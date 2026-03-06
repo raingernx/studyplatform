@@ -70,7 +70,7 @@ export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/login?next=/dashboard");
+    redirect("/auth/login?next=/dashboard");
   }
 
   const [purchases, subscription] = await Promise.all([

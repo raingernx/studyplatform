@@ -119,12 +119,12 @@ export function Navbar() {
               </div>
             ) : (
               <>
-                <Link href="/login"
+                <Link href="/auth/login"
                   className="rounded-lg px-3 py-1.5 text-[13px] font-medium text-zinc-600
                              transition-colors hover:text-zinc-900 hover:bg-zinc-100">
                   Sign in
                 </Link>
-                <Link href="/register"
+                <Link href="/auth/register"
                   className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-900 px-3.5 py-1.5
                              text-[13px] font-semibold text-white shadow-card
                              transition-all duration-150 hover:bg-zinc-700">
@@ -173,11 +173,11 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/login" onClick={() => setMobileOpen(false)}
+                <Link href="/auth/login" onClick={() => setMobileOpen(false)}
                   className="rounded-xl border border-zinc-200 px-4 py-2.5 text-center text-sm font-medium text-zinc-700 hover:bg-zinc-50">
                   Sign in
                 </Link>
-                <Link href="/register" onClick={() => setMobileOpen(false)}
+                <Link href="/auth/register" onClick={() => setMobileOpen(false)}
                   className="rounded-xl bg-zinc-900 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-zinc-700">
                   Get started free
                 </Link>
