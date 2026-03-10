@@ -81,8 +81,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    // @ts-expect-error – custom role field
-    const role = session.user.role as string;
+    const role = session.user.role;
     if (!["ADMIN", "INSTRUCTOR"].includes(role)) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     }

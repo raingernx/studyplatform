@@ -19,11 +19,18 @@ function GoogleIcon() {
   );
 }
 
+function sanitizeNext(next: string | null): string {
+  if (!next) return "/dashboard";
+  if (!next.startsWith("/")) return "/dashboard";
+  if (next.startsWith("//")) return "/dashboard";
+  return next;
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Honour ?next= so protected pages can redirect back after sign-in
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = sanitizeNext(searchParams.get("next"));
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");

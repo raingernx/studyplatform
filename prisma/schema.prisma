@@ -129,7 +129,8 @@ model Resource {
   status      ResourceStatus @default(DRAFT)
 
   // File storage (S3 / local)
-  fileUrl     String?        // URL to the stored file
+  fileUrl     String?        // URL to an external / S3-hosted file
+  fileKey     String?        // key inside private-uploads/ for locally stored files
   fileSize    Int?           // bytes
   fileName    String?
   mimeType    String?
@@ -156,6 +157,7 @@ model Resource {
   categoryId  String?
   category    Category?  @relation(fields: [categoryId], references: [id])
   tags        ResourceTag[]
+  previews    ResourcePreview[]
   purchases   Purchase[]
   reviews     Review[]
 }
@@ -168,6 +170,18 @@ model ResourceTag {
   tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([resourceId, tagId])
+}
+
+model ResourcePreview {
+  id         String   @id @default(cuid())
+  resourceId String
+  imageUrl   String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
 }
 
 // ─── Purchases ───────────────────────────────────────────────────────────────
@@ -183,13 +197,23 @@ model Purchase {
   id                    String         @id @default(cuid())
   userId                String
   resourceId            String
-  amount                Int            // in cents
+  amount                Int            // in cents (USD) or smallest unit for the currency
   currency              String         @default("usd")
   status                PurchaseStatus @default(PENDING)
 
-  // Stripe
+  // Which payment provider processed this purchase.
+  // Null on existing rows is treated as "STRIPE" in application logic.
+  paymentProvider       String?        // "STRIPE" | "XENDIT"
+
+  // ── Stripe fields ─────────────────────────────────────────────────────────
   stripeSessionId       String?        @unique
   stripePaymentIntentId String?        @unique
+
+  // ── Xendit fields ─────────────────────────────────────────────────────────
+  // xenditInvoiceId = the invoice.id returned by xendit.Invoice.createInvoice().
+  // Used as the primary match key in the Xendit webhook handler, mirroring
+  // the role stripeSessionId plays in the Stripe webhook handler.
+  xenditInvoiceId       String?        @unique
 
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
@@ -197,7 +221,7 @@ model Purchase {
   user     User     @relation(fields: [userId], references: [id])
   resource Resource @relation(fields: [resourceId], references: [id])
 
-  @@unique([userId, resourceId]) // one purchase per user per resource
+  @@unique([userId, resourceId]) // one purchase record per user per resource
 }
 
 // ─── Reviews ─────────────────────────────────────────────────────────────────
@@ -215,4 +239,17 @@ model Review {
   resource Resource @relation(fields: [resourceId], references: [id])
 
   @@unique([userId, resourceId])
+}
+
+// ─── Webhook Dead-letter Storage ──────────────────────────────────────────────
+
+model WebhookEvent {
+  id        String   @id @default(cuid())
+  provider  String   // "STRIPE" | "XENDIT" | etc.
+  eventType String   // e.g. "checkout.session.completed", "invoice.paid"
+  payload   Json
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([provider, resolved, createdAt])
 }

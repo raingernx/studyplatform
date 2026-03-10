@@ -7,10 +7,17 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
 import { BookOpen } from "lucide-react";
 
+function sanitizeNext(next: string | null): string {
+  if (!next) return "/dashboard";
+  if (!next.startsWith("/")) return "/dashboard";
+  if (next.startsWith("//")) return "/dashboard";
+  return next;
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = sanitizeNext(searchParams.get("next"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,11 +29,7 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
+      const result = await signIn("credentials", { email, password, redirect: false });
       if (result?.error) {
         setError("Invalid email or password.");
       } else {

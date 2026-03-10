@@ -90,26 +90,47 @@ export async function POST(req: Request) {
         });
       }
 
-      const checkoutSession = await stripe.checkout.sessions.create({
-        customer: customerId,
-        mode: "payment",
-        line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${baseUrl}/dashboard/resources/${resourceId}?payment=success`,
-        cancel_url: `${baseUrl}/resources/${resourceId}?payment=cancelled`,
-        metadata: { userId: user.id, resourceId },
-      });
-
-      // Create pending purchase record
-      await prisma.purchase.upsert({
+      // Upsert a pending Purchase first so we can attach purchaseId in metadata
+      const purchase = await prisma.purchase.upsert({
         where: { userId_resourceId: { userId: user.id, resourceId } },
-        update: { stripeSessionId: checkoutSession.id, status: "PENDING" },
+        update: {
+          status: "PENDING",
+          paymentProvider: "STRIPE",
+        },
         create: {
           userId: user.id,
           resourceId,
           amount: resource.price,
-          stripeSessionId: checkoutSession.id,
+          currency: "usd",
           status: "PENDING",
+          paymentProvider: "STRIPE",
         },
+        select: { id: true },
+      });
+
+      const checkoutSession = await stripe.checkout.sessions.create({
+        customer: customerId,
+        mode: "payment",
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${baseUrl}/resources/${resourceId}?payment=success`,
+        cancel_url: `${baseUrl}/resources/${resourceId}?payment=cancelled`,
+        metadata: {
+          purchaseId: purchase.id,
+          userId: user.id,
+          resourceId,
+        },
+        payment_intent_data: {
+          metadata: {
+            purchaseId: purchase.id,
+            userId: user.id,
+            resourceId,
+          },
+        },
+      });
+
+      await prisma.purchase.update({
+        where: { id: purchase.id },
+        data: { stripeSessionId: checkoutSession.id },
       });
 
       return NextResponse.json({ data: { url: checkoutSession.url } });

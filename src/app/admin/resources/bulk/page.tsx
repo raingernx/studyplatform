@@ -1,0 +1,78 @@
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { Navbar } from "@/components/layout/Navbar";
+import { BulkUploadClient } from "./BulkUploadClient";
+import Link from "next/link";
+import { Layers } from "lucide-react";
+
+export const metadata = {
+  title: "Bulk Upload – Admin",
+  description: "Upload multiple resources at once using JSON.",
+};
+
+export default async function BulkUploadPage() {
+  const session = await getServerSession(authOptions);
+
+  // ── 1. Require login ─────────────────────────────────────────────────────
+  if (!session?.user) {
+    redirect("/auth/login?next=/admin/resources/bulk");
+  }
+
+  // ── 2. Require ADMIN role ────────────────────────────────────────────────
+  const role = session.user.role;
+
+  if (role !== "ADMIN") {
+    redirect("/dashboard");
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Navbar />
+
+      <main className="flex-1 bg-zinc-50">
+        <div className="mx-auto max-w-4xl px-6 py-10">
+
+          {/* ── Page header ── */}
+          <div className="mb-8 flex items-start justify-between">
+            <div>
+              <p className="eyebrow mb-1">Admin · Resources</p>
+              <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-zinc-900">
+                <Layers className="h-6 w-6 text-blue-500" />
+                Bulk Upload
+              </h1>
+              <p className="mt-1 text-sm text-zinc-500">
+                Paste a JSON array to create up to 100 resources in one operation.
+              </p>
+            </div>
+
+            {/* Nav links */}
+            <div className="flex items-center gap-2">
+              <Link
+                href="/admin/resources"
+                className="rounded-xl border border-zinc-200 bg-white px-4 py-2
+                           text-[13px] font-medium text-zinc-600 shadow-sm transition
+                           hover:bg-zinc-50 hover:text-zinc-900"
+              >
+                ← Resources
+              </Link>
+              <Link
+                href="/admin"
+                className="rounded-xl border border-zinc-200 bg-white px-4 py-2
+                           text-[13px] font-medium text-zinc-600 shadow-sm transition
+                           hover:bg-zinc-50 hover:text-zinc-900"
+              >
+                Admin home
+              </Link>
+            </div>
+          </div>
+
+          {/* ── Client component with all interactive logic ── */}
+          <BulkUploadClient />
+
+        </div>
+      </main>
+    </div>
+  );
+}

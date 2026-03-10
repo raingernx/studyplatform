@@ -65,8 +65,7 @@ export async function PATCH(req: Request, { params }: Params) {
       return NextResponse.json({ error: "Resource not found." }, { status: 404 });
     }
 
-    // @ts-expect-error – custom role
-    const role = session.user.role as string;
+    const role = session.user.role;
     const isOwner = resource.authorId === session.user.id;
     if (role !== "ADMIN" && !isOwner) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
@@ -106,8 +105,7 @@ export async function DELETE(_req: Request, { params }: Params) {
       return NextResponse.json({ error: "Resource not found." }, { status: 404 });
     }
 
-    // @ts-expect-error – custom role
-    const role = session.user.role as string;
+    const role = session.user.role;
     if (role !== "ADMIN") {
       return NextResponse.json({ error: "Only admins can delete resources." }, { status: 403 });
     }

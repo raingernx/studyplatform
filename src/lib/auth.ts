@@ -70,7 +70,6 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        // @ts-expect-error – role added in authorize()
         token.role = user.role;
       }
 
@@ -93,9 +92,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        // @ts-expect-error – custom field
         session.user.role = token.role;
-        // @ts-expect-error – custom field
         session.user.subscriptionStatus = token.subscriptionStatus;
       }
       return session;
