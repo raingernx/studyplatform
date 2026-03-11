@@ -75,20 +75,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "You already own this resource." }, { status: 409 });
       }
 
-      // Use existing Stripe Price ID or create an ad-hoc price
-      let priceId = resource.stripePriceId;
-      if (!priceId) {
-        const price = await stripe.prices.create({
-          unit_amount: resource.price,
-          currency: "usd",
-          product_data: { name: resource.title },
-        });
-        priceId = price.id;
-        await prisma.resource.update({
-          where: { id: resourceId },
-          data: { stripePriceId: priceId },
-        });
-      }
+      const unitAmount = resource.price * 100;
 
       // Upsert a pending Purchase first so we can attach purchaseId in metadata
       const purchase = await prisma.purchase.upsert({
@@ -100,8 +87,8 @@ export async function POST(req: Request) {
         create: {
           userId: user.id,
           resourceId,
-          amount: resource.price,
-          currency: "usd",
+          amount: unitAmount,
+          currency: "thb",
           status: "PENDING",
           paymentProvider: "STRIPE",
         },
@@ -111,9 +98,18 @@ export async function POST(req: Request) {
       const checkoutSession = await stripe.checkout.sessions.create({
         customer: customerId,
         mode: "payment",
-        line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${baseUrl}/resources/${resourceId}?payment=success`,
-        cancel_url: `${baseUrl}/resources/${resourceId}?payment=cancelled`,
+        line_items: [
+          {
+            price_data: {
+              currency: "thb",
+              unit_amount: unitAmount,
+              product_data: { name: resource.title },
+            },
+            quantity: 1,
+          },
+        ],
+        success_url: `${baseUrl}/resources/id/${resourceId}?payment=success`,
+        cancel_url: `${baseUrl}/resources/id/${resourceId}?payment=cancelled`,
         metadata: {
           purchaseId: purchase.id,
           userId: user.id,

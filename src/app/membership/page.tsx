@@ -244,7 +244,7 @@ export default function MembershipPage() {
           </h2>
           <p className="mt-3 text-blue-100">
             Join thousands of students who accelerate their learning with
-            StudyPlatform.
+            PaperDock.
           </p>
           <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <button

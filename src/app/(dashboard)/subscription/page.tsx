@@ -1,37 +1,23 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { Navbar } from "@/components/layout/Navbar";
-import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
 import { CreditCard, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Subscription – StudyPlatform",
+  title: "Subscription – PaperDock",
 };
 
 export default async function SubscriptionPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/auth/login?next=/subscription");
 
-  // @ts-expect-error – custom field added by JWT callback
   const subscriptionStatus: string = session.user.subscriptionStatus ?? "INACTIVE";
   const isActive = subscriptionStatus === "ACTIVE";
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Navbar />
-      <div className="flex flex-1">
-        <DashboardSidebar
-          user={{
-            name: session.user.name,
-            email: session.user.email,
-            image: session.user.image,
-            subscriptionStatus,
-          }}
-        />
-        <main className="flex-1 bg-zinc-50 px-6 py-8">
-          <div className="mx-auto max-w-4xl">
+    <main className="px-8 py-10 bg-surface-50">
+      <div className="mx-auto max-w-4xl">
             <div className="mb-6">
               <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Subscription</h1>
               <p className="mt-1 text-sm text-zinc-500">
@@ -81,9 +67,7 @@ export default async function SubscriptionPage() {
                 </Link>
               </div>
             )}
-          </div>
-        </main>
       </div>
-    </div>
+    </main>
   );
 }

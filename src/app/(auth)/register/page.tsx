@@ -51,14 +51,14 @@ export default function RegisterPage() {
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20">
             <BookOpen className="h-4 w-4 text-white" />
           </span>
-          StudyPlatform
+          PaperDock
         </Link>
         <div className="mt-12">
           <h2 className="text-3xl font-bold text-white">
             Start learning today
           </h2>
           <p className="mt-3 text-blue-100">
-            Join 18,000+ students who use StudyPlatform to study smarter.
+            Join 18,000+ students who use PaperDock to study smarter.
           </p>
           <ul className="mt-8 space-y-3">
             {PERKS.map((perk) => (
@@ -81,7 +81,7 @@ export default function RegisterPage() {
               <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600">
                 <BookOpen className="h-3.5 w-3.5 text-white" />
               </span>
-              StudyPlatform
+              PaperDock
             </Link>
             <h1 className="mt-4 text-2xl font-bold text-gray-900">Create your account</h1>
             <p className="mt-1 text-sm text-gray-500">Free to start — no credit card required</p>

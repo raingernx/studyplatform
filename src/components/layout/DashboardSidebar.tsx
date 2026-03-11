@@ -7,20 +7,16 @@ import {
   LayoutDashboard,
   BookOpen,
   CreditCard,
-  Star,
-  User,
   Settings,
   ChevronRight,
   Sparkles,
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/dashboard/purchases", label: "My Resources", icon: BookOpen },
-  { href: "/dashboard/subscription", label: "Subscription", icon: CreditCard },
-  { href: "/dashboard/reviews", label: "My Reviews", icon: Star },
-  { href: "/dashboard/profile", label: "Profile", icon: User },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard",    label: "Overview",    icon: LayoutDashboard, exact: true },
+  { href: "/library",      label: "My Library",  icon: BookOpen },
+  { href: "/subscription", label: "Subscription", icon: CreditCard },
+  { href: "/settings",     label: "Settings",    icon: Settings },
 ];
 
 interface DashboardSidebarProps {

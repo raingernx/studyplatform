@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
-import { Navbar } from "@/components/layout/Navbar";
 import { Badge } from "@/components/ui/Badge";
 import { getBaseUrl } from "@/lib/api";
 import Link from "next/link";
@@ -106,22 +104,8 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Navbar />
-
-      <div className="flex flex-1">
-        <DashboardSidebar
-          user={{
-            name: session.user.name,
-            email: session.user.email,
-            image: session.user.image,
-            subscriptionStatus: subscription?.subscriptionStatus ?? undefined,
-          }}
-        />
-
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 px-6 py-8">
-          <div className="mx-auto max-w-4xl space-y-8">
+    <main className="px-8 py-10">
+      <div className="mx-auto max-w-4xl space-y-8">
             {/* Welcome */}
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
@@ -204,7 +188,7 @@ export default async function DashboardPage() {
                   {recentPurchases.map((purchase) => (
                     <li key={purchase.id}>
                       <Link
-                        href={`/resources/${purchase.resource.id}`}
+                        href={`/resources/${purchase.resource.slug}`}
                         className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors"
                       >
                         {/* Thumbnail */}
@@ -280,9 +264,7 @@ export default async function DashboardPage() {
                 </div>
               </div>
             )}
-          </div>
-        </main>
       </div>
-    </div>
+    </main>
   );
 }

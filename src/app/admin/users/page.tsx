@@ -1,0 +1,155 @@
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+
+export const metadata = {
+  title: "Users – Admin",
+  description: "Manage platform users.",
+};
+
+interface AdminUsersPageProps {
+  searchParams?: { q?: string };
+}
+
+export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    redirect("/auth/login?next=/admin/users");
+  }
+
+  if (session.user.role !== "ADMIN") {
+    redirect("/dashboard");
+  }
+
+  const query = searchParams?.q?.trim() ?? "";
+
+  const users = await prisma.user.findMany({
+    take: 50,
+    orderBy: { createdAt: "desc" },
+    where: query
+      ? {
+          OR: [
+            { name: { contains: query, mode: "insensitive" } },
+            { email: { contains: query, mode: "insensitive" } },
+          ],
+        }
+      : undefined,
+    include: {
+      _count: { select: { resources: true } },
+    },
+  });
+
+  return (
+    <>
+      {/* Header + search */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+            Users
+          </h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            Manage platform users
+          </p>
+        </div>
+
+        <form className="w-full max-w-xs">
+          <Input
+            type="search"
+            name="q"
+            defaultValue={query}
+            placeholder="Search by name or email…"
+          />
+        </form>
+      </div>
+
+      {/* Users table */}
+      <div className="overflow-hidden rounded-2xl border border-border-subtle bg-white shadow-card">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="border-b border-border-subtle bg-surface-50/80">
+              <tr>
+                <th className="px-5 py-3 font-medium text-text-secondary">User</th>
+                <th className="px-3 py-3 font-medium text-text-secondary">Email</th>
+                <th className="px-3 py-3 font-medium text-text-secondary">Role</th>
+                <th className="px-3 py-3 font-medium text-text-secondary">Resources</th>
+                <th className="px-3 py-3 font-medium text-text-secondary">Joined</th>
+                <th className="px-3 py-3 text-right font-medium text-text-secondary">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle/60">
+              {users.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-5 py-6 text-center text-sm text-text-muted"
+                  >
+                    No users found.
+                  </td>
+                </tr>
+              ) : (
+                users.map((user) => (
+                  <tr key={user.id} className="bg-white">
+                    <td className="px-5 py-3 text-sm font-medium text-text-primary">
+                      {user.name ?? "—"}
+                    </td>
+                    <td className="px-3 py-3 text-sm text-text-secondary">
+                      {user.email ?? "—"}
+                    </td>
+                    <td className="px-3 py-3 text-sm text-text-secondary">
+                      <span
+                        className={
+                          "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize " +
+                          (user.role === "ADMIN"
+                            ? "bg-violet-50 text-violet-700"
+                            : user.role === "INSTRUCTOR"
+                            ? "bg-blue-50 text-blue-700"
+                            : "bg-zinc-100 text-zinc-600")
+                        }
+                      >
+                        {user.role === "ADMIN"
+                          ? "Admin"
+                          : user.role === "INSTRUCTOR"
+                          ? "Creator"
+                          : "User"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-sm text-text-secondary tabular-nums">
+                      {user._count.resources.toLocaleString()}
+                    </td>
+                    <td className="px-3 py-3 text-sm text-text-secondary">
+                      {user.createdAt.toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      <div className="inline-flex items-center gap-2">
+                        <Button variant="outline" size="sm" type="button">
+                          View
+                        </Button>
+                        <Button variant="outline" size="sm" type="button">
+                          Suspend
+                        </Button>
+                        <Button variant="outline" size="sm" type="button">
+                          Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+

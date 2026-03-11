@@ -242,7 +242,7 @@ export default async function HomePage() {
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {featuredResources.map((r) => (
-              <ResourceCard key={r.id} resource={r} />
+              <ResourceCard key={r.id} resource={r} variant="marketplace" />
             ))}
           </div>
         </div>
@@ -254,7 +254,7 @@ export default async function HomePage() {
       <section className="bg-white px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-14 text-center">
-            <p className="eyebrow">Why StudyPlatform</p>
+            <p className="eyebrow">Why PaperDock</p>
             <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
               Built for how students actually learn
             </h2>

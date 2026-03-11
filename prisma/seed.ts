@@ -43,12 +43,20 @@ async function main() {
   console.log("✅ Categories:", categories.map((c) => c.name).join(", "));
 
   // ── Tags ────────────────────────────────────────────────────────────────────
-  const tagNames = ["beginner", "intermediate", "advanced", "worksheet", "exam-prep"];
-  for (const name of tagNames) {
+  const tagEntries: { name: string; slug: string }[] = [
+    { name: "beginner", slug: "beginner" },
+    { name: "intermediate", slug: "intermediate" },
+    { name: "advanced", slug: "advanced" },
+    { name: "worksheet", slug: "worksheet" },
+    { name: "exam-prep", slug: "exam-prep" },
+    { name: "Computer Science", slug: "computer-science" },
+    { name: "PDF", slug: "pdf" },
+  ];
+  for (const { name, slug } of tagEntries) {
     await prisma.tag.upsert({
-      where: { slug: name },
+      where: { slug },
       update: {},
-      create: { name, slug: name },
+      create: { name, slug },
     });
   }
   console.log("✅ Tags seeded");

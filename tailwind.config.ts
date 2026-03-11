@@ -6,6 +6,12 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx}",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+
+  safelist: [
+    "[data-state=checked]:bg-blue-500",
+    "[data-state=checked]:translate-x-5",
+  ],
+  
   theme: {
     extend: {
       colors: {
@@ -21,6 +27,79 @@ const config: Config = {
           800: "#27272a",
           900: "#18181b",
           950: "#09090b",
+        },
+        // Gumroad-style brand system
+        brand: {
+          50:  "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
+        },
+        accent: {
+          50:  "#fdf2ff",
+          100: "#f5e1ff",
+          200: "#e9c8ff",
+          300: "#d0a4ff",
+          400: "#b46bff",
+          500: "#7c3aed",
+          600: "#6d28d9",
+          700: "#5b21b6",
+          800: "#4c1d95",
+          900: "#2e1065",
+        },
+        highlight: {
+          50:  "#fff7ed",
+          100: "#ffedd5",
+          200: "#fed7aa",
+          300: "#fdba74",
+          400: "#fb923c",
+          500: "#f97316",
+          600: "#ea580c",
+          700: "#c2410c",
+          800: "#9a3412",
+          900: "#7c2d12",
+        },
+        success: {
+          50: "#ecfdf5",
+          100: "#d1fae5",
+          500: "#22c55e",
+          600: "#16a34a",
+          700: "#15803d",
+        },
+        warning: {
+          50: "#fffbeb",
+          100: "#fef3c7",
+          500: "#f59e0b",
+          600: "#d97706",
+        },
+        danger: {
+          50: "#fff0f0",
+          100: "#fee2e2",
+          200: "#ffc7c7",
+          500: "#ef4444",
+          600: "#dc2626",
+        },
+        bg: {
+          default: "#f4f4f5",
+          soft: "#fafafa",
+          dark: "#09090b",
+        },
+        text: {
+          primary: "#18181b",
+          secondary: "#52525b",
+          muted: "#a1a1aa",
+          onDark: "#f9fafb",
+        },
+        border: {
+          subtle: "#e4e4e7",
+          strong: "#d4d4d8",
+          focus: "#2563eb",
         },
       },
       fontFamily: {

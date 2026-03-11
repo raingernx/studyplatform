@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import Image from "next/image";
 
 const LINKS = {
   Platform: [
@@ -29,10 +29,20 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="inline-flex items-center gap-2 font-bold text-zinc-900">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 shadow-sm">
-                <BookOpen className="h-3.5 w-3.5 text-white" />
+              <span className="flex h-fit w-fit items-center justify-center">
+                <Image
+                  src="/logo/SVG/logo-mark.svg"
+                  alt="PaperDock logo"
+                  width={24}
+                  height={24}
+                  className=""
+                  priority={false}
+                />
               </span>
-              StudyPlatform
+              <span className="logo-apotek text-[16px] leading-none flex flex-col -space-y-1">
+                <span>paper</span>
+                <span>dock</span>
+              </span>
             </Link>
             <p className="mt-3 max-w-[200px] text-[13px] leading-relaxed text-zinc-500">
               Curated educational resources for every stage of learning.
@@ -74,7 +84,7 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-zinc-100 pt-6 sm:flex-row">
           <p className="text-[12px] text-zinc-400">
-            © {new Date().getFullYear()} StudyPlatform. All rights reserved.
+            © {new Date().getFullYear()} PaperDock. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <Link href="#" className="text-[12px] text-zinc-400 hover:text-zinc-600 transition-colors">

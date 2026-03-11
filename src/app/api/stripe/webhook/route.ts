@@ -229,7 +229,7 @@ async function handlePayment(session: Stripe.Checkout.Session) {
           data: {
             provider: "STRIPE",
             eventType: "checkout.session.completed",
-            payload: session as unknown as Record<string, unknown>,
+            payload: JSON.parse(JSON.stringify(session)),
           },
         })
         .catch((err) =>

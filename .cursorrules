@@ -1,0 +1,167 @@
+# PaperDock Cursor Rules
+
+## Project Overview
+PaperDock is a marketplace for downloadable learning resources and documents.
+Users can browse resources, purchase them, and access them in their personal library.
+Creators can upload resources and manage them through an admin interface.
+
+Tech stack:
+- Next.js (App Router)
+- TypeScript
+- Prisma ORM
+- PostgreSQL
+- Tailwind CSS
+- NextAuth for authentication
+
+File uploads are stored in:
+private-uploads/
+
+---
+
+# General Coding Principles
+
+1. Always read the repository structure before writing code.
+2. Follow existing patterns used in the project.
+3. Do not introduce new frameworks or libraries unless necessary.
+4. Prefer simple and maintainable solutions.
+5. Avoid breaking existing functionality.
+6. Explain the implementation plan before modifying files.
+
+---
+
+# Project Architecture
+
+Frontend:
+Next.js App Router inside `src/app`
+
+Backend:
+API routes located in:
+src/app/api
+
+Database:
+Prisma ORM
+schema located in:
+prisma/schema.prisma
+
+Uploads:
+Files are stored locally in:
+private-uploads/
+
+Authentication:
+NextAuth
+
+---
+
+# Resource System Rules
+
+Resources represent downloadable learning materials.
+
+A resource includes:
+- title
+- description
+- file
+- price
+- author/creator
+- category
+- thumbnail (optional)
+
+Rules:
+- Resources must always have a file
+- File paths should reference private-uploads
+- Resource metadata must be stored in the database
+
+---
+
+# Purchase System Rules
+
+Purchases allow users to access resources they bought.
+
+Rules:
+- Users must be authenticated to purchase
+- A purchase record must be created in the database
+- Purchased resources appear in the user's library
+
+Library route example:
+`/purchases`
+
+---
+
+# Upload System Rules
+
+Uploads should follow these rules:
+
+- Validate file type before saving
+- Store files in `/private-uploads`
+- Prevent overwriting existing files
+- Save file metadata in the database
+
+Admin uploads happen in:
+admin resource pages
+
+---
+
+# UI Development Rules
+
+Use:
+- Tailwind CSS
+- Reusable components
+- Clean and minimal layouts
+
+Prefer:
+- small components
+- clear naming
+- responsive layouts
+
+Avoid:
+- inline styles
+- duplicated UI logic
+
+---
+
+# TypeScript Rules
+
+- Always use strict typing
+- Avoid using `any`
+- Prefer defined interfaces and types
+- Ensure API responses are typed
+
+---
+
+# Prisma Rules
+
+- Use Prisma client for all database operations
+- Never write raw SQL unless necessary
+- Ensure queries are efficient
+
+---
+
+# Editing Rules for Cursor
+
+Before editing code:
+
+1. Read relevant files
+2. Understand the feature
+3. Explain the implementation plan
+4. List files that will be modified
+
+Only then write or modify code.
+
+Never rewrite large parts of the project unless required.
+
+---
+
+# Goal
+
+Maintain a clean, scalable SaaS architecture for PaperDock.
+
+Code should remain:
+- readable
+- modular
+- easy to extend
+
+---
+
+# Language rules
+
+- The user may speak Thai, but whenever the user asks for "prompts", "prompt templates", or "instructions to copy", the assistant must always write those prompts in **English**.
+- Explanations around the prompts can be in Thai or English, but the prompt blocks themselves must be English.

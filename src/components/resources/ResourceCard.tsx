@@ -1,8 +1,11 @@
-import Link from "next/link";
-import { FileText, Download, ArrowUpRight, Lock, Star } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
-import { cn, formatPrice } from "@/lib/utils";
+"use client";
 
+import Link from "next/link";
+import { FileText, ArrowRight, Download, ExternalLink } from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+
+/** Shared shape for resource card across marketplace, library, and admin preview. */
 export interface ResourceCardData {
   id: string;
   title: string;
@@ -14,157 +17,159 @@ export interface ResourceCardData {
   downloadCount: number;
   author: { name?: string | null };
   category?: { name: string; slug: string } | null;
-  tags?: { tag: { name: string; slug: string } }[];
+  tags?: { tag: { id?: string; name: string; slug: string } }[];
   _count?: { purchases: number; reviews: number };
 }
 
+export type ResourceCardVariant = "marketplace" | "library" | "preview";
+
+/** Minimal resource shape for marketplace, library, and preview. */
+export interface ResourceCardResource extends Partial<ResourceCardData> {
+  id?: string;
+  slug?: string;
+  title: string;
+  previewUrl?: string | null;
+  author?: { name?: string | null };
+  authorName?: string | null;
+  description?: string;
+  tags?: { tag: { id?: string; name: string; slug: string } }[];
+  price?: number;
+  isFree?: boolean;
+}
+
 interface ResourceCardProps {
-  resource: ResourceCardData;
+  resource: ResourceCardResource;
+  variant: ResourceCardVariant;
   owned?: boolean;
 }
 
-// Rich gradient palettes per category — from → to + accent
-const CATEGORY_PALETTE: Record<string, { from: string; to: string; icon: string }> = {
-  mathematics: { from: "#1e40af", to: "#1d4ed8",   icon: "#93c5fd" },
-  science:     { from: "#065f46", to: "#047857",   icon: "#6ee7b7" },
-  humanities:  { from: "#5b21b6", to: "#6d28d9",   icon: "#c4b5fd" },
-  languages:   { from: "#9a3412", to: "#c2410c",   icon: "#fdba74" },
-  default:     { from: "#1e293b", to: "#334155",   icon: "#94a3b8" },
-};
+function normalizeResource(resource: ResourceCardResource) {
+  const authorName =
+    resource.author?.name ?? resource.authorName ?? "Unknown";
+  const description = resource.description ?? "";
+  const tags = resource.tags ?? [];
+  const isFree = resource.isFree ?? (resource.price === 0 || !resource.price);
+  return { authorName, description, tags, isFree };
+}
 
-export function ResourceCard({ resource, owned = false }: ResourceCardProps) {
-  const palette =
-    CATEGORY_PALETTE[resource.category?.slug ?? "default"] ??
-    CATEGORY_PALETTE.default;
+export function ResourceCard({
+  resource,
+  variant,
+  owned = false,
+}: ResourceCardProps) {
+  const { authorName, description, tags, isFree } =
+    normalizeResource(resource);
+  const visibleTags = tags.slice(0, 2);
+  const extra = tags.length - 2;
 
-  const isFreeResource = resource.isFree || resource.price === 0;
+  const priceDisplay =
+    variant === "library"
+      ? "Owned"
+      : isFree
+        ? "Free"
+        : owned
+          ? "Owned"
+          : `฿${Number(resource.price ?? 0).toLocaleString("th-TH")}`;
 
   return (
-    <Link
-      href={`/resources/${resource.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl bg-white
-                 ring-1 ring-black/[0.05] shadow-card
-                 transition-all duration-200 ease-out
-                 hover:shadow-card-lg hover:-translate-y-1 hover:ring-black/[0.08]"
-    >
-      {/* ── Banner ──────────────────────────────────────────────────────── */}
-      <div
-        className="relative flex h-[140px] flex-shrink-0 items-center justify-center overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${palette.from} 0%, ${palette.to} 100%)`,
-        }}
-      >
-        {/* Subtle dot pattern */}
-        <div className="absolute inset-0 bg-dot-dark opacity-30" />
-
-        {/* Shine line on hover */}
-        <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent
-                        via-white/10 to-transparent transition-transform duration-700
-                        group-hover:translate-x-[100%]" />
-
+    <Card className="group flex h-full flex-col overflow-hidden transition-all hover:shadow-md hover:-translate-y-[2px]">
+      {/* Preview Image — aspect-[4/3], bg-neutral-100, fallback FileText */}
+      <div className="aspect-[4/3] flex w-full items-center justify-center overflow-hidden rounded-t-2xl bg-neutral-100">
         {resource.previewUrl ? (
           <img
             src={resource.previewUrl}
             alt={resource.title}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
           />
         ) : (
-          <div className="flex flex-col items-center gap-2">
-            <FileText style={{ color: palette.icon }} className="h-10 w-10 opacity-60" />
-          </div>
+          <FileText className="h-8 w-8 text-neutral-400" aria-hidden />
         )}
-
-        {/* Price pill — top-right */}
-        <div className="absolute right-3 top-3">
-          {isFreeResource ? (
-            <span className="rounded-full bg-emerald-500 px-2.5 py-0.5 text-[11px] font-bold
-                             text-white shadow-sm ring-1 ring-emerald-400/30">
-              Free
-            </span>
-          ) : owned ? (
-            <span className="rounded-full bg-blue-600 px-2.5 py-0.5 text-[11px] font-bold
-                             text-white shadow-sm">
-              Owned
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-0.5
-                             text-[11px] font-bold text-white shadow-sm backdrop-blur-sm
-                             ring-1 ring-white/10">
-              <Lock className="h-2.5 w-2.5 text-orange-300" />
-              {formatPrice(resource.price)}
-            </span>
-          )}
-        </div>
-
-        {/* Arrow icon — appears on hover */}
-        <div className="absolute right-3 bottom-3 flex h-7 w-7 items-center justify-center
-                        rounded-full bg-white/10 opacity-0 ring-1 ring-white/20 backdrop-blur-sm
-                        transition-all duration-200 group-hover:opacity-100">
-          <ArrowUpRight className="h-3.5 w-3.5 text-white" />
-        </div>
       </div>
 
-      {/* ── Body ────────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col gap-2.5 p-4">
-        {/* Category badge */}
-        {resource.category && (
-          <div className="flex items-center gap-1.5">
-            <Badge variant="blue">{resource.category.name}</Badge>
-            {resource.tags?.slice(0, 1).map(({ tag }) => (
-              <Badge key={tag.slug} variant="gray">{tag.name}</Badge>
+      <div className="min-w-0 flex flex-1 flex-col p-4 space-y-3">
+        {/* Tags — max 2, then +N; neutral, lowercase */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {visibleTags.map(({ tag }) => (
+              <span
+                key={tag.id ?? tag.slug}
+                className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700"
+              >
+                {tag.name.toLowerCase()}
+              </span>
             ))}
+            {extra > 0 && (
+              <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-500">
+                +{extra}
+              </span>
+            )}
           </div>
         )}
 
-        {/* Title */}
-        <h3 className="line-clamp-2 text-[14px] font-semibold leading-snug text-zinc-900
-                       transition-colors duration-150 group-hover:text-blue-700">
+        <h3 className="min-w-0 text-sm font-medium text-zinc-900 line-clamp-2">
           {resource.title}
         </h3>
 
-        {/* Description */}
-        <p className="line-clamp-2 flex-1 text-[12px] leading-relaxed text-zinc-400">
-          {resource.description}
+        <p className="min-w-0 text-sm text-neutral-500 line-clamp-2">
+          {description || "—"}
         </p>
 
-        {/* ── Footer ────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between border-t border-zinc-100 pt-3">
-          <span className="truncate text-[11px] text-zinc-400 font-medium">
-            {resource.author.name ?? "Unknown"}
+        <div className="flex min-w-0 items-center justify-between gap-3 text-xs text-neutral-400">
+          <span className="min-w-0 truncate font-medium">{authorName}</span>
+          <span className="shrink-0 font-medium text-emerald-600">
+            {priceDisplay}
           </span>
-          <div className="flex flex-shrink-0 items-center gap-3">
-            {resource._count && resource._count.reviews > 0 && (
-              <span className="flex items-center gap-0.5 text-[11px] text-zinc-400">
-                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                {resource._count.reviews}
-              </span>
-            )}
-            <span className="flex items-center gap-1 text-[11px] text-zinc-400">
-              <Download className="h-3 w-3" />
-              {resource.downloadCount.toLocaleString()}
-            </span>
-          </div>
         </div>
+
+        {/* Actions — by variant */}
+        {variant === "marketplace" && resource.slug && (
+          <Button
+            asChild
+            className="w-full"
+            variant="dark"
+            size="sm"
+          >
+            <Link href={`/resources/${resource.slug}`}>
+              View resource
+              <ArrowRight className="ml-1.5 h-4 w-4" />
+            </Link>
+          </Button>
+        )}
+        {variant === "library" && resource.id && resource.slug && (
+          <div className="flex gap-2">
+            <Button asChild size="sm" className="flex-1 h-9 gap-2" variant="dark">
+              <a href={`/api/download/${resource.id}`}>
+                <Download className="h-4 w-4" />
+                Download
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="sm" className="flex-1 h-9 gap-2">
+              <Link href={`/resources/${resource.slug}`}>
+                <ExternalLink className="h-4 w-4" />
+                Open
+              </Link>
+            </Button>
+          </div>
+        )}
+        {variant === "preview" && null}
       </div>
-    </Link>
+    </Card>
   );
 }
 
-// ── Skeleton loader ──────────────────────────────────────────────────────────
+// ── Skeleton ─────────────────────────────────────────────────────────────────
 export function ResourceCardSkeleton() {
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.05] shadow-card">
-      <div className="h-[140px] skeleton" />
+    <Card className="flex h-full flex-col">
+      <div className="aspect-[4/3] overflow-hidden rounded-t-2xl bg-neutral-100 animate-pulse" />
       <div className="flex flex-col gap-3 p-4">
-        <div className="h-4 w-20 rounded-full skeleton" />
-        <div className="h-4 w-4/5 rounded-lg skeleton" />
-        <div className="h-3 w-full rounded skeleton" />
-        <div className="h-3 w-2/3 rounded skeleton" />
-        <div className="flex justify-between border-t border-zinc-100 pt-3">
-          <div className="h-3 w-16 rounded skeleton" />
-          <div className="h-3 w-10 rounded skeleton" />
+        <div className="h-4 w-3/4 rounded bg-neutral-200 animate-pulse" />
+        <div className="h-3 w-full rounded bg-neutral-200 animate-pulse" />
+        <div className="flex items-center justify-between pt-2">
+          <div className="h-3 w-24 rounded bg-neutral-200 animate-pulse" />
+          <div className="h-6 w-16 rounded-full bg-neutral-200 animate-pulse" />
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

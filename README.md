@@ -1,4 +1,4 @@
-# StudyPlatform — Session 1: Architecture Scaffold
+# PaperDock — Session 1: Architecture Scaffold
 
 Next.js 14 (App Router) · Tailwind CSS · PostgreSQL · Prisma · NextAuth · Stripe
 

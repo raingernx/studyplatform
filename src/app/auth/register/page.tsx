@@ -64,7 +64,7 @@ export default function RegisterPage() {
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
             <BookOpen className="h-4 w-4 text-white" strokeWidth={2.5} />
           </span>
-          Study<span className="text-blue-400">Platform</span>
+          Paper<span className="text-blue-400">Dock</span>
         </Link>
 
         {/* Headline */}
@@ -74,7 +74,7 @@ export default function RegisterPage() {
             Start learning<br />smarter today
           </h2>
           <p className="mt-3 text-[14px] text-zinc-400 leading-relaxed">
-            Join 18,000+ students who use StudyPlatform to access curated
+            Join 18,000+ students who use PaperDock to access curated
             educational resources.
           </p>
           <ul className="mt-8 space-y-3">
@@ -91,7 +91,7 @@ export default function RegisterPage() {
 
         {/* Bottom social proof */}
         <p className="text-[12px] text-zinc-600">
-          © {new Date().getFullYear()} StudyPlatform
+          © {new Date().getFullYear()} PaperDock
         </p>
       </div>
 
@@ -104,7 +104,7 @@ export default function RegisterPage() {
               <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 shadow-sm">
                 <BookOpen className="h-4 w-4 text-white" strokeWidth={2.5} />
               </span>
-              Study<span className="text-blue-600">Platform</span>
+              Paper<span className="text-blue-600">Dock</span>
             </Link>
           </div>
 

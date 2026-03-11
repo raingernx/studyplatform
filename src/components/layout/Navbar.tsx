@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { BookOpen, Menu, X, ChevronDown, LogOut, LayoutDashboard, User } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, LayoutDashboard, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
-  { href: "/resources",  label: "Library"    },
-  { href: "/membership", label: "Membership" },
+  { href: "/resources",         label: "Marketplace" },
+  { href: "/dashboard/library", label: "Library"     },
+  { href: "/membership",        label: "Membership"  },
 ];
 
 export function Navbar() {
@@ -17,6 +19,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen,   setMobileOpen]   = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [avatarBroken, setAvatarBroken] = useState(false);
   const loading = status === "loading";
 
   return (
@@ -25,14 +28,23 @@ export function Navbar() {
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
 
           {/* Logo */}
-          <Link href="/"
-            className="flex flex-shrink-0 items-center gap-2 text-[15px] font-semibold text-zinc-900
-                       transition-opacity hover:opacity-70">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg
-                             bg-gradient-to-br from-blue-600 to-violet-600 shadow-sm">
-              <BookOpen className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+          <Link
+            href="/"
+            className="flex h-fit w-fit flex-shrink-0 items-center justify-center gap-2 align-middle text-[15px] font-semibold text-zinc-900
+                       transition-opacity hover:opacity-70"
+          >
+            <Image
+              src="/logo/SVG/logo-mark.svg"
+              alt="PaperDock logo"
+              width={26}
+              height={26}
+              className=""
+              priority
+            />
+            <span className="logo-apotek text-[18px] leading-none flex flex-col -space-y-1">
+              <span>paper</span>
+              <span>dock</span>
             </span>
-            Study<span className="text-blue-600">Platform</span>
           </Link>
 
           {/* Desktop nav */}
@@ -66,10 +78,14 @@ export function Navbar() {
                   className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white
                              px-2.5 py-1.5 text-sm font-medium text-zinc-700 shadow-card
                              transition-all duration-150 hover:border-zinc-300 hover:shadow-card-md">
-                  {session.user.image ? (
-                    <img src={session.user.image} alt={session.user.name ?? ""}
+                  {session.user.image && !avatarBroken ? (
+                    <img
+                      src={session.user.image}
+                      alt={session.user.name ?? ""}
                       className="rounded-full object-cover ring-1 ring-zinc-200"
-                      style={{ height: 20, width: 20 }} />
+                      style={{ height: 20, width: 20 }}
+                      onError={() => setAvatarBroken(true)}
+                    />
                   ) : (
                     <span className="flex items-center justify-center rounded-full
                                      bg-gradient-to-br from-blue-500 to-violet-500 text-[10px] font-bold text-white"

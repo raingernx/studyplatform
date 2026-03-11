@@ -51,3 +51,6 @@ logs
 .vscode/*
 !.vscode/extensions.json
 .idea
+# Private file uploads (local storage, not for version control)
+/private-uploads/*
+!/private-uploads/.gitkeep

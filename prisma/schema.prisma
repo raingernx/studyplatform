@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Prisma Schema  –  StudyPlatform
+// Prisma Schema  –  PaperDock
 // Stack: PostgreSQL · NextAuth (PrismaAdapter) · Stripe
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -138,7 +138,7 @@ model Resource {
 
   // Pricing
   isFree      Boolean  @default(false)
-  price       Int      @default(0)  // in cents; 0 = free
+  price       Int      @default(0)  // in baht; 0 = free
   // If priceId is set, resource is also available via Stripe checkout
   stripePriceId       String?
   stripeProductId     String?
@@ -197,7 +197,7 @@ model Purchase {
   id                    String         @id @default(cuid())
   userId                String
   resourceId            String
-  amount                Int            // in cents (USD) or smallest unit for the currency
+  amount                Int            // in smallest currency unit (e.g. satang for THB)
   currency              String         @default("usd")
   status                PurchaseStatus @default(PENDING)
 

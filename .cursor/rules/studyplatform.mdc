@@ -1,0 +1,29 @@
+---
+description: PaperDock project architecture and rules
+globs: ["src/**/*", "prisma/**/*", "middleware.ts"]
+alwaysApply: true
+---
+
+This project is a SaaS learning resource marketplace.
+
+Tech stack:
+Next.js 14 App Router
+TypeScript
+Tailwind
+Prisma
+PostgreSQL
+NextAuth
+Stripe
+Xendit
+
+Key rules:
+
+- Never break authentication system
+- Never expose private uploads
+- Always enforce ownership checks on downloads
+- Use Prisma transactions for purchase state changes
+- Follow existing folder structure
+- Never expose private-uploads folder via public routes
+- All downloads must go through /api/download authorization
+- Never trust client input for file paths
+- All payments must be verified via webhook before granting access

@@ -50,7 +50,7 @@ function LoginForm() {
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600">
               <BookOpen className="h-4 w-4 text-white" />
             </span>
-            StudyPlatform
+            PaperDock
           </Link>
           <h1 className="mt-4 text-2xl font-bold text-gray-900">Welcome back</h1>
           <p className="mt-1 text-sm text-gray-500">Sign in to your account</p>

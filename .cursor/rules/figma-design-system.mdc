@@ -1,0 +1,40 @@
+---
+description: Rules for implementing Gumroad Design System (Community) from Figma into PaperDock (Next.js + TypeScript + Tailwind).
+globs: src/app/**/*.tsx, src/components/**/*.tsx
+alwaysApply: false
+---
+
+# Figma MCP Integration Rules
+
+- IMPORTANT: When implementing any UI from Figma (`Gumroad Design System – Community Beta`), always:
+  1. Use `get_design_context` on the exact frame/node.
+  2. Use `get_screenshot` of the same node for visual reference.
+  3. Translate the generated React+Tailwind into **these** tokens and components, not raw utilities from Figma.
+  4. Reuse existing components (`@/components/ui/Button`, `@/components/layout/*`, `@/components/resources/*`) before creating new ones.
+
+---
+
+## 1. Tailwind Color Tokens
+
+### 1.1 Token definition
+
+- Colors are defined in `tailwind.config.ts` under `theme.extend.colors`.
+- IMPORTANT: Do **not** hard‑code hex values in components; always use tokens:
+
+```ts
+// Examples — extend/align to Gumroad palette
+colors: {
+  surface: { 50:"#fafafa",100:"#f4f4f5",200:"#e4e4e7",300:"#d4d4d8",400:"#a1a1aa",500:"#71717a",600:"#52525b",700:"#3f3f46",800:"#27272a",900:"#18181b",950:"#09090b" },
+
+  brand:   { 50:"#eff6ff",100:"#dbeafe",200:"#bfdbfe",300:"#93c5fd",400:"#60a5fa",500:"#3b82f6",600:"#2563eb",700:"#1d4ed8",800:"#1e40af",900:"#1e3a8a" },
+  accent:  { 50:"#fdf2ff",100:"#f5e1ff",200:"#e9c8ff",300:"#d0a4ff",400:"#b46bff",500:"#7c3aed",600:"#6d28d9",700:"#5b21b6",800:"#4c1d95",900:"#2e1065" },
+  highlight:{50:"#fff7ed",100:"#ffedd5",200:"#fed7aa",300:"#fdba74",400:"#fb923c",500:"#f97316",600:"#ea580c",700:"#c2410c",800:"#9a3412",900:"#7c2d12"},
+
+  success: { 50:"#ecfdf5",100:"#d1fae5",500:"#22c55e",600:"#16a34a",700:"#15803d" },
+  warning: { 50:"#fffbeb",100:"#fef3c7",500:"#f59e0b",600:"#d97706" },
+  danger:  { 50:"#fef2f2",100:"#fee2e2",500:"#ef4444",600:"#dc2626" },
+
+  bg:      { default:"#f4f4f5", soft:"#fafafa", dark:"#09090b" },
+  text:    { primary:"#18181b", secondary:"#52525b", muted:"#a1a1aa", onDark:"#f9fafb" },
+  border:  { subtle:"#e4e4e7", strong:"#d4d4d8", focus:"#2563eb" },
+}

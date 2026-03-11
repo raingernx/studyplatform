@@ -8,7 +8,7 @@ import { TagsClient, type TagRow } from "./TagsClient";
 
 export const metadata = {
   title: "Tag Management – Admin",
-  description: "Create, edit, and delete tags in the StudyPlatform library.",
+  description: "Create, edit, and delete tags in the PaperDock library.",
 };
 
 // ── Data ──────────────────────────────────────────────────────────────────────

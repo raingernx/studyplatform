@@ -157,7 +157,7 @@ async function handleXenditPayment(payload: XenditInvoicePayload) {
           data: {
             provider: "XENDIT",
             eventType: "invoice.paid",
-            payload: payload as unknown as Record<string, unknown>,
+            payload: JSON.parse(JSON.stringify(payload)),
           },
         })
         .catch((err) =>
