@@ -17,14 +17,14 @@ export const metadata = {
 const PAGE_SIZE = 20;
 
 interface AdminResourcesPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     page?: string;
     q?: string;
     status?: string;
     categoryId?: string;
     minRevenueCents?: string;
     free?: string;
-  };
+  }>;
 }
 
 function buildQueryString(base: {
@@ -57,12 +57,14 @@ export default async function AdminResourcesPage({
     redirect("/dashboard");
   }
 
-  const q = (searchParams?.q ?? "").trim();
-  const statusFilter = (searchParams?.status ?? "").toUpperCase();
-  const categoryIdFilter = (searchParams?.categoryId ?? "").trim();
-  const minRevenueCents = Number(searchParams?.minRevenueCents ?? "0") || 0;
-  const freeOnly = searchParams?.free === "1";
-  const currentPage = Math.max(1, Number(searchParams?.page ?? "1") || 1);
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+
+  const q = (resolvedSearchParams.q ?? "").trim();
+  const statusFilter = (resolvedSearchParams.status ?? "").toUpperCase();
+  const categoryIdFilter = (resolvedSearchParams.categoryId ?? "").trim();
+  const minRevenueCents = Number(resolvedSearchParams.minRevenueCents ?? "0") || 0;
+  const freeOnly = resolvedSearchParams.free === "1";
+  const currentPage = Math.max(1, Number(resolvedSearchParams.page ?? "1") || 1);
 
   const where: any = { deletedAt: null };
 
@@ -138,9 +140,9 @@ export default async function AdminResourcesPage({
   const hasFilters = !!q || !!statusFilter || !!categoryIdFilter;
 
   return (
-    <>
+    <div className="min-w-0 space-y-6">
       {/* Header */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-h2 font-semibold tracking-tight text-text-primary">
             Resources
@@ -149,7 +151,7 @@ export default async function AdminResourcesPage({
             View and manage all resources in the marketplace.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             asChild
             size="sm"
@@ -198,11 +200,11 @@ export default async function AdminResourcesPage({
           <ResourceTable resources={rows} categories={categories} />
 
           {/* Pagination */}
-          <div className="mt-4 flex items-center justify-between text-xs text-text-secondary">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-text-secondary">
             <span>
               Page {currentPage} of {totalPages}
             </span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 asChild
                 variant="outline"
@@ -249,7 +251,6 @@ export default async function AdminResourcesPage({
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }
-

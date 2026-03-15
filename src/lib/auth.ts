@@ -21,8 +21,10 @@ import { prisma } from "./prisma";
 
 const JWT_ROLE_CACHE_TTL_MS = 60_000; // 60 seconds
 
+type AppUserRole = "ADMIN" | "INSTRUCTOR" | "STUDENT";
+
 interface RoleCacheEntry {
-  role: string;
+  role: AppUserRole;
   subscriptionStatus: string | null;
   cachedAt: number; // Date.now() timestamp
 }
@@ -47,7 +49,7 @@ function getCachedRole(userId: string): Omit<RoleCacheEntry, "cachedAt"> | null 
 /** Write or refresh a role cache entry for `userId`. */
 function setCachedRole(
   userId: string,
-  role: string,
+  role: AppUserRole,
   subscriptionStatus: string | null
 ): void {
   roleCache.set(userId, { role, subscriptionStatus, cachedAt: Date.now() });
@@ -122,8 +124,8 @@ export const authOptions: NextAuthOptions = {
       // On first sign-in `user` is populated — write to cache immediately.
       if (user) {
         token.id = user.id;
-        token.role = user.role;
-        setCachedRole(user.id!, user.role as string, null);
+        token.role = user.role as AppUserRole;
+        setCachedRole(user.id!, user.role as AppUserRole, null);
       }
 
       // On every subsequent token refresh check the cache first.
@@ -134,7 +136,7 @@ export const authOptions: NextAuthOptions = {
         if (cached) {
           // Cache hit — no DB round trip needed.
           token.role = cached.role;
-          token.subscriptionStatus = cached.subscriptionStatus;
+          token.subscriptionStatus = cached.subscriptionStatus ?? undefined;
         } else {
           // Cache miss — query the DB and refresh the cache.
           const dbUser = await prisma.user.findUnique({
@@ -143,7 +145,7 @@ export const authOptions: NextAuthOptions = {
           });
           if (dbUser) {
             token.role = dbUser.role;
-            token.subscriptionStatus = dbUser.subscriptionStatus;
+            token.subscriptionStatus = dbUser.subscriptionStatus ?? undefined;
             setCachedRole(userId, dbUser.role, dbUser.subscriptionStatus);
           }
         }
@@ -157,7 +159,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role ?? "STUDENT";
-        session.user.subscriptionStatus = token.subscriptionStatus;
+        session.user.subscriptionStatus = token.subscriptionStatus ?? undefined;
       }
       return session;
     },

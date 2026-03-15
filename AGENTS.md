@@ -28,33 +28,140 @@ Framework
 Next.js 14 (App Router)
 
 Frontend
+
 - React
 - TypeScript
 - Tailwind CSS
 
 Backend
+
 - Next.js API Routes
 
 Authentication
+
 - NextAuth
 - Google OAuth
 - Credentials provider
 - JWT sessions
 
 Database
+
 - PostgreSQL
 
 ORM
+
 - Prisma
 
 Payments
+
 - Stripe
 
 Deployment
+
 - Vercel (planned)
 
 Storage (future)
+
 - Cloudflare R2 or S3
+
+---
+
+# Backend Architecture
+
+The backend follows a layered architecture.
+
+```
+routes → services → repositories → Prisma → database
+```
+
+### Routes
+
+Location
+
+```
+src/app/api
+```
+
+Responsibilities
+
+- request parsing
+- authentication checks
+- response formatting
+
+Routes must remain **thin controllers**.
+
+---
+
+### Services
+
+Location
+
+```
+src/services
+```
+
+Responsibilities
+
+- business logic
+- orchestration
+- validation
+
+Examples
+
+- payment.service
+- download.service
+- subscription.service
+
+---
+
+### Repositories
+
+Location
+
+```
+src/repositories
+```
+
+Responsibilities
+
+- database access
+- Prisma queries
+- persistence logic
+
+Repositories must be the **only layer calling Prisma**.
+
+---
+
+### Analytics
+
+Location
+
+```
+src/analytics
+```
+
+Responsibilities
+
+- analytics event tracking
+- resource statistics
+- trending score calculations
+- creator analytics
+
+---
+
+### Workers
+
+Location
+
+```
+src/workers
+```
+
+Responsibilities
+
+- analytics aggregation
+- trending calculations
+- background processing
 
 ---
 

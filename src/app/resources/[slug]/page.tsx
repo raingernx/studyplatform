@@ -20,8 +20,30 @@ import type { ResourceCardResource } from "@/components/resources/ResourceCard";
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: { payment?: string };
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+function buildIncludedFiles(resource: {
+  fileName: string | null;
+  fileSize: number | null;
+  fileUrl: string | null;
+  fileKey: string | null;
+  type: string;
+}) {
+  if (resource.fileName) {
+    return [{ name: resource.fileName, size: resource.fileSize ?? undefined }];
+  }
+
+  if (!(resource.fileUrl ?? resource.fileKey)) {
+    return [];
+  }
+
+  const fallbackName =
+    resource.fileKey?.split("/").pop() ||
+    (resource.type === "PDF" ? "Downloadable PDF" : "Downloadable file");
+
+  return [{ name: fallbackName, size: resource.fileSize ?? undefined }];
+}
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -112,6 +134,7 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function ResourceDetailPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
 
@@ -126,7 +149,12 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
 
   const isOwned = Boolean(purchase);
   const hasFile = Boolean(resource.fileUrl ?? resource.fileKey);
-  const paymentStatus = searchParams.payment;
+  const paymentStatus =
+    typeof resolvedSearchParams.payment === "string"
+      ? resolvedSearchParams.payment
+      : undefined;
+  const fallbackPreviewUrl = resource.previewUrl ?? resource.previews[0]?.imageUrl ?? null;
+  const includedFiles = buildIncludedFiles(resource);
 
   logActivity({
     userId,
@@ -202,7 +230,11 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
 
           {/* Gallery: thumbnails | preview | purchase card (3 columns on lg, equal height) */}
           <div className="grid grid-cols-1 gap-6 items-stretch lg:grid-cols-[80px_1fr_320px]">
-            <ResourceGallery previews={resource.previews} resourceTitle={resource.title} />
+            <ResourceGallery
+              previews={resource.previews}
+              resourceTitle={resource.title}
+              fallbackImageUrl={fallbackPreviewUrl}
+            />
             <div className="order-3 h-full min-h-0">
               <PurchaseCard
                 resource={purchaseCardResource}
@@ -216,13 +248,7 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
           {/* Sections: About → Included files → Tags → Creator card → Related resources */}
           <div className="mt-12 space-y-12">
             <ResourceDescription title="About" description={resource.description} />
-            <ResourceFiles
-              files={
-                resource.fileName
-                  ? [{ name: resource.fileName, size: resource.fileSize ?? undefined }]
-                  : []
-              }
-            />
+            <ResourceFiles files={includedFiles} />
             <TagList tags={resource.tags.map((rt) => rt.tag)} />
             <CreatorCard creator={{ id: resource.author.id, name: resource.author.name, image: resource.author.image }} />
             <RelatedResources resources={relatedResources} ownedIds={ownedRelatedIds} />

@@ -58,6 +58,13 @@ enum UserRole {
   STUDENT
 }
 
+enum CreatorStatus {
+  INACTIVE
+  ACTIVE
+  PAUSED
+  SUSPENDED
+}
+
 model User {
   id             String    @id @default(cuid())
   name           String?
@@ -66,6 +73,13 @@ model User {
   image          String?
   hashedPassword String? // null for OAuth-only users
   role           UserRole  @default(STUDENT)
+  creatorDisplayName String?
+  creatorSlug        String?   @unique
+  creatorBio         String?   @db.Text
+  creatorBanner      String?
+  creatorEnabled     Boolean   @default(false)
+  creatorStatus      CreatorStatus @default(INACTIVE)
+  creatorSocialLinks Json?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -82,9 +96,13 @@ model User {
   resources        Resource[] // resources authored by this user
   purchases        Purchase[]
   reviews          Review[]
+  analyticsEvents  AnalyticsEvent[] @relation("AnalyticsEventUser")
+  creatorEvents    AnalyticsEvent[] @relation("AnalyticsEventCreator")
   activityLogs     ActivityLog[]
   resourceVersions ResourceVersion[]
   auditLogs        AuditLog[]
+  creatorStat      CreatorStat?
+  creatorRevenue   CreatorRevenue[] @relation("CreatorRevenueCreator")
   preferences      UserPreference?
 }
 
@@ -150,6 +168,62 @@ model HomepageHero {
   updatedAt        DateTime @updatedAt
 }
 
+model Hero {
+  id               String   @id @default(cuid())
+  name             String
+  type             String
+  title            String
+  subtitle         String?
+  badgeText        String?
+  primaryCtaText   String
+  primaryCtaLink   String
+  secondaryCtaText String?
+  secondaryCtaLink String?
+  imageUrl         String?
+  mediaUrl         String?
+  mediaType        String?
+  priority         Int      @default(0)
+  weight           Int      @default(1)
+  isActive         Boolean  @default(true)
+  startDate        DateTime?
+  endDate          DateTime?
+  experimentId     String?
+  variant          String?
+  abGroup          String?
+  isFallback       Boolean  @default(false)
+  impressions      Int      @default(0)
+  clicks           Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([priority])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+model HeroImpression {
+  id           String   @id @default(cuid())
+  heroId       String
+  experimentId String?
+  variant      String?
+  createdAt    DateTime @default(now())
+
+  @@index([heroId, createdAt])
+  @@index([experimentId, variant])
+}
+
+model HeroClick {
+  id           String   @id @default(cuid())
+  heroId       String
+  experimentId String?
+  variant      String?
+  createdAt    DateTime @default(now())
+
+  @@index([heroId, createdAt])
+  @@index([experimentId, variant])
+}
+
 model Tag {
   id        String        @id @default(cuid())
   name      String        @unique
@@ -203,6 +277,9 @@ model Resource {
   reviews         Review[]
   versions        ResourceVersion[]
   downloadEvents  DownloadEvent[]
+  analyticsEvents AnalyticsEvent[]
+  resourceStat    ResourceStat?
+  creatorRevenue  CreatorRevenue[] @relation("CreatorRevenueResource")
 
   // Indexes for common marketplace listing queries
   @@index([status, createdAt])
@@ -293,6 +370,7 @@ model Purchase {
 
   user     User     @relation(fields: [userId], references: [id])
   resource Resource @relation(fields: [resourceId], references: [id])
+  creatorRevenue CreatorRevenue?
 
   @@unique([userId, resourceId]) // one purchase record per user per resource
   @@index([userId, status])
@@ -418,4 +496,103 @@ model DownloadEvent {
   @@index([resourceId])
   @@index([createdAt])
   @@index([resourceId, createdAt])
+}
+
+enum AnalyticsEventType {
+  RESOURCE_VIEW
+  RESOURCE_DOWNLOAD
+  RESOURCE_PURCHASE
+  RESOURCE_LIKE
+  RESOURCE_BOOKMARK
+}
+
+model AnalyticsEvent {
+  id         String             @id @default(cuid())
+  eventType  AnalyticsEventType
+  userId     String?
+  resourceId String?
+  creatorId  String?
+  metadata   Json?
+  createdAt  DateTime           @default(now())
+
+  user     User?     @relation("AnalyticsEventUser", fields: [userId], references: [id], onDelete: SetNull)
+  resource Resource? @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  creator  User?     @relation("AnalyticsEventCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+
+  @@index([eventType, createdAt])
+  @@index([resourceId, createdAt])
+  @@index([creatorId, createdAt])
+  @@index([userId, createdAt])
+  @@map("analytics_events")
+}
+
+model ResourceStat {
+  resourceId         String   @id
+  views              Int      @default(0)
+  downloads          Int      @default(0)
+  purchases          Int      @default(0)
+  revenue            Int      @default(0)
+  last24hDownloads   Int      @default(0)
+  last7dDownloads    Int      @default(0)
+  last30dDownloads   Int      @default(0)
+  last24hPurchases   Int      @default(0)
+  last7dPurchases    Int      @default(0)
+  last30dPurchases   Int      @default(0)
+  trendingScore      Int      @default(0)
+  updatedAt          DateTime @updatedAt
+
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([trendingScore, updatedAt])
+  @@index([downloads, updatedAt])
+  @@index([purchases, updatedAt])
+  @@map("resource_stats")
+}
+
+model CreatorStat {
+  creatorId       String   @id
+  resources       Int      @default(0)
+  totalDownloads  Int      @default(0)
+  last30dDownloads Int     @default(0)
+  totalSales      Int      @default(0)
+  totalRevenue    Int      @default(0)
+  last7dRevenue   Int      @default(0)
+  last30dRevenue  Int      @default(0)
+  updatedAt       DateTime @updatedAt
+
+  creator User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([totalRevenue, updatedAt])
+  @@index([totalDownloads, updatedAt])
+  @@map("creator_stats")
+}
+
+model PlatformStat {
+  date           DateTime @id @db.Date
+  totalDownloads Int      @default(0)
+  totalSales     Int      @default(0)
+  totalRevenue   Int      @default(0)
+  newUsers       Int      @default(0)
+  newResources   Int      @default(0)
+
+  @@map("platform_stats")
+}
+
+model CreatorRevenue {
+  id           String   @id @default(cuid())
+  creatorId    String
+  resourceId   String
+  purchaseId   String   @unique
+  amount       Int
+  platformFee  Int
+  creatorShare Int
+  createdAt    DateTime @default(now())
+
+  creator  User     @relation("CreatorRevenueCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  resource Resource @relation("CreatorRevenueResource", fields: [resourceId], references: [id], onDelete: Cascade)
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, createdAt])
+  @@index([resourceId, createdAt])
+  @@map("creator_revenue")
 }

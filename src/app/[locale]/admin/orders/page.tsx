@@ -13,11 +13,11 @@ export const metadata = {
 };
 
 interface AdminOrdersPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     status?: string;
     from?: string;
     to?: string;
-  };
+  }>;
 }
 
 const STATUS_BADGE: Record<
@@ -51,9 +51,10 @@ export default async function AdminOrdersPage({
     redirect("/dashboard");
   }
 
-  const statusFilter = searchParams?.status?.toUpperCase() || "";
-  const from = searchParams?.from ? new Date(searchParams.from) : null;
-  const to = searchParams?.to ? new Date(searchParams.to) : null;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const statusFilter = resolvedSearchParams.status?.toUpperCase() || "";
+  const from = resolvedSearchParams.from ? new Date(resolvedSearchParams.from) : null;
+  const to = resolvedSearchParams.to ? new Date(resolvedSearchParams.to) : null;
 
   const where: any = {};
 
@@ -109,7 +110,7 @@ export default async function AdminOrdersPage({
       : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -186,7 +187,7 @@ export default async function AdminOrdersPage({
               id="from"
               name="from"
               type="date"
-              defaultValue={searchParams?.from}
+              defaultValue={resolvedSearchParams.from}
             />
           </div>
 
@@ -201,7 +202,7 @@ export default async function AdminOrdersPage({
               id="to"
               name="to"
               type="date"
-              defaultValue={searchParams?.to}
+              defaultValue={resolvedSearchParams.to}
             />
           </div>
 
@@ -214,7 +215,7 @@ export default async function AdminOrdersPage({
       </Card>
 
       {/* Orders table */}
-      <Card className="overflow-hidden">
+      <Card className="min-w-0 w-full overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="border-b border-border-subtle bg-surface-50/80">
@@ -296,4 +297,3 @@ export default async function AdminOrdersPage({
     </div>
   );
 }
-

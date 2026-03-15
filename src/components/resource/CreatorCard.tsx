@@ -14,7 +14,6 @@ interface CreatorCardProps {
 
 export function CreatorCard({ creator }: CreatorCardProps) {
   const displayName = creator.name ?? "Creator";
-  const initials = displayName.charAt(0).toUpperCase();
 
   return (
     <section>
@@ -23,7 +22,7 @@ export function CreatorCard({ creator }: CreatorCardProps) {
         <Avatar
           src={creator.image}
           alt={displayName}
-          initials={initials}
+          name={displayName}
           size={56}
         />
         <div className="flex-1 min-w-0">

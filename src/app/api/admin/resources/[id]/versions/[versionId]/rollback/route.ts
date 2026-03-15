@@ -4,21 +4,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-type Params = { params: { id: string; versionId: string } };
+type Params = { params: Promise<{ id: string; versionId: string }> };
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return {
-      session: null,
-      error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }),
-    };
+    return { error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }) };
   }
 
   if (session.user.role !== "ADMIN") {
     return {
-      session: null,
       error: NextResponse.json(
         { error: "Forbidden. Admin access required." },
         { status: 403 },
@@ -26,16 +22,18 @@ async function requireAdmin() {
     };
   }
 
-  return { session, error: null as NextResponse | null };
+  return { session };
 }
 
 // POST /api/admin/resources/:id/versions/:versionId/rollback
 export async function POST(_req: Request, { params }: Params) {
   try {
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdmin();
+    if ("error" in admin) {
+      return admin.error;
+    }
 
-    const { id: resourceId, versionId } = params;
+    const { id: resourceId, versionId } = await params;
 
     const result = await prisma.$transaction(async (tx) => {
       const targetVersion = await tx.resourceVersion.findFirst({
@@ -66,7 +64,7 @@ export async function POST(_req: Request, { params }: Params) {
           mimeType: targetVersion.mimeType,
           fileUrl: targetVersion.fileUrl,
           changelog: `Rollback to v${targetVersion.version}`,
-          createdById: session.user.id ?? null,
+          createdById: admin.session.user.id ?? null,
         },
       });
 
@@ -110,4 +108,3 @@ export async function POST(_req: Request, { params }: Params) {
     );
   }
 }
-

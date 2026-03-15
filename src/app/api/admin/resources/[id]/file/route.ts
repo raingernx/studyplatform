@@ -6,9 +6,9 @@ import { prisma } from "@/lib/prisma";
 // DELETE /api/admin/resources/:id/file
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   try {
     // Require authenticated admin
@@ -46,4 +46,3 @@ export async function DELETE(
     );
   }
 }
-

@@ -6,6 +6,10 @@ export interface DashboardUser {
   email?: string | null;
   image?: string | null;
   subscriptionStatus?: string | null;
+  role?: "ADMIN" | "INSTRUCTOR" | "STUDENT" | null;
+  isCreator?: boolean;
+  canCreateResources?: boolean;
+  creatorEnabled?: boolean;
 }
 
 interface DashboardLayoutProps {

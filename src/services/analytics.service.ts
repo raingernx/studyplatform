@@ -8,6 +8,10 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import {
+  findPlatformStatsSince,
+  findTopResourcesByDownloads,
+} from "@/repositories/analytics/analytics.repository";
 
 // ── Daily bucket helpers ──────────────────────────────────────────────────────
 
@@ -81,90 +85,16 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const days          = lastNDays(30);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = prisma as any; // DownloadEvent types available after `prisma generate`
-
   const [
     totalResources,
     totalUsers,
-    downloadAggregate,
-    purchaseAggregate,
-    downloadsLast30,
-    purchasesLast30Result,
-    newUsersLast30,
-    newResourcesLast30,
-    dailyDownloadEvents,
-    dailyPurchaseEvents,
-    dailyUserEvents,
+    platformStats,
     topResourcesRaw,
   ] = await Promise.all([
-    // Scalar counts
     prisma.resource.count({ where: { deletedAt: null } }),
     prisma.user.count(),
-
-    // All-time download count (aggregate on counter column — no DownloadEvent scan needed)
-    prisma.resource.aggregate({ _sum: { downloadCount: true } }),
-
-    // All-time purchase revenue
-    prisma.purchase.aggregate({
-      where: { status: "COMPLETED" },
-      _count: { id: true },
-      _sum:   { amount: true },
-    }),
-
-    // Downloads last 30 days (from DownloadEvent — granular)
-    db.downloadEvent.count({ where: { createdAt: { gte: thirtyDaysAgo } } }) as Promise<number>,
-
-    // Purchases last 30 days
-    prisma.purchase.aggregate({
-      where:  { status: "COMPLETED", createdAt: { gte: thirtyDaysAgo } },
-      _count: { id: true },
-      _sum:   { amount: true },
-    }),
-
-    // New users last 30 days
-    prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-
-    // New resources last 30 days
-    prisma.resource.count({
-      where: { createdAt: { gte: thirtyDaysAgo }, deletedAt: null },
-    }),
-
-    // Daily download events (raw rows, grouped in JS)
-    db.downloadEvent.findMany({
-      where:  { createdAt: { gte: thirtyDaysAgo } },
-      select: { createdAt: true },
-    }) as Promise<{ createdAt: Date }[]>,
-
-    // Daily purchase events
-    prisma.purchase.findMany({
-      where:  { status: "COMPLETED", createdAt: { gte: thirtyDaysAgo } },
-      select: { createdAt: true, amount: true },
-    }),
-
-    // Daily user signups
-    prisma.user.findMany({
-      where:  { createdAt: { gte: thirtyDaysAgo } },
-      select: { createdAt: true },
-    }),
-
-    // Top 10 resources
-    prisma.resource.findMany({
-      where:   { deletedAt: null, status: "PUBLISHED" },
-      select: {
-        id:            true,
-        title:         true,
-        slug:          true,
-        downloadCount: true,
-        _count: { select: { purchases: true } },
-        purchases: {
-          where:  { status: "COMPLETED" },
-          select: { amount: true },
-        },
-      },
-      orderBy: { downloadCount: "desc" },
-      take:    10,
-    }),
+    findPlatformStatsSince(new Date(Date.UTC(2020, 0, 1))),
+    findTopResourcesByDownloads(10),
   ]);
 
   // ── Aggregate daily series ─────────────────────────────────────────────────
@@ -182,19 +112,12 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
     uMap.set(key, 0);
   }
 
-  for (const e of dailyDownloadEvents) {
-    const key = startOfDay(e.createdAt).toISOString().slice(0, 10);
-    dlMap.set(key, (dlMap.get(key) ?? 0) + 1);
-  }
-
-  for (const p of dailyPurchaseEvents) {
-    const key = startOfDay(p.createdAt).toISOString().slice(0, 10);
-    revMap.set(key, (revMap.get(key) ?? 0) + p.amount);
-  }
-
-  for (const u of dailyUserEvents) {
-    const key = startOfDay(u.createdAt).toISOString().slice(0, 10);
-    uMap.set(key, (uMap.get(key) ?? 0) + 1);
+  for (const row of platformStats) {
+    const key = startOfDay(row.date).toISOString().slice(0, 10);
+    if (!dlMap.has(key)) continue;
+    dlMap.set(key, row.totalDownloads);
+    revMap.set(key, row.totalRevenue);
+    uMap.set(key, row.newUsers);
   }
 
   const toPoints = (map: Map<string, number>): DailyPoint[] =>
@@ -202,28 +125,56 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
 
   // ── Top resources ──────────────────────────────────────────────────────────
 
-  const topResources: TopResource[] = topResourcesRaw.map((r: {
-    id: string; title: string; slug: string; downloadCount: number;
-    _count: { purchases: number }; purchases: { amount: number }[];
-  }) => ({
-    id:            r.id,
-    title:         r.title,
-    slug:          r.slug,
-    downloadCount: r.downloadCount,
-    salesCount:    r._count.purchases,
-    revenue:       r.purchases.reduce((s: number, p: { amount: number }) => s + p.amount, 0),
+  const topResources: TopResource[] = topResourcesRaw.map((row) => ({
+    id: row.resource.id,
+    title: row.resource.title,
+    slug: row.resource.slug,
+    downloadCount: row.downloads,
+    salesCount: row.purchases,
+    revenue: row.revenue,
   }));
+
+  const totalDownloads = platformStats.reduce(
+    (sum, row) => sum + row.totalDownloads,
+    0,
+  );
+  const totalPurchases = platformStats.reduce(
+    (sum, row) => sum + row.totalSales,
+    0,
+  );
+  const totalRevenue = platformStats.reduce(
+    (sum, row) => sum + row.totalRevenue,
+    0,
+  );
+  const recentStats = platformStats.filter((row) => row.date >= thirtyDaysAgo);
+  const downloadsLast30 = recentStats.reduce(
+    (sum, row) => sum + row.totalDownloads,
+    0,
+  );
+  const purchasesLast30 = recentStats.reduce(
+    (sum, row) => sum + row.totalSales,
+    0,
+  );
+  const revenueLast30 = recentStats.reduce(
+    (sum, row) => sum + row.totalRevenue,
+    0,
+  );
+  const newUsersLast30 = recentStats.reduce((sum, row) => sum + row.newUsers, 0);
+  const newResourcesLast30 = recentStats.reduce(
+    (sum, row) => sum + row.newResources,
+    0,
+  );
 
   return {
     totalResources,
-    totalDownloads:  downloadAggregate._sum.downloadCount ?? 0,
-    totalPurchases:  purchaseAggregate._count.id ?? 0,
-    totalRevenue:    purchaseAggregate._sum.amount ?? 0,
+    totalDownloads,
+    totalPurchases,
+    totalRevenue,
     totalUsers,
 
     downloadsLast30Days:    downloadsLast30,
-    purchasesLast30Days:    purchasesLast30Result._count.id    ?? 0,
-    reveneuLast30Days:      purchasesLast30Result._sum.amount  ?? 0,
+    purchasesLast30Days:    purchasesLast30,
+    reveneuLast30Days:      revenueLast30,
     newUsersLast30Days:     newUsersLast30,
     newResourcesLast30Days: newResourcesLast30,
 

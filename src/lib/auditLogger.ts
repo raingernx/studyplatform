@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export interface AdminAuditLogOptions {
@@ -22,7 +23,8 @@ export async function logAdminAction({
         action,
         entityType,
         entityId: entityId ?? undefined,
-        metadata: metadata ?? undefined,
+        metadata:
+          metadata == null ? undefined : (metadata as Prisma.InputJsonObject),
       },
     });
   } catch (err) {
@@ -31,4 +33,3 @@ export async function logAdminAction({
     console.error("[AUDIT_LOG_ERROR]", err);
   }
 }
-

@@ -1,22 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Plus } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import {
-  Modal,
-  ModalTrigger,
-  ModalContent,
-  ModalHeader,
-  ModalTitle,
-  ModalDescription,
-  ModalBody,
-  ModalFooter,
-  ModalClose,
-} from "@/components/ui/Modal";
+import { Modal } from "@/components/ui/Modal";
 
 type Category = {
   id: string;
@@ -81,7 +71,7 @@ export default function AdminCategoriesPage() {
     setOpen(true);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
     const name = formName.trim();
@@ -133,8 +123,8 @@ export default function AdminCategoriesPage() {
             Manage resource categories used in the marketplace.
           </p>
         </div>
-        <Modal open={open} onOpenChange={setOpen}>
-          <ModalTrigger asChild>
+        <Modal.Root open={open} onOpenChange={setOpen}>
+          <Modal.Trigger asChild>
             <Button
               type="button"
               size="sm"
@@ -144,14 +134,14 @@ export default function AdminCategoriesPage() {
               <Plus className="h-4 w-4" />
               <span>Create Category</span>
             </Button>
-          </ModalTrigger>
-          <ModalContent showCloseButton={false}>
+          </Modal.Trigger>
+          <Modal.Content showCloseButton={false}>
             <form onSubmit={handleSubmit}>
-              <ModalHeader>
-                <ModalTitle>{title}</ModalTitle>
-                <ModalDescription>{description}</ModalDescription>
-              </ModalHeader>
-              <ModalBody className="space-y-4">
+              <Modal.Header>
+                <Modal.Title>{title}</Modal.Title>
+                <Modal.Description>{description}</Modal.Description>
+              </Modal.Header>
+              <Modal.Body className="space-y-4">
                 <div className="space-y-1.5">
                   <label
                     htmlFor="category-name"
@@ -183,20 +173,20 @@ export default function AdminCategoriesPage() {
                     Used in URLs, lowercase with dashes.
                   </p>
                 </div>
-              </ModalBody>
-              <ModalFooter className="flex items-center justify-end gap-2">
-                <ModalClose asChild>
+              </Modal.Body>
+              <Modal.Footer className="flex items-center justify-end gap-2">
+                <Modal.Close asChild>
                   <Button type="button" variant="outline" size="sm">
                     Cancel
                   </Button>
-                </ModalClose>
+                </Modal.Close>
                 <Button type="submit" size="sm">
                   {mode === "create" ? "Create" : "Save changes"}
                 </Button>
-              </ModalFooter>
+              </Modal.Footer>
             </form>
-          </ModalContent>
-        </Modal>
+          </Modal.Content>
+        </Modal.Root>
       </div>
 
       {/* Table card */}
@@ -283,4 +273,3 @@ export default function AdminCategoriesPage() {
     </div>
   );
 }
-

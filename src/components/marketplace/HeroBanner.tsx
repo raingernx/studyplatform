@@ -1,7 +1,12 @@
 import Image from "next/image";
-import Link from "next/link";
+import { HeroImpressionTracker } from "@/components/marketplace/HeroImpressionTracker";
+import { HeroTrackedLink } from "@/components/marketplace/HeroTrackedLink";
 
 export type HomepageHeroConfig = {
+  heroId?: string | null;
+  source?: "cms" | "fallback";
+  experimentId?: string | null;
+  variant?: string | null;
   title: string;
   subtitle: string;
   primaryCtaText: string;
@@ -33,6 +38,9 @@ const DEFAULT_HERO = {
  */
 export function HeroBanner({ config }: { config?: HomepageHeroConfig }) {
   const hero = config ?? DEFAULT_HERO;
+  const heroId = "heroId" in hero ? hero.heroId ?? null : null;
+  const experimentId = "experimentId" in hero ? hero.experimentId ?? null : null;
+  const variant = "variant" in hero ? hero.variant ?? null : null;
   const title = hero.title || DEFAULT_HERO.title;
   const subtitle = hero.subtitle || DEFAULT_HERO.subtitle;
   const primaryCtaText = hero.primaryCtaText || DEFAULT_HERO.primaryCtaText;
@@ -50,6 +58,7 @@ export function HeroBanner({ config }: { config?: HomepageHeroConfig }) {
 
   return (
     <div className="relative min-h-[520px] w-full overflow-hidden rounded-2xl bg-surface-200">
+      <HeroImpressionTracker heroId={heroId} experimentId={experimentId} variant={variant} />
       {useImg ? (
         // Uploaded media (image/gif) or external URL: render without Next.js optimization
         // eslint-disable-next-line @next/next/no-img-element
@@ -84,19 +93,25 @@ export function HeroBanner({ config }: { config?: HomepageHeroConfig }) {
             <p className="text-xs text-white/70">{badgeText}</p>
           ) : null}
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link
+            <HeroTrackedLink
+              heroId={heroId}
+              experimentId={experimentId}
+              variant={variant}
               href={primaryCtaLink}
               className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-zinc-900 transition hover:bg-white/90"
             >
               {primaryCtaText}
-            </Link>
+            </HeroTrackedLink>
             {secondaryCtaText && secondaryCtaLink ? (
-              <Link
+              <HeroTrackedLink
+                heroId={heroId}
+                experimentId={experimentId}
+                variant={variant}
                 href={secondaryCtaLink}
                 className="inline-flex items-center justify-center rounded-xl border border-white/40 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
               >
                 {secondaryCtaText}
-              </Link>
+              </HeroTrackedLink>
             ) : null}
           </div>
         </div>

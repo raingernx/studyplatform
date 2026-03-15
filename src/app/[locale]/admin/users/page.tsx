@@ -45,9 +45,9 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   });
 
   return (
-    <>
+    <div className="min-w-0 space-y-6">
       {/* Header + search */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-h2 font-semibold tracking-tight text-text-primary">
             Users
@@ -68,7 +68,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
       </div>
 
       {/* Users table */}
-      <div className="overflow-hidden rounded-2xl border border-border-subtle bg-white shadow-card">
+      <div className="min-w-0 w-full overflow-hidden rounded-2xl border border-border-subtle bg-white shadow-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-border-subtle bg-surface-50/80">
@@ -146,7 +146,6 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
           </table>
         </div>
       </div>
-    </>
+    </div>
   );
 }
-

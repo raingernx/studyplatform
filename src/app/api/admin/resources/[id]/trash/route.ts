@@ -6,21 +6,17 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity";
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return {
-      session: null,
-      error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }),
-    };
+    return { error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }) };
   }
 
   if (session.user.role !== "ADMIN") {
     return {
-      session: null,
       error: NextResponse.json(
         { error: "Forbidden. Admin access required." },
         { status: 403 },
@@ -28,17 +24,20 @@ async function requireAdmin() {
     };
   }
 
-  return { session, error: null as NextResponse | null };
+  return { session };
 }
 
 // PATCH /api/admin/resources/[id]/trash  → restore from trash
 export async function PATCH(_req: Request, { params }: Params) {
   try {
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const { id } = await params;
+    const admin = await requireAdmin();
+    if ("error" in admin) {
+      return admin.error;
+    }
 
     const existing = await prisma.resource.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existing) {
@@ -46,20 +45,20 @@ export async function PATCH(_req: Request, { params }: Params) {
     }
 
     const restored = await prisma.resource.update({
-      where: { id: params.id },
+      where: { id },
       data: { deletedAt: null },
     });
 
     await logActivity({
-      userId: session.user.id,
+      userId: admin.session.user.id,
       action: "resource_restored",
       entityType: "resource",
-      entityId: params.id,
+      entityId: id,
       meta: { title: restored.title },
     });
 
     // A restored PUBLISHED resource becomes visible in discover again.
-    revalidateTag("discover");
+    revalidateTag("discover", "max");
 
     return NextResponse.json({ data: restored });
   } catch (err) {
@@ -74,11 +73,14 @@ export async function PATCH(_req: Request, { params }: Params) {
 // DELETE /api/admin/resources/[id]/trash  → hard delete (only for trashed items)
 export async function DELETE(_req: Request, { params }: Params) {
   try {
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const { id } = await params;
+    const admin = await requireAdmin();
+    if ("error" in admin) {
+      return admin.error;
+    }
 
     const existing = await prisma.resource.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: { select: { purchases: true, reviews: true } },
       },
@@ -97,25 +99,25 @@ export async function DELETE(_req: Request, { params }: Params) {
     }
 
     await prisma.$transaction([
-      prisma.review.deleteMany({ where: { resourceId: params.id } }),
-      prisma.purchase.deleteMany({ where: { resourceId: params.id } }),
-      prisma.resource.delete({ where: { id: params.id } }),
+      prisma.review.deleteMany({ where: { resourceId: id } }),
+      prisma.purchase.deleteMany({ where: { resourceId: id } }),
+      prisma.resource.delete({ where: { id } }),
     ]);
 
     await logActivity({
-      userId: session.user.id,
+      userId: admin.session.user.id,
       action: "resource_deleted_permanently",
       entityType: "resource",
-      entityId: params.id,
+      entityId: id,
       meta: { title: existing.title },
     });
 
     // Safety revalidation: ensures no stale reference remains in the cache.
-    revalidateTag("discover");
+    revalidateTag("discover", "max");
 
     return NextResponse.json({
       data: {
-        id: params.id,
+        id,
         message: `"${existing.title}" was permanently deleted.`,
       },
     });
@@ -127,4 +129,3 @@ export async function DELETE(_req: Request, { params }: Params) {
     );
   }
 }
-

@@ -54,17 +54,17 @@ export function CreateResourceForm({ categories, tags: initialTags, currentUser 
 
       if (!res.ok) {
         console.error("Failed to create draft resource", data);
-        return null;
+        return undefined;
       }
 
       const draftId = data.id as string | undefined;
-      if (!draftId) return null;
+      if (!draftId) return undefined;
 
       setDraftResourceId(draftId);
       return draftId;
     } catch (err) {
       console.error("Error creating draft resource", err);
-      return null;
+      return undefined;
     }
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { FileText, Download, ExternalLink, Star, ArrowRight } from "lucide-react";
@@ -15,7 +15,7 @@ export interface ResourceCardData {
   id: string;
   title: string;
   slug: string;
-  description: string;
+  description?: string;
   isFree: boolean;
   price: number;
   featured?: boolean;
@@ -88,6 +88,11 @@ function isNewResource(createdAt?: Date | string): boolean {
   return (Date.now() - d.getTime()) / 86_400_000 < 14;
 }
 
+function getDownloadedLabel(downloadedAt?: Date) {
+  if (!downloadedAt) return null;
+  return `Downloaded ${formatDistanceToNow(downloadedAt, { addSuffix: true })}`;
+}
+
 /* ── Badge ───────────────────────────────────────────────────────────────── */
 
 function ResourceBadge({
@@ -139,11 +144,12 @@ function CardBody({
   isOwned: boolean;
 }) {
   const isFree = resource.isFree ?? (resource.price === 0 || !resource.price);
-  const isNew = isNewResource(resource.createdAt);
   const isHero = variant === "hero";
   const isMarketplace = variant === "marketplace";
   const showRating = typeof resource.rating === "number" && resource.rating > 0;
   const [imageError, setImageError] = useState(false);
+  const [isNew, setIsNew] = useState(false);
+  const [downloadedLabel, setDownloadedLabel] = useState<string | null>(null);
   const thumbnail =
     resource.thumbnailUrl ??
     resource.previewImages?.[0] ??
@@ -167,6 +173,11 @@ function CardBody({
 
   const categoryName = resource.category?.name;
   const showPrice = variant !== "library";
+
+  useEffect(() => {
+    setIsNew(isNewResource(resource.createdAt));
+    setDownloadedLabel(getDownloadedLabel(resource.downloadedAt));
+  }, [resource.createdAt, resource.downloadedAt]);
 
   return (
     <article className={articleClass}>
@@ -242,10 +253,9 @@ function CardBody({
 
         {/* Meta (library info, rating) */}
         <div className="space-y-1.5 pt-1">
-          {variant === "library" && resource.downloadedAt && (
+          {variant === "library" && resource.downloadedAt && downloadedLabel && (
             <p className="text-[11px] text-neutral-400">
-              Downloaded{" "}
-              {formatDistanceToNow(resource.downloadedAt, { addSuffix: true })}
+              {downloadedLabel}
             </p>
           )}
 

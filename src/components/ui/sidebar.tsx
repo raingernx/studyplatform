@@ -21,8 +21,8 @@ export function SidebarContainer({
   return (
     <aside
       className={cn(
-        "sticky top-0 flex h-screen flex-col bg-white border-r border-gray-200",
-        collapsed ? "w-16" : "w-64",
+        "sticky top-0 flex h-screen shrink-0 flex-col border-r border-neutral-200 bg-white shadow-[1px_0_0_0_rgba(0,0,0,0.03)]",
+        collapsed ? "w-16" : "w-[272px]",
         className,
       )}
       {...props}
@@ -39,7 +39,7 @@ interface SidebarNavProps extends ComponentProps<"div"> {
 export function SidebarNav({ children, className, ...props }: SidebarNavProps) {
   return (
     <div
-      className={cn("flex-1 overflow-y-auto px-3 py-4", className)}
+      className={cn("flex-1 overflow-y-auto px-4 py-4", className)}
       {...props}
     >
       {children}
@@ -79,7 +79,7 @@ export function SidebarSectionLabel({
   return (
     <p
       className={cn(
-        "mt-6 mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+        "mb-2.5 mt-6 px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400",
         className,
       )}
       {...props}
@@ -247,4 +247,3 @@ export function NavGroup({ label, children, className }: NavGroupProps) {
     </SidebarSection>
   );
 }
-

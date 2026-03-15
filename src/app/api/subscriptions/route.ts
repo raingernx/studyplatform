@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { getUserSubscription } from "@/services/subscriptions/subscription.service";
 
 // GET /api/subscriptions  –  returns the current user's subscription status
 export async function GET() {
@@ -12,15 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        subscriptionStatus: true,
-        subscriptionPlan: true,
-        currentPeriodEnd: true,
-        stripeSubscriptionId: true,
-      },
-    });
+    const user = await getUserSubscription(session.user.id);
 
     return NextResponse.json({ data: user });
   } catch (err) {

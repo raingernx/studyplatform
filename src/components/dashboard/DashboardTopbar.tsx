@@ -2,13 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   Search,
   Bell,
-  Menu,
   ChevronDown,
   BookOpen,
   ShoppingBag,
@@ -18,7 +16,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { routes } from "@/lib/routes";
+import { Avatar } from "@/components/ui/Avatar";
 import type { DashboardUser } from "./DashboardLayout";
+import { DashboardTopbar as SharedDashboardTopbar } from "@/components/layout/dashboard/DashboardTopbar";
 
 interface DashboardTopbarProps {
   user: DashboardUser;
@@ -62,23 +62,13 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
   }
 
   return (
-    <header className="flex h-14 flex-shrink-0 items-center justify-between gap-4 border-b border-neutral-100 bg-white pl-4 pr-4">
-      {/* ── Left: mobile hamburger + logo (mobile) + search ────── */}
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        {/* Mobile hamburger */}
-        <button
-          type="button"
-          onClick={onMenuToggle}
-          aria-label="Toggle sidebar"
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 lg:hidden"
-        >
-          <Menu className="h-4 w-4" />
-        </button>
-
-        {/* Search bar */}
+    <SharedDashboardTopbar
+      variant={user.isCreator ? "creator" : "user"}
+      onMenuToggle={onMenuToggle}
+      left={
         <form
           onSubmit={handleSearch}
-          className="relative hidden flex-1 max-w-lg sm:block"
+          className="relative hidden max-w-lg flex-1 sm:block"
         >
           <Search
             className={cn(
@@ -106,108 +96,92 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
             </button>
           )}
         </form>
-      </div>
+      }
+      rightClassName="gap-1.5"
+      right={
+        <>
+          <Link
+            href={routes.marketplace}
+            className="hidden items-center rounded-xl bg-neutral-900 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:bg-neutral-700 sm:flex"
+          >
+            Browse
+          </Link>
 
-      {/* ── Right: actions + avatar ─────────────────────────────── */}
-      <div className="flex flex-shrink-0 items-center gap-1.5">
-        {/* Browse button */}
-        <Link
-          href={routes.marketplace}
-          className="hidden items-center rounded-xl bg-neutral-900 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:bg-neutral-700 sm:flex"
-        >
-          Browse
-        </Link>
-
-        {/* Notifications */}
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-600"
-        >
-          <Bell className="h-4 w-4" />
-          {/* Unread dot — hidden for now */}
-          {/* <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-blue-500" /> */}
-        </button>
-
-        {/* Avatar dropdown */}
-        <div ref={avatarRef} className="relative">
           <button
             type="button"
-            onClick={() => setAvatarOpen((o) => !o)}
-            className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-zinc-100"
+            aria-label="Notifications"
+            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-600"
           >
-            {user.image ? (
-              <div className="h-7 w-7 overflow-hidden rounded-full ring-1 ring-zinc-200">
-                <Image
-                  src={user.image}
-                  alt={user.name ?? "User"}
-                  width={28}
-                  height={28}
-                  sizes="28px"
-                  className="h-7 w-7 object-cover"
-                />
-              </div>
-            ) : (
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-violet-600 text-[11px] font-bold text-white">
-                {user.name?.[0]?.toUpperCase() ?? "U"}
-              </span>
-            )}
+            <Bell className="h-4 w-4" />
+          </button>
+
+          <div ref={avatarRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setAvatarOpen((o) => !o)}
+              className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-zinc-100"
+            >
+              <Avatar
+                src={user.image}
+                name={user.name}
+                email={user.email}
+                size={28}
+                className="ring-1 ring-zinc-200"
+              />
               <span className="hidden text-[13px] font-medium text-neutral-700 sm:block">
-              {user.name?.split(" ")[0] ?? "Account"}
-            </span>
+                {user.name?.split(" ")[0] ?? "Account"}
+              </span>
               <ChevronDown
                 className={cn(
                   "h-3.5 w-3.5 text-neutral-400 transition-transform duration-150",
                   avatarOpen && "rotate-180"
                 )}
               />
-          </button>
+            </button>
 
-          {/* Dropdown panel */}
-          {avatarOpen && (
-            <div className="absolute right-0 top-full z-50 mt-1.5 w-52 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-card-md">
-              {/* User info */}
-              <div className="border-b border-neutral-100 px-4 py-3">
-                <p className="text-[13px] font-semibold text-neutral-900">
-                  {user.name ?? "Account"}
-                </p>
-                <p className="mt-0.5 truncate text-[11px] text-neutral-400">
-                  {user.email}
-                </p>
-              </div>
+            {avatarOpen && (
+              <div className="absolute right-0 top-full z-50 mt-1.5 w-52 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-card-md">
+                <div className="border-b border-neutral-100 px-4 py-3">
+                  <p className="text-[13px] font-semibold text-neutral-900">
+                    {user.name ?? "Account"}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11px] text-neutral-400">
+                    {user.email}
+                  </p>
+                </div>
 
-              {/* Nav links */}
-              <div className="p-1.5">
-                {AVATAR_MENU.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setAvatarOpen(false)}
-                      className="flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] text-neutral-700 transition hover:bg-neutral-50"
+                <div className="p-1.5">
+                  {AVATAR_MENU.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setAvatarOpen(false)}
+                        className="flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] text-neutral-700 transition hover:bg-neutral-50"
+                      >
+                        <Icon className="h-3.5 w-3.5 text-neutral-400" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+
+                  <div className="mt-1 border-t border-neutral-100 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[13px] text-red-500 transition hover:bg-red-50"
                     >
-                      <Icon className="h-3.5 w-3.5 text-neutral-400" />
-                      {item.label}
-                    </Link>
-                  );
-                })}
-
-                <div className="mt-1 border-t border-neutral-100 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => signOut({ callbackUrl: "/" })}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[13px] text-red-500 transition hover:bg-red-50"
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    Sign out
-                  </button>
+                      <LogOut className="h-3.5 w-3.5" />
+                      Sign out
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </header>
+            )}
+          </div>
+        </>
+      }
+    />
   );
 }

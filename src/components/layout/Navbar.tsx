@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { Logo } from "@/components/brand/Logo";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "@/i18n/navigation";
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { Avatar } from "@/components/ui/Avatar";
 import {useTranslations, useLocale} from "next-intl";
 import {getLocalizedPath, type RouteKey} from "@/lib/routeTranslations";
 import type {Locale} from "@/i18n/config";
@@ -44,10 +44,7 @@ export function Navbar() {
 
   const [mobileOpen,   setMobileOpen]   = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [avatarBroken, setAvatarBroken] = useState(false);
   const [search,       setSearch]       = useState("");
-
-  const initials = session?.user?.name?.[0]?.toUpperCase() ?? "U";
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -154,9 +151,8 @@ export function Navbar() {
               >
                 <Avatar
                   src={session.user.image}
-                  broken={avatarBroken}
-                  initials={initials}
-                  onBroken={() => setAvatarBroken(true)}
+                  name={session.user.name}
+                  email={session.user.email}
                   size={20}
                 />
                 <span className="max-w-[96px] truncate text-[13px] font-medium text-text-primary">
@@ -353,9 +349,8 @@ export function Navbar() {
                 <div className="flex items-center gap-3 rounded-xl bg-surface-50 px-3 py-2.5">
                   <Avatar
                     src={session.user.image}
-                    broken={avatarBroken}
-                    initials={initials}
-                    onBroken={() => setAvatarBroken(true)}
+                    name={session.user.name}
+                    email={session.user.email}
                     size={28}
                   />
                   <div className="min-w-0">
@@ -415,48 +410,5 @@ export function Navbar() {
         </div>
       )}
     </header>
-  );
-}
-
-/* ── Avatar helper ───────────────────────────────────────────────────────── */
-
-function Avatar({
-  src,
-  broken,
-  initials,
-  onBroken,
-  size,
-}: {
-  src?: string | null;
-  broken: boolean;
-  initials: string;
-  onBroken: () => void;
-  size: number;
-}) {
-  if (src && !broken) {
-    return (
-      <div
-        className="overflow-hidden rounded-full ring-1 ring-surface-200"
-        style={{ width: size, height: size }}
-      >
-        <Image
-          src={src}
-          alt=""
-          width={size}
-          height={size}
-          sizes={`${size}px`}
-          className="h-full w-full object-cover"
-          onError={onBroken}
-        />
-      </div>
-    );
-  }
-  return (
-    <span
-      className="flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 font-bold text-white"
-      style={{ width: size, height: size, fontSize: Math.max(8, size * 0.45) }}
-    >
-      {initials}
-    </span>
   );
 }

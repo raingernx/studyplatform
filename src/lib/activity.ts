@@ -15,6 +15,7 @@
  * The function normalises both shapes transparently.
  */
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export interface LogActivityOptions {
@@ -37,6 +38,16 @@ export interface LogActivityOptions {
 // from activityLogger and switched to activity.ts still compiles.
 export type { LogActivityOptions as ActivityLogOptions };
 
+function toActivityMetadata(
+  value: Record<string, unknown> | null | undefined,
+): Prisma.InputJsonObject | undefined {
+  if (value == null) {
+    return undefined;
+  }
+
+  return value as Prisma.InputJsonObject;
+}
+
 export async function logActivity({
   userId,
   action,
@@ -50,7 +61,7 @@ export async function logActivity({
 }: LogActivityOptions): Promise<void> {
   // Normalise: prefer the canonical name, fall back to the legacy alias
   const resolvedEntity = entity ?? entityType ?? undefined;
-  const resolvedMetadata = metadata ?? meta ?? undefined;
+  const resolvedMetadata = toActivityMetadata(metadata ?? meta ?? undefined);
 
   try {
     await prisma.activityLog.create({

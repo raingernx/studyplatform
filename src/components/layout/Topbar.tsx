@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { AdminGlobalSearch } from "./AdminGlobalSearch";
+import { DashboardTopbar as SharedDashboardTopbar } from "@/components/layout/dashboard/DashboardTopbar";
 
 interface TopbarProps {
   title?: string;
@@ -10,21 +11,33 @@ interface TopbarProps {
 }
 
 /** Top bar for admin / dashboard. Optional search and actions. */
-export function Topbar({ title = "Admin", subtitle = "Control panel", children }: TopbarProps) {
+export function Topbar({
+  title = "Admin",
+  subtitle = "Control panel",
+  children,
+  onMenuToggle,
+}: TopbarProps & { onMenuToggle?: () => void }) {
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border-subtle bg-white px-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-tightest text-text-muted">
-          {title}
-        </p>
-        <p className="text-sm font-semibold text-text-primary">{subtitle}</p>
-      </div>
-      {children ?? (
-        <div className="flex items-center gap-4">
-          <AdminGlobalSearch />
-          <NotificationBell />
+    <SharedDashboardTopbar
+      variant="admin"
+      onMenuToggle={onMenuToggle}
+      left={
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-tightest text-text-muted">
+            {title}
+          </p>
+          <p className="text-sm font-semibold text-text-primary">{subtitle}</p>
         </div>
-      )}
-    </header>
+      }
+      rightClassName="gap-4"
+      right={
+        children ?? (
+          <>
+            <AdminGlobalSearch />
+            <NotificationBell />
+          </>
+        )
+      }
+    />
   );
 }

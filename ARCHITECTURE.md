@@ -1,4 +1,4 @@
-# StudyPlatform – System Architecture
+# PaperDock – System Architecture
 
 ## Overview
 
@@ -73,6 +73,95 @@ External integrations include:
 - Stripe (payments and subscriptions)
 - OAuth providers (Google login)
 - File storage (future: R2/S3)
+
+---
+
+
+# Backend Layers
+
+PaperDock backend follows a layered architecture to keep responsibilities separated.
+
+routes → services → repositories → Prisma → database
+
+### Routes
+
+Location:
+
+src/app/api
+
+Responsibilities:
+
+- request parsing
+- authentication validation
+- response formatting
+
+Routes must remain **thin controllers**.
+
+---
+
+### Services
+
+Location:
+
+src/services
+
+Responsibilities:
+
+- business logic
+- orchestration
+- validation
+
+Examples:
+
+- payment.service
+- download.service
+- subscription.service
+- resource.service
+
+---
+
+### Repositories
+
+Location:
+
+src/repositories
+
+Responsibilities:
+
+- database access
+- Prisma queries
+- persistence logic
+
+Repositories should be the **only layer calling Prisma**.
+
+---
+
+### Analytics Layer
+
+Location:
+
+src/analytics
+
+Responsibilities:
+
+- analytics event tracking
+- resource statistics
+- creator analytics
+- trending calculations
+
+---
+
+### Workers
+
+Location:
+
+src/workers
+
+Responsibilities:
+
+- analytics aggregation
+- trending score calculation
+- background processing jobs
 
 ---
 

@@ -4,21 +4,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return {
-      session: null,
-      error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }),
-    };
+    return { error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }) };
   }
 
   if (session.user.role !== "ADMIN") {
     return {
-      session: null,
       error: NextResponse.json(
         { error: "Forbidden. Admin access required." },
         { status: 403 },
@@ -26,17 +22,20 @@ async function requireAdmin() {
     };
   }
 
-  return { session, error: null as NextResponse | null };
+  return { session };
 }
 
 // GET /api/admin/resources/:id/versions
 export async function GET(_req: Request, { params }: Params) {
   try {
-    const { error } = await requireAdmin();
-    if (error) return error;
+    const { id } = await params;
+    const admin = await requireAdmin();
+    if ("error" in admin) {
+      return admin.error;
+    }
 
     const resource = await prisma.resource.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true, title: true },
     });
 
@@ -48,7 +47,7 @@ export async function GET(_req: Request, { params }: Params) {
     }
 
     const versions = await prisma.resourceVersion.findMany({
-      where: { resourceId: params.id },
+      where: { resourceId: id },
       orderBy: { version: "desc" },
       include: {
         createdBy: {
@@ -83,4 +82,3 @@ export async function GET(_req: Request, { params }: Params) {
     );
   }
 }
-

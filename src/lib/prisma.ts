@@ -1,3 +1,4 @@
+import "server-only";
 import { PrismaClient } from "@prisma/client";
 
 // Prevent multiple Prisma instances in development (hot reload)

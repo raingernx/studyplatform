@@ -127,7 +127,7 @@ export function AdminResourcesFilters({
     <>
       <form
         onSubmit={handleSubmit}
-        className="mb-2 flex flex-wrap items-end gap-3 rounded-2xl border border-border-subtle bg-white px-4 py-3 shadow-card"
+        className="mb-2 flex min-w-0 flex-wrap items-end gap-3 rounded-2xl border border-border-subtle bg-white px-4 py-3 shadow-card"
       >
         <div className="flex min-w-[220px] flex-1 flex-col gap-1">
         <label
@@ -200,7 +200,7 @@ export function AdminResourcesFilters({
         </Select>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <SavedFiltersDropdown
             currentFilters={filters}
             onApplyPreset={(preset: SavedFilterPresetId) => {
@@ -275,4 +275,3 @@ export function AdminResourcesFilters({
     </>
   );
 }
-

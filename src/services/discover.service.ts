@@ -10,9 +10,37 @@
  */
 
 import { unstable_cache } from "next/cache";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { CACHE_KEYS, CACHE_TTLS, rememberJson } from "@/lib/cache";
 import { LISTED_RESOURCE_WHERE } from "@/lib/query/resourceFilters";
 import { RESOURCE_CARD_SELECT } from "@/lib/query/resourceSelect";
+import { resolveHomepageHero } from "@/services/heroes/hero.resolver";
+import {
+  findFeaturedResourceIds,
+  findFreeResourceIds,
+  findNewestResourceIds,
+  findTopDownloadedResourceIds,
+  findTopTrendingResourceIds,
+} from "@/repositories/analytics/analytics.repository";
+
+async function findFallbackResourceIds(
+  limit: number,
+  orderBy: Prisma.ResourceFindManyArgs["orderBy"],
+  where?: Prisma.ResourceFindManyArgs["where"],
+) {
+  const rows = await prisma.resource.findMany({
+    where: {
+      ...LISTED_RESOURCE_WHERE,
+      ...(where ?? {}),
+    },
+    select: { id: true },
+    orderBy,
+    take: limit,
+  });
+
+  return rows.map((row) => row.id);
+}
 
 // ── Preview normaliser ────────────────────────────────────────────────────────
 
@@ -49,91 +77,83 @@ export function withPreview<
  */
 export const getDiscoverData = unstable_cache(
   async function _getDiscoverData() {
-    // ── 2 queries total ────────────────────────────────────────────────────
-    //
-    // Query 1: a single wide resource pool that powers every section.
-    // Query 2: categories for the discover navigation.
-    //
-    // All six sections are derived from the pool in memory — no per-section
-    // DB round-trips, no expensive groupBy on DownloadEvent.
-    //
-    // Trending score = downloadCount + purchases * 3
-    // This approximates recency-weighted popularity using columns that are
-    // already returned by RESOURCE_CARD_SELECT, so no extra query is needed.
-
-    const [pool, categories] = await Promise.all([
-      // ── Query 1: resource pool ─────────────────────────────────────────
-      // Order by featured → downloadCount → createdAt so the pool skews
-      // toward high-signal resources across all section types.
-      prisma.resource.findMany({
-        where:   LISTED_RESOURCE_WHERE,
-        select:  RESOURCE_CARD_SELECT,
-        orderBy: [
-          { featured:      "desc" },
-          { downloadCount: "desc" },
-          { createdAt:     "desc" },
-        ],
-        take: 40,
-      }),
-
-      // ── Query 2: categories ────────────────────────────────────────────
+    const [
+      trendingIdsFromStats,
+      popularIdsFromStats,
+      newestIdsFromStats,
+      featuredIdsFromStats,
+      freeIdsFromStats,
+      categories,
+    ] = await Promise.all([
+      rememberJson(CACHE_KEYS.trendingResources, CACHE_TTLS.homepageList, () =>
+        findTopTrendingResourceIds(8),
+      ),
+      rememberJson(CACHE_KEYS.popularResources, CACHE_TTLS.homepageList, () =>
+        findTopDownloadedResourceIds(8),
+      ),
+      rememberJson(CACHE_KEYS.newestResources, CACHE_TTLS.homepageList, () =>
+        findNewestResourceIds(8),
+      ),
+      rememberJson(CACHE_KEYS.featuredResources, CACHE_TTLS.homepageList, () =>
+        findFeaturedResourceIds(4),
+      ),
+      rememberJson(CACHE_KEYS.freeResources, CACHE_TTLS.homepageList, () =>
+        findFreeResourceIds(4),
+      ),
       prisma.category.findMany({
         include: { _count: { select: { resources: true } } },
         orderBy: { name: "asc" },
       }),
     ]);
 
-    // ── Derive sections in memory ──────────────────────────────────────────
-    //
-    // Each section slices the pool with a different sort or filter.
-    // `.slice()` is used after sort to avoid mutating the original array.
+    const [trendingIds, popularIds, newestIds, featuredIds, freeIds] = await Promise.all([
+      trendingIdsFromStats.length > 0
+        ? trendingIdsFromStats
+        : findFallbackResourceIds(8, [{ downloadCount: "desc" }, { createdAt: "desc" }]),
+      popularIdsFromStats.length > 0
+        ? popularIdsFromStats
+        : findFallbackResourceIds(8, [{ downloadCount: "desc" }, { createdAt: "desc" }]),
+      newestIdsFromStats.length > 0
+        ? newestIdsFromStats
+        : findFallbackResourceIds(8, { createdAt: "desc" }),
+      featuredIdsFromStats.length > 0
+        ? featuredIdsFromStats
+        : findFallbackResourceIds(4, [{ downloadCount: "desc" }, { createdAt: "desc" }], {
+            featured: true,
+          }),
+      freeIdsFromStats.length > 0
+        ? freeIdsFromStats
+        : findFallbackResourceIds(4, [{ downloadCount: "desc" }, { createdAt: "desc" }], {
+            isFree: true,
+          }),
+    ]);
 
-    // Trending: downloadCount + purchases*3 approximates purchase-weighted
-    // momentum without hitting the DB for per-window event counts.
-    const trending = pool
-      .slice()
-      .sort(
-        (a, b) =>
-          (b.downloadCount + b._count.purchases * 3) -
-          (a.downloadCount + a._count.purchases * 3)
-      )
-      .slice(0, 4)
-      .map(withPreview);
+    const resourceIds = Array.from(
+      new Set([
+        ...trendingIds,
+        ...popularIds,
+        ...newestIds,
+        ...featuredIds,
+        ...freeIds,
+      ]),
+    );
 
-    // New releases: most recently published first.
-    const newReleases = pool
-      .slice()
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, 4)
-      .map(withPreview);
+    const pool = await loadDiscoverResourcesByIds(resourceIds);
 
-    // Featured: admin-curated resources, sorted by download popularity.
-    const featured = pool
-      .filter((r) => r.featured)
-      .sort((a, b) => b.downloadCount - a.downloadCount)
-      .slice(0, 4)
-      .map(withPreview);
+    const mapSection = (ids: string[]) =>
+      ids
+        .map((id) => pool.get(id))
+        .filter((resource): resource is NonNullable<typeof resource> =>
+          Boolean(resource),
+        )
+        .map(withPreview);
 
-    // Free resources: isFree flag, sorted by popularity.
-    const freeResources = pool
-      .filter((r) => r.isFree)
-      .sort((a, b) => b.downloadCount - a.downloadCount)
-      .slice(0, 4)
-      .map(withPreview);
-
-    // Most downloaded: all-time download count descending.
-    const mostDownloaded = pool
-      .slice()
-      .sort((a, b) => b.downloadCount - a.downloadCount)
-      .slice(0, 4)
-      .map(withPreview);
-
-    // Recommended: newest resources the user may not have seen yet.
-    const recommended = pool
-      .slice()
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, 8)
-      .map(withPreview);
+    const trending = mapSection(trendingIds).slice(0, 4);
+    const newReleases = mapSection(newestIds).slice(0, 4);
+    const featured = mapSection(featuredIds).slice(0, 4);
+    const freeResources = mapSection(freeIds).slice(0, 4);
+    const mostDownloaded = mapSection(popularIds).slice(0, 4);
+    const recommended = mapSection(trendingIds).slice(0, 8);
 
     return {
       trending,
@@ -148,6 +168,21 @@ export const getDiscoverData = unstable_cache(
   ["discover-data"],
   { revalidate: 120, tags: ["discover"] }
 );
+
+async function loadDiscoverResourcesByIds(resourceIds: string[]) {
+  const rows =
+    resourceIds.length === 0
+      ? []
+      : await prisma.resource.findMany({
+          where: {
+            ...LISTED_RESOURCE_WHERE,
+            id: { in: resourceIds },
+          },
+          select: RESOURCE_CARD_SELECT,
+        });
+
+  return new Map(rows.map((row) => [row.id, row]));
+}
 
 // ── Convenience type ──────────────────────────────────────────────────────────
 
@@ -177,8 +212,8 @@ export const getDiscoverCategories = unstable_cache(
 
 /**
  * Returns the hero config used in discover mode.
- * Returns null when no HomepageHero record has been created.
+ * Falls back to HomepageHero when no active CMS hero exists.
  */
-export async function getHeroConfig() {
-  return prisma.homepageHero.findFirst({ orderBy: { createdAt: "asc" } });
+export async function getHeroConfig(context?: { userId?: string | null }) {
+  return resolveHomepageHero(context);
 }

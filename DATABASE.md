@@ -1,6 +1,6 @@
 # DATABASE.md
 
-This document describes the database architecture for StudyPlatform.
+This document describes the database architecture for PaperDock.
 
 Database: PostgreSQL  
 ORM: Prisma
@@ -20,6 +20,19 @@ Subscriptions
 Downloads
 
 ---
+
+# Data Access Layer
+
+Database queries must follow the repository pattern.
+
+Architecture:
+services → repositories → Prisma → database
+
+Rules:
+
+- Prisma queries must live in `src/repositories`
+- Services call repositories
+- API routes must not call Prisma directly
 
 # User
 
@@ -219,6 +232,39 @@ Stripe webhooks update database records.
 
 ---
 
+# Database Indexing
+
+Important indexes should exist for frequently queried fields.
+
+Recommended indexes:
+
+Users
+
+- email
+
+Resources
+
+- createdAt
+- price
+
+Purchases
+
+- userId
+- resourceId
+- stripePaymentIntentId
+
+Downloads
+
+- resourceId
+- userId
+
+Analytics
+
+- resourceId
+- creatorId
+
+---
+
 # Query Guidelines
 
 When using Prisma:
@@ -240,6 +286,63 @@ purchases: true
 })
 
 ```
+
+# Analytics Tables
+
+The system supports marketplace analytics through aggregated tables.
+
+---
+
+## analytics_events
+
+Stores raw analytics events.
+
+Fields
+id
+eventType
+userId
+resourceId
+creatorId
+metadata
+createdAt
+Example events
+resource_view
+resource_download
+resource_purchase
+
+---
+
+## resource_stats
+
+Stores aggregated statistics for resources.
+
+Fields
+resourceId
+views
+downloads
+purchases
+revenue
+trendingScore
+updatedAt
+Used for:
+
+- trending resources
+- popular resources
+- marketplace analytics
+
+---
+
+## creator_stats
+
+Stores creator analytics.
+
+Fields
+creatorId
+totalDownloads
+totalSales
+totalRevenue
+updatedAt
+Used for creator dashboards.
 
 ---
 

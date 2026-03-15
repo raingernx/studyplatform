@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { User, Mail, Camera } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormSection } from "@/components/ui/form-section";
+import { Avatar } from "@/components/ui/Avatar";
 
 type ProfileSettingsProps = {
   name?: string | null;
@@ -67,22 +67,13 @@ export function ProfileSettings({ name, email, image }: ProfileSettingsProps) {
     >
       <form id="profile-settings-form" onSubmit={handleSave} className="space-y-6">
         <div className="flex items-center gap-4">
-          {image ? (
-            <div className="h-14 w-14 overflow-hidden rounded-full ring-2 ring-zinc-100">
-              <Image
-                src={image}
-                alt={displayName || "Avatar"}
-                width={56}
-                height={56}
-                sizes="56px"
-                className="h-14 w-14 object-cover"
-              />
-            </div>
-          ) : (
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-violet-600 text-xl font-bold text-white">
-              {(displayName || "U").charAt(0).toUpperCase()}
-            </div>
-          )}
+          <Avatar
+            src={image}
+            name={displayName}
+            email={displayEmail}
+            size={56}
+            className="ring-2 ring-zinc-100"
+          />
           <div>
             <p className="text-[13px] text-zinc-500">Avatar</p>
             <div className="mt-1 flex gap-2">
@@ -126,4 +117,3 @@ export function ProfileSettings({ name, email, image }: ProfileSettingsProps) {
     </FormSection>
   );
 }
-

@@ -4,13 +4,25 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
+
+const previewMediaSchema = z.string().refine(
+  (value) =>
+    value.startsWith("http://") ||
+    value.startsWith("https://") ||
+    value.startsWith("/"),
+  {
+    message:
+      "Preview media must be a URL or uploaded image path (e.g. https://… or /uploads/…).",
+  },
+);
 
 // ── GET /api/resources/[id] ────────────────────────────────────────────────
 export async function GET(_req: Request, { params }: Params) {
   try {
+    const { id } = await params;
     const resource = await prisma.resource.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         author: { select: { id: true, name: true, image: true } },
         category: true,
@@ -30,7 +42,7 @@ export async function GET(_req: Request, { params }: Params) {
 
     // Increment view count (fire and forget)
     prisma.resource
-      .update({ where: { id: params.id }, data: { viewCount: { increment: 1 } } })
+      .update({ where: { id }, data: { viewCount: { increment: 1 } } })
       .catch(() => {});
 
     return NextResponse.json({ data: resource });
@@ -50,17 +62,19 @@ const UpdateResourceSchema = z.object({
   featured: z.boolean().optional(),
   categoryId: z.string().cuid().nullable().optional(),
   fileUrl: z.string().url().optional(),
-  previewUrl: z.string().url().optional(),
+  previewUrl: previewMediaSchema.nullable().optional(),
+  previewUrls: z.array(previewMediaSchema).optional(),
 });
 
 export async function PATCH(req: Request, { params }: Params) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const resource = await prisma.resource.findUnique({ where: { id: params.id } });
+    const resource = await prisma.resource.findUnique({ where: { id } });
     if (!resource) {
       return NextResponse.json({ error: "Resource not found." }, { status: 404 });
     }
@@ -80,9 +94,40 @@ export async function PATCH(req: Request, { params }: Params) {
       );
     }
 
-    const updated = await prisma.resource.update({
-      where: { id: params.id },
-      data: parsed.data,
+    const normalizedPreviewUrls =
+      parsed.data.previewUrls?.filter((url) => url.trim() !== "") ?? undefined;
+    const nextPreviewUrl =
+      normalizedPreviewUrls !== undefined
+        ? parsed.data.previewUrl ?? normalizedPreviewUrls[0] ?? null
+        : parsed.data.previewUrl;
+    const { previewUrls: _previewUrls, ...scalarData } = parsed.data;
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedResource = await tx.resource.update({
+        where: { id },
+        data: {
+          ...scalarData,
+          ...(nextPreviewUrl !== undefined ? { previewUrl: nextPreviewUrl } : {}),
+        },
+      });
+
+      if (normalizedPreviewUrls !== undefined) {
+        await tx.resourcePreview.deleteMany({
+          where: { resourceId: id },
+        });
+
+        if (normalizedPreviewUrls.length > 0) {
+          await tx.resourcePreview.createMany({
+            data: normalizedPreviewUrls.map((imageUrl, order) => ({
+              resourceId: id,
+              imageUrl,
+              order,
+            })),
+          });
+        }
+      }
+
+      return updatedResource;
     });
 
     return NextResponse.json({ data: updated });
@@ -95,12 +140,13 @@ export async function PATCH(req: Request, { params }: Params) {
 // ── DELETE /api/resources/[id] ──────────────────────────────────────────────
 export async function DELETE(_req: Request, { params }: Params) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const resource = await prisma.resource.findUnique({ where: { id: params.id } });
+    const resource = await prisma.resource.findUnique({ where: { id } });
     if (!resource) {
       return NextResponse.json({ error: "Resource not found." }, { status: 404 });
     }
@@ -110,7 +156,7 @@ export async function DELETE(_req: Request, { params }: Params) {
       return NextResponse.json({ error: "Only admins can delete resources." }, { status: 403 });
     }
 
-    await prisma.resource.delete({ where: { id: params.id } });
+    await prisma.resource.delete({ where: { id } });
 
     return NextResponse.json({ data: { deleted: true } });
   } catch (err) {

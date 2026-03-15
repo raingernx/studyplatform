@@ -44,6 +44,13 @@ export const routes = {
 
   // ── User dashboard ────────────────────────────────────────────────────────
   dashboard: "/dashboard",
+  creatorDashboard: "/dashboard/creator",
+  creatorApply: "/dashboard/creator/apply",
+  creatorResources: "/dashboard/creator/resources",
+  creatorNewResource: "/dashboard/creator/resources/new",
+  creatorAnalytics: "/dashboard/creator/analytics",
+  creatorSales: "/dashboard/creator/sales",
+  creatorProfile: "/dashboard/creator/profile",
   library: "/dashboard/library",
   downloads: "/dashboard/downloads",
   purchases: "/dashboard/purchases",
@@ -64,6 +71,8 @@ export const routes = {
   adminAnalytics: "/admin/analytics",
   adminActivity: "/admin/activity",
   adminAudit: "/admin/audit",
+  adminHeroes: "/admin/heroes",
+  adminNewHero: "/admin/heroes/new",
   adminSettings: "/admin/settings",
 
   /**
@@ -71,6 +80,9 @@ export const routes = {
    * @example routes.adminResource("clxyz123") → "/admin/resources/clxyz123"
    */
   adminResource: (id: string) => `/admin/resources/${id}`,
+  adminHero: (id: string) => `/admin/heroes/${id}`,
+  creatorResource: (id: string) => `/dashboard/creator/resources/${id}`,
+  creatorPublicProfile: (slug: string) => `/creators/${slug}`,
 
   /**
    * Admin version history page for a resource.

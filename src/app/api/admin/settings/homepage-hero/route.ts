@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import {
+  getFallbackHero,
+  HeroServiceError,
+  upsertFallbackHero,
+} from "@/services/heroes/hero.service";
 
 const UpdateHeroSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -32,16 +36,14 @@ async function requireAdmin() {
 
 /**
  * GET /api/admin/settings/homepage-hero
- * Returns the first HomepageHero record or null. Admin only.
+ * Returns the protected fallback hero record. Admin only.
  */
 export async function GET() {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.res;
 
   try {
-    const hero = await prisma.homepageHero.findFirst({
-      orderBy: { createdAt: "asc" },
-    });
+    const hero = await getFallbackHero();
     return NextResponse.json(hero);
   } catch (err) {
     console.error("[ADMIN_HOMEPAGE_HERO_GET]", err);
@@ -51,7 +53,7 @@ export async function GET() {
 
 /**
  * PATCH /api/admin/settings/homepage-hero
- * Create or update the single hero config (upsert first record). Admin only.
+ * Create or update the protected fallback hero config. Admin only.
  */
 export async function PATCH(req: Request) {
   const auth = await requireAdmin();
@@ -87,21 +89,14 @@ export async function PATCH(req: Request) {
   };
 
   try {
-    const existing = await prisma.homepageHero.findFirst({
-      orderBy: { createdAt: "asc" },
-    });
-
-    const hero = existing
-      ? await prisma.homepageHero.update({
-          where: { id: existing.id },
-          data: payload,
-        })
-      : await prisma.homepageHero.create({
-          data: payload,
-        });
+    const hero = await upsertFallbackHero(payload);
 
     return NextResponse.json(hero);
   } catch (err) {
+    if (err instanceof HeroServiceError) {
+      return NextResponse.json(err.payload, { status: err.status });
+    }
+
     console.error("[ADMIN_HOMEPAGE_HERO_PATCH]", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }

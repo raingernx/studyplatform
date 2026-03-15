@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, ImageIcon } from "lucide-react";
 
 const VISIBLE_THUMBNAILS = 5;
 
@@ -15,22 +15,47 @@ interface Preview {
 interface ResourceGalleryProps {
   previews: Preview[];
   resourceTitle: string;
+  fallbackImageUrl?: string | null;
 }
 
-export function ResourceGallery({ previews, resourceTitle }: ResourceGalleryProps) {
+export function ResourceGallery({
+  previews,
+  resourceTitle,
+  fallbackImageUrl = null,
+}: ResourceGalleryProps) {
   const [active, setActive] = useState(0);
   const [startIndex, setStartIndex] = useState(0);
 
-  if (previews.length === 0) return null;
+  const resolvedPreviews =
+    previews.length > 0
+      ? previews
+      : fallbackImageUrl
+        ? [{ id: "fallback-preview", imageUrl: fallbackImageUrl, order: 0 }]
+        : [];
 
-  const current = previews[active];
-  const hasThumbnails = previews.length > 1;
-  const maxStart = Math.max(0, previews.length - VISIBLE_THUMBNAILS);
+  if (resolvedPreviews.length === 0) {
+    return (
+      <>
+        <div className="order-2 w-20 shrink-0 lg:order-1" aria-hidden />
+        <div className="relative order-1 flex w-full min-h-0 items-center justify-center overflow-hidden rounded-xl bg-muted aspect-[4/3] max-h-[640px] lg:order-2 lg:aspect-auto lg:max-h-none lg:h-full">
+          <div className="flex flex-col items-center gap-2 text-center text-zinc-400">
+            <ImageIcon className="h-10 w-10" />
+            <span className="text-sm font-medium">Preview coming soon</span>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const activeIndex = Math.min(active, resolvedPreviews.length - 1);
+  const current = resolvedPreviews[activeIndex];
+  const hasThumbnails = resolvedPreviews.length > 1;
+  const maxStart = Math.max(0, resolvedPreviews.length - VISIBLE_THUMBNAILS);
   const visible = hasThumbnails
-    ? previews.slice(startIndex, startIndex + VISIBLE_THUMBNAILS)
+    ? resolvedPreviews.slice(startIndex, startIndex + VISIBLE_THUMBNAILS)
     : [];
-  const canGoUp = hasThumbnails && active > 0;
-  const canGoDown = hasThumbnails && active < previews.length - 1;
+  const canGoUp = hasThumbnails && activeIndex > 0;
+  const canGoDown = hasThumbnails && activeIndex < resolvedPreviews.length - 1;
 
   return (
     <>
@@ -41,7 +66,7 @@ export function ResourceGallery({ previews, resourceTitle }: ResourceGalleryProp
             <button
               type="button"
               onClick={() => {
-                const newActive = Math.max(0, active - 1);
+                const newActive = Math.max(0, activeIndex - 1);
                 setActive(newActive);
                 setStartIndex((prev) => Math.min(prev, newActive));
               }}
@@ -62,7 +87,7 @@ export function ResourceGallery({ previews, resourceTitle }: ResourceGalleryProp
                     aria-label={`View preview ${globalIndex + 1}`}
                     className={[
                       "relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg border-2 transition",
-                      globalIndex === active
+                      globalIndex === activeIndex
                         ? "border-zinc-900 shadow-sm"
                         : "border-zinc-200 opacity-70 hover:opacity-100",
                     ].join(" ")}
@@ -81,7 +106,7 @@ export function ResourceGallery({ previews, resourceTitle }: ResourceGalleryProp
             <button
               type="button"
               onClick={() => {
-                const newActive = Math.min(previews.length - 1, active + 1);
+                const newActive = Math.min(resolvedPreviews.length - 1, activeIndex + 1);
                 setActive(newActive);
                 setStartIndex((prev) =>
                   Math.min(maxStart, Math.max(prev, newActive - VISIBLE_THUMBNAILS + 1))
@@ -103,14 +128,14 @@ export function ResourceGallery({ previews, resourceTitle }: ResourceGalleryProp
       <div className="relative order-1 w-full min-h-0 overflow-hidden rounded-xl bg-muted aspect-[4/3] max-h-[640px] lg:order-2 lg:aspect-auto lg:max-h-none lg:h-full">
         <Image
           src={current.imageUrl}
-          alt={`${resourceTitle} – preview ${active + 1} of ${previews.length}`}
+          alt={`${resourceTitle} – preview ${activeIndex + 1} of ${resolvedPreviews.length}`}
           fill
           sizes="(max-width: 768px) 100vw, 640px"
           className="h-full w-full object-contain"
         />
-        {previews.length > 1 && (
+        {resolvedPreviews.length > 1 && (
           <span className="absolute bottom-2 right-3 rounded-full bg-black/50 px-2 py-0.5 text-[11px] font-medium text-white">
-            {active + 1} / {previews.length}
+            {activeIndex + 1} / {resolvedPreviews.length}
           </span>
         )}
       </div>

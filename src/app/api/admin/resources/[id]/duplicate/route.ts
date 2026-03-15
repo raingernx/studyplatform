@@ -10,15 +10,11 @@ async function requireAdmin() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return {
-      session: null,
-      error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }),
-    };
+    return { error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }) };
   }
 
   if (session.user.role !== "ADMIN") {
     return {
-      session: null,
       error: NextResponse.json(
         { error: "Forbidden. Admin access required." },
         { status: 403 },
@@ -26,15 +22,17 @@ async function requireAdmin() {
     };
   }
 
-  return { session, error: null as NextResponse | null };
+  return { session };
 }
 
 export async function POST(_req: Request, { params }: Params) {
   try {
     const { id } = await params;
 
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdmin();
+    if ("error" in admin) {
+      return admin.error;
+    }
 
     const existing = await prisma.resource.findUnique({
       where: { id },
@@ -92,7 +90,7 @@ export async function POST(_req: Request, { params }: Params) {
         categoryId: existing.categoryId,
         featured: existing.featured,
         previewUrl: firstPreviewUrl,
-        authorId: session.user.id!,
+        authorId: admin.session.user.id!,
         tags:
           tagIds.length > 0
             ? {
@@ -122,4 +120,3 @@ export async function POST(_req: Request, { params }: Params) {
     );
   }
 }
-

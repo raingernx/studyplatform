@@ -6,6 +6,17 @@ import { prisma } from "@/lib/prisma";
 import { listPublicResources } from "@/services/resources/resource.service";
 import { slugify } from "@/lib/utils";
 
+const previewMediaSchema = z.string().refine(
+  (value) =>
+    value.startsWith("http://") ||
+    value.startsWith("https://") ||
+    value.startsWith("/"),
+  {
+    message:
+      "Preview media must be a URL or uploaded image path (e.g. https://… or /uploads/…).",
+  },
+);
+
 // ── GET /api/resources ────────────────────────────────────────────────────────
 // Public – returns published resources with optional filtering + pagination
 export async function GET(req: Request) {
@@ -46,6 +57,8 @@ const CreateResourceSchema = z.object({
   stripePriceId: z.string().optional(),
   stripeProductId: z.string().optional(),
   tagIds: z.array(z.string().cuid()).optional(),
+  previewUrl: previewMediaSchema.nullable().optional(),
+  previewUrls: z.array(previewMediaSchema).optional(),
 });
 
 export async function POST(req: Request) {
@@ -69,10 +82,22 @@ export async function POST(req: Request) {
       );
     }
 
-    const { title, description, categoryId, isFree, price, stripePriceId, stripeProductId, tagIds } =
-      parsed.data;
+    const {
+      title,
+      description,
+      categoryId,
+      isFree,
+      price,
+      stripePriceId,
+      stripeProductId,
+      tagIds,
+      previewUrl,
+      previewUrls,
+    } = parsed.data;
 
     const slug = slugify(title);
+    const normalizedPreviewUrls = (previewUrls ?? []).filter((url) => url.trim() !== "");
+    const primaryPreviewUrl = previewUrl ?? normalizedPreviewUrls[0] ?? null;
 
     // Ensure slug is unique
     const existing = await prisma.resource.findUnique({ where: { slug } });
@@ -93,10 +118,20 @@ export async function POST(req: Request) {
         stripePriceId,
         stripeProductId,
         categoryId,
+        previewUrl: primaryPreviewUrl,
         authorId: session.user.id,
         tags: tagIds
           ? { create: tagIds.map((tagId) => ({ tagId })) }
           : undefined,
+        previews:
+          normalizedPreviewUrls.length > 0
+            ? {
+                create: normalizedPreviewUrls.map((imageUrl, order) => ({
+                  imageUrl,
+                  order,
+                })),
+              }
+            : undefined,
       },
       include: {
         author: { select: { id: true, name: true } },

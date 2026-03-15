@@ -4,9 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { FileText, Eye, Pencil, Trash2 } from "lucide-react";
+import { FileText, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownSeparator,
+  DropdownTrigger,
+} from "@/components/ui/Dropdown";
 import { Select } from "@/components/ui/Select";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { formatPrice, formatDate } from "@/lib/format";
@@ -305,13 +312,13 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border-subtle bg-white shadow-card">
+    <div className="min-w-0 w-full overflow-hidden rounded-2xl border border-border-subtle bg-white shadow-card">
       {hasSelection && (
         <div className="flex flex-col gap-1 border-b border-border-subtle bg-surface-50 px-4 py-2 text-xs text-text-secondary sm:flex-row sm:items-center sm:justify-between">
           <div className="font-medium text-text-secondary">
             {selectedCount} resource{selectedCount === 1 ? "" : "s"} selected
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               size="xs"
@@ -383,8 +390,9 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
           </div>
         </div>
       )}
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[980px] text-left text-sm">
+      <div className="overflow-x-auto bg-white">
+        <div className="min-w-[780px] bg-white">
+        <table className="w-full text-left text-sm">
           <thead className="border-b border-border-subtle bg-surface-50/80">
             <tr>
               <th className="px-3 py-3">
@@ -402,25 +410,10 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                 Creator
               </th>
               <th className="px-2 py-3 text-xs font-medium uppercase tracking-tightest text-text-secondary">
-                Category
+                Listing
               </th>
               <th className="px-2 py-3 text-xs font-medium uppercase tracking-tightest text-text-secondary">
-                Price
-              </th>
-              <th className="px-2 py-3 text-xs font-medium uppercase tracking-tightest text-text-secondary">
-                Status
-              </th>
-              <th className="px-2 py-3 text-xs font-medium uppercase tracking-tightest text-text-secondary">
-                Downloads
-              </th>
-              <th className="px-2 py-3 text-xs font-medium uppercase tracking-tightest text-text-secondary">
-                Purchases
-              </th>
-              <th className="px-2 py-3 text-xs font-medium uppercase tracking-tightest text-text-secondary">
-                Revenue
-              </th>
-              <th className="px-2 py-3 text-xs font-medium uppercase tracking-tightest text-text-secondary">
-                Created
+                Performance
               </th>
               <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-tightest text-text-secondary">
                 Actions
@@ -479,9 +472,17 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                         <p className="truncate text-sm font-medium text-text-primary">
                           {displayTitle}
                         </p>
-                        <p className="truncate text-xs text-text-muted">
-                          /resources/{resource.slug}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
+                          <span className="truncate">/resources/{resource.slug}</span>
+                          <span>•</span>
+                          <span>{formatDate(resource.createdAt)}</span>
+                          {resource.category?.name ? (
+                            <>
+                              <span>•</span>
+                              <span>{resource.category.name}</span>
+                            </>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -500,43 +501,38 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                     </div>
                   </td>
 
-                  {/* Category */}
-                  <td className="px-2 py-3 align-middle text-sm text-text-secondary">
-                    {resource.category?.name ?? "—"}
-                  </td>
-
-                  {/* Price */}
+                  {/* Listing */}
                   <td className="px-2 py-3 align-middle">
-                  <span className="inline-flex rounded-full bg-surface-100 px-2.5 py-0.5 text-xs font-medium text-text-secondary">
-                    {resource.isFree || resource.price === 0
-                      ? "Free"
-                      : formatPrice(resource.price / 100)}
-                  </span>
+                    <div className="space-y-2">
+                      <span className="inline-flex rounded-full bg-surface-100 px-2.5 py-0.5 text-xs font-medium text-text-secondary">
+                        {resource.isFree || resource.price === 0
+                          ? "Free"
+                          : formatPrice(resource.price / 100)}
+                      </span>
+                      <div>
+                        <StatusBadge status={resource.status} />
+                      </div>
+                    </div>
                   </td>
 
-                  {/* Status */}
+                  {/* Performance */}
                   <td className="px-2 py-3 align-middle">
-                    <StatusBadge status={resource.status} />
-                  </td>
-
-                  {/* Downloads */}
-                  <td className="px-2 py-3 align-middle text-sm text-text-secondary">
-                    {resource.downloads}
-                  </td>
-
-                  {/* Purchases */}
-                  <td className="px-2 py-3 align-middle text-sm text-text-secondary">
-                    {resource.purchases}
-                  </td>
-
-                  {/* Revenue */}
-                  <td className="px-2 py-3 align-middle text-sm text-text-secondary">
-                    {resource.revenue > 0 ? formatPrice(resource.revenue / 100) : "—"}
-                  </td>
-
-                  {/* Created */}
-                  <td className="px-2 py-3 align-middle text-sm text-text-secondary">
-                    {formatDate(resource.createdAt)}
+                    <div className="space-y-1 text-xs text-text-secondary">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-text-muted">Downloads</span>
+                        <span className="font-medium text-text-primary">{resource.downloads}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-text-muted">Purchases</span>
+                        <span className="font-medium text-text-primary">{resource.purchases}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-text-muted">Revenue</span>
+                        <span className="font-medium text-text-primary">
+                          {resource.revenue > 0 ? formatPrice(resource.revenue / 100) : "—"}
+                        </span>
+                      </div>
+                    </div>
                   </td>
 
                   {/* Actions */}
@@ -575,7 +571,7 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                         </div>
                       </div>
                     ) : (
-                      <div className="flex justify-end gap-2">
+                      <div className="flex items-center justify-end gap-2">
                         {isDraft && (
                           <Button
                             type="button"
@@ -592,7 +588,7 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700 cursor-default"
+                            className="cursor-default border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700"
                             disabled
                           >
                             Published ✓
@@ -634,51 +630,6 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                         )}
                         <Button asChild variant="outline" size="sm">
                           <Link
-                            href={
-                              isDraft
-                                ? `/resources/${resource.slug}?preview=true`
-                                : `/resources/${resource.slug}`
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            <span>Preview</span>
-                          </Link>
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={isRowLoading}
-                          onClick={async () => {
-                            setRowLoadingId(resource.id);
-                            const res = await fetch(
-                              `/api/admin/resources/${resource.id}/duplicate`,
-                              { method: "POST" },
-                            );
-                            setRowLoadingId(null);
-                            if (!res.ok) {
-                              window.alert("Failed to duplicate resource");
-                              return;
-                            }
-                            const json = (await res.json()) as {
-                              data?: { id?: string };
-                            };
-                            const newId = json.data?.id;
-                            if (!newId) {
-                              window.alert("Failed to duplicate resource");
-                              return;
-                            }
-                            notify("success", "Resource duplicated");
-                            router.push(`/admin/resources/${newId}`);
-                          }}
-                        >
-                          Duplicate
-                        </Button>
-                        <Button asChild variant="outline" size="sm">
-                          <Link
                             href={`/admin/resources/${resource.id}`}
                             className="flex items-center gap-1"
                           >
@@ -686,20 +637,63 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                             <span>Edit</span>
                           </Link>
                         </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className={[
-                            "text-danger-600 hover:bg-danger-50 hover:text-danger-700",
-                            isPublished ? "border-danger-200" : "border-border-subtle",
-                          ].join(" ")}
-                          disabled={isRowLoading}
-                          onClick={() => setConfirmDeleteId(resource.id)}
-                        >
-                          <Trash2 className="mr-1 h-3.5 w-3.5" />
-                          Delete
-                        </Button>
+                        <Dropdown>
+                          <DropdownTrigger asChild>
+                            <Button variant="outline" size="sm" aria-label="More actions">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownTrigger>
+                          <DropdownMenu align="end">
+                            <DropdownItem asChild>
+                              <Link
+                                href={
+                                  isDraft
+                                    ? `/resources/${resource.slug}?preview=true`
+                                    : `/resources/${resource.slug}`
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                Preview
+                              </Link>
+                            </DropdownItem>
+                            <DropdownItem
+                              disabled={isRowLoading}
+                              onSelect={async () => {
+                                setRowLoadingId(resource.id);
+                                const res = await fetch(
+                                  `/api/admin/resources/${resource.id}/duplicate`,
+                                  { method: "POST" },
+                                );
+                                setRowLoadingId(null);
+                                if (!res.ok) {
+                                  window.alert("Failed to duplicate resource");
+                                  return;
+                                }
+                                const json = (await res.json()) as {
+                                  data?: { id?: string };
+                                };
+                                const newId = json.data?.id;
+                                if (!newId) {
+                                  window.alert("Failed to duplicate resource");
+                                  return;
+                                }
+                                notify("success", "Resource duplicated");
+                                router.push(`/admin/resources/${newId}`);
+                              }}
+                            >
+                              Duplicate
+                            </DropdownItem>
+                            <DropdownSeparator />
+                            <DropdownItem
+                              destructive
+                              disabled={isRowLoading}
+                              onSelect={() => setConfirmDeleteId(resource.id)}
+                            >
+                              Delete
+                            </DropdownItem>
+                          </DropdownMenu>
+                        </Dropdown>
                       </div>
                     )}
                   </td>
@@ -708,6 +702,7 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
             })}
           </tbody>
         </table>
+        </div>
       </div>
       {showBulkDeleteConfirm && hasSelection && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -802,4 +797,3 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
     </div>
   );
 }
-

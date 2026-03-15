@@ -10,7 +10,6 @@ export async function getActiveUsersLast7Days(): Promise<number> {
       userId: { not: null },
       createdAt: { gte: since },
     },
-    _count: { _all: true },
   });
 
   return rows.length;
@@ -24,9 +23,9 @@ export async function getTopViewedResources(limit = 10) {
       entity: "Resource",
       entityId: { not: null },
     },
-    _count: { _all: true },
+    _count: { entityId: true },
     orderBy: {
-      _count: { _all: "desc" },
+      _count: { entityId: "desc" },
     },
     take: limit,
   });
@@ -56,7 +55,7 @@ export async function getTopViewedResources(limit = 10) {
         resourceId: res.id,
         title: res.title,
         slug: res.slug,
-        viewCount: row._count._all,
+        viewCount: row._count.entityId ?? 0,
       };
     })
     .filter(Boolean) as {
@@ -97,4 +96,3 @@ export async function getConversionFunnel() {
     purchases,
   };
 }
-

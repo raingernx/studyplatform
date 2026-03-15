@@ -51,33 +51,39 @@ const ITEMS_PER_PAGE = 20;
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+type SearchParamValue = string | string[] | undefined;
+
 interface ResourcesPageProps {
-  searchParams: {
-    search?: string;
-    category?: string;
-    price?: string;
-    featured?: string;
-    tag?: string;
-    sort?: string;
-    page?: string;
-  };
+  searchParams?: Promise<Record<string, SearchParamValue>>;
+}
+
+function getSearchParamValue(value: SearchParamValue) {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return value;
 }
 
 export default async function ResourcesPage({ searchParams }: ResourcesPageProps) {
-  const resolvedParams =
-    typeof (searchParams as Promise<unknown>)?.then === "function"
-      ? await (searchParams as Promise<Record<string, string | undefined>>)
-      : (searchParams as Record<string, string | undefined>);
+  const resolvedParams = searchParams ? await searchParams : {};
 
   const {
-    search,
-    category,
-    price,
-    featured,
-    tag,
-    sort = "newest",
-    page: pageParam,
+    search: rawSearch,
+    category: rawCategory,
+    price: rawPrice,
+    featured: rawFeatured,
+    tag: rawTag,
+    sort: rawSort,
+    page: rawPage,
   } = resolvedParams;
+  const search = getSearchParamValue(rawSearch)?.trim();
+  const category = getSearchParamValue(rawCategory)?.trim();
+  const price = getSearchParamValue(rawPrice)?.trim();
+  const featured = getSearchParamValue(rawFeatured)?.trim();
+  const tag = getSearchParamValue(rawTag)?.trim();
+  const sort = getSearchParamValue(rawSort)?.trim() || "newest";
+  const pageParam = getSearchParamValue(rawPage)?.trim();
 
   const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
@@ -100,7 +106,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
 
   if (isDiscoverMode) {
     const [heroResult, categoriesWithCount, data] = await Promise.all([
-      getHeroConfig(),
+      getHeroConfig({ userId }),
       getDiscoverCategories(),
       getDiscoverData(),
     ]);
@@ -171,8 +177,9 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
           {/* ════════════════════════════════════════════════════════════════ */}
           {/* DISCOVER MODE — curated sections, no sidebar                    */}
           {/* ════════════════════════════════════════════════════════════════ */}
-          {isDiscoverMode && discoverData && (
-            <div className="space-y-12">
+          <div className={isDiscoverMode ? "space-y-12" : undefined}>
+            {isDiscoverMode && discoverData && (
+              <>
 
               {/* Browse by category */}
               {discoverCategoriesWithCount.length > 0 && (
@@ -331,58 +338,59 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
               <CreatorCTA />
               <BlogSection />
               <EmailSignup />
-            </div>
-          )}
+              </>
+            )}
 
           {/* ════════════════════════════════════════════════════════════════ */}
           {/* CATEGORY MODE — filter sidebar + paginated grid                 */}
           {/* ════════════════════════════════════════════════════════════════ */}
-          {!isDiscoverMode && (
-            <section>
-              <div className="flex gap-8">
-                {/* Sidebar filters */}
-                <Suspense fallback={<SidebarFallback />}>
-                  <FilterSidebar categories={categories as FilterCategory[]} />
-                </Suspense>
-
-                {/* Sort bar + grid */}
-                <div className="min-w-0 flex-1 space-y-5">
-                  <Suspense fallback={<FilterBarFallback />}>
-                    <FilterBar total={total} />
+            {!isDiscoverMode && (
+              <section>
+                <div className="flex gap-8">
+                  {/* Sidebar filters */}
+                  <Suspense fallback={<SidebarFallback />}>
+                    <FilterSidebar categories={categories as FilterCategory[]} />
                   </Suspense>
 
-                  {search?.trim() && (
-                    <p className="text-[13px] text-zinc-500">
-                      {total === 0 ? (
-                        <>
-                          No results for{" "}
-                          <strong className="text-zinc-900">
-                            &ldquo;{search.trim()}&rdquo;
-                          </strong>
-                          .
-                        </>
-                      ) : (
-                        <>
-                          Showing results for{" "}
-                          <strong className="text-zinc-900">
-                            &ldquo;{search.trim()}&rdquo;
-                          </strong>
-                        </>
-                      )}
-                    </p>
-                  )}
+                  {/* Sort bar + grid */}
+                  <div className="min-w-0 flex-1 space-y-5">
+                    <Suspense fallback={<FilterBarFallback />}>
+                      <FilterBar total={total} />
+                    </Suspense>
 
-                  <ResourceGrid
-                    resources={resources}
-                    ownedIds={Array.from(ownedIds)}
-                    total={total}
-                    page={safePage}
-                    totalPages={totalPages}
-                  />
+                    {search?.trim() && (
+                      <p className="text-[13px] text-zinc-500">
+                        {total === 0 ? (
+                          <>
+                            No results for{" "}
+                            <strong className="text-zinc-900">
+                              &ldquo;{search.trim()}&rdquo;
+                            </strong>
+                            .
+                          </>
+                        ) : (
+                          <>
+                            Showing results for{" "}
+                            <strong className="text-zinc-900">
+                              &ldquo;{search.trim()}&rdquo;
+                            </strong>
+                          </>
+                        )}
+                      </p>
+                    )}
+
+                    <ResourceGrid
+                      resources={resources}
+                      ownedIds={Array.from(ownedIds)}
+                      total={total}
+                      page={safePage}
+                      totalPages={totalPages}
+                    />
+                  </div>
                 </div>
-              </div>
-            </section>
-          )}
+              </section>
+            )}
+          </div>
 
         </div>
       </main>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -23,7 +23,7 @@ type Timezone =
   | "America/New_York";
 type StorageProvider = "local" | "s3";
 type Language = "th" | "en";
-type PaymentProvider = "stripe" | "omise" | "promptpay";
+type PaymentProvider = "stripe" | "promptpay";
 
 interface AdminSettingsState {
   // General
@@ -103,54 +103,9 @@ const DEFAULT_SETTINGS: AdminSettingsState = {
   seoTwitterCardImageUrl: "",
 };
 
-const DEFAULT_HERO = {
-  title: "Discover beautiful study resources",
-  subtitle:
-    "Worksheets, flashcards, and study guides from educators and creators.",
-  primaryCtaText: "Browse resources",
-  primaryCtaLink: "/resources",
-  secondaryCtaText: "Start selling",
-  secondaryCtaLink: "/membership",
-  badgeText: "Trusted by 12,000+ educators",
-  imageUrl: "",
-  mediaUrl: "",
-  mediaType: "" as "" | "image" | "gif",
-};
-
-const HERO_MEDIA_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
-const HERO_MEDIA_ACCEPT = "image/png,image/jpeg,image/webp,image/gif";
-
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<AdminSettingsState>(DEFAULT_SETTINGS);
-  const [heroForm, setHeroForm] = useState(DEFAULT_HERO);
-  const [heroLoading, setHeroLoading] = useState(true);
-  const [heroSaving, setHeroSaving] = useState(false);
-  const [heroMediaUploading, setHeroMediaUploading] = useState(false);
-  const heroFileInputRef = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetch("/api/admin/settings/homepage-hero")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data) {
-          setHeroForm({
-            title: data.title ?? DEFAULT_HERO.title,
-            subtitle: data.subtitle ?? DEFAULT_HERO.subtitle,
-            primaryCtaText: data.primaryCtaText ?? DEFAULT_HERO.primaryCtaText,
-            primaryCtaLink: data.primaryCtaLink ?? DEFAULT_HERO.primaryCtaLink,
-            secondaryCtaText: data.secondaryCtaText ?? DEFAULT_HERO.secondaryCtaText,
-            secondaryCtaLink: data.secondaryCtaLink ?? DEFAULT_HERO.secondaryCtaLink,
-            badgeText: data.badgeText ?? DEFAULT_HERO.badgeText,
-            imageUrl: data.imageUrl ?? "",
-            mediaUrl: data.mediaUrl ?? "",
-            mediaType: (data.mediaType ?? "") as "" | "image" | "gif",
-          });
-        }
-      })
-      .catch(() => toast.error("Failed to load homepage hero"))
-      .finally(() => setHeroLoading(false));
-  }, [toast]);
 
   function handleFieldChange<K extends keyof AdminSettingsState>(
     key: K,
@@ -195,86 +150,6 @@ export default function AdminSettingsPage() {
 
   function handleReset() {
     setSettings(DEFAULT_SETTINGS);
-  }
-
-  async function handleSaveHero() {
-    if (
-      !heroForm.title.trim() ||
-      !heroForm.subtitle.trim() ||
-      !heroForm.primaryCtaText.trim() ||
-      !heroForm.primaryCtaLink.trim()
-    ) {
-      toast.error("Please fill in title, subtitle, primary CTA text and link.");
-      return;
-    }
-    setHeroSaving(true);
-    try {
-      const payload = {
-        ...heroForm,
-        mediaType:
-          heroForm.mediaType === "image" || heroForm.mediaType === "gif"
-            ? heroForm.mediaType
-            : undefined,
-      };
-      const res = await fetch("/api/admin/settings/homepage-hero", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        toast.error(data.error ?? "Failed to save homepage hero");
-        return;
-      }
-      toast.success("Homepage hero saved.");
-    } catch {
-      toast.error("Failed to save homepage hero");
-    } finally {
-      setHeroSaving(false);
-    }
-  }
-
-  async function handleHeroMediaUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (file.size > HERO_MEDIA_MAX_BYTES) {
-      toast.error("File too large. Maximum size is 5 MB.");
-      return;
-    }
-    setHeroMediaUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/admin/upload/image", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error ?? "Upload failed.");
-        return;
-      }
-      const mediaType = file.type === "image/gif" ? "gif" : "image";
-      setHeroForm((prev) => ({
-        ...prev,
-        mediaUrl: data.url ?? "",
-        mediaType,
-      }));
-      toast.success("Hero media uploaded. Click Save to apply.");
-    } catch {
-      toast.error("Upload failed.");
-    } finally {
-      setHeroMediaUploading(false);
-    }
-  }
-
-  function handleRemoveHeroMedia() {
-    setHeroForm((prev) => ({
-      ...prev,
-      mediaUrl: "",
-      mediaType: "",
-    }));
   }
 
   function handleSave() {
@@ -561,7 +436,6 @@ export default function AdminSettingsPage() {
               onChange={handleInputChange}
             >
               <option value="stripe">Stripe</option>
-              <option value="omise">Omise</option>
               <option value="promptpay">PromptPay (Manual)</option>
             </Select>
           </div>
@@ -653,11 +527,6 @@ export default function AdminSettingsPage() {
             </div>
           )}
 
-          {settings.paymentProvider === "omise" && (
-            <p className="text-xs text-text-muted">
-              Omise configuration coming soon.
-            </p>
-          )}
         </div>
       </Card>
 
@@ -902,246 +771,6 @@ export default function AdminSettingsPage() {
         </div>
       </Card>
 
-      {/* Homepage */}
-      <Card className="space-y-6 p-6">
-        <div>
-          <h2 className="text-sm font-semibold text-text-primary">Homepage</h2>
-          <p className="mt-1 text-meta text-text-secondary">
-            Customize the hero section shown on the marketplace homepage.
-          </p>
-        </div>
-        {heroLoading ? (
-          <p className="text-sm text-text-muted">Loading hero…</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:col-span-2">
-              <label
-                htmlFor="heroTitle"
-                className="text-sm font-medium text-text-primary"
-              >
-                Hero Title
-              </label>
-              <Input
-                id="heroTitle"
-                value={heroForm.title}
-                onChange={(e) =>
-                  setHeroForm((prev) => ({ ...prev, title: e.target.value }))
-                }
-                placeholder="Discover beautiful study resources"
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label
-                htmlFor="heroSubtitle"
-                className="text-sm font-medium text-text-primary"
-              >
-                Hero Subtitle
-              </label>
-              <Textarea
-                id="heroSubtitle"
-                rows={2}
-                value={heroForm.subtitle}
-                onChange={(e) =>
-                  setHeroForm((prev) => ({ ...prev, subtitle: e.target.value }))
-                }
-                placeholder="Worksheets, flashcards, and study guides…"
-              />
-            </div>
-
-            {/* Hero media preview */}
-            <div className="space-y-2 sm:col-span-2">
-              <span className="text-sm font-medium text-text-primary">
-                Preview
-              </span>
-              <div className="flex min-h-[140px] items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                {heroForm.mediaUrl ? (
-                  <div className="relative max-h-40 w-full max-w-md overflow-hidden rounded-md bg-zinc-200">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={heroForm.mediaUrl}
-                      alt="Hero preview"
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                ) : heroForm.imageUrl?.trim() ? (
-                  <div className="relative max-h-40 w-full max-w-md overflow-hidden rounded-md bg-zinc-200">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={heroForm.imageUrl}
-                      alt="Hero preview (URL)"
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                ) : (
-                  <p className="text-sm text-text-muted">
-                    No hero image — default artwork will be used on the homepage.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Hero media upload */}
-            <div className="space-y-2 sm:col-span-2">
-              <span className="text-sm font-medium text-text-primary">
-                Hero image or GIF
-              </span>
-              <p className="text-xs text-text-muted">
-                PNG, JPG, JPEG, WEBP, GIF. Max 5 MB. Recommended width 1600–2000px.
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  ref={heroFileInputRef}
-                  type="file"
-                  accept={HERO_MEDIA_ACCEPT}
-                  className="hidden"
-                  onChange={handleHeroMediaUpload}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => heroFileInputRef.current?.click()}
-                  disabled={heroMediaUploading}
-                >
-                  {heroMediaUploading ? "Uploading…" : "Upload image or GIF"}
-                </Button>
-                {heroForm.mediaUrl ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRemoveHeroMedia}
-                    disabled={heroMediaUploading}
-                  >
-                    Remove
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label
-                htmlFor="primaryCtaText"
-                className="text-sm font-medium text-text-primary"
-              >
-                Primary CTA Text
-              </label>
-              <Input
-                id="primaryCtaText"
-                value={heroForm.primaryCtaText}
-                onChange={(e) =>
-                  setHeroForm((prev) => ({
-                    ...prev,
-                    primaryCtaText: e.target.value,
-                  }))
-                }
-                placeholder="Browse resources"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label
-                htmlFor="primaryCtaLink"
-                className="text-sm font-medium text-text-primary"
-              >
-                Primary CTA Link
-              </label>
-              <Input
-                id="primaryCtaLink"
-                value={heroForm.primaryCtaLink}
-                onChange={(e) =>
-                  setHeroForm((prev) => ({
-                    ...prev,
-                    primaryCtaLink: e.target.value,
-                  }))
-                }
-                placeholder="/resources"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label
-                htmlFor="secondaryCtaText"
-                className="text-sm font-medium text-text-primary"
-              >
-                Secondary CTA Text
-              </label>
-              <Input
-                id="secondaryCtaText"
-                value={heroForm.secondaryCtaText}
-                onChange={(e) =>
-                  setHeroForm((prev) => ({
-                    ...prev,
-                    secondaryCtaText: e.target.value,
-                  }))
-                }
-                placeholder="Start selling"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label
-                htmlFor="secondaryCtaLink"
-                className="text-sm font-medium text-text-primary"
-              >
-                Secondary CTA Link
-              </label>
-              <Input
-                id="secondaryCtaLink"
-                value={heroForm.secondaryCtaLink}
-                onChange={(e) =>
-                  setHeroForm((prev) => ({
-                    ...prev,
-                    secondaryCtaLink: e.target.value,
-                  }))
-                }
-                placeholder="/membership"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label
-                htmlFor="badgeText"
-                className="text-sm font-medium text-text-primary"
-              >
-                Badge Text (optional)
-              </label>
-              <Input
-                id="badgeText"
-                value={heroForm.badgeText}
-                onChange={(e) =>
-                  setHeroForm((prev) => ({ ...prev, badgeText: e.target.value }))
-                }
-                placeholder="Trusted by 12,000+ educators"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label
-                htmlFor="heroImageUrl"
-                className="text-sm font-medium text-text-primary"
-              >
-                Hero Image URL (optional)
-              </label>
-              <Input
-                id="heroImageUrl"
-                value={heroForm.imageUrl}
-                onChange={(e) =>
-                  setHeroForm((prev) => ({ ...prev, imageUrl: e.target.value }))
-                }
-                placeholder="https://…"
-              />
-            </div>
-          </div>
-        )}
-        {!heroLoading && (
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              onClick={handleSaveHero}
-              disabled={heroSaving}
-            >
-              {heroSaving ? "Saving…" : "Save"}
-            </Button>
-          </div>
-        )}
-      </Card>
-
       {/* Actions */}
       <div className="flex items-center justify-end gap-3">
         <Button
@@ -1158,4 +787,3 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
-
