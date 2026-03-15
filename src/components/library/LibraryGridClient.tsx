@@ -2,9 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { ResourceCard, type ResourceCardResource } from "@/components/resources/ResourceCard";
-import type { LibraryResource } from "./LibraryResourceCard";
+import { LIBRARY_GRID_CLASSES } from "./LibraryGrid";
 
 type FilterKey = "all" | "pdf" | "worksheets" | "templates";
+
+export interface LibraryResource {
+  id: string;
+  slug: string;
+  title: string;
+  authorName?: string | null;
+  previewUrl?: string | null;
+  downloadedAt: Date;
+}
 
 export interface LibraryItemClient extends LibraryResource {
   type: "PDF" | "DOCUMENT";
@@ -18,6 +27,7 @@ function toCardResource(item: LibraryItemClient): ResourceCardResource {
     title: item.title,
     authorName: item.authorName,
     previewUrl: item.previewUrl,
+    downloadedAt: item.downloadedAt,
     description: "",
     tags: [],
     isFree: true,
@@ -116,7 +126,7 @@ export function LibraryGridClient({ items }: LibraryGridClientProps) {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 lg:grid-cols-3">
+      <div className={LIBRARY_GRID_CLASSES}>
         {filteredItems.map((item) => (
           <ResourceCard
             key={item.id + item.slug}

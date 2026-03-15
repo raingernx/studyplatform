@@ -1,7 +1,16 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { CheckCircle, FileText, Loader2, Trash2, Upload, X, XCircle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  CheckCircle,
+  FileText,
+  Loader2,
+  Trash2,
+  Upload,
+  X,
+  XCircle,
+} from "lucide-react";
+import { formatFileSize } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -14,17 +23,16 @@ interface Props {
   initialFileSize?: number | null;
   /** Optional callback when the current stored file should be removed. */
   onRemoveCurrentFile?: () => void;
+  /** When provided, will be called to lazily ensure a resource id exists before uploading (e.g. create draft). */
+  onEnsureResourceId?: () => Promise<string | undefined>;
 }
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+type UploadedFile = {
+  name: string;
+  size: number | null;
+} | null;
 
 const ACCEPTED_TYPES = [
   "application/pdf",
@@ -50,19 +58,27 @@ export function FileUploadWidget({
   initialFileName,
   initialFileSize,
   onRemoveCurrentFile,
+  onEnsureResourceId,
 }: Props) {
   // ── State ──────────────────────────────────────────────────────────────────
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [currentFileName, setCurrentFileName] = useState<string | null>(
-    initialFileName ?? null
-  );
-  const [currentFileSize, setCurrentFileSize] = useState<number | null>(
-    initialFileSize ?? null
-  );
+  const [uploadedFile, setUploadedFile] = useState<UploadedFile>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Keep uploadedFile in sync with latest props (initialFileName / initialFileSize)
+  useEffect(() => {
+    if (initialFileName) {
+      setUploadedFile({
+        name: initialFileName,
+        size: initialFileSize ?? null,
+      });
+    } else {
+      setUploadedFile(null);
+    }
+  }, [initialFileName, initialFileSize]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
@@ -73,8 +89,28 @@ export function FileUploadWidget({
     setErrorMsg(null);
   }
 
+  function handleFileDrop(files: FileList | File[]) {
+    const fileArray = Array.from(files as ArrayLike<File>);
+    const file = fileArray[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setStatus("idle");
+    setErrorMsg(null);
+  }
+
   async function handleUpload() {
     if (!selectedFile) return;
+
+    let targetResourceId: string | undefined = resourceId;
+
+    if (!targetResourceId && onEnsureResourceId) {
+      targetResourceId = await onEnsureResourceId();
+    }
+
+    if (!targetResourceId) {
+      setErrorMsg("Save or create the resource before uploading a file.");
+      return;
+    }
 
     // Client-side size guard
     if (selectedFile.size > MAX_MB * 1024 * 1024) {
@@ -85,11 +121,9 @@ export function FileUploadWidget({
     setStatus("uploading");
     setErrorMsg(null);
 
-    if (!resourceId) return;
-
     try {
       const body = new FormData();
-      body.append("resourceId", resourceId);
+      body.append("resourceId", targetResourceId);
       body.append("file", selectedFile);
 
       const res = await fetch("/api/admin/resources/upload", {
@@ -103,8 +137,10 @@ export function FileUploadWidget({
         throw new Error(json?.error ?? `Upload failed (${res.status})`);
       }
 
-      setCurrentFileName(json.fileName ?? selectedFile.name);
-      setCurrentFileSize(json.fileSize ?? selectedFile.size);
+      setUploadedFile({
+        name: (json.fileName as string | undefined) ?? selectedFile.name,
+        size: (json.fileSize as number | undefined) ?? selectedFile.size,
+      });
       setSelectedFile(null);
       setStatus("success");
 
@@ -113,7 +149,7 @@ export function FileUploadWidget({
     } catch (err: unknown) {
       setStatus("error");
       setErrorMsg(
-        err instanceof Error ? err.message : "Upload failed. Please try again."
+        err instanceof Error ? err.message : "Upload failed. Please try again.",
       );
     }
   }
@@ -125,111 +161,157 @@ export function FileUploadWidget({
     if (inputRef.current) inputRef.current.value = "";
   }
 
+  async function handleRemoveExisting() {
+    setStatus("idle");
+    setErrorMsg(null);
+    setSelectedFile(null);
+    setUploadedFile(null);
+    if (inputRef.current) inputRef.current.value = "";
+
+    if (onRemoveCurrentFile) {
+      await onRemoveCurrentFile();
+    }
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="w-full min-w-0 space-y-4">
-
-      {/* ── Current file indicator ── */}
-      {currentFileName ? (
-        <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50">
-            <FileText className="h-4 w-4 text-blue-500" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-medium text-zinc-800">
-              {currentFileName}
-            </p>
-            {currentFileSize !== null && (
-              <p className="text-[11px] text-zinc-400">
-                {formatBytes(currentFileSize)}
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            aria-label="Remove file"
-            onClick={onRemoveCurrentFile}
-            className="ml-auto inline-flex h-6 w-6 items-center justify-center rounded-full text-zinc-500 transition hover:bg-surface-100 hover:text-red-600"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      ) : (
-        <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-4 text-center">
-          <p className="text-[13px] text-zinc-400">No file uploaded yet.</p>
-        </div>
-      )}
-
-      {/* ── File picker ── */}
-      <div>
-        <label className="block text-[12px] font-medium text-zinc-500 mb-1.5">
-          {currentFileName ? "Replace file" : "Upload file"}
-          <span className="ml-1.5 text-zinc-400 font-normal">
-            {resourceId
-              ? `(PDF, DOCX, XLSX, ZIP, images — max ${MAX_MB} MB)`
-              : "Save the resource first to upload a file."}
-          </span>
-        </label>
-
-        <input
-          ref={inputRef}
-          type="file"
-          accept={ACCEPTED_TYPES}
-          onChange={handleFileChange}
-          disabled={!resourceId}
-          className="block w-full rounded-xl border border-zinc-200 bg-white px-3 py-2
-                     text-[13px] text-zinc-700 shadow-sm
-                     file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50
-                     file:px-3 file:py-1 file:text-[12px] file:font-semibold file:text-blue-700
-                     hover:file:bg-blue-100
-                     focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-      </div>
-
-      {/* ── Selected file preview + actions ── */}
-      {selectedFile && (
-        <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
-          <FileText className="h-4 w-4 shrink-0 text-blue-400" />
-          <p className="min-w-0 flex-1 truncate text-[13px] text-blue-700">
-            {selectedFile.name}{" "}
-            <span className="text-blue-400">
-              ({formatBytes(selectedFile.size)})
+      {uploadedFile ? (
+        <>
+          <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+              <FileText className="h-4 w-4 text-blue-500" />
             </span>
-          </p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-medium text-zinc-800 flex items-center gap-2">
+                <span className="truncate">{uploadedFile.name}</span>
+                {uploadedFile.name && (
+                  <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-600">
+                    {uploadedFile.name.split(".").pop()?.toUpperCase()}
+                  </span>
+                )}
+              </p>
+              {uploadedFile.size !== null && (
+                <p className="text-[11px] text-zinc-400">
+                  {formatFileSize(uploadedFile.size)}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              aria-label="Remove file"
+              onClick={handleRemoveExisting}
+              className="ml-auto inline-flex h-6 w-6 items-center justify-center rounded-full text-zinc-500 transition hover:bg-surface-100 hover:text-red-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="inline-flex items-center gap-2 rounded-xl border border-dashed border-border-subtle px-4 py-2 text-[13px] font-medium text-text-secondary transition hover:border-brand-400 hover:text-brand-600"
+            >
+              <Upload className="h-4 w-4" />
+              Replace file
+            </button>
+            <input
+              ref={inputRef}
+              type="file"
+              accept={ACCEPTED_TYPES}
+              onChange={handleFileChange}
+              disabled={!resourceId}
+              className="sr-only"
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <label
+            onDragOver={(e) => {
+              e.preventDefault();
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleFileDrop(e.dataTransfer.files);
+                e.dataTransfer.clearData();
+              }
+            }}
+            className={[
+              "flex min-h-[120px] cursor-pointer flex-col items-center justify-center",
+              "rounded-xl border border-dashed border-border-subtle px-4 py-6",
+              "bg-white text-center text-[13px] text-text-primary transition",
+              resourceId || onEnsureResourceId
+                ? "hover:border-brand-400 hover:bg-surface-50"
+                : "cursor-not-allowed opacity-60",
+            ].join(" ")}
+          >
+            <Upload className="mb-2 h-5 w-5 text-text-muted" />
+            <p className="font-medium text-text-primary">
+              Drag & drop file here, or click to browse
+            </p>
+            <p className="mt-1 text-[11px] text-text-secondary">
+              PDF, DOCX, XLSX, ZIP — up to {MAX_MB} MB
+            </p>
+            <p className="mt-0.5 text-[11px] text-text-secondary">
+              Max file size: {MAX_MB} MB
+            </p>
+            <input
+              ref={inputRef}
+              type="file"
+              accept={ACCEPTED_TYPES}
+              onChange={handleFileChange}
+              disabled={!resourceId && !onEnsureResourceId}
+              className="sr-only"
+            />
+          </label>
+
+          {selectedFile && (
+            <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+              <FileText className="h-4 w-4 shrink-0 text-blue-400" />
+              <p className="min-w-0 flex-1 truncate text-[13px] text-blue-700">
+                {selectedFile.name}{" "}
+                <span className="text-blue-400">
+                  ({formatFileSize(selectedFile.size)})
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={handleClear}
+                aria-label="Remove selected file"
+                className="shrink-0 rounded-lg p-1 text-blue-400 transition hover:bg-blue-100 hover:text-blue-600"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
           <button
             type="button"
-            onClick={handleClear}
-            aria-label="Remove selected file"
-            className="shrink-0 rounded-lg p-1 text-blue-400 transition hover:bg-blue-100 hover:text-blue-600"
+            onClick={handleUpload}
+            disabled={!resourceId || !selectedFile || status === "uploading"}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl
+                     bg-blue-600 px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm
+                     transition hover:bg-blue-700 active:scale-[0.98]
+                     disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            {status === "uploading" ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Uploading…
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4" />
+                Upload file
+              </>
+            )}
           </button>
-        </div>
+        </>
       )}
-
-      {/* ── Upload button ── */}
-      <button
-        type="button"
-        onClick={handleUpload}
-        disabled={!resourceId || !selectedFile || status === "uploading"}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl
-                   bg-blue-600 px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm
-                   transition hover:bg-blue-700 active:scale-[0.98]
-                   disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {status === "uploading" ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Uploading…
-          </>
-        ) : (
-          <>
-            <Upload className="h-4 w-4" />
-            {currentFileName ? "Replace file" : "Upload file"}
-          </>
-        )}
-      </button>
 
       {/* ── Success feedback ── */}
       {status === "success" && (

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { logActivity } from "@/lib/activity";
 
 /**
  * POST /api/checkout
@@ -179,7 +180,19 @@ export async function POST(req: Request) {
       data: { stripeSessionId: checkoutSession.id },
     });
 
-    // ── 9. Return checkout URL ─────────────────────────────────────────────────
+    // ── 9. Log checkout intent (optional) ─────────────────────────────────────
+    logActivity({
+      userId: session.user.id,
+      action: "PURCHASE_CHECKOUT_STARTED",
+      entity: "Resource",
+      entityId: resourceId,
+      metadata: {
+        price: resource.price,
+        currency: "usd",
+      },
+    }).catch(() => {});
+
+    // ── 10. Return checkout URL ────────────────────────────────────────────────
     return NextResponse.json({ data: { url: checkoutSession.url } });
   } catch (err) {
     console.error("[CHECKOUT_POST]", err);

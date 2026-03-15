@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/activity";
+import { storage } from "@/lib/storage";
+import { checkRateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 import { createReadStream, existsSync } from "fs";
 import { stat } from "fs/promises";
-import path from "path";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-/** Must match the upload route. */
-const UPLOAD_DIR = path.join(process.cwd(), "private-uploads");
 
 /** External hosts allowed for fileUrl redirects. */
 const ALLOWED_DOWNLOAD_HOSTS = [
@@ -47,8 +47,25 @@ type Params = { params: { resourceId: string } };
  *   404  Resource not found, or no file attached
  *   500  Unexpected server error
  */
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   try {
+    // ── 0. Rate limit — 10 downloads / minute per IP ──────────────────────
+    const ip = getClientIp(req);
+    const rl = await checkRateLimit(LIMITS.download, ip);
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many download requests. Please try again shortly." },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit":     String(rl.limit),
+            "X-RateLimit-Remaining": String(rl.remaining),
+            "Retry-After":           String(Math.ceil((rl.reset - Date.now()) / 1000)),
+          },
+        }
+      );
+    }
+
     // ── 1. Require authentication ─────────────────────────────────────────
     const session = await getServerSession(authOptions);
 
@@ -102,7 +119,13 @@ export async function GET(_req: Request, { params }: Params) {
       );
     }
 
-    // ── 5. Increment download counter (fire-and-forget, non-blocking) ─────
+    // ── 5. Observability (fire-and-forget — must not block file delivery) ────
+    //
+    // Three independent writes are queued but not awaited.  A failure in any
+    // one of them is logged to the server console and swallowed; the download
+    // response is already in-flight by the time these settle.
+
+    // 5a. Increment the aggregate counter used for sorting / ordering.
     prisma.resource
       .update({
         where: { id: resourceId },
@@ -112,20 +135,75 @@ export async function GET(_req: Request, { params }: Params) {
         console.error("[DOWNLOAD] Failed to increment downloadCount:", err);
       });
 
+    // 5b. Write a granular DownloadEvent row for analytics / trend charts.
+    prisma.downloadEvent
+      .create({
+        data: {
+          resourceId,
+          userId: session.user.id ?? null,
+          ip:     getClientIp(req),
+        },
+      })
+      .catch((err) => {
+        console.error("[DOWNLOAD] Failed to record DownloadEvent:", err);
+      });
+
+    // 5c. Activity log for the user's download timeline.
+    logActivity({
+      userId: session.user.id,
+      action: "RESOURCE_DOWNLOAD",
+      entity: "Resource",
+      entityId: resourceId,
+    }).catch(() => {});
+
     // ── 6. Deliver the file ───────────────────────────────────────────────
 
-    // ── Path A: locally stored file → stream from disk ────────────────────
+    // ── Path A: file stored via StorageProvider ───────────────────────────
     if (resource.fileKey) {
-      const filePath = path.join(UPLOAD_DIR, resource.fileKey);
-
-      // Safety: verify the resolved path is still inside UPLOAD_DIR
-      // (guards against path-traversal if fileKey were somehow malformed)
-      if (!filePath.startsWith(UPLOAD_DIR + path.sep)) {
+      // Validate fileKey before passing to the storage provider.
+      // Guards against path-traversal attacks even if the DB row were
+      // somehow modified with a malicious key value.
+      if (!/^[a-zA-Z0-9._-]+$/.test(resource.fileKey)) {
         return NextResponse.json(
           { error: "Invalid file reference." },
           { status: 400 }
         );
       }
+
+      // Ask the active provider for a download URL.
+      //
+      //  • R2Provider  → returns a presigned "https://" URL valid for 15 min.
+      //                   We 307-redirect the client; Cloudflare's edge serves
+      //                   the file directly — the Next.js server is not in the
+      //                   data path, so large files never buffer in memory.
+      //
+      //  • LocalStorageProvider → returns the absolute filesystem path
+      //                   (no "https://" prefix).  We fall through to the
+      //                   disk-streaming branch below, which is unchanged.
+      const fileSource = await storage.getSignedUrl(resource.fileKey);
+
+      // ── Cloud path: redirect to presigned URL ─────────────────────────
+      if (fileSource.startsWith("https://") || fileSource.startsWith("http://")) {
+        const contentType = resource.mimeType ?? "application/octet-stream";
+        const downloadName = resource.fileName ?? resource.fileKey;
+        const safeFilename = downloadName.replace(/[^\w.\-]/g, "_");
+
+        // 307 Temporary Redirect — the presigned URL changes on every
+        // request, so this response must not be cached by the browser.
+        return NextResponse.redirect(fileSource, {
+          status: 307,
+          headers: {
+            // Hint the browser to treat the redirect destination as a
+            // file download with the correct name.
+            "Content-Disposition": `attachment; filename="${safeFilename}"`,
+            "Content-Type": contentType,
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+          },
+        });
+      }
+
+      // ── Local path: stream from disk (development fallback) ──────────
+      const filePath = fileSource; // absolute filesystem path
 
       if (!existsSync(filePath)) {
         console.error("[DOWNLOAD] File missing on disk:", filePath);

@@ -1,27 +1,27 @@
-import { withAuth, NextRequestWithAuth } from "next-auth/middleware";
+import createMiddleware from "next-intl/middleware";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { withAuth, NextRequestWithAuth } from "next-auth/middleware";
+import { routing } from "./src/i18n/routing";
+import { locales, defaultLocale } from "./src/i18n/config";
 
-/**
- * Route protection middleware.
- *
- * Protected matchers (see `config.matcher` below):
- *   /dashboard  /dashboard/*  — requires any authenticated user
- *   /admin      /admin/*      — requires authenticated user with role === "ADMIN"
- *
- * `withAuth` reads the JWT from the session cookie at the edge (no DB round-trip).
- * The `authorized` callback returning `false` triggers a redirect to `pages.signIn`.
- * An additional check inside the middleware function handles admin-only routes.
- */
-export default withAuth(
+// next-intl locale middleware
+const intlMiddleware = createMiddleware(routing);
+
+// Auth protection middleware (preserves existing NextAuth logic)
+const authMiddleware = withAuth(
   function middleware(req: NextRequestWithAuth) {
     const { token } = req.nextauth;
     const { pathname } = req.nextUrl;
 
-    // Admin section — require ADMIN role
-    if (pathname.startsWith("/admin") && token?.role !== "ADMIN") {
-      // Redirect non-admins to their dashboard instead of a blank 403
+    // Admin section — require ADMIN role (matches locale-prefixed paths)
+    const isAdminPath = locales.some((locale) =>
+      pathname.startsWith(`/${locale}/admin`)
+    );
+
+    if (isAdminPath && token?.role !== "ADMIN") {
       const url = req.nextUrl.clone();
-      url.pathname = "/dashboard";
+      url.pathname = `/${defaultLocale}/dashboard`;
       return NextResponse.redirect(url);
     }
 
@@ -29,27 +29,57 @@ export default withAuth(
   },
   {
     callbacks: {
-      /**
-       * Return true  → allow the request through (then the middleware fn runs).
-       * Return false → redirect to `pages.signIn` automatically.
-       */
       authorized: ({ token }) => !!token,
     },
     pages: {
+      // next-intl will redirect this to /{defaultLocale}/auth/login automatically
       signIn: "/auth/login",
     },
   }
 );
 
-/**
- * Only run middleware on these route prefixes.
- * Static files, API routes, and public pages are deliberately excluded.
- */
+export default function middleware(req: NextRequestWithAuth) {
+  const { pathname } = req.nextUrl;
+
+  // ── Backwards-compat redirects for legacy non-localized paths ──────────────
+  // These paths no longer have route files; redirect explicitly to the
+  // canonical locale-prefixed equivalents so bookmarks and existing links work.
+  const LEGACY_PREFIXES = ["/dashboard", "/admin", "/auth"];
+  const isLegacyPath = LEGACY_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+
+  if (isLegacyPath) {
+    const url = req.nextUrl.clone();
+    url.pathname = `/${defaultLocale}${pathname}`;
+    return NextResponse.redirect(url, { status: 301 });
+  }
+
+  // ── Let next-intl handle locale detection & redirects ──────────────────────
+  const intlResponse = intlMiddleware(req as unknown as NextRequest);
+
+  const hasRedirect =
+    intlResponse.headers.get("Location") !== null ||
+    intlResponse.headers.get("x-middleware-rewrite") !== null;
+
+  if (hasRedirect) {
+    return intlResponse;
+  }
+
+  // ── Apply auth guard on locale-prefixed protected routes ───────────────────
+  const isProtected = locales.some(
+    (locale) =>
+      pathname.startsWith(`/${locale}/dashboard`) ||
+      pathname.startsWith(`/${locale}/admin`)
+  );
+
+  if (isProtected) {
+    return (authMiddleware as any)(req);
+  }
+
+  return intlResponse;
+}
+
 export const config = {
-  matcher: [
-    "/dashboard",
-    "/dashboard/:path*",
-    "/admin",
-    "/admin/:path*",
-  ],
+  matcher: ["/((?!api|_next|.*\\..*).*)"],
 };

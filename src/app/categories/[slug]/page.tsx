@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { ResourceGrid } from "@/components/resources/ResourceGrid";
+import { ResourceGrid, RESOURCE_GRID_CLASSES } from "@/components/resources/ResourceGrid";
 import { ResourceCardSkeleton } from "@/components/resources/ResourceCard";
 import { Badge } from "@/components/ui/Badge";
 import { getBaseUrl } from "@/lib/api";
@@ -39,7 +38,7 @@ const CATEGORY_META: Record<
 };
 
 interface CategoryPageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 async function getCategoryResources(slug: string) {
@@ -57,15 +56,16 @@ async function getCategoryResources(slug: string) {
 }
 
 export async function generateMetadata({ params }: CategoryPageProps) {
-  const name = params.slug.charAt(0).toUpperCase() + params.slug.slice(1);
+  const { slug } = await params;
+  const name = slug.charAt(0).toUpperCase() + slug.slice(1);
   return {
     title: `${name} Resources`,
-    description: CATEGORY_META[params.slug]?.description,
+    description: CATEGORY_META[slug]?.description,
   };
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const { slug } = params;
+  const { slug } = await params;
   const meta = CATEGORY_META[slug] ?? {
     emoji: "📄",
     color: "from-slate-600 to-slate-800",
@@ -108,7 +108,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           </div>
 
           <div className="mt-6 flex items-center gap-3">
-            <Badge variant="blue" className="bg-white/20 text-white ring-white/20">
+            <Badge variant="secondary" className="bg-white/20 text-white ring-white/20">
               <BookOpen className="mr-1.5 h-3 w-3" />
               {total} resource{total !== 1 ? "s" : ""}
             </Badge>
@@ -121,7 +121,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         <div className="mx-auto max-w-7xl">
           <Suspense
             fallback={
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className={RESOURCE_GRID_CLASSES}>
                 {Array.from({ length: 8 }).map((_, i) => (
                   <ResourceCardSkeleton key={i} />
                 ))}
@@ -137,8 +137,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           </Suspense>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

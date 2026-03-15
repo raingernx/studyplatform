@@ -165,3 +165,251 @@ Code should remain:
 
 - The user may speak Thai, but whenever the user asks for "prompts", "prompt templates", or "instructions to copy", the assistant must always write those prompts in **English**.
 - Explanations around the prompts can be in Thai or English, but the prompt blocks themselves must be English.
+
+---
+
+# UI Component Architecture Rules
+
+PaperDock must follow a unified component architecture to prevent UI duplication
+and maintain a consistent design system.
+
+Component folders must follow this structure:
+
+src/components/
+
+ui/
+layout/
+resources/
+marketplace/
+library/
+admin/
+forms/
+shared/
+
+Descriptions:
+
+ui → primitive UI components (shadcn)
+layout → app layouts (sidebar, topbar, containers)
+resources → resource UI components
+marketplace → marketplace specific UI
+library → library page components
+admin → admin dashboard UI
+forms → reusable form components
+shared → cross-feature components
+
+---
+
+# ResourceCard Rule (Critical)
+
+All resources must use a single shared component:
+
+src/components/resources/ResourceCard.tsx
+
+Do NOT create alternative resource card components.
+
+Forbidden examples:
+
+ResourceItem
+ResourceTile
+MarketplaceCard
+LibraryCard
+
+All pages must render resources using:
+
+<ResourceCard />
+
+---
+
+# ResourceCard Structure
+
+ResourceCard must always follow this layout:
+
+preview
+
+tags
+
+title
+description
+
+meta row
+(author + price or owned)
+
+actions
+
+Example structure:
+
+preview
+tags
+
+Title
+Description
+
+Author        Price
+
+CTA
+
+---
+
+# ResourceCard Variants
+
+ResourceCard supports these variants:
+
+marketplace
+library
+preview
+
+Example usage:
+
+<ResourceCard variant="marketplace" />
+<ResourceCard variant="library" />
+<ResourceCard variant="preview" />
+
+Admin pages must use:
+
+variant="preview"
+
+for live preview.
+
+---
+
+# Grid System Rules
+
+Marketplace grid must always use:
+
+grid
+grid-cols-2
+md:grid-cols-3
+xl:grid-cols-4
+gap-6
+
+Library grid must use:
+
+grid
+grid-cols-2
+lg:grid-cols-3
+gap-6
+
+Never generate random grid layouts.
+
+Always reuse ResourceGrid if available.
+
+---
+
+# Tag Rules
+
+Tags represent resource topics.
+
+Tag requirements:
+
+- Always lowercase
+- Short labels
+- Max 2 visible in cards
+
+Example:
+
+beginner
+exam-prep
+computer-science
+
+---
+
+# Tag Component
+
+Tags must use the shared component:
+
+TagChip
+
+Located in:
+
+src/components/shared/TagChip.tsx
+
+Style:
+
+rounded-full
+bg-neutral-100
+text-neutral-700
+text-xs
+px-2.5
+py-0.5
+
+Do not generate new tag styles.
+
+---
+
+# Tag Overflow Rule
+
+If a resource has more than 2 tags:
+
+display:
+
++N
+
+Example:
+
+beginner algebra +2
+
+---
+
+# Live Preview Rule
+
+Admin Create and Edit resource pages must render preview using:
+
+<ResourceCard variant="preview" />
+
+Do not create separate preview UI.
+
+The admin preview must match the marketplace card layout.
+
+---
+
+# Component Reuse Rules
+
+Before creating a new component, Cursor must check:
+
+1. Does a similar component already exist?
+2. Can the existing component be reused?
+
+Never duplicate UI patterns.
+
+Examples:
+
+Reuse ResourceCard instead of building a new card.
+
+Reuse TagChip instead of creating new tag UI.
+
+Reuse Button from shadcn.
+
+---
+
+# Styling Rules
+
+Use Tailwind CSS utilities.
+
+Avoid inline styles.
+
+Spacing must follow Tailwind scale:
+
+gap-4
+gap-6
+gap-8
+
+Containers must use:
+
+max-w-7xl
+mx-auto
+px-6
+py-8
+
+---
+
+# UI Generation Safety
+
+When generating UI:
+
+1. Prefer existing components
+2. Respect the component architecture
+3. Follow ResourceCard structure
+4. Follow grid rules
+5. Follow tag rules
+
+Cursor must avoid generating duplicate UI implementations.

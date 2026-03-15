@@ -1,4 +1,7 @@
+import createNextIntlPlugin from "next-intl/plugin";
+
 const nextConfig = {
+  transpilePackages: ["geist"],
   images: {
     remotePatterns: [
       {
@@ -7,10 +10,9 @@ const nextConfig = {
       },
     ],
   },
-
-  experimental: {
-    serverComponentsExternalPackages: ["@prisma/client", "bcryptjs"],
-  },
+  serverExternalPackages: ["@prisma/client", "bcryptjs"],
 };
 
-export default nextConfig;
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+export default withNextIntl(nextConfig);

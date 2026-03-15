@@ -1,18 +1,19 @@
 import type { ReactNode } from "react";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { DashboardShell } from "./DashboardShell";
+
+export interface DashboardUser {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  subscriptionStatus?: string | null;
+}
 
 interface DashboardLayoutProps {
   children: ReactNode;
+  user: DashboardUser;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
-  return (
-    <div className="grid min-h-screen grid-cols-[260px_1fr] bg-surface-50">
-      <aside className="border-r border-zinc-100 bg-white">
-        <DashboardSidebar />
-      </aside>
-      <main className="px-8 py-10">{children}</main>
-    </div>
-  );
+/** Server-component wrapper — passes user data into the client shell. */
+export function DashboardLayout({ children, user }: DashboardLayoutProps) {
+  return <DashboardShell user={user}>{children}</DashboardShell>;
 }
-

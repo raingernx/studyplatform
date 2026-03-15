@@ -2,9 +2,9 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
-    "./src/app/**/*.{js,ts,jsx,tsx}",
-    "./src/components/**/*.{js,ts,jsx,tsx}",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/app/**/*.{ts,tsx}",
+    "./src/components/**/*.{ts,tsx}",
+    "./src/lib/**/*.{ts,tsx}",
   ],
 
   safelist: [
@@ -15,8 +15,74 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // shadcn/ui design tokens
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+          50: "#f5f3ff",
+          100: "#ede9fe",
+          200: "#ddd6fe",
+          300: "#c4b5fd",
+          400: "#a78bfa",
+          500: "#8b5cf6",
+          600: "#7c3aed",
+          700: "#6d28d9",
+          800: "#4c1d95",
+          900: "#2e1065",
+
+          // PaperDock logo accent system
+          blue: "#2563EB",
+          "blue-light": "#DBEAFE",
+          "blue-soft": "#EFF6FF",
+
+          orange: "#F97316",
+          "orange-light": "#FED7AA",
+          "orange-soft": "#FFF7ED",
+
+          yellow: "#FACC15",
+          "yellow-light": "#FEF3C7",
+          "yellow-soft": "#FFFBEB",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+
+        // Existing design tokens (kept for compatibility)
+        neutral: {
+          50: "#F9FAFB",
+          100: "#F3F4F6",
+          200: "#E5E7EB",
+          300: "#D1D5DB",
+          400: "#9CA3AF",
+          500: "#6B7280",
+          700: "#374151",
+          900: "#111827",
+        },
         surface: {
-          50:  "#fafafa",
+          50: "#fafafa",
           100: "#f4f4f5",
           200: "#e4e4e7",
           300: "#d4d4d8",
@@ -28,7 +94,7 @@ const config: Config = {
           900: "#18181b",
           950: "#09090b",
         },
-        // Gumroad-style brand system
+        // Gumroad-style brand / PaperDock brand system
         brand: {
           50:  "#eff6ff",
           100: "#dbeafe",
@@ -41,20 +107,8 @@ const config: Config = {
           800: "#1e40af",
           900: "#1e3a8a",
         },
-        accent: {
-          50:  "#fdf2ff",
-          100: "#f5e1ff",
-          200: "#e9c8ff",
-          300: "#d0a4ff",
-          400: "#b46bff",
-          500: "#7c3aed",
-          600: "#6d28d9",
-          700: "#5b21b6",
-          800: "#4c1d95",
-          900: "#2e1065",
-        },
         highlight: {
-          50:  "#fff7ed",
+          50: "#fff7ed",
           100: "#ffedd5",
           200: "#fed7aa",
           300: "#fdba74",
@@ -96,17 +150,21 @@ const config: Config = {
           muted: "#a1a1aa",
           onDark: "#f9fafb",
         },
-        border: {
-          subtle: "#e4e4e7",
-          strong: "#d4d4d8",
-          focus: "#2563eb",
-        },
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        sans:    ["var(--font-inter)", "var(--font-thai)", "system-ui", "sans-serif"],
+        display: ["var(--font-geist)", "var(--font-thai)", "system-ui", "sans-serif"],
       },
       fontSize: {
-        "2xs": ["0.65rem", { lineHeight: "1rem" }],
+        "2xs":     ["0.65rem",                    { lineHeight: "1rem"  }],
+        "hero":    ["clamp(2.5rem, 5vw, 3.5rem)", { lineHeight: "1.1"  }],
+        "h1":      ["2.25rem",                    { lineHeight: "1.2"  }],
+        "h2":      ["1.75rem",                    { lineHeight: "1.25" }],
+        "h3":      ["1.25rem",                    { lineHeight: "1.35" }],
+        "body-lg": ["1.125rem",                   { lineHeight: "1.7"  }],
+        "body":    ["1rem",                       { lineHeight: "1.7"  }],
+        "meta":    ["0.875rem",                   { lineHeight: "1.4"  }],
+        "micro":   ["0.75rem",                    { lineHeight: "1.4"  }],
       },
       letterSpacing: {
         tightest: "-0.05em",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
+import { revalidateTag } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -14,7 +15,15 @@ const BulkItemSchema = z.object({
   categorySlug: z.string().optional().nullable(),
   tagSlugs: z.array(z.string()).default([]),
   previewUrls: z
-    .array(z.string().url("Each preview must be a valid URL"))
+    .array(
+      z.string().refine(
+        (val) =>
+          val.startsWith("http://") ||
+          val.startsWith("https://") ||
+          val.startsWith("/"),
+        { message: "Preview must be a URL or uploaded image path (e.g. https://… or /uploads/…)" }
+      )
+    )
     .default([]),
   fileUrl: z
     .string()
@@ -286,7 +295,12 @@ export async function POST(req: Request) {
       });
     }
 
-    // ── 5. Return structured result ─────────────────────────────────────────
+    // ── 5. Invalidate discover cache if any PUBLISHED resources were created ─
+    if (created.length > 0) {
+      revalidateTag("discover");
+    }
+
+    // ── 6. Return structured result ─────────────────────────────────────────
     return NextResponse.json({
       data: {
         success: created.length,
@@ -300,6 +314,130 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: "Internal server error." },
       { status: 500 }
+    );
+  }
+}
+
+// ── Bulk mutation helpers for dashboard actions ───────────────────────────────
+
+const BulkMutationSchema = z.object({
+  ids: z.array(z.string().cuid()).min(1, "Provide at least one resource id."),
+  action: z.enum(["publish", "archive", "delete", "draft", "moveToCategory"]),
+  categoryId: z.string().cuid().optional(),
+});
+
+async function requireAdmin() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return {
+      session: null,
+      error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }),
+    };
+  }
+
+  if (session.user.role !== "ADMIN") {
+    return {
+      session: null,
+      error: NextResponse.json(
+        { error: "Forbidden. Admin access required." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return { session, error: null as NextResponse | null };
+}
+
+/**
+ * PATCH /api/admin/resources/bulk
+ *
+ * Perform bulk actions on existing resources:
+ *  - publish        → set status to PUBLISHED
+ *  - archive        → set status to ARCHIVED
+ *  - draft          → set status to DRAFT
+ *  - delete         → soft delete resources (set deletedAt)
+ *  - moveToCategory → change categoryId for selected resources
+ */
+export async function PATCH(req: Request) {
+  try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
+    const body = await req.json();
+    const parsed = BulkMutationSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.errors[0]?.message ?? "Invalid payload." },
+        { status: 400 },
+      );
+    }
+
+    const { ids, action, categoryId } = parsed.data;
+
+    if (ids.length === 0) {
+      return NextResponse.json(
+        { error: "No resource ids provided." },
+        { status: 400 },
+      );
+    }
+
+    if (action === "delete") {
+      const result = await prisma.resource.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt: new Date() },
+      });
+
+      if (result.count > 0) revalidateTag("discover");
+
+      return NextResponse.json({
+        data: { deleted: result.count, updated: 0 },
+      });
+    }
+
+    if (action === "moveToCategory") {
+      if (!categoryId) {
+        return NextResponse.json(
+          { error: "categoryId is required when action is moveToCategory." },
+          { status: 400 },
+        );
+      }
+
+      const result = await prisma.resource.updateMany({
+        where: { id: { in: ids } },
+        data: { categoryId },
+      });
+
+      if (result.count > 0) revalidateTag("discover");
+
+      return NextResponse.json({
+        data: { updated: result.count, deleted: 0 },
+      });
+    }
+
+    const nextStatus =
+      action === "publish"
+        ? "PUBLISHED"
+        : action === "archive"
+          ? "ARCHIVED"
+          : "DRAFT";
+
+    const result = await prisma.resource.updateMany({
+      where: { id: { in: ids } },
+      data: { status: nextStatus },
+    });
+
+    if (result.count > 0) revalidateTag("discover");
+
+    return NextResponse.json({
+      data: { updated: result.count, deleted: 0 },
+    });
+  } catch (err) {
+    console.error("[ADMIN_RESOURCES_BULK_PATCH]", err);
+    return NextResponse.json(
+      { error: "Internal server error." },
+      { status: 500 },
     );
   }
 }

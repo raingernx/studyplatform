@@ -5,6 +5,56 @@ import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
+// ── JWT role cache ────────────────────────────────────────────────────────────
+//
+// The JWT callback previously hit the database on every single request to
+// keep `role` and `subscriptionStatus` in sync.  At any meaningful traffic
+// level this is the single biggest source of unnecessary DB load.
+//
+// This module-level Map caches the two fields for 60 seconds per user.
+// A role change (e.g. STUDENT → ADMIN) takes effect within one minute,
+// which is acceptable for this use case.
+//
+// NOTE: This cache is per-process.  In a multi-instance (serverless) deployment
+// each instance maintains its own cache — the worst case is one extra DB call
+// per instance per TTL window, not one per request.
+
+const JWT_ROLE_CACHE_TTL_MS = 60_000; // 60 seconds
+
+interface RoleCacheEntry {
+  role: string;
+  subscriptionStatus: string | null;
+  cachedAt: number; // Date.now() timestamp
+}
+
+const roleCache = new Map<string, RoleCacheEntry>();
+
+/**
+ * Return the cached role/subscriptionStatus for `userId` if the entry exists
+ * and has not yet expired.  Returns `null` on cache miss so the caller can
+ * fall through to a fresh DB query.
+ */
+function getCachedRole(userId: string): Omit<RoleCacheEntry, "cachedAt"> | null {
+  const entry = roleCache.get(userId);
+  if (!entry) return null;
+  if (Date.now() - entry.cachedAt > JWT_ROLE_CACHE_TTL_MS) {
+    roleCache.delete(userId);
+    return null;
+  }
+  return { role: entry.role, subscriptionStatus: entry.subscriptionStatus };
+}
+
+/** Write or refresh a role cache entry for `userId`. */
+function setCachedRole(
+  userId: string,
+  role: string,
+  subscriptionStatus: string | null
+): void {
+  roleCache.set(userId, { role, subscriptionStatus, cachedAt: Date.now() });
+}
+
+// ── Auth options ──────────────────────────────────────────────────────────────
+
 export const authOptions: NextAuthOptions = {
   // @ts-expect-error – PrismaAdapter type mismatch between next-auth v4 and @auth/prisma-adapter v2
   adapter: PrismaAdapter(prisma),
@@ -66,29 +116,43 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    // Persist role + id in the JWT
+    // Persist role + id in the JWT, keeping them in sync with the DB via
+    // the in-memory role cache (max one DB call per user per 60 seconds).
     async jwt({ token, user }) {
+      // On first sign-in `user` is populated — write to cache immediately.
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        setCachedRole(user.id!, user.role as string, null);
       }
 
-      // Keep subscription status in sync on every token refresh
+      // On every subsequent token refresh check the cache first.
       if (token.id) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { role: true, subscriptionStatus: true },
-        });
-        if (dbUser) {
-          token.role = dbUser.role;
-          token.subscriptionStatus = dbUser.subscriptionStatus;
+        const userId = token.id as string;
+        const cached = getCachedRole(userId);
+
+        if (cached) {
+          // Cache hit — no DB round trip needed.
+          token.role = cached.role;
+          token.subscriptionStatus = cached.subscriptionStatus;
+        } else {
+          // Cache miss — query the DB and refresh the cache.
+          const dbUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { role: true, subscriptionStatus: true },
+          });
+          if (dbUser) {
+            token.role = dbUser.role;
+            token.subscriptionStatus = dbUser.subscriptionStatus;
+            setCachedRole(userId, dbUser.role, dbUser.subscriptionStatus);
+          }
         }
       }
 
       return token;
     },
 
-    // Expose role + id on the session object so the client can read them
+    // Expose role + id on the session object so the client can read them.
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;

@@ -35,13 +35,13 @@ export function PreviewGallery({ previews, resourceTitle }: Props) {
       </p>
 
       {/* ── Main image ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+      <div className="relative aspect-[3/4] h-[676px] w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100">
+        <Image
           src={current.imageUrl}
           alt={`${resourceTitle} – preview ${active + 1} of ${previews.length}`}
-          className="h-auto w-full object-contain"
-          style={{ maxHeight: "480px" }}
+          fill
+          sizes="(max-width: 768px) 100vw, 640px"
+          className="object-contain"
         />
 
         {/* Prev / Next arrows — only shown when there are multiple images */}
@@ -61,7 +61,9 @@ export function PreviewGallery({ previews, resourceTitle }: Props) {
 
             <button
               type="button"
-              onClick={() => setActive((n) => Math.min(previews.length - 1, n + 1))}
+              onClick={() =>
+                setActive((n) => Math.min(previews.length - 1, n + 1))
+              }
               disabled={!hasNext}
               aria-label="Next preview"
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90
@@ -72,8 +74,10 @@ export function PreviewGallery({ previews, resourceTitle }: Props) {
             </button>
 
             {/* Slide counter */}
-            <span className="absolute bottom-2 right-3 rounded-full bg-black/50 px-2 py-0.5
-                             text-[11px] font-medium text-white">
+            <span
+              className="absolute bottom-2 right-3 rounded-full bg-black/50 px-2 py-0.5
+                             text-[11px] font-medium text-white"
+            >
               {active + 1} / {previews.length}
             </span>
           </>
@@ -97,10 +101,12 @@ export function PreviewGallery({ previews, resourceTitle }: Props) {
               ].join(" ")}
               style={{ width: 72, height: 72 }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={p.imageUrl}
                 alt={`Thumbnail ${i + 1}`}
+                width={72}
+                height={72}
+                sizes="72px"
                 className="h-full w-full object-cover"
               />
             </button>

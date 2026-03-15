@@ -17,7 +17,7 @@ export const Switch = React.forwardRef<
 
   const thumbClasses = [
     "h-5 w-5 rounded-full bg-white shadow",
-    "translate-x-0.5 data-[state=checked]:translate-x-5",
+    "translate-x-0.5 data-[state=checked]:translate-x-[24px]",
     "transition-transform duration-200",
   ].join(" ");
 

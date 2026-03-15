@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
+import { revalidateTag } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/activity";
+import { logAdminAction } from "@/lib/auditLogger";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 // ── Auth guard helper ─────────────────────────────────────────────────────────
 
@@ -26,6 +29,28 @@ async function requireAdmin() {
   return { session, error: null };
 }
 
+async function ensureUniqueSlugForUpdate(
+  slug: string,
+  resourceId: string,
+): Promise<string> {
+  const base = slug;
+  let candidate = base;
+  let attempt = 0;
+
+  while (true) {
+    const existing = await prisma.resource.findUnique({
+      where: { slug: candidate },
+    });
+
+    if (!existing || existing.id === resourceId) {
+      return candidate;
+    }
+
+    attempt += 1;
+    candidate = `${base}-${attempt}`;
+  }
+}
+
 // ── Validation schema (all fields optional for partial update) ────────────────
 
 const PatchResourceSchema = z.object({
@@ -33,6 +58,11 @@ const PatchResourceSchema = z.object({
   description: z
     .string()
     .min(10, "Description must be at least 10 characters")
+    .optional(),
+  slug: z
+    .string()
+    .min(1, "Slug is required")
+    .max(80, "Slug must be at most 80 characters")
     .optional(),
   type: z.enum(["PDF", "DOCUMENT"]).optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
@@ -46,11 +76,23 @@ const PatchResourceSchema = z.object({
     .or(z.literal("").transform(() => null)),
   categoryId: z.string().cuid().nullable().optional(),
   featured: z.boolean().optional(),
+  level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).nullable().optional(),
+  license: z.enum(["PERSONAL_USE", "COMMERCIAL_USE", "EXTENDED_LICENSE"]).nullable().optional(),
+  visibility: z.enum(["PUBLIC", "UNLISTED"]).nullable().optional(),
+  authorId: z.string().cuid().optional(),
   // When present, replaces the full tag set.  Omit the field to leave tags unchanged.
   tagIds: z.array(z.string().cuid()).optional(),
   // When present, replaces all preview images. Omit to leave previews unchanged.
   previewUrls: z
-    .array(z.string().url("Each preview must be a valid URL"))
+    .array(
+      z.string().refine(
+        (val) =>
+          val.startsWith("http://") ||
+          val.startsWith("https://") ||
+          val.startsWith("/"),
+        { message: "Preview must be a URL or uploaded image path (e.g. https://… or /uploads/…)" }
+      )
+    )
     .optional(),
 });
 
@@ -69,12 +111,14 @@ const PatchResourceSchema = z.object({
  */
 export async function PATCH(req: Request, { params }: Params) {
   try {
-    const { error } = await requireAdmin();
-    if (error) return error;
+    const { id } = await params;
+
+    const { session, error } = await requireAdmin();
+    if (error || !session) return error;
 
     // Confirm the resource exists
     const existing = await prisma.resource.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existing) {
@@ -86,15 +130,26 @@ export async function PATCH(req: Request, { params }: Params) {
     const parsed = PatchResourceSchema.safeParse(body);
 
     if (!parsed.success) {
+      const flattened = parsed.error.flatten();
+      const fieldErrors: Record<string, string> = {};
+      for (const [key, messages] of Object.entries(flattened.fieldErrors)) {
+        if (messages && messages.length > 0) {
+          fieldErrors[key] = messages[0] as string;
+        }
+      }
       return NextResponse.json(
-        { error: parsed.error.errors[0].message },
-        { status: 400 }
+        {
+          error: "Validation failed",
+          fields: fieldErrors,
+        },
+        { status: 400 },
       );
     }
 
     const {
       title,
       description,
+      slug,
       type,
       status,
       isFree,
@@ -102,6 +157,10 @@ export async function PATCH(req: Request, { params }: Params) {
       fileUrl,
       categoryId,
       featured,
+      level,
+      license,
+      visibility,
+      authorId,
       tagIds,
       previewUrls,
     } = parsed.data;
@@ -110,10 +169,21 @@ export async function PATCH(req: Request, { params }: Params) {
     const resolvedIsFree = isFree ?? existing.isFree;
     const resolvedPrice  = resolvedIsFree ? 0 : (price ?? existing.price);
 
-    // Build the base resource update
+    const resolvedSlug =
+      slug !== undefined
+        ? await ensureUniqueSlugForUpdate(slug, id)
+        : undefined;
+
+    // When previewUrls is sent, use first URL as resource.previewUrl so card/display resolve correctly
+    const firstPreviewUrl =
+      previewUrls !== undefined
+        ? previewUrls.filter((u) => u.trim() !== "")[0] ?? null
+        : undefined;
+
     const resourceUpdateData = {
       ...(title !== undefined && { title }),
       ...(description !== undefined && { description }),
+      ...(resolvedSlug !== undefined && { slug: resolvedSlug }),
       ...(type !== undefined && { type }),
       ...(status !== undefined && { status }),
       isFree: resolvedIsFree,
@@ -121,6 +191,11 @@ export async function PATCH(req: Request, { params }: Params) {
       ...(fileUrl !== undefined && { fileUrl }),
       ...(categoryId !== undefined && { categoryId }),
       ...(featured !== undefined && { featured }),
+      ...(level !== undefined && { level }),
+      ...(license !== undefined && { license }),
+      ...(visibility !== undefined && { visibility }),
+      ...(authorId !== undefined && { authorId }),
+      ...(firstPreviewUrl !== undefined && { previewUrl: firstPreviewUrl }),
     };
 
     // Run everything in a single interactive transaction.
@@ -128,18 +203,18 @@ export async function PATCH(req: Request, { params }: Params) {
     const resource = await prisma.$transaction(async (tx) => {
       // 1. Always update the resource's scalar fields
       const updated = await tx.resource.update({
-        where: { id: params.id },
+        where: { id },
         data: resourceUpdateData,
       });
 
       // 2. Replace tags when tagIds is present in the payload
       if (tagIds !== undefined) {
         const uniqueTagIds = Array.from(new Set(tagIds));
-        await tx.resourceTag.deleteMany({ where: { resourceId: params.id } });
+        await tx.resourceTag.deleteMany({ where: { resourceId: id } });
         if (uniqueTagIds.length > 0) {
           await tx.resourceTag.createMany({
             data: uniqueTagIds.map((tagId) => ({
-              resourceId: params.id,
+              resourceId: id,
               tagId,
             })),
           });
@@ -149,11 +224,11 @@ export async function PATCH(req: Request, { params }: Params) {
       // 3. Replace previews when previewUrls is present in the payload
       if (previewUrls !== undefined) {
         const validUrls = previewUrls.filter((u) => u.trim() !== "");
-        await tx.resourcePreview.deleteMany({ where: { resourceId: params.id } });
+        await tx.resourcePreview.deleteMany({ where: { resourceId: id } });
         if (validUrls.length > 0) {
           await tx.resourcePreview.createMany({
             data: validUrls.map((imageUrl, i) => ({
-              resourceId: params.id,
+              resourceId: id,
               imageUrl,
               order: i,
             })),
@@ -163,6 +238,41 @@ export async function PATCH(req: Request, { params }: Params) {
 
       return updated;
     });
+
+    const action =
+      status && status !== existing.status
+        ? status === "PUBLISHED"
+          ? "resource_published"
+          : status === "ARCHIVED"
+            ? "resource_archived"
+            : "resource_updated"
+        : "resource_updated";
+
+    await Promise.all([
+      logActivity({
+        userId: session.user.id,
+        action,
+        entityType: "resource",
+        entityId: id,
+        meta: { title: resource.title },
+      }),
+      logAdminAction({
+        adminId: session.user.id,
+        action:
+          action === "resource_published"
+            ? "RESOURCE_PUBLISHED"
+            : action === "resource_archived"
+              ? "RESOURCE_ARCHIVED"
+              : "RESOURCE_UPDATED",
+        entityType: "resource",
+        entityId: id,
+        metadata: { title: resource.title },
+      }),
+    ]);
+
+    // Bust the discover cache on any mutation — status, featured flag,
+    // content, or pricing changes all affect what the discover page shows.
+    revalidateTag("discover");
 
     return NextResponse.json({ data: resource });
   } catch (err) {
@@ -189,33 +299,50 @@ export async function PATCH(req: Request, { params }: Params) {
  */
 export async function DELETE(_req: Request, { params }: Params) {
   try {
-    const { error } = await requireAdmin();
-    if (error) return error;
+    const { id } = await params;
+
+    const { session, error } = await requireAdmin();
+    if (error || !session) return error;
 
     // Confirm the resource exists
     const existing = await prisma.resource.findUnique({
-      where: { id: params.id },
-      include: {
-        _count: { select: { purchases: true, reviews: true } },
-      },
+      where: { id },
     });
 
     if (!existing) {
       return NextResponse.json({ error: "Resource not found." }, { status: 404 });
     }
 
-    // Delete related rows in dependency order, then the resource itself.
-    // ResourceTag rows are handled automatically by the DB cascade.
-    await prisma.$transaction([
-      prisma.review.deleteMany({ where: { resourceId: params.id } }),
-      prisma.purchase.deleteMany({ where: { resourceId: params.id } }),
-      prisma.resource.delete({ where: { id: params.id } }),
+    // Soft delete: mark the resource as trashed via deletedAt timestamp.
+    const trashed = await prisma.resource.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    await Promise.all([
+      logActivity({
+        userId: session.user.id,
+        action: "resource_deleted",
+        entityType: "resource",
+        entityId: id,
+        meta: { title: trashed.title, deletedAt: trashed.deletedAt },
+      }),
+      logAdminAction({
+        adminId: session.user.id,
+        action: "RESOURCE_DELETED",
+        entityType: "resource",
+        entityId: id,
+        metadata: { title: trashed.title },
+      }),
     ]);
+
+    // Soft-deleted resources disappear from discover listings immediately.
+    revalidateTag("discover");
 
     return NextResponse.json({
       data: {
-        id: params.id,
-        message: `"${existing.title}" was permanently deleted.`,
+        id,
+        message: `"${trashed.title}" was moved to trash.`,
       },
     });
   } catch (err) {

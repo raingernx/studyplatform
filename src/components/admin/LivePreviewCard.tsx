@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { FileText } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import type { ResourceCardData } from "@/components/resources/ResourceCard";
+import { formatPrice } from "@/lib/format";
 
 /**
  * Admin preview card. Reuses same structure as marketplace ResourceCard
@@ -18,7 +20,7 @@ export function LivePreviewCard({ data }: LivePreviewCardProps) {
   const visibleTags = tags.slice(0, 2);
   const extra = tags.length - 2;
   const isFree = data.isFree || data.price === 0;
-  const priceLabel = isFree ? "Free" : `฿${data.price.toLocaleString("th-TH")}`;
+  const priceLabel = isFree ? "Free" : formatPrice(data.price);
   const authorName = data.author?.name ?? "You";
 
   return (
@@ -29,12 +31,14 @@ export function LivePreviewCard({ data }: LivePreviewCardProps) {
       </p>
 
       <Card className="overflow-hidden">
-        {/* Preview Image — same as marketplace: aspect-[4/3], rounded-t-2xl */}
-        <div className="aspect-[4/3] w-full overflow-hidden rounded-t-2xl bg-zinc-100">
+        {/* Preview Image — use square-ish container for consistency */}
+        <div className="relative aspect-square w-full overflow-hidden rounded-t-2xl bg-zinc-100">
           {data.previewUrl ? (
-            <img
+            <Image
               src={data.previewUrl}
               alt={data.title}
+              fill
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
               className="h-full w-full object-cover"
             />
           ) : (

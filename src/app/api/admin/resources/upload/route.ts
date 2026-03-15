@@ -2,24 +2,25 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir, unlink } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
+import { logActivity } from "@/lib/activity";
+import { storage } from "@/lib/storage";
+import { checkRateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-/** Files are written here — outside public/ so they're never directly accessible. */
-const UPLOAD_DIR = path.join(process.cwd(), "private-uploads");
 
 /** 50 MB hard cap (increase if needed). */
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
+/** PDF, DOCX, XLSX, ZIP, images. Max 50 MB. */
 const ALLOWED_MIME_TYPES = new Set<string>([
   "application/pdf",
   "application/zip",
   "image/png",
   "image/jpeg",
+  "image/webp",
+  "image/gif",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ]);
 
 const FILE_KEY_REGEX = /^[a-zA-Z0-9._-]+$/;
@@ -33,14 +34,15 @@ const FILE_KEY_REGEX = /^[a-zA-Z0-9._-]+$/;
  *   - resourceId  (string)  — the resource to attach the file to
  *   - file        (File)    — the uploaded file
  *
- * Saves the file to private-uploads/ and updates the Resource row with
- *   fileKey, fileName, fileSize, mimeType.
+ * Persists the file via the storage abstraction and updates the Resource row
+ * with fileKey, fileName, fileSize, mimeType.
  *
- * The previous fileKey (if any) is deleted from disk after the DB update.
+ * The previous fileKey (if any) is deleted via storage.delete() after the
+ * DB update succeeds.
  *
  * Responses:
  *   200  { fileKey, fileName, fileSize }
- *   400  Missing fields / file too large
+ *   400  Missing fields / file too large / invalid key
  *   401  Not authenticated
  *   403  Not ADMIN
  *   404  Resource not found
@@ -48,6 +50,23 @@ const FILE_KEY_REGEX = /^[a-zA-Z0-9._-]+$/;
  */
 export async function POST(req: Request) {
   try {
+    // ── 0. Rate limit — 20 uploads / minute per IP ────────────────────────
+    const ip = getClientIp(req);
+    const rl = await checkRateLimit(LIMITS.upload, ip);
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many upload requests. Please try again shortly." },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit":     String(rl.limit),
+            "X-RateLimit-Remaining": String(rl.remaining),
+            "Retry-After":           String(Math.ceil((rl.reset - Date.now()) / 1000)),
+          },
+        }
+      );
+    }
+
     // ── 1. Require ADMIN session ──────────────────────────────────────────
     const session = await getServerSession(authOptions);
 
@@ -81,7 +100,11 @@ export async function POST(req: Request) {
     // ── 3. Validate file size ─────────────────────────────────────────────
     if (file.size > MAX_FILE_SIZE_BYTES) {
       return NextResponse.json(
-        { error: `File too large. Maximum allowed size is ${MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB.` },
+        {
+          error: `File too large. Maximum allowed size is ${
+            MAX_FILE_SIZE_BYTES / (1024 * 1024)
+          } MB.`,
+        },
         { status: 400 }
       );
     }
@@ -90,7 +113,10 @@ export async function POST(req: Request) {
     const mimeType = file.type || "application/octet-stream";
     if (!ALLOWED_MIME_TYPES.has(mimeType)) {
       return NextResponse.json(
-        { error: "File type not allowed." },
+        {
+          error:
+            "Unsupported format. Allowed: PDF, DOCX, XLSX, ZIP, and common image types.",
+        },
         { status: 400 }
       );
     }
@@ -127,37 +153,69 @@ export async function POST(req: Request) {
       );
     }
 
-    // ── 6. Ensure the upload directory exists ─────────────────────────────
-    if (!existsSync(UPLOAD_DIR)) {
-      await mkdir(UPLOAD_DIR, { recursive: true });
-    }
-
-    // ── 7. Write the new file to disk ─────────────────────────────────────
+    // ── 6. Persist file via storage provider ─────────────────────────────
     const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(path.join(UPLOAD_DIR, fileKey), buffer);
+    await storage.upload(buffer, fileKey);
 
-    // ── 8. Update the Resource row ────────────────────────────────────────
-    const updated = await prisma.resource.update({
-      where: { id: resourceId },
-      data: {
-        fileKey,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType,
-      },
-      select: { fileKey: true, fileName: true, fileSize: true },
+    // ── 7. Update the Resource row and create a ResourceVersion snapshot ─
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedResource = await tx.resource.update({
+        where: { id: resourceId },
+        data: {
+          fileKey,
+          fileName: file.name,
+          fileSize: file.size,
+          mimeType,
+        },
+        select: { id: true, fileKey: true, fileName: true, fileSize: true },
+      });
+
+      const lastVersion = await tx.resourceVersion.findFirst({
+        where: { resourceId },
+        orderBy: { version: "desc" },
+      });
+
+      const nextVersion = (lastVersion?.version ?? 0) + 1;
+
+      await tx.resourceVersion.create({
+        data: {
+          resourceId,
+          version: nextVersion,
+          fileKey: updatedResource.fileKey,
+          fileName: updatedResource.fileName,
+          fileSize: updatedResource.fileSize,
+          mimeType,
+          // fileUrl is only used for external storage; local uploads rely on fileKey
+          changelog:
+            nextVersion === 1
+              ? "Initial upload"
+              : `File updated (v${nextVersion.toString()})`,
+          createdById: session.user.id ?? null,
+        },
+      });
+
+      return updatedResource;
     });
 
-    // ── 9. Remove the old file (after successful DB update) ───────────────
-    //  Fire-and-forget: a leftover file on disk is far less harmful than
-    //  failing the whole request because unlink threw.
+    // ── 8. Remove the old file via storage provider (fire-and-forget) ─────
     if (resource.fileKey && resource.fileKey !== fileKey) {
-      unlink(path.join(UPLOAD_DIR, resource.fileKey)).catch((err) => {
+      storage.delete(resource.fileKey).catch((err) => {
         console.warn("[UPLOAD] Could not remove old file:", resource.fileKey, err);
       });
     }
 
-    // ── 10. Respond ───────────────────────────────────────────────────────
+    await logActivity({
+      userId: session.user.id!,
+      action: "file_uploaded",
+      entityType: "resource",
+      entityId: resourceId,
+      meta: {
+        fileName: updated.fileName ?? file.name,
+        versioning: { createdVersion: true },
+      },
+    });
+
+    // ── 9. Respond ────────────────────────────────────────────────────────
     return NextResponse.json({
       fileKey: updated.fileKey,
       fileName: updated.fileName,

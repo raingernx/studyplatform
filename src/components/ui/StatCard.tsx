@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 /**
  * StudyDock Stat Card. Used in dashboard and admin panels.
@@ -15,7 +16,7 @@ interface StatCardProps {
 
 export function StatCard({ label, value, icon, className }: StatCardProps) {
   const displayValue =
-    typeof value === "number" ? value.toLocaleString() : value;
+    typeof value === "number" ? formatNumber(value) : value;
 
   return (
     <div

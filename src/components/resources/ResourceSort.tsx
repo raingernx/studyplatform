@@ -2,27 +2,18 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ArrowUpDown } from "lucide-react";
+import { SORT_OPTIONS, normaliseSortParam, type SortValue } from "@/config/sortOptions";
 
-export const SORT_OPTIONS = [
-  { value: "newest",     label: "Newest" },
-  { value: "oldest",     label: "Oldest" },
-  { value: "featured",   label: "Featured" },
-  { value: "trending",   label: "Trending" },
-  { value: "popular",    label: "Most Popular" },
-  { value: "downloads",  label: "Most Downloaded" },
-  { value: "price_asc",  label: "Price: Low → High" },
-  { value: "price_desc", label: "Price: High → Low" },
-] as const;
-
-export type SortOption = (typeof SORT_OPTIONS)[number]["value"];
+// Re-export for any callers that import SortOption from this file.
+export type SortOption = SortValue;
 
 export function ResourceSort() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Mirror the active sort from the URL; fall back to "newest"
-  const current = searchParams.get("sort") ?? "newest";
+  // Mirror the active sort from the URL; normalise legacy values and fall back to "newest".
+  const current = normaliseSortParam(searchParams.get("sort"));
 
   function handleChange(value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -34,7 +25,7 @@ export function ResourceSort() {
     }
     // Reset to page 1 after every sort change
     params.delete("page");
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   return (

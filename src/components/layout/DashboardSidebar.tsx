@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { routes } from "@/lib/routes";
 import {
   LayoutDashboard,
   BookOpen,
@@ -13,10 +15,10 @@ import {
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/dashboard",    label: "Overview",    icon: LayoutDashboard, exact: true },
-  { href: "/library",      label: "My Library",  icon: BookOpen },
-  { href: "/subscription", label: "Subscription", icon: CreditCard },
-  { href: "/settings",     label: "Settings",    icon: Settings },
+  { href: routes.dashboard,    label: "Overview",    icon: LayoutDashboard, exact: true },
+  { href: routes.library,      label: "My Library",  icon: BookOpen },
+  { href: routes.subscription, label: "Subscription", icon: CreditCard },
+  { href: routes.settings,     label: "Settings",    icon: Settings },
 ];
 
 interface DashboardSidebarProps {
@@ -41,11 +43,16 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
       {/* User info */}
       <div className="flex items-center gap-3 border-b border-zinc-100 px-5 py-4">
         {user.image ? (
-          <img
-            src={user.image}
-            alt={user.name ?? "User"}
-            className="h-9 w-9 rounded-full object-cover ring-2 ring-zinc-100"
-          />
+          <div className="h-9 w-9 overflow-hidden rounded-full ring-2 ring-zinc-100">
+            <Image
+              src={user.image}
+              alt={user.name ?? "User"}
+              width={36}
+              height={36}
+              sizes="36px"
+              className="h-9 w-9 object-cover"
+            />
+          </div>
         ) : (
           <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-violet-600 text-sm font-bold text-white shadow-sm">
             {user.name?.[0]?.toUpperCase() ?? "U"}
@@ -71,7 +78,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
           </div>
         ) : (
           <Link
-            href="/membership"
+            href={routes.membership}
             className="group flex items-center justify-between rounded-xl bg-orange-50 px-3 py-2.5 ring-1 ring-orange-200/80 transition-all hover:bg-orange-100 hover:ring-orange-300"
           >
             <span className="text-[12px] font-semibold text-orange-700">
@@ -101,6 +108,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
                       ? "bg-blue-50 text-blue-700"
                       : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
                   )}
+                  aria-current={active ? "page" : undefined}
                 >
                   <Icon
                     className={cn(

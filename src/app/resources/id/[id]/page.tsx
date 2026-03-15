@@ -2,13 +2,14 @@ import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
   searchParams?: { payment?: string };
 }
 
 export default async function Page({ params, searchParams }: PageProps) {
+  const { id } = await params;
   const resource = await prisma.resource.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: { slug: true },
   });
 

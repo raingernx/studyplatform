@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { xenditClient } from "@/lib/xendit";
+import { checkRateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 
 /**
  * POST /api/checkout/xendit
@@ -26,6 +27,23 @@ import { xenditClient } from "@/lib/xendit";
  */
 export async function POST(req: Request) {
   try {
+    // ── 0. Rate limit — 5 checkout initiations / minute per IP ────────────
+    const ip = getClientIp(req);
+    const rl = await checkRateLimit(LIMITS.checkout, ip);
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many checkout requests. Please try again shortly." },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit":     String(rl.limit),
+            "X-RateLimit-Remaining": String(rl.remaining),
+            "Retry-After":           String(Math.ceil((rl.reset - Date.now()) / 1000)),
+          },
+        }
+      );
+    }
+
     // ── 1. Auth ────────────────────────────────────────────────────────────
     const session = await getServerSession(authOptions);
     if (!session?.user) {

@@ -1,52 +1,59 @@
-import { cn } from "@/lib/utils";
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+import { Slot } from "radix-ui"
 
-/** PaperDock Design System: free, price, owned, featured. Legacy: blue, purple, orange, green, gray, red, dark. */
-type BadgeVariant =
-  | "free"
-  | "price"
-  | "owned"
-  | "featured"
-  | "blue"
-  | "purple"
-  | "orange"
-  | "green"
-  | "gray"
-  | "red"
-  | "dark";
+import { cn } from "@/lib/utils"
 
-interface BadgeProps {
-  children: React.ReactNode;
-  variant?: BadgeVariant;
-  className?: string;
-}
+const badgeVariants = cva(
+  // Base — pill shape, small text, no border by default
+  "inline-flex items-center justify-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-colors [&>svg]:size-3 [&>svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        // ── Semantic (PaperDock design system) ────────────────────────────
+        success:     "bg-success-50  text-success-700",
+        warning:     "bg-warning-50  text-warning-600",
+        neutral:     "bg-surface-100 text-text-secondary",
+        info:        "bg-brand-50    text-brand-700",
 
-const styles: Record<BadgeVariant, string> = {
-  free: "bg-green-100 text-green-700",
-  price: "bg-blue-100 text-blue-700",
-  owned: "bg-neutral-100 text-neutral-700",
-  featured: "bg-amber-100 text-amber-700",
-  blue: "bg-blue-50 text-blue-700 ring-blue-200/60 ring-1 ring-inset",
-  purple: "bg-violet-50 text-violet-700 ring-violet-200/60 ring-1 ring-inset",
-  orange: "bg-orange-50 text-orange-700 ring-orange-200/60 ring-1 ring-inset",
-  green: "bg-emerald-50 text-emerald-700 ring-emerald-200/60 ring-1 ring-inset",
-  gray: "bg-zinc-100 text-zinc-600 ring-zinc-200/60 ring-1 ring-inset",
-  red: "bg-red-50 text-red-700 ring-red-200/60 ring-1 ring-inset",
-  dark: "bg-zinc-900 text-zinc-100 ring-zinc-800 ring-1 ring-inset",
-};
+        // PaperDock marketplace badges
+        featured:    "bg-accent-yellow-soft text-neutral-900",
+        owned:       "bg-violet-50         text-violet-600",
+        new:         "bg-accent-blue-soft  text-accent-blue",
+        free:        "bg-green-50          text-green-600",
 
-export function Badge({ children, variant = "gray", className }: BadgeProps) {
-  const isDesignSystem = ["free", "price", "owned", "featured"].includes(variant);
+        // ── Shadcn-compatible aliases (kept for backward compat) ──────────
+        default:     "bg-primary    text-primary-foreground",
+        secondary:   "bg-surface-100 text-text-secondary",
+        destructive: "bg-red-50     text-red-600",
+        outline:     "border border-surface-200 text-text-primary bg-transparent",
+        ghost:       "bg-transparent text-text-secondary hover:bg-surface-100",
+        link:        "text-brand-600 underline-offset-3 hover:underline bg-transparent",
+      },
+    },
+    defaultVariants: {
+      variant: "neutral",
+    },
+  }
+)
+
+function Badge({
+  className,
+  variant = "neutral",
+  asChild = false,
+  ...props
+}: React.ComponentProps<"span"> &
+  VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : "span"
+
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5",
-        isDesignSystem ? "text-xs font-medium" : "text-[11px] font-semibold tracking-wide",
-        styles[variant],
-        !isDesignSystem && "ring-1 ring-inset",
-        className
-      )}
-    >
-      {children}
-    </span>
-  );
+    <Comp
+      data-slot="badge"
+      data-variant={variant}
+      className={cn(badgeVariants({ variant }), className)}
+      {...props}
+    />
+  )
 }
+
+export { Badge, badgeVariants }

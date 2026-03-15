@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { stripe, SUBSCRIPTION_PLANS, type SubscriptionPlan } from "@/lib/stripe";
+import { checkRateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 
 const CheckoutSchema = z.discriminatedUnion("mode", [
   z.object({
@@ -18,6 +19,23 @@ const CheckoutSchema = z.discriminatedUnion("mode", [
 
 export async function POST(req: Request) {
   try {
+    // ── Rate limit — 5 checkout initiations / minute per IP ───────────────
+    const ip = getClientIp(req);
+    const rl = await checkRateLimit(LIMITS.checkout, ip);
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many checkout requests. Please try again shortly." },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit":     String(rl.limit),
+            "X-RateLimit-Remaining": String(rl.remaining),
+            "Retry-After":           String(Math.ceil((rl.reset - Date.now()) / 1000)),
+          },
+        }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "You must be logged in to purchase." }, { status: 401 });
@@ -75,7 +93,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "You already own this resource." }, { status: 409 });
       }
 
-      const unitAmount = resource.price * 100;
+      // Resource.price is stored in the smallest unit (satang).
+      // Stripe expects the smallest currency unit for unit_amount.
+      const unitAmount = resource.price;
 
       // Upsert a pending Purchase first so we can attach purchaseId in metadata
       const purchase = await prisma.purchase.upsert({

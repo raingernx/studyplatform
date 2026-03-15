@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { CreditCard, QrCode, Download, Lock, BookmarkPlus, CheckCircle } from "lucide-react";
+import { formatPrice } from "@/lib/format";
 
 interface BuyButtonProps {
   resourceId: string;
@@ -95,7 +96,7 @@ export function BuyButton({
         <Button
           onClick={handleAddToLibrary}
           loading={loadingLibrary}
-          variant="primary"
+          variant="default"
           size="lg"
           fullWidth
           className="gap-2"
@@ -176,7 +177,7 @@ export function BuyButton({
         className="gap-2 shadow-md"
       >
         <CreditCard className="h-4 w-4" />
-        Pay with Card · ฿{price.toLocaleString("th-TH")}
+        Pay with Card · {formatPrice(price)}
       </Button>
       <Button
         onClick={handleXendit}
@@ -188,7 +189,7 @@ export function BuyButton({
         className="gap-2"
       >
         <QrCode className="h-4 w-4" />
-        Pay with Bank / QR · ฿{price.toLocaleString("th-TH")}
+        Pay with Bank / QR · {formatPrice(price)}
       </Button>
       <p className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
         <Lock className="h-3 w-3" /> Secure checkout · Card or Bank transfer

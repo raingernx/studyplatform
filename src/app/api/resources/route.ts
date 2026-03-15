@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
+import { LISTED_RESOURCE_WHERE } from "@/lib/query/resourceFilters";
 
 // ── GET /api/resources ────────────────────────────────────────────────────────
 // Public – returns published resources with optional filtering + pagination
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
     const isFree = searchParams.get("free") === "true" ? true : undefined;
 
     const where = {
-      status: "PUBLISHED" as const,
+      ...LISTED_RESOURCE_WHERE,
       ...(categorySlug && { category: { slug: categorySlug } }),
       ...(tagSlug && { tags: { some: { tag: { slug: tagSlug } } } }),
       ...(isFree !== undefined && { isFree }),
@@ -30,13 +31,14 @@ export async function GET(req: Request) {
       }),
     };
 
-    const [items, total] = await Promise.all([
+    const [rawItems, total] = await Promise.all([
       prisma.resource.findMany({
         where,
         include: {
           author: { select: { id: true, name: true, image: true } },
           category: true,
           tags: { include: { tag: true } },
+          previews: { orderBy: { order: "asc" }, select: { imageUrl: true } },
           _count: { select: { purchases: true, reviews: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -45,6 +47,11 @@ export async function GET(req: Request) {
       }),
       prisma.resource.count({ where }),
     ]);
+
+    const items = rawItems.map((r) => ({
+      ...r,
+      previewUrl: r.previewUrl ?? r.previews?.[0]?.imageUrl ?? null,
+    }));
 
     return NextResponse.json({
       data: {

@@ -25,11 +25,14 @@ export async function DELETE(
       );
     }
 
-    // Clear fileUrl for the resource
+    // Clear private upload fields for the resource (but leave external fileUrl untouched)
     await prisma.resource.update({
       where: { id },
       data: {
-        fileUrl: null,
+        fileKey: null,
+        fileName: null,
+        fileSize: null,
+        mimeType: null,
       },
     });
 

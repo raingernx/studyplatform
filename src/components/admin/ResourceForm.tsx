@@ -10,14 +10,15 @@ import {
   Link as LinkIcon,
   Trash2,
   AlertTriangle,
-  Search,
-  X,
   ImagePlus,
   GripVertical,
 } from "lucide-react";
-import { Toggle } from "@/components/ui/Toggle";
 import { Button } from "@/components/ui/Button";
-import { FileUploadWidget } from "@/components/admin/FileUploadWidget";
+import { Textarea, FileUploadWidget, Switch, Select } from "@/components/ui/forms";
+import { ImageDropzone } from "@/components/admin/ImageDropzone";
+import { PreviewImageSortableList } from "@/components/admin/PreviewImageSortableList";
+import { TagInput } from "@/components/admin/TagInput";
+import { UserSearchSelect } from "@/components/admin/UserSearchSelect";
 import { FormSection } from "@/components/admin/FormSection";
 import type { ResourceCardData } from "@/components/resources/ResourceCard";
 
@@ -34,6 +35,10 @@ export interface ResourceFormTag {
   slug: string;
 }
 
+export type ResourceLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+export type ResourceLicense = "PERSONAL_USE" | "COMMERCIAL_USE" | "EXTENDED_LICENSE";
+export type ResourceVisibility = "PUBLIC" | "UNLISTED";
+
 export interface ResourceFormResource {
   id: string;
   slug: string;
@@ -46,11 +51,17 @@ export interface ResourceFormResource {
   fileUrl: string | null;
   categoryId: string | null;
   featured: boolean;
+  level?: ResourceLevel | null;
+  license?: ResourceLicense | null;
+  visibility?: ResourceVisibility | null;
+  authorId?: string;
+  authorName?: string | null;
 }
 
 export interface ResourcePayload {
   title: string;
   description: string;
+  slug: string;
   type: "PDF" | "DOCUMENT";
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   isFree: boolean;
@@ -58,6 +69,10 @@ export interface ResourcePayload {
   fileUrl: string | null;
   categoryId: string | null;
   featured: boolean;
+  level?: ResourceLevel | null;
+  license?: ResourceLicense | null;
+  visibility?: ResourceVisibility | null;
+  authorId?: string | null;
   tagIds: string[];
   previewUrls: string[];
 }
@@ -65,6 +80,7 @@ export interface ResourcePayload {
 interface FormState {
   title: string;
   description: string;
+  slug: string;
   type: "PDF" | "DOCUMENT";
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   isFree: boolean;
@@ -72,12 +88,18 @@ interface FormState {
   fileUrl: string;
   categoryId: string;
   featured: boolean;
+  level: string;
+  license: string;
+  visibility: ResourceVisibility;
+  authorId: string;
 }
 
 export interface ResourceFormProps {
   mode: "create" | "edit";
   id?: string;
   resource?: ResourceFormResource;
+  /** When in create mode, an optional draft resource id used for uploads. */
+  draftResourceId?: string;
   categories: ResourceFormCategory[];
   tags: ResourceFormTag[];
   initialTagIds?: string[];
@@ -88,6 +110,12 @@ export interface ResourceFormProps {
   onDelete?: () => Promise<void>;
   /** Called when form state changes so the parent can render a live preview (e.g. create page sidebar). */
   onPreviewDataChange?: (data: ResourceCardData) => void;
+  /** In create mode, called when the user first edits key fields or uses file upload so a draft can be created lazily. */
+  onEnsureDraftResource?: () => Promise<string | undefined>;
+  /** When the user creates a new tag from the tag input, called so the parent can add it to the tag list. */
+  onTagCreated?: (tag: ResourceFormTag) => void;
+  /** Current admin user (for Creator "Current user" default). */
+  currentUser?: { id: string; name: string | null };
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -108,7 +136,7 @@ function slugifyPreview(title: string): string {
 
 // ── Label ────────────────────────────────────────────────────────────────────
 
-function Label({
+export function Label({
   htmlFor,
   icon,
   children,
@@ -128,125 +156,17 @@ function Label({
   );
 }
 
-// ── TagSelector ───────────────────────────────────────────────────────────────
-
-function TagSelector({
-  tags,
-  selectedIds,
-  onChange,
-}: {
-  tags: ResourceFormTag[];
-  selectedIds: string[];
-  onChange: (ids: string[]) => void;
-}) {
-  const [query, setQuery] = useState("");
-
-  const filtered = query.trim()
-    ? tags.filter((t) =>
-        t.name.toLowerCase().includes(query.trim().toLowerCase()),
-      )
-    : tags;
-
-  function toggle(id: string) {
-    onChange(
-      selectedIds.includes(id)
-        ? selectedIds.filter((x) => x !== id)
-        : [...selectedIds, id],
-    );
-  }
-
-  const selectedTags = tags.filter((t) => selectedIds.includes(t.id));
-
-  return (
-    <div className="w-full min-w-0">
-      <Label htmlFor="tag-search" icon={<Tag className="h-3.5 w-3.5" />}>
-        Tags
-        <span className="ml-1 font-normal normal-case text-text-secondary">
-          (optional)
-        </span>
-      </Label>
-
-      {selectedTags.length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-2">
-          {selectedTags.map((t) => (
-            <span
-              key={t.id}
-              className="inline-flex items-center gap-1"
-            >
-              <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
-                {t.name.toLowerCase()}
-              </span>
-              <button
-                type="button"
-                onClick={() => toggle(t.id)}
-                className="rounded-full p-0.5 text-text-secondary transition hover:bg-surface-100 hover:text-text-primary"
-                aria-label={`Remove tag ${t.name}`}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="min-w-0 rounded-xl border border-border-subtle bg-surface-50">
-        <div className="flex min-w-0 items-center gap-2 border-b border-border-subtle px-3 py-2">
-          <Search className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
-          <input
-            id="tag-search"
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search tags…"
-            className="w-full min-w-0 bg-transparent text-[13px] text-text-primary outline-none placeholder:text-text-muted"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              className="shrink-0 text-text-secondary hover:text-text-primary"
-              aria-label="Clear search"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-
-        <div className="max-h-40 overflow-y-auto p-2">
-          {filtered.length === 0 ? (
-            <p className="py-3 text-center text-[12px] text-text-secondary">
-              No tags found.
-            </p>
-          ) : (
-            filtered.map((t) => (
-              <label
-                key={t.id}
-                className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-surface-100"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(t.id)}
-                  onChange={() => toggle(t.id)}
-                  className="h-3.5 w-3.5 rounded border-zinc-300 text-brand-600 focus:ring-brand-500"
-                />
-                <span className="text-[13px] text-text-primary">{t.name}</span>
-              </label>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── PreviewUrlsEditor ─────────────────────────────────────────────────────────
 
 function PreviewUrlsEditor({
   urls,
   onChange,
+  onUploadImage,
 }: {
   urls: string[];
   onChange: (urls: string[]) => void;
+  /** When provided, shows "Upload image" and calls this with the selected file; expects public URL. */
+  onUploadImage?: (file: File) => Promise<string | null>;
 }) {
   function update(index: number, value: string) {
     const next = [...urls];
@@ -267,7 +187,7 @@ function PreviewUrlsEditor({
       <Label htmlFor="preview-url-0" icon={<ImagePlus className="h-3.5 w-3.5" />}>
         Preview Images
         <span className="ml-1 font-normal normal-case text-text-secondary">
-          (optional, multiple URLs)
+          (optional, multiple URLs or upload)
         </span>
       </Label>
 
@@ -277,10 +197,10 @@ function PreviewUrlsEditor({
             <GripVertical className="h-4 w-4 shrink-0 text-text-muted" aria-hidden />
             <input
               id={i === 0 ? "preview-url-0" : undefined}
-              type="url"
+              type="text"
               value={url}
               onChange={(e) => update(i, e.target.value)}
-              placeholder={`https://… (preview ${i + 1})`}
+              placeholder={i === 0 ? "Thumbnail URL or path (e.g. /uploads/… or https://…)" : "https://… or /uploads/… (preview image)"}
               className="input-base w-full min-w-0 flex-1"
             />
             <button
@@ -295,30 +215,61 @@ function PreviewUrlsEditor({
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={add}
-        className="mt-2 inline-flex items-center gap-1.5 rounded-xl border border-dashed border-border-subtle px-4 py-2 text-[12px] font-medium text-text-secondary transition hover:border-brand-400 hover:text-brand-600"
-      >
-        <ImagePlus className="h-3.5 w-3.5" />
-        Add preview image
-      </button>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={add}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-border-subtle px-4 py-2 text-[12px] font-medium text-text-secondary transition hover:border-brand-400 hover:text-brand-600"
+        >
+          <ImagePlus className="h-3.5 w-3.5" />
+          Add URL
+        </button>
+        {onUploadImage && (
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-dashed border-border-subtle px-4 py-2 text-[12px] font-medium text-text-secondary transition hover:border-brand-400 hover:text-brand-600">
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  const url = await onUploadImage(file);
+                  if (url) onChange([...urls.filter((u) => u.trim() !== ""), url]);
+                } finally {
+                  e.target.value = "";
+                }
+              }}
+            />
+            <ImagePlus className="h-3.5 w-3.5" />
+            Upload image
+          </label>
+        )}
+      </div>
     </div>
   );
 }
 
 // ── ResourceForm ──────────────────────────────────────────────────────────────
 
-/**
- * Shared form for Create Resource and Edit Resource.
- * Root container: <form className="space-y-8">. Layout is handled by AdminFormLayout.
- * Props: mode, resource?, categories, tags, initialTagIds, initialPreviewUrls,
- * initialFileName, initialFileSize, onSubmit, onDelete?
- */
+  /**
+   * Shared form for Create Resource and Edit Resource.
+   * Root container: <form className="space-y-8">. Layout is handled by AdminFormLayout.
+   *
+   * Field order:
+   *  1. Title
+   *  2. Description
+   *  3. Category / Type / Status (3-column grid)
+   *  4. Pricing (model + price)
+   *  5. Tags
+   *  6. Media (thumbnail + preview images)
+   *  7. File (external URL + private upload)
+   */
 export function ResourceForm({
   mode,
   id,
   resource,
+  draftResourceId,
   categories,
   tags,
   initialTagIds = [],
@@ -328,26 +279,36 @@ export function ResourceForm({
   onSubmit,
   onDelete,
   onPreviewDataChange,
+  onEnsureDraftResource,
+  onTagCreated,
+  currentUser,
 }: ResourceFormProps) {
   const isEdit = mode === "edit";
+  const effectiveResourceId = resource?.id ?? draftResourceId;
 
   const [form, setForm] = useState<FormState>(() => {
     if (isEdit && resource) {
       return {
         title: resource.title,
         description: resource.description,
+        slug: resource.slug,
         type: resource.type,
         status: resource.status,
         isFree: resource.isFree,
-        price: resource.isFree ? "" : centsToDollars(resource.price),
+        price: resource.isFree ? "" : String(Math.round(resource.price / 100)),
         fileUrl: resource.fileUrl ?? "",
         categoryId: resource.categoryId ?? "",
         featured: resource.featured,
+        level: resource.level ?? "",
+        license: resource.license ?? "",
+        visibility: (resource.visibility ?? "PUBLIC") as ResourceVisibility,
+        authorId: resource.authorId ?? "",
       };
     }
     return {
       title: "",
       description: "",
+      slug: "",
       type: "PDF",
       status: "DRAFT",
       isFree: true,
@@ -355,12 +316,18 @@ export function ResourceForm({
       fileUrl: "",
       categoryId: "",
       featured: false,
+      level: "",
+      license: "",
+      visibility: "PUBLIC",
+      authorId: "",
     };
   });
 
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialTagIds);
   const [previewUrls, setPreviewUrls] = useState<string[]>(
-    initialPreviewUrls.length > 0 ? initialPreviewUrls : [""],
+    initialPreviewUrls.length > 0
+      ? initialPreviewUrls.filter((u) => u.trim() !== "")
+      : [],
   );
 
   const [saveLoading, setSaveLoading] = useState(false);
@@ -373,6 +340,62 @@ export function ResourceForm({
     Boolean(initialFileName ?? initialFileSize),
   );
   const [fileUploadKey, setFileUploadKey] = useState(0);
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [slugEditedManually, setSlugEditedManually] = useState(false);
+  const [isEditingSlug, setIsEditingSlug] = useState(false);
+
+  async function uploadImageFile(file: File): Promise<string | null> {
+    setImageUploadError(null);
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("/api/admin/upload/image", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setImageUploadError((data as { error?: string }).error ?? "Upload failed.");
+      return null;
+    }
+    return typeof (data as { url?: string }).url === "string" ? (data as { url: string }).url : null;
+  }
+
+  async function handleThumbnailUpload(file: File) {
+    setThumbnailUploading(true);
+    setImageUploadError(null);
+    try {
+      const url = await uploadImageFile(file);
+      if (url) {
+        setPreviewUrls((prev) => {
+          const next = prev.filter((u) => u.trim() !== "");
+          return [url, ...next];
+        });
+      }
+    } finally {
+      setThumbnailUploading(false);
+    }
+  }
+
+  function slugify(text: string) {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
+  }
+
+  // Keep slug in sync with title unless the user has edited it manually.
+  useEffect(() => {
+    if (!slugEditedManually && form.title.trim()) {
+      setForm((prev) => ({
+        ...prev,
+        slug: slugify(form.title),
+      }));
+    }
+  }, [form.title, slugEditedManually]);
 
   // Live preview sync: update when user edits title, description, tags, price, preview images.
   useEffect(() => {
@@ -381,7 +404,11 @@ export function ResourceForm({
     const category = form.categoryId
       ? categories.find((c) => c.id === form.categoryId)
       : null;
-    const priceNum = form.isFree ? 0 : Number(form.price) || 0;
+    // For preview, keep price semantics consistent with the database:
+    // Resource.price is stored in the smallest unit (satang).
+    const priceNum = form.isFree
+      ? 0
+      : Math.round((Number(form.price) || 0) * 100);
     const previewUrl =
       previewUrls.filter((u) => u.trim() !== "")[0] ?? null;
     const selectedTagsData = tags.filter((t) => selectedTagIds.includes(t.id));
@@ -389,7 +416,7 @@ export function ResourceForm({
     const data: ResourceCardData = {
       id: "preview",
       title: form.title.trim() || "Sample resource title",
-      slug: slugifyPreview(form.title) || "sample-resource",
+      slug: form.slug.trim() || slugifyPreview(form.title) || "sample-resource",
       description:
         form.description.trim() ||
         "Short description of the resource to show how it will look in the marketplace.",
@@ -430,9 +457,34 @@ export function ResourceForm({
     const checked =
       type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
 
+    setFieldErrors((prev) => {
+      if (!name) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+
+    const nextValue =
+      name === "description" ? value.slice(0, 500) : value;
+
+    // Lazily create a draft when the user first edits the title in create mode.
+    if (
+      mode === "create" &&
+      !resource?.id &&
+      !draftResourceId &&
+      onEnsureDraftResource &&
+      name &&
+      name === "title"
+    ) {
+      const trimmed = typeof nextValue === "string" ? nextValue.trim() : "";
+      if (trimmed.length > 0) {
+        void onEnsureDraftResource();
+      }
+    }
+
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : nextValue,
       ...(name === "isFree" && checked ? { price: "" } : {}),
     }));
   }
@@ -440,16 +492,21 @@ export function ResourceForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaveLoading(true);
+    setSaveState("saving");
     setError(null);
     setSuccess(null);
+    setFieldErrors({});
 
     const priceCents = form.isFree
       ? 0
       : Math.round((Number(form.price) || 0) * 100);
 
+    const rawSlug = (form.slug && form.slug.trim()) || slugify(form.title);
+
     const payload: ResourcePayload = {
       title: form.title.trim(),
       description: form.description.trim(),
+      slug: rawSlug,
       type: form.type,
       status: form.status,
       isFree: form.isFree,
@@ -457,6 +514,10 @@ export function ResourceForm({
       fileUrl: form.fileUrl.trim() || null,
       categoryId: form.categoryId || null,
       featured: form.featured,
+      level: form.level ? (form.level as ResourceLevel) : undefined,
+      license: form.license ? (form.license as ResourceLicense) : undefined,
+      visibility: form.visibility,
+      authorId: form.authorId?.trim() || undefined,
       tagIds: selectedTagIds,
       previewUrls: previewUrls.filter((u) => u.trim() !== ""),
     };
@@ -466,10 +527,24 @@ export function ResourceForm({
       setSuccess(
         isEdit ? "Resource updated successfully." : "Resource created successfully.",
       );
+      setSaveState("saved");
     } catch (err) {
+      if (err && typeof err === "object" && "fields" in (err as any)) {
+        const fields = (err as any).fields as Record<string, string | string[] | undefined>;
+        const next: Record<string, string> = {};
+        Object.entries(fields || {}).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            if (value[0]) next[key] = value[0] as string;
+          } else if (typeof value === "string") {
+            next[key] = value;
+          }
+        });
+        setFieldErrors(next);
+      }
       setError(
         err instanceof Error ? err.message : "Network error. Please try again.",
       );
+      setSaveState("idle");
     } finally {
       setSaveLoading(false);
     }
@@ -513,8 +588,9 @@ export function ResourceForm({
     }
   }
 
-  const normalizedPreviewUrls =
-    previewUrls.length === 0 ? [""] : previewUrls;
+  const normalizedPreviewUrls = previewUrls.filter((u) => u.trim() !== "");
+  const descriptionLength = form.description.length;
+  const slugPreview = form.slug.trim() || slugifyPreview(form.title);
 
   return (
     <>
@@ -523,137 +599,186 @@ export function ResourceForm({
         onSubmit={handleSubmit}
         className="w-full min-w-0 space-y-8"
       >
-        <FormSection title="Basic Information">
-          <div className="grid w-full min-w-0 gap-4 md:grid-cols-2">
-            <div className="min-w-0 space-y-1.5 md:col-span-2">
-              <Label htmlFor="title">Title</Label>
-              <input
-                id="title"
-                name="title"
-                type="text"
-                required
-                minLength={3}
-                value={form.title}
-                onChange={handleChange}
-                className="input-base w-full"
-              />
-            </div>
-            <div className="min-w-0 space-y-1.5 md:col-span-2">
-              <Label htmlFor="description">Description</Label>
-              <textarea
-                id="description"
-                name="description"
-                required
-                minLength={10}
-                rows={4}
-                value={form.description}
-                onChange={handleChange}
-                className="input-base w-full resize-none"
-              />
-            </div>
-          </div>
-        </FormSection>
+        {/* Save state indicator */}
+        <div className="flex justify-end text-[11px] text-text-secondary">
+          {saveState === "saving" && <span>Saving...</span>}
+          {saveState === "saved" && (
+            <span className="text-emerald-600">Saved</span>
+          )}
+        </div>
 
-        <FormSection title="Metadata">
-          <div className="grid w-full min-w-0 gap-4 md:grid-cols-3">
-            <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="categoryId">Category</Label>
-              <select
-                id="categoryId"
-                name="categoryId"
-                value={form.categoryId}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-              >
-                <option value="">— None —</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="type">Resource Type</Label>
-              <select
-                id="type"
-                name="type"
-                value={form.type}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-              >
-                <option value="PDF">PDF</option>
-                <option value="DOCUMENT">Document</option>
-              </select>
-            </div>
-
-            <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-              >
-                <option value="DRAFT">Draft</option>
-                <option value="PUBLISHED">Published</option>
-                <option value="ARCHIVED">Archived</option>
-              </select>
-              <p className="mt-1 text-[11px] text-text-secondary">
-                {form.status === "DRAFT" && "Only visible to admins."}
-                {form.status === "PUBLISHED" && "Visible in marketplace."}
-                {form.status === "ARCHIVED" && "Hidden but not deleted."}
+        {/* Basic Info */}
+        <h3 className="text-sm font-semibold text-zinc-900">Basic Info</h3>
+        <div className="grid w-full min-w-0 gap-4">
+          <div className="min-w-0 space-y-1.5">
+            <Label htmlFor="title">Title</Label>
+            <input
+              id="title"
+              name="title"
+              type="text"
+              required
+              minLength={3}
+              value={form.title}
+              onChange={handleChange}
+              className="input-base w-full"
+              placeholder="Enter resource title"
+            />
+            {fieldErrors.title && (
+              <p className="mt-1 text-[12px] text-red-600">
+                {fieldErrors.title}
               </p>
+            )}
+            <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-text-secondary">
+              {!isEditingSlug ? (
+                <>
+                  <p className="truncate text-text-secondary">
+                    /resources/{slugPreview}
+                  </p>
+                  <button
+                    type="button"
+                    className="shrink-0 rounded-full px-2 py-1 text-[11px] font-medium text-brand-700 hover:bg-brand-50"
+                    onClick={() => setIsEditingSlug(true)}
+                  >
+                    Edit URL
+                  </button>
+                </>
+              ) : (
+                <div className="flex w-full items-center gap-1.5">
+                  <span className="shrink-0 text-text-secondary">
+                    /resources/
+                  </span>
+                  <input
+                    id="slug"
+                    name="slug"
+                    type="text"
+                    value={form.slug}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setForm((prev) => ({
+                        ...prev,
+                        slug: value,
+                      }));
+                      setSlugEditedManually(true);
+                    }}
+                    className="input-base w-full py-1 text-[11px]"
+                    placeholder={slugPreview}
+                  />
+                  <button
+                    type="button"
+                    className="shrink-0 rounded-full px-2 py-1 text-[11px] font-medium text-brand-700 hover:bg-brand-50"
+                    onClick={() => setIsEditingSlug(false)}
+                  >
+                    Save
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-        </FormSection>
+        </div>
 
-        <FormSection title="Pricing">
-          <div className="grid w-full min-w-0 gap-4 md:grid-cols-3">
-            <div className="min-w-0 space-y-1.5 md:col-span-2">
-              <Label htmlFor="pricing">Pricing model</Label>
-              <div className="flex w-full rounded-xl border border-zinc-200 bg-zinc-50 p-1">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setForm((prev) => ({
-                      ...prev,
-                      isFree: true,
-                      price: "",
-                    }))
-                  }
-                  className={[
-                    "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    form.isFree
-                      ? "bg-white text-zinc-900 shadow-sm"
-                      : "bg-transparent text-zinc-600 hover:text-zinc-900",
-                  ].join(" ")}
-                >
-                  Free
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setForm((prev) => ({
-                      ...prev,
-                      isFree: false,
-                    }))
-                  }
-                  className={[
-                    "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    !form.isFree
-                      ? "bg-white text-zinc-900 shadow-sm"
-                      : "bg-transparent text-zinc-600 hover:text-zinc-900",
-                  ].join(" ")}
-                >
-                  Paid
-                </button>
-              </div>
+        {/* 2. Description */}
+        <div className="grid w-full min-w-0 gap-4">
+          <div className="min-w-0 space-y-1.5">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              name="description"
+              required
+              minLength={10}
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Briefly describe what this resource contains..."
+            />
+            {fieldErrors.description && (
+              <p className="mt-1 text-[12px] text-red-600">
+                {fieldErrors.description}
+              </p>
+            )}
+            <p className="mt-1 text-[11px] text-text-secondary">
+              {descriptionLength} / 500 characters
+            </p>
+          </div>
+        </div>
+
+        {/* Basic Info: Category, Level, Type */}
+        <div className="grid w-full min-w-0 gap-4 md:grid-cols-3">
+          <div className="min-w-0 space-y-1.5">
+            <Label htmlFor="categoryId">Category</Label>
+            <Select
+              id="categoryId"
+              name="categoryId"
+              value={form.categoryId}
+              onChange={handleChange}
+            >
+              <option value="">— None —</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+            {fieldErrors.categoryId && (
+              <p className="mt-1 text-[12px] text-red-600">
+                {fieldErrors.categoryId}
+              </p>
+            )}
+          </div>
+
+          <div className="min-w-0 space-y-1.5">
+            <Label htmlFor="level">Level</Label>
+            <Select
+              id="level"
+              name="level"
+              value={form.level}
+              onChange={handleChange}
+            >
+              <option value="">— None —</option>
+              <option value="BEGINNER">Beginner</option>
+              <option value="INTERMEDIATE">Intermediate</option>
+              <option value="ADVANCED">Advanced</option>
+            </Select>
+          </div>
+
+          <div className="min-w-0 space-y-1.5">
+            <Label htmlFor="type">Resource Type</Label>
+            <Select
+              id="type"
+              name="type"
+              value={form.type}
+              onChange={handleChange}
+            >
+              <option value="PDF">PDF</option>
+              <option value="DOCUMENT">Document</option>
+            </Select>
+            {fieldErrors.type && (
+              <p className="mt-1 text-[12px] text-red-600">
+                {fieldErrors.type}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Pricing */}
+        <div className="grid w-full min-w-0 gap-4">
+          <h3 className="text-sm font-semibold text-zinc-900">Pricing</h3>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="isFree"
+                checked={form.isFree}
+                onCheckedChange={(checked) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    isFree: checked,
+                    ...(checked ? { price: "" } : {}),
+                  }))
+                }
+              />
+              <label htmlFor="isFree" className="text-sm font-medium text-zinc-700">
+                Free resource
+              </label>
             </div>
-
-            <div className="min-w-0 space-y-1.5">
+            <div className="min-w-0 flex-1 space-y-1.5 sm:max-w-[140px]">
               <Label htmlFor="price">Price (THB)</Label>
               <input
                 id="price"
@@ -664,62 +789,212 @@ export function ResourceForm({
                 value={form.price}
                 onChange={handleChange}
                 placeholder="49"
-                className="input-base w-full"
+                className="input-base w-full disabled:bg-zinc-100 disabled:opacity-70"
                 disabled={form.isFree}
               />
+              {fieldErrors.price && (
+                <p className="mt-1 text-[12px] text-red-600">
+                  {fieldErrors.price}
+                </p>
+              )}
             </div>
           </div>
-        </FormSection>
+        </div>
 
-        <FormSection title="Marketplace Options">
-          <div className="space-y-4">
-            <div className="flex min-w-0 items-start justify-between gap-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-zinc-900">
-                  Featured Resource
-                </p>
-                <p className="mt-1 text-xs text-zinc-600">
-                  Featured resources appear more prominently in the marketplace.
-                </p>
-              </div>
-              <div className="shrink-0 pt-0.5">
-                <Toggle
-                  checked={form.featured}
-                  onCheckedChange={(value) =>
+        {/* Visibility */}
+        <div className="grid w-full min-w-0 gap-4">
+          <h3 className="text-sm font-semibold text-zinc-900">Visibility</h3>
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-6">
+            <div className="min-w-0 space-y-1.5 sm:max-w-[180px]">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                id="status"
+                name="status"
+                value={form.status}
+                onChange={handleChange}
+              >
+                <option value="DRAFT">Draft</option>
+                <option value="PUBLISHED">Published</option>
+                <option value="ARCHIVED">Archived</option>
+              </Select>
+              <p className="mt-1 text-[11px] text-text-secondary">
+                {form.status === "DRAFT" && "Only visible to admins."}
+                {form.status === "PUBLISHED" && "Visible in marketplace."}
+                {form.status === "ARCHIVED" && "Hidden but not deleted."}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="featured"
+                checked={form.featured}
+                onCheckedChange={(checked) =>
+                  setForm((prev) => ({ ...prev, featured: checked }))
+                }
+              />
+              <label htmlFor="featured" className="text-sm font-medium text-zinc-700">
+                Featured resource
+              </label>
+            </div>
+            <p className="text-[11px] text-text-secondary">
+              May appear on homepage or in featured sections.
+            </p>
+            {form.status === "PUBLISHED" && (
+              <div className="min-w-0 space-y-1.5 sm:max-w-[180px]">
+                <Label htmlFor="visibility">Visibility</Label>
+                <Select
+                  id="visibility"
+                  name="visibility"
+                  value={form.visibility}
+                  onChange={(e) =>
                     setForm((prev) => ({
                       ...prev,
-                      featured: value,
+                      visibility: e.target.value as ResourceVisibility,
                     }))
                   }
+                >
+                  <option value="PUBLIC">Public</option>
+                  <option value="UNLISTED">Unlisted</option>
+                </Select>
+                <p className="mt-1 text-[11px] text-text-secondary">
+                  Unlisted: accessible by URL, not shown in marketplace listings.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Tags */}
+        <div className="w-full min-w-0">
+          <Label htmlFor="tag-input-search" icon={<Tag className="h-3.5 w-3.5" />}>
+            Tags
+            <span className="ml-1 font-normal normal-case text-text-secondary">
+              (optional)
+            </span>
+          </Label>
+          <TagInput
+            options={tags}
+            selectedIds={selectedTagIds}
+            onChange={setSelectedTagIds}
+            placeholder="Search or add tags…"
+            label={undefined}
+            onCreateTag={
+              onTagCreated
+                ? async (name) => {
+                    const res = await fetch("/api/admin/tags", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ name: name.trim() }),
+                    });
+                    const json = await res.json();
+                    if (!res.ok) return null;
+                    const tag = json.data as ResourceFormTag;
+                    onTagCreated(tag);
+                    return tag;
+                  }
+                : undefined
+            }
+          />
+        </div>
+
+        {/* Media */}
+        <h3 className="text-sm font-semibold text-zinc-900">Media</h3>
+        <div className="w-full min-w-0 space-y-4">
+          <p className="text-[11px] text-text-secondary">
+            JPEG, PNG, WebP, GIF. Max 5MB per image.
+          </p>
+          {/* Thumbnail: uses first preview URL (cover = first in list) */}
+          <div className="w-full min-w-0 space-y-2">
+            <Label htmlFor="thumbnail-upload">Thumbnail</Label>
+            {normalizedPreviewUrls[0] && (
+              <div className="relative inline-block overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={normalizedPreviewUrls[0]}
+                  alt="Thumbnail preview"
+                  className="h-32 w-auto max-w-[240px] object-cover"
                 />
               </div>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-[12px] font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50">
+                <input
+                  id="thumbnail-upload"
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  disabled={thumbnailUploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleThumbnailUpload(file);
+                    e.target.value = "";
+                  }}
+                />
+                {thumbnailUploading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-3.5 w-3.5" />
+                )}
+                {thumbnailUploading ? "Uploading…" : "Upload thumbnail"}
+              </label>
             </div>
+            {imageUploadError && (
+              <p className="text-[12px] text-red-600">{imageUploadError}</p>
+            )}
+          </div>
 
-            <input
-              type="hidden"
-              name="isFeatured"
-              value={form.featured ? "true" : "false"}
+          {/* Drag & drop upload + sortable previews; first image = cover */}
+          <div className="w-full min-w-0 space-y-2">
+            <Label htmlFor="preview-images">Preview images</Label>
+            <p className="text-[11px] text-text-secondary">
+              First image is the cover. Drag to reorder; use first position as cover.
+            </p>
+            <ImageDropzone
+              disabled={thumbnailUploading}
+              onFilesAccepted={async (files) => {
+                const uploaded: string[] = [];
+                for (const file of files) {
+                  const url = await uploadImageFile(file);
+                  if (url) uploaded.push(url);
+                }
+                if (uploaded.length > 0) {
+                  setPreviewUrls((prev) => [
+                    ...prev.filter((u) => u.trim() !== ""),
+                    ...uploaded,
+                  ]);
+                }
+              }}
+              helpText="Drag & drop preview images here, or click to browse"
+            />
+            <PreviewImageSortableList
+              images={normalizedPreviewUrls}
+              onReorder={(next) => setPreviewUrls(next)}
+              onRemoveIndex={(index) =>
+                setPreviewUrls((prev) =>
+                  prev.filter((_, i) => i !== index),
+                )
+              }
+              onSetCover={(index) =>
+                setPreviewUrls((prev) => {
+                  const next = [...prev];
+                  const [img] = next.splice(index, 1);
+                  next.unshift(img);
+                  return next;
+                })
+              }
             />
           </div>
-        </FormSection>
 
-        <FormSection title="Tags">
-          <div className="grid w-full min-w-0 gap-4">
-            <TagSelector
-              tags={tags}
-              selectedIds={selectedTagIds}
-              onChange={setSelectedTagIds}
-            />
-          </div>
-        </FormSection>
+          <PreviewUrlsEditor
+            urls={normalizedPreviewUrls}
+            onChange={setPreviewUrls}
+            onUploadImage={uploadImageFile}
+          />
+        </div>
 
-        <FormSection title="Content">
-          <div className="w-full min-w-0 space-y-4">
-            <PreviewUrlsEditor
-              urls={normalizedPreviewUrls}
-              onChange={setPreviewUrls}
-            />
-
+        {/* File */}
+        <div className="grid w-full min-w-0 gap-4">
+          <h3 className="text-sm font-semibold text-zinc-900">File</h3>
+          <div className="min-w-0 space-y-4">
             <div className="min-w-0 space-y-1.5">
               <Label
                 htmlFor="fileUrl"
@@ -733,7 +1008,7 @@ export function ResourceForm({
                 type="url"
                 value={form.fileUrl}
                 onChange={handleChange}
-                placeholder="https://…"
+                placeholder="https://example.com/file.pdf"
                 className="input-base w-full"
               />
               <p className="mt-1 text-[11px] text-text-secondary">
@@ -777,7 +1052,7 @@ export function ResourceForm({
                   </div>
                   <FileUploadWidget
                     key={fileUploadKey}
-                    resourceId={resource?.id}
+                    resourceId={effectiveResourceId}
                     initialFileName={hasPrivateFile ? initialFileName : null}
                     initialFileSize={
                       hasPrivateFile ? initialFileSize ?? undefined : undefined
@@ -785,12 +1060,58 @@ export function ResourceForm({
                     onRemoveCurrentFile={
                       isEdit && resource ? handleRemoveFile : undefined
                     }
+                    onEnsureResourceId={
+                      !isEdit && onEnsureDraftResource ? onEnsureDraftResource : undefined
+                    }
                   />
                 </div>
               </div>
+              <p className="mt-1 text-[11px] text-text-secondary">
+                Allowed: PDF, DOCX, XLSX, ZIP. Max file size: 50MB.
+              </p>
             </div>
           </div>
-        </FormSection>
+        </div>
+
+        {/* License */}
+        <div className="grid w-full min-w-0 gap-4">
+          <h3 className="text-sm font-semibold text-zinc-900">License</h3>
+          <div className="min-w-0 max-w-md space-y-1.5">
+            <Label htmlFor="license">License type</Label>
+            <Select
+              id="license"
+              name="license"
+              value={form.license}
+              onChange={handleChange}
+            >
+              <option value="">— None —</option>
+              <option value="PERSONAL_USE">Personal Use</option>
+              <option value="COMMERCIAL_USE">Commercial Use</option>
+              <option value="EXTENDED_LICENSE">Extended License</option>
+            </Select>
+          </div>
+        </div>
+
+        {/* Creator (admin override) — optional; default is current user */}
+        <div className="grid w-full min-w-0 gap-4">
+          <h3 className="text-sm font-semibold text-zinc-900">Creator</h3>
+          <div className="min-w-0 max-w-md space-y-1.5">
+            <Label htmlFor="authorId">Assign owner</Label>
+            <UserSearchSelect
+              id="authorId"
+              value={form.authorId}
+              onChange={(userId) =>
+                setForm((prev) => ({ ...prev, authorId: userId }))
+              }
+              currentUserId={currentUser?.id}
+              currentUserName={currentUser?.name}
+              initialAuthorName={resource?.authorName}
+            />
+            <p className="text-[11px] text-text-secondary">
+              Optional. Defaults to the current admin user.
+            </p>
+          </div>
+        </div>
 
         {/* Feedback banners */}
         {error && (

@@ -64,7 +64,7 @@ model User {
   email          String?   @unique
   emailVerified  DateTime?
   image          String?
-  hashedPassword String?   // null for OAuth-only users
+  hashedPassword String? // null for OAuth-only users
   role           UserRole  @default(STUDENT)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -73,15 +73,19 @@ model User {
   stripeCustomerId     String?   @unique
   stripeSubscriptionId String?   @unique
   subscriptionStatus   SubStatus @default(INACTIVE)
-  subscriptionPlan     String?   // e.g. "pro_monthly"
+  subscriptionPlan     String? // e.g. "pro_monthly"
   currentPeriodEnd     DateTime?
 
   // Relations
-  accounts     Account[]
-  sessions     Session[]
-  resources    Resource[]   // resources authored by this user
-  purchases    Purchase[]
-  reviews      Review[]
+  accounts         Account[]
+  sessions         Session[]
+  resources        Resource[] // resources authored by this user
+  purchases        Purchase[]
+  reviews          Review[]
+  activityLogs     ActivityLog[]
+  resourceVersions ResourceVersion[]
+  auditLogs        AuditLog[]
+  preferences      UserPreference?
 }
 
 enum SubStatus {
@@ -105,6 +109,23 @@ enum ResourceStatus {
   ARCHIVED
 }
 
+enum ResourceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ResourceLicense {
+  PERSONAL_USE
+  COMMERCIAL_USE
+  EXTENDED_LICENSE
+}
+
+enum ResourceVisibility {
+  PUBLIC
+  UNLISTED
+}
+
 model Category {
   id          String     @id @default(cuid())
   name        String     @unique
@@ -113,10 +134,26 @@ model Category {
   resources   Resource[]
 }
 
+model HomepageHero {
+  id               String   @id @default(cuid())
+  title            String
+  subtitle         String
+  primaryCtaText   String
+  primaryCtaLink   String
+  secondaryCtaText String?
+  secondaryCtaLink String?
+  badgeText        String?
+  imageUrl         String?
+  mediaUrl         String?
+  mediaType        String?  // "image" | "gif"
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
 model Tag {
-  id        String         @id @default(cuid())
-  name      String         @unique
-  slug      String         @unique
+  id        String        @id @default(cuid())
+  name      String        @unique
+  slug      String        @unique
   resources ResourceTag[]
 }
 
@@ -129,45 +166,81 @@ model Resource {
   status      ResourceStatus @default(DRAFT)
 
   // File storage (S3 / local)
-  fileUrl     String?        // URL to an external / S3-hosted file
-  fileKey     String?        // key inside private-uploads/ for locally stored files
-  fileSize    Int?           // bytes
-  fileName    String?
-  mimeType    String?
-  previewUrl  String?        // thumbnail or first-page preview
+  fileUrl    String? // URL to an external / S3-hosted file
+  fileKey    String? // key inside private-uploads/ for locally stored files
+  fileSize   Int? // bytes
+  fileName   String?
+  mimeType   String?
+  previewUrl String? // thumbnail or first-page preview
 
   // Pricing
-  isFree      Boolean  @default(false)
-  price       Int      @default(0)  // in baht; 0 = free
+  isFree          Boolean @default(false)
+  price           Int     @default(0) // in baht; 0 = free
   // If priceId is set, resource is also available via Stripe checkout
-  stripePriceId       String?
-  stripeProductId     String?
+  stripePriceId   String?
+  stripeProductId String?
 
   // Metadata
-  featured    Boolean  @default(false)
-  downloadCount Int    @default(0)
-  viewCount   Int      @default(0)
+  featured      Boolean            @default(false)
+  level         ResourceLevel?
+  license       ResourceLicense?
+  visibility    ResourceVisibility? // when status=PUBLISHED: PUBLIC (in listings) or UNLISTED (URL only)
+  downloadCount Int                @default(0)
+  viewCount     Int                @default(0)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
   // Relations
-  authorId    String
-  author      User       @relation(fields: [authorId], references: [id])
-  categoryId  String?
-  category    Category?  @relation(fields: [categoryId], references: [id])
-  tags        ResourceTag[]
-  previews    ResourcePreview[]
-  purchases   Purchase[]
-  reviews     Review[]
+  authorId   String
+  author     User              @relation(fields: [authorId], references: [id])
+  categoryId String?
+  category   Category?         @relation(fields: [categoryId], references: [id])
+  tags            ResourceTag[]
+  previews        ResourcePreview[]
+  purchases       Purchase[]
+  reviews         Review[]
+  versions        ResourceVersion[]
+  downloadEvents  DownloadEvent[]
+
+  // Indexes for common marketplace listing queries
+  @@index([status, createdAt])
+  @@index([status, downloadCount])
+  @@index([status, featured])
+  @@index([deletedAt])
+}
+
+model ResourceVersion {
+  id         String @id @default(cuid())
+  resourceId String
+  version    Int
+
+  // File snapshot at this version
+  fileKey  String?
+  fileName String?
+  fileSize Int?
+  mimeType String?
+  fileUrl  String?
+
+  changelog String? @db.Text
+
+  createdAt   DateTime @default(now())
+  createdById String?
+
+  resource  Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdBy User?    @relation(fields: [createdById], references: [id])
+
+  @@unique([resourceId, version])
+  @@index([resourceId, version])
 }
 
 model ResourceTag {
   resourceId String
   tagId      String
 
-  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([resourceId, tagId])
 }
@@ -179,7 +252,7 @@ model ResourcePreview {
   order      Int      @default(0)
   createdAt  DateTime @default(now())
 
-  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
   @@index([resourceId])
 }
@@ -194,34 +267,36 @@ enum PurchaseStatus {
 }
 
 model Purchase {
-  id                    String         @id @default(cuid())
-  userId                String
-  resourceId            String
-  amount                Int            // in smallest currency unit (e.g. satang for THB)
-  currency              String         @default("usd")
-  status                PurchaseStatus @default(PENDING)
+  id         String         @id @default(cuid())
+  userId     String
+  resourceId String
+  amount     Int // in smallest currency unit (e.g. satang for THB)
+  currency   String         @default("usd")
+  status     PurchaseStatus @default(PENDING)
 
   // Which payment provider processed this purchase.
   // Null on existing rows is treated as "STRIPE" in application logic.
-  paymentProvider       String?        // "STRIPE" | "XENDIT"
+  paymentProvider String? // "STRIPE" | "XENDIT"
 
   // ── Stripe fields ─────────────────────────────────────────────────────────
-  stripeSessionId       String?        @unique
-  stripePaymentIntentId String?        @unique
+  stripeSessionId       String? @unique
+  stripePaymentIntentId String? @unique
 
   // ── Xendit fields ─────────────────────────────────────────────────────────
   // xenditInvoiceId = the invoice.id returned by xendit.Invoice.createInvoice().
   // Used as the primary match key in the Xendit webhook handler, mirroring
   // the role stripeSessionId plays in the Stripe webhook handler.
-  xenditInvoiceId       String?        @unique
+  xenditInvoiceId String? @unique
 
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user     User     @relation(fields: [userId], references: [id])
   resource Resource @relation(fields: [resourceId], references: [id])
 
   @@unique([userId, resourceId]) // one purchase record per user per resource
+  @@index([userId, status])
+  @@index([resourceId])
 }
 
 // ─── Reviews ─────────────────────────────────────────────────────────────────
@@ -230,7 +305,7 @@ model Review {
   id         String   @id @default(cuid())
   userId     String
   resourceId String
-  rating     Int      // 1–5
+  rating     Int // 1–5
   body       String?  @db.Text
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -241,15 +316,106 @@ model Review {
   @@unique([userId, resourceId])
 }
 
+// ─── User Preferences ──────────────────────────────────────────────────────────
+
+model UserPreference {
+  id      String @id @default(cuid())
+  userId  String @unique
+
+  language String @default("th")
+  theme    String @default("system")
+  currency String @default("THB")
+  timezone String @default("Asia/Bangkok")
+
+  // Notification preferences (can be expanded over time)
+  emailNotifications  Boolean @default(true)
+  purchaseReceipts    Boolean @default(true)
+  productUpdates      Boolean @default(true)
+  marketingEmails     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
 // ─── Webhook Dead-letter Storage ──────────────────────────────────────────────
 
 model WebhookEvent {
   id        String   @id @default(cuid())
-  provider  String   // "STRIPE" | "XENDIT" | etc.
-  eventType String   // e.g. "checkout.session.completed", "invoice.paid"
+  provider  String // "STRIPE" | "XENDIT" | etc.
+  eventType String // e.g. "checkout.session.completed", "invoice.paid"
   payload   Json
   resolved  Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@index([provider, resolved, createdAt])
+}
+
+// ─── Activity Log ───────────────────────────────────────────────────────────────
+
+model ActivityLog {
+  id String @id @default(cuid())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  action   String
+  entity   String?
+  entityId String?
+
+  metadata Json?
+
+  ip        String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+}
+
+// ─── Admin Audit Trail ─────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  entityType String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  @@index([adminId, createdAt])
+  @@index([action])
+  @@index([entityType])
+}
+
+// ─── Download Events ──────────────────────────────────────────────────────────
+//
+// One row per successful file delivery.  Used for analytics dashboards and
+// per-resource download trend charts.  Supplements the downloadCount counter
+// on the Resource model which is also maintained for fast sorting/ordering.
+//
+// userId is nullable so future unauthenticated/guest downloads can also be
+// recorded.  The relation to User is intentionally omitted — the userId here
+// is a soft reference (no FK constraint) to keep the write fast and to avoid
+// cascading deletes when users are removed.
+
+model DownloadEvent {
+  id         String   @id @default(cuid())
+  resourceId String
+  userId     String?  // null = unauthenticated; soft reference, no FK
+  ip         String?  // client IP from cf-connecting-ip / x-forwarded-for
+
+  createdAt  DateTime @default(now())
+
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+  @@index([createdAt])
+  @@index([resourceId, createdAt])
 }

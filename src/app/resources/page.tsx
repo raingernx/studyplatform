@@ -1,348 +1,496 @@
 import { Suspense } from "react";
-import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import {
+  ArrowRight,
+  BookOpen,
+  Calculator,
+  ClipboardList,
+  FlaskConical,
+  GraduationCap,
+  Languages,
+  LayoutGrid,
+  Palette,
+} from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { Navbar } from "@/components/layout/Navbar";
-import { ResourceGrid } from "@/components/ui/ResourceGrid";
-import { Card } from "@/components/ui/Card";
-import { SectionHeader } from "@/components/ui/SectionHeader";
-import { ResourceFilters, type FilterCategory, type FilterTag } from "@/components/resources/ResourceFilters";
-import { ResourceFiltersMobile } from "@/components/resources/ResourceFiltersMobile";
-import { ResourceSearch } from "@/components/resources/ResourceSearch";
-import { ResourceSort } from "@/components/resources/ResourceSort";
-import type { ResourceCardData } from "@/components/resources/ResourceCard";
-import { ArrowUpDown, SlidersHorizontal } from "lucide-react";
+import { ResourceGrid } from "@/components/resources/ResourceGrid";
+import { ResourceCard, type ResourceCardData } from "@/components/resources/ResourceCard";
+import { HeroSearch } from "@/components/marketplace/HeroSearch";
+import { HeroBanner } from "@/components/marketplace/HeroBanner";
+import { DiscoverButton, CategoryChips, type ChipCategory } from "@/components/marketplace/CategoryChips";
+import { ScrollableCategoryNav } from "@/components/marketplace/ScrollableCategoryNav";
+import { FilterBar } from "@/components/marketplace/FilterBar";
+import { FilterSidebar, type FilterCategory } from "@/components/marketplace/FilterSidebar";
+import { CreatorCTA } from "@/components/discover/CreatorCTA";
+import { BlogSection } from "@/components/discover/BlogSection";
+import { EmailSignup } from "@/components/discover/EmailSignup";
+import { formatNumber } from "@/lib/format";
+
+// ── Service imports ───────────────────────────────────────────────────────────
+
+import {
+  getDiscoverData,
+  getDiscoverCategories,
+  getHeroConfig,
+  type DiscoverData,
+} from "@/services/discover.service";
+import { getMarketplaceResources } from "@/services/resource.service";
+import { getOwnedResourceIds } from "@/services/purchase.service";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Marketplace – PaperDock",
+  title: "PaperDock — Discover Study Resources",
   description: "Browse and download study resources.",
 };
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-const ITEMS_PER_PAGE = 12;
-
-// ── Data fetching ─────────────────────────────────────────────────────────────
-
-// Convenience alias — Prisma accepts either a single clause or an array.
-type OrderBy =
-  | Prisma.ResourceOrderByWithRelationInput
-  | Prisma.ResourceOrderByWithRelationInput[];
-
-/**
- * Maps a URL sort token to a Prisma orderBy clause (or array of clauses).
- *
- * Single-column sorts return a plain object; multi-column sorts return an
- * array so Postgres can use a tie-breaker without extra application logic.
- *
- * "featured"  — featured items float to the top, then newest within each tier.
- * "trending"  — ordered by downloadCount first, then by purchase count as a
- *               tie-breaker.  Both are DB columns / relation counts so the
- *               sort runs entirely inside Postgres.
- * "popular"   — relation-count ordering: { purchases: { _count: "desc" } }.
- */
-function buildOrderBy(sort: string): OrderBy {
-  switch (sort) {
-    case "oldest":     return { createdAt:     "asc"  };
-    case "popular":    return { purchases:     { _count: "desc" } };
-    case "downloads":  return { downloadCount: "desc" };
-    case "price_asc":  return { price:         "asc"  };
-    case "price_desc": return { price:         "desc" };
-
-    // Featured items (featured: true) bubble to the top; within each tier
-    // resources are sorted newest-first so fresh content stays visible.
-    case "featured":
-      return [
-        { featured:  "desc" },
-        { createdAt: "desc" },
-      ];
-
-    // Trending = most downloaded, with purchase count as a tie-breaker.
-    // downloadCount is a scalar column; purchases uses relation-count ordering.
-    case "trending":
-      return [
-        { downloadCount: "desc" },
-        { purchases:     { _count: "desc" } },
-      ];
-
-    case "newest":
-    default:           return { createdAt: "desc" };
-  }
-}
-
-/**
- * Fetches a single page of published resources from the database.
- *
- * All filters (search, category, price, featured) and sorting are pushed
- * into Postgres via Prisma so the application layer only receives the rows
- * it needs.  A parallel `count` query provides the total for pagination.
- *
- * URL param → Prisma mapping:
- *   search   → OR [title contains, description contains] (insensitive)
- *   category → category.slug
- *   price    → isFree (free | paid | all)
- *   featured → featured: true
- *   tag      → tags.some.tag.slug
- *   sort     → orderBy via buildOrderBy()
- *   page     → skip / take
- */
-async function getMarketplaceData(params: {
-  search?:   string;
-  category?: string;
-  price?:    string;
-  featured?: boolean;
-  tag?:      string;
-  sort?:     string;
-  page?:     number;
-}) {
-  const { search, category, price, featured, tag, sort, page = 1 } = params;
-
-  const trimmedSearch   = search?.trim();
-  const trimmedCategory = category?.trim();
-  const trimmedTag      = tag?.trim();
-
-  // ── where fragments ──────────────────────────────────────────────────────────
-  const searchWhere = trimmedSearch
-    ? {
-        OR: [
-          { title:       { contains: trimmedSearch, mode: "insensitive" as const } },
-          { description: { contains: trimmedSearch, mode: "insensitive" as const } },
-        ],
-      }
-    : {};
-
-  const categoryWhere = trimmedCategory
-    ? { category: { slug: trimmedCategory } }
-    : {};
-
-  const priceWhere =
-    price === "free" ? { isFree: true }
-    : price === "paid" ? { isFree: false }
-    : {};
-
-  const featuredWhere = featured ? { featured: true } : {};
-
-  // Matches resources that have at least one tag with the given slug.
-  // Prisma translates this to an EXISTS subquery on the ResourceTag join table.
-  const tagWhere = trimmedTag
-    ? { tags: { some: { tag: { slug: trimmedTag } } } }
-    : {};
-
-  const where = {
-    status: "PUBLISHED" as const,
-    ...searchWhere,
-    ...categoryWhere,
-    ...priceWhere,
-    ...featuredWhere,
-    ...tagWhere,
-  };
-
-  // ── parallel queries ──────────────────────────────────────────────────────────
-  const skip = (page - 1) * ITEMS_PER_PAGE;
-
-  const [resources, total, categories, popularTags] = await Promise.all([
-    prisma.resource.findMany({
-      where,
-      include: {
-        author:   { select: { name: true } },
-        category: { select: { id: true, name: true, slug: true } },
-        tags:     { include: { tag: { select: { name: true, slug: true } } } },
-        _count:   { select: { purchases: true, reviews: true } },
-      },
-      orderBy: buildOrderBy(sort ?? "newest") as
-        | Prisma.ResourceOrderByWithRelationInput
-        | Prisma.ResourceOrderByWithRelationInput[],
-      skip,
-      take: ITEMS_PER_PAGE,
-    }),
-    prisma.resource.count({ where }),
-    prisma.category.findMany({ orderBy: { name: "asc" } }),
-    // Fetch the 20 most-used tags for the sidebar filter list.
-    // Ordering by relation count surfaces the tags that appear on the most resources.
-    prisma.tag.findMany({
-      orderBy: { resources: { _count: "desc" } },
-      take: 20,
-    }),
-  ]);
-
-  return { resources, total, categories, popularTags };
-}
-
+const ITEMS_PER_PAGE = 20;
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 interface ResourcesPageProps {
   searchParams: {
-    search?: string;  // full-text search term → passed to Prisma where clause
+    search?: string;
     category?: string;
     price?: string;
-    type?: string;
     featured?: string;
-    tag?: string;     // tag slug → tags.some.tag.slug in Prisma where clause
+    tag?: string;
     sort?: string;
     page?: string;
   };
 }
 
 export default async function ResourcesPage({ searchParams }: ResourcesPageProps) {
+  const resolvedParams =
+    typeof (searchParams as Promise<unknown>)?.then === "function"
+      ? await (searchParams as Promise<Record<string, string | undefined>>)
+      : (searchParams as Record<string, string | undefined>);
+
   const {
     search,
     category,
     price,
-    type,
     featured,
     tag,
     sort = "newest",
     page: pageParam,
-  } = searchParams;
+  } = resolvedParams;
 
   const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
-  // All filters, sorting, and pagination are handled by Prisma
-  const { resources, total, categories, popularTags } = await getMarketplaceData({
-    search,
-    category,
-    price,
-    featured: featured === "true",
-    tag,
-    sort,
-    page: currentPage,
-  });
+  // Discover = no category selected; Category = any category (including "all")
+  const isDiscoverMode = !category;
 
-  const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
-  // Clamp the page in case the URL has a stale high page number
-  const safePage = Math.min(currentPage, totalPages);
+  const session = await getServerSession(authOptions);
+  const userId  = session?.user?.id;
 
-  // Count active sidebar filters (search is shown separately, not counted here)
-  const activeFiltersCount = [
-    category,
-    price && price !== "all" ? price : null,
-    type && type !== "all" ? type : null,
-    featured === "true" ? "featured" : null,
-    tag,
-  ].filter(Boolean).length;
+  // ── Mode-specific data ──────────────────────────────────────────────────────
 
-  const displayCategories = categories as FilterCategory[];
-  const displayTags       = popularTags as FilterTag[];
+  let categories: { id: string; name: string; slug: string }[] = [];
+  let discoverCategoriesWithCount: { id: string; name: string; slug: string; _count: { resources: number } }[] = [];
+  let resources: ResourceCardData[] = [];
+  let total      = 0;
+  let totalPages = 1;
+  let safePage   = 1;
+  let discoverData: DiscoverData | null = null;
+  let heroConfig: Awaited<ReturnType<typeof getHeroConfig>> = null;
+
+  if (isDiscoverMode) {
+    const [heroResult, categoriesWithCount, data] = await Promise.all([
+      getHeroConfig(),
+      getDiscoverCategories(),
+      getDiscoverData(),
+    ]);
+    heroConfig     = heroResult;
+    categories     = categoriesWithCount.map((c) => ({ id: c.id, name: c.name, slug: c.slug }));
+    discoverData   = data;
+    discoverCategoriesWithCount = categoriesWithCount;
+  } else {
+    const data = await getMarketplaceResources({
+      search,
+      category,
+      price,
+      featured: featured === "true",
+      tag,
+      sort,
+      page:     currentPage,
+      pageSize: ITEMS_PER_PAGE,
+    });
+    resources   = data.resources as ResourceCardData[];
+    total       = data.total;
+    categories  = data.categories;
+    totalPages  = data.totalPages;
+    safePage    = Math.min(currentPage, totalPages);
+    discoverCategoriesWithCount = [];
+  }
+
+  // ── Owned IDs (both modes) ──────────────────────────────────────────────────
+
+  const ownedIds = userId ? await getOwnedResourceIds(userId) : new Set<string>();
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-50">
       <Navbar />
-      <main className="flex-1">
-        <div className="mx-auto flex w-full max-w-7xl flex-col px-6 py-10">
-          <SectionHeader
-            title="Marketplace"
-            description="Browse and download study resources created by top students and educators."
-            className="mb-8"
-          />
 
-          <div className="flex gap-8">
-            {/* ── Filter sidebar ─────────────────────────────────────────── */}
-            <div className="hidden flex-shrink-0 lg:block lg:w-52 xl:w-60">
-              <Suspense fallback={<FiltersFallback />}>
-                <ResourceFilters
-                  categories={displayCategories}
-                  tags={displayTags}
-                />
+      <main className="flex-1">
+        <div className="mx-auto w-full max-w-[1400px] space-y-8 px-6 py-8 sm:px-8">
+
+          {/* ── Hero (discover only) ──────────────────────────────────────── */}
+          {isDiscoverMode && (
+            <section>
+              <HeroBanner config={heroConfig} />
+            </section>
+          )}
+
+          {/* ── Category nav + Search (always visible) ────────────────────── */}
+          <section className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
+            <div className="flex min-w-0 items-center gap-4">
+              <Suspense fallback={<DiscoverFallback />}>
+                <DiscoverButton />
+              </Suspense>
+              <div className="h-6 w-px shrink-0 bg-zinc-200" aria-hidden />
+              <ScrollableCategoryNav>
+                <Suspense fallback={<ChipsFallback />}>
+                  <CategoryChips categories={categories as ChipCategory[]} />
+                </Suspense>
+              </ScrollableCategoryNav>
+            </div>
+
+            <div className="w-full max-w-lg shrink-0">
+              <Suspense fallback={<SearchFallback />}>
+                <HeroSearch />
               </Suspense>
             </div>
+          </section>
 
-            {/* ── Main content ───────────────────────────────────────────── */}
-            <div className="min-w-0 flex-1">
-              {/* ── Search bar ───────────────────────────────────────────── */}
-              <div className="mb-6 w-full">
-                <Suspense fallback={<SearchFallback />}>
-                  <ResourceSearch />
-                </Suspense>
-              </div>
+          {/* ════════════════════════════════════════════════════════════════ */}
+          {/* DISCOVER MODE — curated sections, no sidebar                    */}
+          {/* ════════════════════════════════════════════════════════════════ */}
+          {isDiscoverMode && discoverData && (
+            <div className="space-y-12">
 
-              {/* ── Mobile filters ───────────────────────────────────────── */}
-              <div className="mb-6 lg:hidden">
-                <ResourceFiltersMobile
-                  categories={displayCategories}
-                  tags={displayTags}
-                />
-              </div>
-
-              {/* ── Result header row ───────────────────────────────────── */}
-              <div className="mb-6 flex items-center justify-between">
-                <p className="text-sm text-text-secondary">
-                  {total === 1
-                    ? "1 resource found"
-                    : `${total.toLocaleString()} resources found`}
-                </p>
-                <Suspense fallback={<SortFallback />}>
-                  <ResourceSort />
-                </Suspense>
-              </div>
-
-              {/* ── Search results banner ──────────────────────────────── */}
-              {search?.trim() && (
-                <p className="mb-5 text-sm text-text-secondary">
-                  {total === 0 ? (
-                    <>
-                      No resources found for{" "}
-                      <span className="font-semibold text-text-primary">
-                        &ldquo;{search.trim()}&rdquo;
-                      </span>
-                      .
-                    </>
-                  ) : (
-                    <>
-                      Showing results for{" "}
-                      <span className="font-semibold text-text-primary">
-                        &ldquo;{search.trim()}&rdquo;
-                      </span>
-                    </>
-                  )}
-                </p>
+              {/* Browse by category */}
+              {discoverCategoriesWithCount.length > 0 && (
+                <section className="space-y-4">
+                  <h2 className="text-lg font-semibold text-text-primary">
+                    Browse by category
+                  </h2>
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    {discoverCategoriesWithCount.map((cat) => {
+                      const Icon  = getCategoryIcon(cat.slug);
+                      const color = getCategoryColor(cat.slug);
+                      return (
+                        <Link
+                          key={cat.id}
+                          href={`/resources?category=${encodeURIComponent(cat.slug)}`}
+                          className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-md"
+                        >
+                          <span
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}
+                          >
+                            <Icon className="h-5 w-5" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <span className="block font-medium text-zinc-900">{cat.name}</span>
+                            <span className="block text-[13px] text-zinc-500">
+                              {formatNumber(cat._count.resources)} resources
+                            </span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </section>
               )}
 
-              {/* ── Resource grid ──────────────────────────────────────── */}
-              <ResourceGrid
-                resources={resources as ResourceCardData[]}
-                total={total}
-                page={safePage}
-                totalPages={totalPages}
-              />
+              {/* Trending resources */}
+              {discoverData.trending.length > 0 && (
+                <section className="space-y-4">
+                  <SectionHeader
+                    title="Trending resources"
+                    viewAllHref="/resources?sort=trending&category=all"
+                  />
+                  <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                    {(discoverData.trending as ResourceCardData[]).map((resource) => (
+                      <ResourceCard
+                        key={resource.id}
+                        resource={resource}
+                        variant="marketplace"
+                        owned={ownedIds.has(resource.id)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Recommended for you */}
+              {discoverData.recommended.length > 0 && (
+                <section className="space-y-4">
+                  <SectionHeader
+                    title="Recommended for you"
+                    viewAllHref="/resources?sort=trending&category=all"
+                  />
+                  <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                    {(discoverData.recommended as ResourceCardData[]).map((resource) => (
+                      <ResourceCard
+                        key={resource.id}
+                        resource={resource}
+                        variant="marketplace"
+                        owned={ownedIds.has(resource.id)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* New releases */}
+              {discoverData.newReleases.length > 0 && (
+                <section className="space-y-4">
+                  <SectionHeader
+                    title="New releases"
+                    viewAllHref="/resources?sort=newest&category=all"
+                  />
+                  <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                    {(discoverData.newReleases as ResourceCardData[]).map((resource) => (
+                      <ResourceCard
+                        key={resource.id}
+                        resource={resource}
+                        variant="marketplace"
+                        owned={ownedIds.has(resource.id)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Featured picks */}
+              {discoverData.featured.length > 0 && (
+                <section className="space-y-4">
+                  <SectionHeader
+                    title="Featured picks"
+                    viewAllHref="/resources?sort=featured&category=all"
+                  />
+                  <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                    {(discoverData.featured as ResourceCardData[]).map((resource) => (
+                      <ResourceCard
+                        key={resource.id}
+                        resource={resource}
+                        variant="marketplace"
+                        owned={ownedIds.has(resource.id)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Free resources */}
+              {discoverData.freeResources.length > 0 && (
+                <section className="space-y-4">
+                  <SectionHeader
+                    title="Free resources"
+                    viewAllHref="/resources?price=free&category=all"
+                  />
+                  <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                    {(discoverData.freeResources as ResourceCardData[]).map((resource) => (
+                      <ResourceCard
+                        key={resource.id}
+                        resource={resource}
+                        variant="marketplace"
+                        owned={ownedIds.has(resource.id)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Most downloaded */}
+              {discoverData.mostDownloaded.length > 0 && (
+                <section className="space-y-4">
+                  <SectionHeader
+                    title="Most downloaded"
+                    viewAllHref="/resources?sort=downloads&category=all"
+                  />
+                  <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                    {(discoverData.mostDownloaded as ResourceCardData[]).map((resource) => (
+                      <ResourceCard
+                        key={resource.id}
+                        resource={resource}
+                        variant="marketplace"
+                        owned={ownedIds.has(resource.id)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <CreatorCTA />
+              <BlogSection />
+              <EmailSignup />
             </div>
-          </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════ */}
+          {/* CATEGORY MODE — filter sidebar + paginated grid                 */}
+          {/* ════════════════════════════════════════════════════════════════ */}
+          {!isDiscoverMode && (
+            <section>
+              <div className="flex gap-8">
+                {/* Sidebar filters */}
+                <Suspense fallback={<SidebarFallback />}>
+                  <FilterSidebar categories={categories as FilterCategory[]} />
+                </Suspense>
+
+                {/* Sort bar + grid */}
+                <div className="min-w-0 flex-1 space-y-5">
+                  <Suspense fallback={<FilterBarFallback />}>
+                    <FilterBar total={total} />
+                  </Suspense>
+
+                  {search?.trim() && (
+                    <p className="text-[13px] text-zinc-500">
+                      {total === 0 ? (
+                        <>
+                          No results for{" "}
+                          <strong className="text-zinc-900">
+                            &ldquo;{search.trim()}&rdquo;
+                          </strong>
+                          .
+                        </>
+                      ) : (
+                        <>
+                          Showing results for{" "}
+                          <strong className="text-zinc-900">
+                            &ldquo;{search.trim()}&rdquo;
+                          </strong>
+                        </>
+                      )}
+                    </p>
+                  )}
+
+                  <ResourceGrid
+                    resources={resources}
+                    ownedIds={Array.from(ownedIds)}
+                    total={total}
+                    page={safePage}
+                    totalPages={totalPages}
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
         </div>
       </main>
     </div>
   );
 }
 
-// ── Fallback skeletons (shown during Suspense hydration) ──────────────────────
+// ── Category icon and color mapping ───────────────────────────────────────────
 
-function SearchFallback() {
+function getCategoryIcon(slug: string): typeof Calculator {
+  const s = slug.toLowerCase();
+  if (s.includes("math"))          return Calculator;
+  if (s.includes("science"))       return FlaskConical;
+  if (s.includes("humanities"))    return BookOpen;
+  if (s.includes("language"))      return Languages;
+  if (s.includes("art"))           return Palette;
+  if (s.includes("early-learning"))return GraduationCap;
+  if (s.includes("study-skills"))  return ClipboardList;
+  if (s.includes("test-prep"))     return GraduationCap;
+  return LayoutGrid;
+}
+
+function getCategoryColor(slug: string): { bg: string; text: string } {
+  const s = slug.toLowerCase();
+  if (s.includes("math"))          return { bg: "bg-blue-100",   text: "text-blue-600" };
+  if (s.includes("science"))       return { bg: "bg-green-100",  text: "text-green-600" };
+  if (s.includes("language"))      return { bg: "bg-orange-100", text: "text-orange-600" };
+  if (s.includes("humanities"))    return { bg: "bg-purple-100", text: "text-purple-600" };
+  if (s.includes("art"))           return { bg: "bg-pink-100",   text: "text-pink-600" };
+  if (s.includes("early-learning"))return { bg: "bg-yellow-100", text: "text-yellow-600" };
+  if (s.includes("study-skills"))  return { bg: "bg-indigo-100", text: "text-indigo-600" };
+  if (s.includes("test-prep"))     return { bg: "bg-red-100",    text: "text-red-600" };
+  return { bg: "bg-zinc-100", text: "text-zinc-600" };
+}
+
+// ── Section header ────────────────────────────────────────────────────────────
+
+function SectionHeader({
+  title,
+  viewAllHref,
+}: {
+  title:       string;
+  viewAllHref: string;
+}) {
   return (
-    <div className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-100 animate-pulse" />
+    <div className="flex items-center justify-between gap-3">
+      <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
+      <Link
+        href={viewAllHref}
+        className="group flex items-center gap-1 text-[13px] font-medium text-brand-600 transition hover:underline hover:text-brand-700"
+      >
+        View all
+        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+      </Link>
+    </div>
   );
 }
 
-function FiltersFallback() {
+// ── Fallback skeletons ────────────────────────────────────────────────────────
+
+function DiscoverFallback() {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm font-semibold text-zinc-400">
-        <SlidersHorizontal className="h-4 w-4" />
-        Filters
-      </div>
-      {[40, 60, 50, 45].map((w, i) => (
+    <div className="h-9 w-24 animate-pulse rounded-lg bg-surface-100" />
+  );
+}
+
+function SearchFallback() {
+  return (
+    <div className="h-10 w-full animate-pulse rounded-xl border border-surface-200 bg-white shadow-sm" />
+  );
+}
+
+function ChipsFallback() {
+  return (
+    <div className="flex gap-2 overflow-hidden">
+      {[48, 64, 72, 56, 80, 60].map((w, i) => (
         <div
           key={i}
-          className="h-4 rounded animate-pulse bg-zinc-100"
-          style={{ width: `${w}%` }}
+          className="h-8 shrink-0 animate-pulse rounded-full bg-surface-100"
+          style={{ width: w }}
         />
       ))}
     </div>
   );
 }
 
-function SortFallback() {
+function FilterBarFallback() {
   return (
-    <div className="flex items-center gap-2">
-      <ArrowUpDown className="h-4 w-4 text-zinc-300" />
-      <div className="h-9 w-36 rounded-xl border border-zinc-200 bg-zinc-100 animate-pulse" />
+    <div className="flex items-center justify-between">
+      <div className="h-4 w-24 animate-pulse rounded bg-surface-100" />
+      <div className="flex gap-2">
+        <div className="h-8 w-28 animate-pulse rounded-lg bg-surface-100" />
+        <div className="h-8 w-32 animate-pulse rounded-lg bg-surface-100" />
+      </div>
+    </div>
+  );
+}
+
+function SidebarFallback() {
+  return (
+    <div className="w-[220px] flex-shrink-0 space-y-4">
+      {[80, 120, 80, 60].map((h, i) => (
+        <div
+          key={i}
+          className="animate-pulse rounded-xl bg-zinc-100"
+          style={{ height: h }}
+        />
+      ))}
     </div>
   );
 }

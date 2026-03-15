@@ -1,0 +1,145 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ResourceForm,
+  type ResourceFormCategory,
+  type ResourceFormTag,
+  type ResourcePayload,
+  type ResourceFormResource,
+} from "@/components/admin/ResourceForm";
+import { Card } from "@/components/ui/Card";
+import { ResourceCard } from "@/components/resources/ResourceCard";
+import { AdminFormLayout } from "@/components/admin/AdminFormLayout";
+import type { ResourceCardData } from "@/components/resources/ResourceCard";
+
+interface CreateResourceFormProps {
+  categories: ResourceFormCategory[];
+  tags: ResourceFormTag[];
+  currentUser?: { id: string; name: string | null };
+}
+
+const defaultPreviewData: ResourceCardData = {
+  id: "preview",
+  title: "Sample resource title",
+  slug: "sample-resource",
+  description:
+    "Short description of the resource to show how it will look in the marketplace.",
+  isFree: true,
+  price: 0,
+  previewUrl: null,
+  downloadCount: 0,
+  author: { name: "You" },
+  category: undefined,
+  tags: [],
+  _count: { purchases: 0, reviews: 0 },
+};
+
+export function CreateResourceForm({ categories, tags: initialTags, currentUser }: CreateResourceFormProps) {
+  const router = useRouter();
+  const [tags, setTags] = useState(initialTags);
+  const [previewData, setPreviewData] =
+    useState<ResourceCardData>(defaultPreviewData);
+  const [draftResourceId, setDraftResourceId] = useState<string | null>(null);
+
+  async function ensureDraftResource() {
+    if (draftResourceId) return draftResourceId;
+
+    try {
+      const res = await fetch("/api/admin/resources/draft", {
+        method: "POST",
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Failed to create draft resource", data);
+        return null;
+      }
+
+      const draftId = data.id as string | undefined;
+      if (!draftId) return null;
+
+      setDraftResourceId(draftId);
+      return draftId;
+    } catch (err) {
+      console.error("Error creating draft resource", err);
+      return null;
+    }
+  }
+
+  async function handleCreate(payload: ResourcePayload) {
+    // When a draft exists, finalize it via PATCH so uploads stay attached.
+    if (draftResourceId) {
+      const res = await fetch(`/api/admin/resources/${draftResourceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const error = new Error(
+          data.error ?? "Failed to create resource.",
+        ) as Error & { fields?: Record<string, string> };
+        if (data.fields) {
+          error.fields = data.fields as Record<string, string>;
+        }
+        throw error;
+      }
+
+      router.refresh();
+      return;
+    }
+
+    // Fallback: legacy create behavior without draft.
+    const res = await fetch("/api/admin/resources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const error = new Error(
+        data.error ?? "Failed to create resource.",
+      ) as Error & { fields?: Record<string, string> };
+      if (data.fields) {
+        error.fields = data.fields as Record<string, string>;
+      }
+      throw error;
+    }
+
+    router.refresh();
+  }
+
+  return (
+    <AdminFormLayout
+      form={
+        <Card className="w-full min-w-0 rounded-xl border border-zinc-200 bg-white px-8 pb-8 shadow-sm">
+          <ResourceForm
+            mode="create"
+            categories={categories}
+            tags={tags}
+            draftResourceId={draftResourceId ?? undefined}
+            onEnsureDraftResource={ensureDraftResource}
+            onSubmit={handleCreate}
+            onPreviewDataChange={setPreviewData}
+            onTagCreated={(tag) => setTags((prev) => [...prev, tag])}
+            currentUser={currentUser}
+          />
+        </Card>
+      }
+      sidebar={
+        <div className="w-full">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-tight text-zinc-500">
+            LIVE PREVIEW
+          </p>
+          <ResourceCard resource={previewData} variant="preview" previewMode />
+        </div>
+      }
+    />
+  );
+}

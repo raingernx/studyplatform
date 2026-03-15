@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toSlug } from "@/lib/slug";
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
 
@@ -29,11 +29,13 @@ const PatchTagSchema = z.object({
 // ── PATCH /api/admin/tags/[id] ────────────────────────────────────────────────
 
 export async function PATCH(req: Request, { params }: Params) {
+  const { id } = await params;
+
   const { ok, res } = await requireAdmin();
   if (!ok) return res!;
 
   try {
-    const existing = await prisma.tag.findUnique({ where: { id: params.id } });
+    const existing = await prisma.tag.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: "Tag not found." }, { status: 404 });
     }
@@ -58,7 +60,7 @@ export async function PATCH(req: Request, { params }: Params) {
     const duplicate = await prisma.tag.findFirst({
       where: {
         AND: [
-          { id: { not: params.id } },
+          { id: { not: id } },
           { OR: [{ name: { equals: trimmed, mode: "insensitive" } }, { slug }] },
         ],
       },
@@ -70,10 +72,7 @@ export async function PATCH(req: Request, { params }: Params) {
       );
     }
 
-    const tag = await prisma.tag.update({
-      where: { id: params.id },
-      data:  { name: trimmed, slug },
-    });
+    const tag = await prisma.tag.update({ where: { id }, data: { name: trimmed, slug } });
     return NextResponse.json({ data: tag });
   } catch (err) {
     console.error("[ADMIN_TAGS_PATCH]", err);
@@ -84,20 +83,22 @@ export async function PATCH(req: Request, { params }: Params) {
 // ── DELETE /api/admin/tags/[id] ───────────────────────────────────────────────
 
 export async function DELETE(_req: Request, { params }: Params) {
+  const { id } = await params;
+
   const { ok, res } = await requireAdmin();
   if (!ok) return res!;
 
   try {
-    const existing = await prisma.tag.findUnique({ where: { id: params.id } });
+    const existing = await prisma.tag.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: "Tag not found." }, { status: 404 });
     }
 
     // Remove join rows first (foreign-key constraint)
-    await prisma.resourceTag.deleteMany({ where: { tagId: params.id } });
-    await prisma.tag.delete({ where: { id: params.id } });
+    await prisma.resourceTag.deleteMany({ where: { tagId: id } });
+    await prisma.tag.delete({ where: { id } });
 
-    return NextResponse.json({ data: { id: params.id } });
+    return NextResponse.json({ data: { id } });
   } catch (err) {
     console.error("[ADMIN_TAGS_DELETE]", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });

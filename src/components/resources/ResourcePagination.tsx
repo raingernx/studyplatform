@@ -1,14 +1,17 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ResourcePaginationProps {
   page: number;
   totalPages: number;
+  /** Optional ref to scroll results grid into view on page change */
+  gridContainerRef?: React.RefObject<HTMLElement | null>;
 }
 
-export function ResourcePagination({ page, totalPages }: ResourcePaginationProps) {
+export function ResourcePagination({ page, totalPages, gridContainerRef }: ResourcePaginationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -22,59 +25,88 @@ export function ResourcePagination({ page, totalPages }: ResourcePaginationProps
     } else {
       params.set("page", String(newPage));
     }
-    router.push(`${pathname}?${params.toString()}`);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    gridContainerRef?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
-    <div className="flex items-center justify-center gap-1.5 pt-4">
-      <button
+    <nav
+      aria-label="Pagination"
+      className="flex items-center justify-center gap-1 pt-8"
+    >
+      {/* Prev */}
+      <PaginationButton
         onClick={() => handlePageChange(page - 1)}
         disabled={page <= 1}
-        className="rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium
-                   text-zinc-600 transition-colors hover:bg-zinc-50
-                   disabled:pointer-events-none disabled:opacity-40"
+        aria-label="Previous page"
       >
-        ← Prev
-      </button>
+        <ChevronLeft className="h-4 w-4" />
+        <span className="hidden sm:inline">Prev</span>
+      </PaginationButton>
 
+      {/* Page numbers */}
       {buildPageNumbers(page, totalPages).map((p, i) =>
         p === "…" ? (
-          <span key={`ellipsis-${i}`} className="px-1 text-sm text-zinc-400">
+          <span key={`ellipsis-${i}`} className="select-none px-1 text-sm text-text-muted">
             …
           </span>
         ) : (
-          <button
+          <PaginationButton
             key={p}
             onClick={() => handlePageChange(p as number)}
-            className={cn(
-              "min-w-[36px] rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
-              p === page
-                ? "border-blue-600 bg-blue-600 text-white"
-                : "border-zinc-200 text-zinc-600 hover:bg-zinc-50"
-            )}
+            active={p === page}
+            aria-label={`Page ${p}`}
+            aria-current={p === page ? "page" : undefined}
           >
             {p}
-          </button>
+          </PaginationButton>
         )
       )}
 
-      <button
+      {/* Next */}
+      <PaginationButton
         onClick={() => handlePageChange(page + 1)}
         disabled={page >= totalPages}
-        className="rounded-xl border border-zinc-200 px-3 py-2 text-sm font-medium
-                   text-zinc-600 transition-colors hover:bg-zinc-50
-                   disabled:pointer-events-none disabled:opacity-40"
+        aria-label="Next page"
       >
-        Next →
-      </button>
-    </div>
+        <span className="hidden sm:inline">Next</span>
+        <ChevronRight className="h-4 w-4" />
+      </PaginationButton>
+    </nav>
+  );
+}
+
+// ── PaginationButton ──────────────────────────────────────────────────────────
+
+function PaginationButton({
+  children,
+  onClick,
+  disabled = false,
+  active   = false,
+  ...props
+}: React.ComponentProps<"button"> & { active?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      {...props}
+      className={cn(
+        "inline-flex min-w-[36px] items-center justify-center gap-1 rounded-lg border px-3 py-2",
+        "text-sm font-medium transition-colors",
+        "disabled:pointer-events-none disabled:opacity-40",
+        active
+          ? "border-brand-600 bg-brand-600 text-white"
+          : "border-surface-200 bg-white text-text-secondary hover:border-brand-300 hover:text-brand-600",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Produces page numbers + ellipsis tokens for a compact pagination bar. */
 function buildPageNumbers(current: number, total: number): (number | "…")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
 

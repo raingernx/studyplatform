@@ -1,0 +1,213 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
+import {
+  Search,
+  Bell,
+  Menu,
+  ChevronDown,
+  BookOpen,
+  ShoppingBag,
+  Settings,
+  LogOut,
+  X,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { routes } from "@/lib/routes";
+import type { DashboardUser } from "./DashboardLayout";
+
+interface DashboardTopbarProps {
+  user: DashboardUser;
+  onMenuToggle: () => void;
+}
+
+const AVATAR_MENU = [
+  { href: routes.library,   label: "My Library", icon: BookOpen },
+  { href: routes.purchases, label: "Purchases",  icon: ShoppingBag },
+  { href: routes.settings,  label: "Settings",   icon: Settings },
+];
+
+export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const avatarRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function onOutsideClick(e: MouseEvent) {
+      if (
+        avatarRef.current &&
+        !avatarRef.current.contains(e.target as Node)
+      ) {
+        setAvatarOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onOutsideClick);
+    return () => document.removeEventListener("mousedown", onOutsideClick);
+  }, []);
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const q = query.trim();
+    if (q) {
+      router.push(`${routes.marketplace}?q=${encodeURIComponent(q)}`);
+      searchRef.current?.blur();
+    }
+  }
+
+  return (
+    <header className="flex h-14 flex-shrink-0 items-center justify-between gap-4 border-b border-neutral-100 bg-white pl-4 pr-4">
+      {/* ── Left: mobile hamburger + logo (mobile) + search ────── */}
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        {/* Mobile hamburger */}
+        <button
+          type="button"
+          onClick={onMenuToggle}
+          aria-label="Toggle sidebar"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 lg:hidden"
+        >
+          <Menu className="h-4 w-4" />
+        </button>
+
+        {/* Search bar */}
+        <form
+          onSubmit={handleSearch}
+          className="relative hidden flex-1 max-w-lg sm:block"
+        >
+          <Search
+            className={cn(
+              "absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 transition-colors",
+              searchFocused ? "text-neutral-600" : "text-neutral-400"
+            )}
+          />
+          <input
+            ref={searchRef}
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            placeholder="Search worksheets, flashcards, templates…"
+            className="w-full rounded-xl border border-neutral-200 bg-neutral-50 py-2 pl-9 pr-9 text-[13px] text-neutral-900 transition placeholder:text-neutral-400 focus:border-neutral-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900/5"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-300 hover:text-neutral-500"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </form>
+      </div>
+
+      {/* ── Right: actions + avatar ─────────────────────────────── */}
+      <div className="flex flex-shrink-0 items-center gap-1.5">
+        {/* Browse button */}
+        <Link
+          href={routes.marketplace}
+          className="hidden items-center rounded-xl bg-neutral-900 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:bg-neutral-700 sm:flex"
+        >
+          Browse
+        </Link>
+
+        {/* Notifications */}
+        <button
+          type="button"
+          aria-label="Notifications"
+          className="relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-600"
+        >
+          <Bell className="h-4 w-4" />
+          {/* Unread dot — hidden for now */}
+          {/* <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-blue-500" /> */}
+        </button>
+
+        {/* Avatar dropdown */}
+        <div ref={avatarRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setAvatarOpen((o) => !o)}
+            className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-zinc-100"
+          >
+            {user.image ? (
+              <div className="h-7 w-7 overflow-hidden rounded-full ring-1 ring-zinc-200">
+                <Image
+                  src={user.image}
+                  alt={user.name ?? "User"}
+                  width={28}
+                  height={28}
+                  sizes="28px"
+                  className="h-7 w-7 object-cover"
+                />
+              </div>
+            ) : (
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-violet-600 text-[11px] font-bold text-white">
+                {user.name?.[0]?.toUpperCase() ?? "U"}
+              </span>
+            )}
+              <span className="hidden text-[13px] font-medium text-neutral-700 sm:block">
+              {user.name?.split(" ")[0] ?? "Account"}
+            </span>
+              <ChevronDown
+                className={cn(
+                  "h-3.5 w-3.5 text-neutral-400 transition-transform duration-150",
+                  avatarOpen && "rotate-180"
+                )}
+              />
+          </button>
+
+          {/* Dropdown panel */}
+          {avatarOpen && (
+            <div className="absolute right-0 top-full z-50 mt-1.5 w-52 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-card-md">
+              {/* User info */}
+              <div className="border-b border-neutral-100 px-4 py-3">
+                <p className="text-[13px] font-semibold text-neutral-900">
+                  {user.name ?? "Account"}
+                </p>
+                <p className="mt-0.5 truncate text-[11px] text-neutral-400">
+                  {user.email}
+                </p>
+              </div>
+
+              {/* Nav links */}
+              <div className="p-1.5">
+                {AVATAR_MENU.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setAvatarOpen(false)}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] text-neutral-700 transition hover:bg-neutral-50"
+                    >
+                      <Icon className="h-3.5 w-3.5 text-neutral-400" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+
+                <div className="mt-1 border-t border-neutral-100 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[13px] text-red-500 transition hover:bg-red-50"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}

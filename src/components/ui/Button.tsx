@@ -1,55 +1,103 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  // Base styles shared by every variant
+  [
+    "group/button inline-flex shrink-0 items-center justify-center gap-1.5",
+    "rounded-md border border-transparent bg-clip-padding",
+    "text-sm font-medium whitespace-nowrap",
+    "transition-all outline-none select-none",
+    "focus-visible:ring-2 focus-visible:ring-offset-1",
+    "disabled:pointer-events-none disabled:opacity-50",
+    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  ].join(" "),
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
-        outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+        // ── PaperDock brand primary (blue) ─────────────────────────────────
+        primary:
+          "bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 focus-visible:ring-brand-500/50",
+
+        // ── Default (zinc/dark) — kept as alias for "primary" look in shadcn contexts ──
+        default:
+          "bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 focus-visible:ring-brand-500/50",
+
+        // ── Kept for backward compat ───────────────────────────────────────
+        dark:
+          "bg-zinc-900 text-white hover:bg-zinc-700 active:bg-zinc-800 focus-visible:ring-zinc-700/50",
+
+        // ── Secondary — outlined, neutral ──────────────────────────────────
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "border-surface-200 bg-white text-text-primary hover:border-surface-300 hover:bg-surface-50 focus-visible:ring-surface-400/40",
+
+        // ── Outline — alias for secondary ──────────────────────────────────
+        outline:
+          "border-surface-200 bg-white text-text-primary hover:border-surface-300 hover:bg-surface-50 focus-visible:ring-surface-400/40",
+
+        // ── Ghost — subtle border + hover ─────────────────────────────────
         ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+          "bg-transparent text-text-secondary border-border-subtle hover:bg-surface-100 hover:text-text-primary focus-visible:ring-surface-400/40",
+
+        // ── Danger — solid red ─────────────────────────────────────────────
+        danger:
+          "bg-red-500 text-white hover:bg-red-600 active:bg-red-700 focus-visible:ring-red-500/50",
+
+        // ── Destructive — subtle red (for inline/table contexts) ───────────
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-red-50 text-red-600 border-red-100 hover:bg-red-100 hover:border-red-200 focus-visible:ring-red-500/30",
+
+        // ── Accent — orange highlight ──────────────────────────────────────
+        accent:
+          "bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 focus-visible:ring-orange-400/50",
+
+        // ── Link ───────────────────────────────────────────────────────────
+        link:
+          "text-brand-600 underline-offset-4 hover:underline focus-visible:ring-brand-500/30",
       },
       size: {
-        default:
-          "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
-        icon: "size-8",
-        "icon-xs":
-          "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm":
-          "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
-        "icon-lg": "size-9",
+        // Named sizes matching the spec
+        sm:  "h-10 px-2.5 text-[0.8rem] gap-1",
+        md:  "h-[42px] px-3.5 text-sm",
+        lg:  "h-11 px-5 text-base",
+
+        // Aliases kept for backward compat
+        xs:      "h-6 px-2 text-xs gap-1 rounded-md",
+        default: "h-[42px] px-3.5 text-sm",
+
+        // Icon-only
+        icon:    "size-9",
+        "icon-xs":  "size-6 rounded-md",
+        "icon-sm":  "size-7",
+        "icon-lg":  "size-11",
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: "primary",
+      size: "md",
     },
   }
 )
 
 function Button({
   className,
-  variant = "default",
-  size = "default",
+  variant = "primary",
+  size = "md",
   asChild = false,
+  loading = false,
+  fullWidth = false,
+  children,
+  disabled,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    loading?: boolean
+    fullWidth?: boolean
   }) {
   const Comp = asChild ? Slot.Root : "button"
 
@@ -58,9 +106,25 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      disabled={disabled || loading}
+      className={cn(
+        buttonVariants({ variant, size }),
+        fullWidth && "w-full",
+        className,
+      )}
       {...props}
-    />
+    >
+      {asChild ? (
+        // Slot.Root (radix-ui) uses React.Children.only — it must receive exactly
+        // one React element. Skip the loading spinner when asChild is true.
+        children
+      ) : (
+        <>
+          {loading && <Loader2 className="size-4 animate-spin" />}
+          {children}
+        </>
+      )}
+    </Comp>
   )
 }
 

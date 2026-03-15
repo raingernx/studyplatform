@@ -15,7 +15,7 @@ const STATUS_LABELS: Record<ResourceStatus, string> = {
 const STATUS_CLASSES: Record<ResourceStatus, string> = {
   DRAFT: "bg-zinc-100 text-zinc-600",
   PUBLISHED: "bg-emerald-50 text-emerald-700",
-  ARCHIVED: "bg-zinc-100 text-zinc-500",
+  ARCHIVED: "bg-amber-50 text-amber-700",
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
