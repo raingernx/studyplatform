@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { listPublicResources } from "@/services/resources/resource.service";
 import { slugify } from "@/lib/utils";
-import { LISTED_RESOURCE_WHERE } from "@/lib/query/resourceFilters";
 
 // ── GET /api/resources ────────────────────────────────────────────────────────
 // Public – returns published resources with optional filtering + pagination
@@ -17,50 +17,17 @@ export async function GET(req: Request) {
     const tagSlug = searchParams.get("tag");
     const search = searchParams.get("q");
     const isFree = searchParams.get("free") === "true" ? true : undefined;
-
-    const where = {
-      ...LISTED_RESOURCE_WHERE,
-      ...(categorySlug && { category: { slug: categorySlug } }),
-      ...(tagSlug && { tags: { some: { tag: { slug: tagSlug } } } }),
-      ...(isFree !== undefined && { isFree }),
-      ...(search && {
-        OR: [
-          { title: { contains: search, mode: "insensitive" as const } },
-          { description: { contains: search, mode: "insensitive" as const } },
-        ],
-      }),
-    };
-
-    const [rawItems, total] = await Promise.all([
-      prisma.resource.findMany({
-        where,
-        include: {
-          author: { select: { id: true, name: true, image: true } },
-          category: true,
-          tags: { include: { tag: true } },
-          previews: { orderBy: { order: "asc" }, select: { imageUrl: true } },
-          _count: { select: { purchases: true, reviews: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      prisma.resource.count({ where }),
-    ]);
-
-    const items = rawItems.map((r) => ({
-      ...r,
-      previewUrl: r.previewUrl ?? r.previews?.[0]?.imageUrl ?? null,
-    }));
+    const data = await listPublicResources({
+      page,
+      pageSize,
+      categorySlug,
+      tagSlug,
+      search,
+      isFree,
+    });
 
     return NextResponse.json({
-      data: {
-        items,
-        total,
-        page,
-        pageSize,
-        totalPages: Math.ceil(total / pageSize),
-      },
+      data,
     });
   } catch (err) {
     console.error("[RESOURCES_GET]", err);
