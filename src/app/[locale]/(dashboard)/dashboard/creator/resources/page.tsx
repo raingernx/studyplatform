@@ -17,7 +17,7 @@ import { routes } from "@/lib/routes";
 import { getCreatorAccessState, getCreatorResourceManagementData } from "@/services/creator.service";
 
 export const metadata = {
-  title: "Creator Resources – PaperDock",
+  title: "Creator Resources",
 };
 
 export const dynamic = "force-dynamic";
@@ -75,8 +75,7 @@ export default async function CreatorResourcesPage({
   const totalDownloads = data.resources.reduce((sum, resource) => sum + resource.downloadCount, 0);
 
   return (
-    <div className="px-8 py-8">
-      <div className="mx-auto max-w-7xl space-y-8">
+    <div className="space-y-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-500">
@@ -321,7 +320,6 @@ export default async function CreatorResourcesPage({
             <ExternalLink className="h-4 w-4" />
           </Link>
         </div>
-      </div>
     </div>
   );
 }

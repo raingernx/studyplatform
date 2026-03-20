@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
 
 import { authOptions } from "@/lib/auth";
+import { CACHE_TAGS } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity";
 
@@ -58,7 +59,8 @@ export async function PATCH(_req: Request, { params }: Params) {
     });
 
     // A restored PUBLISHED resource becomes visible in discover again.
-    revalidateTag("discover", "max");
+    revalidateTag(CACHE_TAGS.discover, "max");
+    revalidateTag(CACHE_TAGS.creatorPublic, "max");
 
     return NextResponse.json({ data: restored });
   } catch (err) {
@@ -113,7 +115,8 @@ export async function DELETE(_req: Request, { params }: Params) {
     });
 
     // Safety revalidation: ensures no stale reference remains in the cache.
-    revalidateTag("discover", "max");
+    revalidateTag(CACHE_TAGS.discover, "max");
+    revalidateTag(CACHE_TAGS.creatorPublic, "max");
 
     return NextResponse.json({
       data: {

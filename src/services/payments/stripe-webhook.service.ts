@@ -12,8 +12,9 @@ import {
   findPurchaseByUserAndResource,
   setPurchaseStripePaymentIntentIdBySession,
 } from "@/repositories/purchases/purchase.repository";
+import { findResourceById } from "@/repositories/resources/resource.repository";
 import { activateUserStripeSubscription } from "@/repositories/users/user.repository";
-import { PaymentServiceError } from "@/services/payments/payment.service";
+import { buildPurchaseSnapshot, PaymentServiceError } from "@/services/payments/payment.service";
 
 function extractId(
   field: string | { id: string } | null | undefined,
@@ -142,12 +143,23 @@ async function handleStripePayment(session: Stripe.Checkout.Session) {
     return;
   }
 
+  const resource = await findResourceById(resourceId);
+  if (!resource) {
+    console.error("[WEBHOOK] Recovery failed - resource not found.", {
+      sessionId,
+      paymentIntentId,
+      resourceId,
+    });
+    return;
+  }
+
   const recovered = await completeRecoveredPurchase({
     userId,
     resourceId,
     amount: session.amount_total ?? 0,
     currency: session.currency ?? "usd",
     paymentProvider: "STRIPE",
+    ...buildPurchaseSnapshot(resource, session.amount_total ?? resource.price),
     stripeSessionId: sessionId,
   });
 

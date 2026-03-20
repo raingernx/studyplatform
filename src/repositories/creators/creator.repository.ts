@@ -19,6 +19,74 @@ export interface CreatorEarningsTotals {
   platformFees: number;
 }
 
+export interface CreatorDashboardStatsRecord {
+  totalRevenue: number;
+  totalSales: number;
+  totalResources: number;
+}
+
+export interface CreatorResourcePerformanceRecord {
+  resourceId: string;
+  title: string;
+  slug: string;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  price: number;
+  isFree: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  downloadCount: number;
+  salesCount: number;
+  revenue: number;
+  averageRating: number | null;
+  visibleReviewCount: number;
+}
+
+export interface CreatorResourceStatusSummaryRecord {
+  draft: number;
+  published: number;
+  archived: number;
+}
+
+export interface CreatorReviewOverviewRecord {
+  averageRating: number | null;
+  totalVisibleReviews: number;
+  resourcesWithVisibleReviews: number;
+}
+
+export interface CreatorResourceReviewSummaryRecord {
+  resourceId: string;
+  title: string;
+  slug: string;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  price: number;
+  isFree: boolean;
+  updatedAt: Date;
+  averageRating: number | null;
+  visibleReviewCount: number;
+  lastReviewDate: Date | null;
+}
+
+export interface CreatorRecentVisibleReviewRecord {
+  id: string;
+  rating: number;
+  body: string | null;
+  createdAt: Date;
+  user: {
+    name: string | null;
+    email: string | null;
+  };
+  resource: {
+    id: string;
+    title: string;
+    slug: string;
+  };
+}
+
+export interface CreatorRatingDistributionRecord {
+  rating: number;
+  count: number;
+}
+
 function shouldRetryCreatorStatusActivation(error: unknown) {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code !== "P2022" && error.code !== "P2021") {
@@ -365,6 +433,345 @@ export async function findCreatorResourcesByUserId(
       },
     },
   });
+}
+
+export async function getCreatorStats(authorId: string): Promise<CreatorDashboardStatsRecord> {
+  const [salesAggregate, totalResources] = await Promise.all([
+    prisma.purchase.aggregate({
+      where: {
+        authorId,
+        status: "COMPLETED",
+      },
+      _sum: {
+        authorRevenue: true,
+      },
+      _count: {
+        id: true,
+      },
+    }),
+    prisma.resource.count({
+      where: {
+        authorId,
+        deletedAt: null,
+      },
+    }),
+  ]);
+
+  return {
+    totalRevenue: salesAggregate._sum.authorRevenue ?? 0,
+    totalSales: salesAggregate._count.id ?? 0,
+    totalResources,
+  };
+}
+
+export async function getCreatorResourcePerformance(
+  authorId: string,
+): Promise<CreatorResourcePerformanceRecord[]> {
+  const [resources, salesByResource, reviewGroups] = await Promise.all([
+    prisma.resource.findMany({
+      where: {
+        authorId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        status: true,
+        price: true,
+        isFree: true,
+        createdAt: true,
+        updatedAt: true,
+        downloadCount: true,
+        resourceStat: {
+          select: {
+            downloads: true,
+          },
+        },
+      },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+    }),
+    prisma.purchase.groupBy({
+      by: ["resourceId"],
+      where: {
+        authorId,
+        status: "COMPLETED",
+      },
+      _count: {
+        id: true,
+      },
+      _sum: {
+        authorRevenue: true,
+      },
+    }),
+    prisma.review.groupBy({
+      by: ["resourceId"],
+      where: {
+        isVisible: true,
+        resource: {
+          authorId,
+          deletedAt: null,
+        },
+      },
+      _avg: {
+        rating: true,
+      },
+      _count: {
+        id: true,
+      },
+    }),
+  ]);
+
+  const salesLookup = new Map(
+    salesByResource.map((row) => [
+      row.resourceId,
+      {
+        salesCount: row._count.id ?? 0,
+        revenue: row._sum.authorRevenue ?? 0,
+      },
+    ]),
+  );
+
+  const reviewLookup = new Map(
+    reviewGroups.map((row) => [
+      row.resourceId,
+      {
+        averageRating: row._avg.rating ?? null,
+        visibleReviewCount: row._count.id ?? 0,
+      },
+    ]),
+  );
+
+  return resources
+    .map((resource) => {
+      const performance = salesLookup.get(resource.id);
+      const reviewSummary = reviewLookup.get(resource.id);
+
+      return {
+        resourceId: resource.id,
+        title: resource.title,
+        slug: resource.slug,
+        status: resource.status,
+        price: resource.price,
+        isFree: resource.isFree,
+        createdAt: resource.createdAt,
+        updatedAt: resource.updatedAt,
+        downloadCount: resource.resourceStat?.downloads ?? resource.downloadCount,
+        salesCount: performance?.salesCount ?? 0,
+        revenue: performance?.revenue ?? 0,
+        averageRating: reviewSummary?.averageRating ?? null,
+        visibleReviewCount: reviewSummary?.visibleReviewCount ?? 0,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.revenue - a.revenue ||
+        b.salesCount - a.salesCount ||
+        b.updatedAt.getTime() - a.updatedAt.getTime(),
+    );
+}
+
+export async function findCreatorResourceStatusSummary(
+  authorId: string,
+): Promise<CreatorResourceStatusSummaryRecord> {
+  const rows = await prisma.resource.groupBy({
+    by: ["status"],
+    where: {
+      authorId,
+      deletedAt: null,
+    },
+    _count: {
+      _all: true,
+    },
+  });
+
+  return rows.reduce<CreatorResourceStatusSummaryRecord>(
+    (summary, row) => {
+      if (row.status === "PUBLISHED") {
+        summary.published = row._count._all;
+      } else if (row.status === "ARCHIVED") {
+        summary.archived = row._count._all;
+      } else {
+        summary.draft = row._count._all;
+      }
+
+      return summary;
+    },
+    { draft: 0, published: 0, archived: 0 },
+  );
+}
+
+export async function getCreatorReviewOverview(
+  authorId: string,
+): Promise<CreatorReviewOverviewRecord> {
+  const [reviewAggregate, resourcesWithVisibleReviews] = await Promise.all([
+    prisma.review.aggregate({
+      where: {
+        isVisible: true,
+        resource: {
+          authorId,
+          deletedAt: null,
+        },
+      },
+      _avg: {
+        rating: true,
+      },
+      _count: {
+        id: true,
+      },
+    }),
+    prisma.resource.count({
+      where: {
+        authorId,
+        deletedAt: null,
+        reviews: {
+          some: {
+            isVisible: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  return {
+    averageRating: reviewAggregate._avg.rating ?? null,
+    totalVisibleReviews: reviewAggregate._count.id ?? 0,
+    resourcesWithVisibleReviews,
+  };
+}
+
+export async function getCreatorResourceReviewSummaries(
+  authorId: string,
+): Promise<CreatorResourceReviewSummaryRecord[]> {
+  const [resources, reviewGroups] = await Promise.all([
+    prisma.resource.findMany({
+      where: {
+        authorId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        status: true,
+        price: true,
+        isFree: true,
+        updatedAt: true,
+      },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+    }),
+    prisma.review.groupBy({
+      by: ["resourceId"],
+      where: {
+        isVisible: true,
+        resource: {
+          authorId,
+          deletedAt: null,
+        },
+      },
+      _avg: {
+        rating: true,
+      },
+      _count: {
+        id: true,
+      },
+      _max: {
+        createdAt: true,
+      },
+    }),
+  ]);
+
+  const reviewLookup = new Map(
+    reviewGroups.map((row) => [
+      row.resourceId,
+      {
+        averageRating: row._avg.rating ?? null,
+        visibleReviewCount: row._count.id ?? 0,
+        lastReviewDate: row._max.createdAt ?? null,
+      },
+    ]),
+  );
+
+  return resources.map((resource) => {
+    const summary = reviewLookup.get(resource.id);
+
+    return {
+      resourceId: resource.id,
+      title: resource.title,
+      slug: resource.slug,
+      status: resource.status,
+      price: resource.price,
+      isFree: resource.isFree,
+      updatedAt: resource.updatedAt,
+      averageRating: summary?.averageRating ?? null,
+      visibleReviewCount: summary?.visibleReviewCount ?? 0,
+      lastReviewDate: summary?.lastReviewDate ?? null,
+    };
+  });
+}
+
+export async function findCreatorRecentVisibleReviews(
+  authorId: string,
+  limit: number,
+): Promise<CreatorRecentVisibleReviewRecord[]> {
+  return prisma.review.findMany({
+    where: {
+      isVisible: true,
+      resource: {
+        authorId,
+        deletedAt: null,
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: limit,
+    select: {
+      id: true,
+      rating: true,
+      body: true,
+      createdAt: true,
+      user: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+      resource: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+        },
+      },
+    },
+  });
+}
+
+export async function getCreatorVisibleRatingDistribution(
+  authorId: string,
+): Promise<CreatorRatingDistributionRecord[]> {
+  const rows = await prisma.review.groupBy({
+    by: ["rating"],
+    where: {
+      isVisible: true,
+      resource: {
+        authorId,
+        deletedAt: null,
+      },
+    },
+    _count: {
+      _all: true,
+    },
+    orderBy: {
+      rating: "desc",
+    },
+  });
+
+  return rows.map((row) => ({
+    rating: row.rating,
+    count: row._count._all,
+  }));
 }
 
 export async function findCreatorResourceById(userId: string, resourceId: string) {

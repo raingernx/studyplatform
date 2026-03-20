@@ -1,4 +1,4 @@
-# PaperDock Future Systems
+# KruCraft Future Systems
 
 Systems planned but not implemented yet.
 

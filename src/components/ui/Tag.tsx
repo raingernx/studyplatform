@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** PaperDock Design System: tags are lowercase, bg-neutral-100 text-neutral-700, max 2 visible in cards. */
+/** KruCraft Design System: tags are lowercase, bg-neutral-100 text-neutral-700, max 2 visible in cards. */
 interface TagProps {
   children: ReactNode;
   className?: string;

@@ -1,3 +1,5 @@
+import { PageContentWide } from "@/design-system";
+
 /**
  * Global admin form layout: FORM | SIDEBAR.
  * Used by Create Resource and Edit Resource pages.
@@ -16,13 +18,15 @@ interface AdminFormLayoutProps {
 
 export function AdminFormLayout({ form, sidebar }: AdminFormLayoutProps) {
   return (
-    <div className="w-full min-w-0 max-w-6xl mx-auto grid gap-10 lg:grid-cols-[minmax(0,720px)_320px]">
-      <div className="min-w-0 space-y-8">
-        {form}
+    <PageContentWide className="space-y-8">
+      <div className="grid w-full min-w-0 gap-8 xl:grid-cols-[minmax(0,720px)_340px] xl:gap-10">
+        <div className="min-w-0 space-y-8">
+          {form}
+        </div>
+        <aside className="min-w-0 space-y-6 xl:sticky xl:top-20 xl:self-start">
+          {sidebar}
+        </aside>
       </div>
-      <aside className="min-w-0 space-y-6 lg:sticky lg:top-24 lg:self-start">
-        {sidebar}
-      </aside>
-    </div>
+    </PageContentWide>
   );
 }

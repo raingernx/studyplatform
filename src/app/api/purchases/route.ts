@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getUserPurchases } from "@/services/purchase.service";
 
 // GET /api/purchases  –  returns the current user's completed purchases
 export async function GET() {
@@ -11,21 +11,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const purchases = await prisma.purchase.findMany({
-      where: { userId: session.user.id, status: "COMPLETED" },
-      include: {
-        resource: {
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            previewUrl: true,
-            category: { select: { name: true } },
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const purchases = await getUserPurchases(session.user.id);
 
     return NextResponse.json({ data: purchases });
   } catch (err) {

@@ -10,13 +10,13 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        // ── Semantic (PaperDock design system) ────────────────────────────
+        // ── Semantic (KruCraft design system) ────────────────────────────
         success:     "bg-success-50  text-success-700",
         warning:     "bg-warning-50  text-warning-600",
         neutral:     "bg-surface-100 text-text-secondary",
         info:        "bg-brand-50    text-brand-700",
 
-        // PaperDock marketplace badges
+        // KruCraft marketplace badges
         featured:    "bg-accent-yellow-soft text-neutral-900",
         owned:       "bg-violet-50         text-violet-600",
         new:         "bg-accent-blue-soft  text-accent-blue",

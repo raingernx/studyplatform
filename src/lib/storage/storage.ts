@@ -36,19 +36,34 @@ export interface StorageProvider {
   getUrl(key: string): string;
 
   /**
-   * Return a time-limited signed URL that authorises a single download.
+   * Return a time-limited signed URL that authorises a private GET request.
    *
    * For local storage this resolves to the filesystem path (the same value
-   * as `getUrl`) so the download route can fall back to streaming from disk.
+   * as `getUrl`) so the service layer can fall back to streaming from disk.
    *
    * For cloud providers (R2, S3, GCS) this generates a pre-signed GET URL
-   * with the given expiry.  The download route redirects the client to this
+   * with the given expiry.  The service layer redirects the client to this
    * URL — the file is served directly from the bucket, bypassing the server.
    *
-   * @param key              - The storage key returned by `upload`.
-   * @param expiresInSeconds - Signature lifetime in seconds (default: 900 = 15 min).
+   * @param key     - The storage key returned by `upload`.
+   * @param options - Optional delivery parameters:
+   *   - intent:           "download" (default) → Content-Disposition: attachment
+   *                       "preview"            → Content-Disposition: inline
+   *   - expiresInSeconds: Signature lifetime in seconds (default: 900 = 15 min).
+   *   - filename:         Filename embedded in the Content-Disposition attachment
+   *                       header.  Only used when intent is "download".
+   *   - contentType:      Value for the Content-Type response header embedded
+   *                       in the presigned URL (overrides the object's stored type).
    */
-  getSignedUrl(key: string, expiresInSeconds?: number): Promise<string>;
+  getSignedUrl(
+    key: string,
+    options?: {
+      intent?: "download" | "preview";
+      expiresInSeconds?: number;
+      filename?: string;
+      contentType?: string;
+    },
+  ): Promise<string>;
 
   /**
    * Permanently remove a file from storage.

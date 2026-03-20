@@ -10,6 +10,12 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import {
+  PickerActionButton,
+  PickerDropzoneShell,
+  PickerIconButton,
+  PreviewCard,
+} from "@/design-system";
 import { formatFileSize } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -179,7 +185,7 @@ export function FileUploadWidget({
     <div className="w-full min-w-0 space-y-4">
       {uploadedFile ? (
         <>
-          <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+          <PreviewCard className="flex items-center gap-3">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50">
               <FileText className="h-4 w-4 text-blue-500" />
             </span>
@@ -198,25 +204,24 @@ export function FileUploadWidget({
                 </p>
               )}
             </div>
-            <button
-              type="button"
+            <PickerIconButton
               aria-label="Remove file"
               onClick={handleRemoveExisting}
-              className="ml-auto inline-flex h-6 w-6 items-center justify-center rounded-full text-zinc-500 transition hover:bg-surface-100 hover:text-red-600"
+              className="ml-auto inline-flex h-6 w-6 items-center justify-center rounded-full p-0"
             >
               <X className="h-4 w-4" />
-            </button>
-          </div>
+            </PickerIconButton>
+          </PreviewCard>
 
           <div className="space-y-2">
-            <button
+            <PickerActionButton
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-xl border border-dashed border-border-subtle px-4 py-2 text-[13px] font-medium text-text-secondary transition hover:border-brand-400 hover:text-brand-600"
+              actionStyle="dashed"
             >
               <Upload className="h-4 w-4" />
               Replace file
-            </button>
+            </PickerActionButton>
             <input
               ref={inputRef}
               type="file"
@@ -240,25 +245,20 @@ export function FileUploadWidget({
                 e.dataTransfer.clearData();
               }
             }}
-            className={[
-              "flex min-h-[120px] cursor-pointer flex-col items-center justify-center",
-              "rounded-xl border border-dashed border-border-subtle px-4 py-6",
-              "bg-white text-center text-[13px] text-text-primary transition",
-              resourceId || onEnsureResourceId
-                ? "hover:border-brand-400 hover:bg-surface-50"
-                : "cursor-not-allowed opacity-60",
-            ].join(" ")}
+            className="block"
           >
-            <Upload className="mb-2 h-5 w-5 text-text-muted" />
-            <p className="font-medium text-text-primary">
-              Drag & drop file here, or click to browse
-            </p>
-            <p className="mt-1 text-[11px] text-text-secondary">
-              PDF, DOCX, XLSX, ZIP — up to {MAX_MB} MB
-            </p>
-            <p className="mt-0.5 text-[11px] text-text-secondary">
-              Max file size: {MAX_MB} MB
-            </p>
+            <PickerDropzoneShell disabled={!resourceId && !onEnsureResourceId}>
+              <Upload className="mb-2 h-5 w-5 text-text-muted" />
+              <p className="font-medium text-text-primary">
+                Drag & drop file here, or click to browse
+              </p>
+              <p className="mt-1 text-[11px] text-text-secondary">
+                PDF, DOCX, XLSX, ZIP — up to {MAX_MB} MB
+              </p>
+              <p className="mt-0.5 text-[11px] text-text-secondary">
+                Max file size: {MAX_MB} MB
+              </p>
+            </PickerDropzoneShell>
             <input
               ref={inputRef}
               type="file"
@@ -270,7 +270,7 @@ export function FileUploadWidget({
           </label>
 
           {selectedFile && (
-            <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+            <PreviewCard tone="info" className="flex items-center gap-2">
               <FileText className="h-4 w-4 shrink-0 text-blue-400" />
               <p className="min-w-0 flex-1 truncate text-[13px] text-blue-700">
                 {selectedFile.name}{" "}
@@ -278,25 +278,23 @@ export function FileUploadWidget({
                   ({formatFileSize(selectedFile.size)})
                 </span>
               </p>
-              <button
-                type="button"
+              <PickerIconButton
                 onClick={handleClear}
                 aria-label="Remove selected file"
-                className="shrink-0 rounded-lg p-1 text-blue-400 transition hover:bg-blue-100 hover:text-blue-600"
+                tone="info"
+                className="p-1"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
+              </PickerIconButton>
+            </PreviewCard>
           )}
 
-          <button
+          <PickerActionButton
             type="button"
             onClick={handleUpload}
             disabled={!resourceId || !selectedFile || status === "uploading"}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl
-                     bg-blue-600 px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm
-                     transition hover:bg-blue-700 active:scale-[0.98]
-                     disabled:cursor-not-allowed disabled:opacity-40"
+            variant="primary"
+            className="h-10 w-full justify-center px-5 text-[13px] font-semibold disabled:opacity-40"
           >
             {status === "uploading" ? (
               <>
@@ -309,7 +307,7 @@ export function FileUploadWidget({
                 Upload file
               </>
             )}
-          </button>
+          </PickerActionButton>
         </>
       )}
 

@@ -1,5 +1,5 @@
 import { Label } from "@/components/admin/ResourceForm";
-import { Textarea } from "@/components/ui/forms";
+import { Textarea } from "@/design-system";
 import type { ResourceFormValues } from "./types/resource-form";
 
 interface ResourceBasicFieldsProps {
@@ -40,4 +40,3 @@ export function ResourceBasicFields({ form, onChange }: ResourceBasicFieldsProps
     </div>
   );
 }
-

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
 import { authOptions } from "@/lib/auth";
+import { CACHE_TAGS } from "@/lib/cache";
 import {
   createAdminResource,
   listAdminResources,
@@ -29,7 +30,8 @@ export async function POST(req: Request) {
     }
 
     const result = await createAdminResource(await req.json(), session.user.id);
-    revalidateTag("discover", "max");
+    revalidateTag(CACHE_TAGS.discover, "max");
+    revalidateTag(CACHE_TAGS.creatorPublic, "max");
 
     return NextResponse.json(result, { status: 201 });
   } catch (err) {

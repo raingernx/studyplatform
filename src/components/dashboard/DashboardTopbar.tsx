@@ -7,7 +7,6 @@ import { signOut } from "next-auth/react";
 import {
   Search,
   Bell,
-  ChevronDown,
   BookOpen,
   ShoppingBag,
   Settings,
@@ -16,7 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { routes } from "@/lib/routes";
-import { Avatar } from "@/components/ui/Avatar";
+import { AccountTrigger } from "@/components/layout/account/AccountTrigger";
 import type { DashboardUser } from "./DashboardLayout";
 import { DashboardTopbar as SharedDashboardTopbar } from "@/components/layout/dashboard/DashboardTopbar";
 
@@ -84,7 +83,7 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
             placeholder="Search worksheets, flashcards, templates…"
-            className="w-full rounded-xl border border-neutral-200 bg-neutral-50 py-2 pl-9 pr-9 text-[13px] text-neutral-900 transition placeholder:text-neutral-400 focus:border-neutral-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900/5"
+            className="w-full rounded-md border border-neutral-200 bg-neutral-50 py-2 pl-9 pr-9 text-[13px] text-neutral-900 transition placeholder:text-neutral-400 focus:border-neutral-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900/5"
           />
           {query && (
             <button
@@ -102,7 +101,7 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
         <>
           <Link
             href={routes.marketplace}
-            className="hidden items-center rounded-xl bg-neutral-900 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:bg-neutral-700 sm:flex"
+            className="hidden items-center rounded-md bg-neutral-900 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:bg-neutral-700 sm:flex"
           >
             Browse
           </Link>
@@ -119,28 +118,26 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
             <button
               type="button"
               onClick={() => setAvatarOpen((o) => !o)}
-              className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-zinc-100"
+              className="group transition"
             >
-              <Avatar
-                src={user.image}
-                name={user.name}
+              <AccountTrigger
+                name={user.name?.split(" ")[0] ?? "Account"}
+                image={user.image}
                 email={user.email}
-                size={28}
-                className="ring-1 ring-zinc-200"
+                isOpen={avatarOpen}
+                className="hidden sm:inline-flex"
               />
-              <span className="hidden text-[13px] font-medium text-neutral-700 sm:block">
-                {user.name?.split(" ")[0] ?? "Account"}
-              </span>
-              <ChevronDown
-                className={cn(
-                  "h-3.5 w-3.5 text-neutral-400 transition-transform duration-150",
-                  avatarOpen && "rotate-180"
-                )}
+              <AccountTrigger
+                name={user.name?.split(" ")[0] ?? "Account"}
+                image={user.image}
+                email={user.email}
+                isOpen={avatarOpen}
+                className="sm:hidden"
               />
             </button>
 
             {avatarOpen && (
-              <div className="absolute right-0 top-full z-50 mt-1.5 w-52 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-card-md">
+              <div className="absolute right-0 top-full z-50 mt-1.5 w-52 overflow-hidden rounded-lg border border-zinc-100 bg-white shadow-card-md">
                 <div className="border-b border-neutral-100 px-4 py-3">
                   <p className="text-[13px] font-semibold text-neutral-900">
                     {user.name ?? "Account"}
@@ -158,7 +155,7 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
                         key={item.href}
                         href={item.href}
                         onClick={() => setAvatarOpen(false)}
-                        className="flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] text-neutral-700 transition hover:bg-neutral-50"
+                        className="flex items-center gap-3 rounded-md px-3 py-2 text-[13px] text-neutral-700 transition hover:bg-neutral-50"
                       >
                         <Icon className="h-3.5 w-3.5 text-neutral-400" />
                         {item.label}
@@ -170,7 +167,7 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
                     <button
                       type="button"
                       onClick={() => signOut({ callbackUrl: "/" })}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[13px] text-red-500 transition hover:bg-red-50"
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-[13px] text-red-500 transition hover:bg-red-50"
                     >
                       <LogOut className="h-3.5 w-3.5" />
                       Sign out

@@ -1,4 +1,4 @@
-## System Status – PaperDock
+## System Status – KruCraft
 
 | System                | Status       | Notes |
 |-----------------------|-------------|-------|

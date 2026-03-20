@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useTransition } from "react";
 import { Bell } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
-import { Switch } from "@/components/ui/Switch";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/design-system";
+import { Switch } from "@/design-system";
 
 type ToggleRowProps = {
   label: string;
@@ -109,4 +109,3 @@ export function NotificationSettings({
     </Card>
   );
 }
-

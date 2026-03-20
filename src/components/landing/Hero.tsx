@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/design-system";
 import { ResourceCard, type ResourceCardResource } from "@/components/resources/ResourceCard";
 
 /* ── Static fallback (shown only when no real data is passed) ──────────── */

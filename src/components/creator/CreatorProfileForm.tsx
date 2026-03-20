@@ -4,8 +4,8 @@ import type { CreatorStatus } from "@prisma/client";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ExternalLink, Link2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useRouter } from "@/i18n/navigation";
-import { Button } from "@/components/ui/Button";
+import { useRouter } from "next/navigation";
+import { Button, Input, Select, Textarea } from "@/design-system";
 import { Avatar } from "@/components/ui/Avatar";
 import { routes } from "@/lib/routes";
 
@@ -207,12 +207,12 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Display name</label>
-            <input
+            <Input
               name="creatorDisplayName"
               value={form.creatorDisplayName}
               onChange={handleChange}
               className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-              placeholder="PaperDock Studio"
+              placeholder="Your Studio"
             />
             <p className="text-xs text-neutral-400">
               Use the name learners should recognize on your resources and public profile.
@@ -224,12 +224,12 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Creator slug</label>
-            <input
+            <Input
               name="creatorSlug"
               value={form.creatorSlug}
               onChange={handleChange}
               className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-              placeholder="paperdock-studio"
+              placeholder="your-studio"
             />
             <p className="text-xs text-neutral-400">
               We normalize this to lowercase, hyphenated URLs like <span className="font-medium text-neutral-600">math-notes-studio</span>.
@@ -242,7 +242,7 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
 
         <div className="mt-4 space-y-1.5">
           <label className="text-sm font-medium text-neutral-700">Bio</label>
-          <textarea
+          <Textarea
             name="creatorBio"
             value={form.creatorBio}
             onChange={handleChange}
@@ -262,7 +262,7 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Banner URL</label>
-            <input
+            <Input
               name="creatorBanner"
               value={form.creatorBanner}
               onChange={handleChange}
@@ -279,7 +279,7 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Status</label>
-            <select
+            <Select
               name="creatorStatus"
               value={form.creatorStatus}
               onChange={handleChange}
@@ -287,7 +287,7 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
             >
               <option value="ACTIVE">Active</option>
               <option value="PAUSED">Paused</option>
-            </select>
+            </Select>
           </div>
         </div>
 
@@ -408,7 +408,7 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
           ].map(([key, label, placeholder]) => (
             <div key={key} className="space-y-1.5">
               <label className="text-sm font-medium text-neutral-700">{label}</label>
-              <input
+              <Input
                 name={key}
                 value={form[key as keyof typeof form] as string}
                 onChange={handleChange}

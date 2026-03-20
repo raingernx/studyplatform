@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/design-system";
 
 type FilterKey = "search" | "status" | "categoryId";
 
@@ -96,4 +96,3 @@ export function FilterChips({
     </div>
   );
 }
-

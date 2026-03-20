@@ -2,7 +2,13 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import {
+  buildPaginationItems,
+  PaginationButton,
+  PaginationEllipsis,
+  PaginationList,
+  PaginationNav,
+} from "@/design-system";
 
 interface ResourcePaginationProps {
   page: number;
@@ -30,10 +36,7 @@ export function ResourcePagination({ page, totalPages, gridContainerRef }: Resou
   }
 
   return (
-    <nav
-      aria-label="Pagination"
-      className="flex items-center justify-center gap-1 pt-8"
-    >
+    <PaginationNav className="gap-1 pt-8">
       {/* Prev */}
       <PaginationButton
         onClick={() => handlePageChange(page - 1)}
@@ -45,23 +48,23 @@ export function ResourcePagination({ page, totalPages, gridContainerRef }: Resou
       </PaginationButton>
 
       {/* Page numbers */}
-      {buildPageNumbers(page, totalPages).map((p, i) =>
-        p === "…" ? (
-          <span key={`ellipsis-${i}`} className="select-none px-1 text-sm text-text-muted">
-            …
-          </span>
-        ) : (
-          <PaginationButton
-            key={p}
-            onClick={() => handlePageChange(p as number)}
-            active={p === page}
-            aria-label={`Page ${p}`}
-            aria-current={p === page ? "page" : undefined}
-          >
-            {p}
-          </PaginationButton>
-        )
-      )}
+      <PaginationList>
+        {buildPaginationItems(page, totalPages).map((p, i) =>
+          p === "…" ? (
+            <PaginationEllipsis key={`ellipsis-${i}`} />
+          ) : (
+            <PaginationButton
+              key={p}
+              onClick={() => handlePageChange(p as number)}
+              active={p === page}
+              aria-label={`Page ${p}`}
+              aria-current={p === page ? "page" : undefined}
+            >
+              {p}
+            </PaginationButton>
+          )
+        )}
+      </PaginationList>
 
       {/* Next */}
       <PaginationButton
@@ -72,54 +75,6 @@ export function ResourcePagination({ page, totalPages, gridContainerRef }: Resou
         <span className="hidden sm:inline">Next</span>
         <ChevronRight className="h-4 w-4" />
       </PaginationButton>
-    </nav>
+    </PaginationNav>
   );
-}
-
-// ── PaginationButton ──────────────────────────────────────────────────────────
-
-function PaginationButton({
-  children,
-  onClick,
-  disabled = false,
-  active   = false,
-  ...props
-}: React.ComponentProps<"button"> & { active?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      {...props}
-      className={cn(
-        "inline-flex min-w-[36px] items-center justify-center gap-1 rounded-lg border px-3 py-2",
-        "text-sm font-medium transition-colors",
-        "disabled:pointer-events-none disabled:opacity-40",
-        active
-          ? "border-brand-600 bg-brand-600 text-white"
-          : "border-surface-200 bg-white text-text-secondary hover:border-brand-300 hover:text-brand-600",
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function buildPageNumbers(current: number, total: number): (number | "…")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-
-  const pages: (number | "…")[] = [1];
-  if (current > 3) pages.push("…");
-  for (
-    let p = Math.max(2, current - 1);
-    p <= Math.min(total - 1, current + 1);
-    p++
-  ) {
-    pages.push(p);
-  }
-  if (current < total - 2) pages.push("…");
-  pages.push(total);
-  return pages;
 }

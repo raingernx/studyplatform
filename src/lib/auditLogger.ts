@@ -29,7 +29,6 @@ export async function logAdminAction({
     });
   } catch (err) {
     // Audit logging must never break primary flows.
-    // eslint-disable-next-line no-console
     console.error("[AUDIT_LOG_ERROR]", err);
   }
 }

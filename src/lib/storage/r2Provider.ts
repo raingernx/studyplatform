@@ -7,14 +7,14 @@
  *
  * Required environment variables:
  *   R2_ENDPOINT          https://<account-id>.r2.cloudflarestorage.com
- *   R2_BUCKET            Name of the R2 bucket (e.g. "paperdock-files")
+ *   R2_BUCKET            Name of the R2 bucket (e.g. "krucraft-files")
  *   R2_ACCESS_KEY_ID     R2 API token — Access Key ID
  *   R2_SECRET_ACCESS_KEY R2 API token — Secret Access Key
  *
  * Optional:
  *   R2_PUBLIC_URL        Custom domain / public bucket URL used by getUrl().
  *                        If omitted, getUrl() falls back to the R2 endpoint URL.
- *                        Example: https://files.paperdock.com
+ *                        Example: https://files.krucraft.com
  *
  * Upload/download flow:
  *   1. Admin uploads a file → upload() streams it to R2 via PutObjectCommand.
@@ -64,13 +64,19 @@ export class R2Provider implements StorageProvider {
     this.client = new S3Client({
       region: "auto", // R2 requires "auto"
       endpoint,
+      // R2's S3-compatible API requires path-style addressing.
+      // Without this flag the SDK generates virtual-hosted-style presigned
+      // URLs (https://<bucket>.<account>.r2.cloudflarestorage.com/…) whose
+      // HMAC-SHA256 signature does not match what R2 computes against the
+      // actual request host, causing "AccessDenied" on every presigned GET.
+      forcePathStyle: true,
       credentials: {
         accessKeyId: requireEnv("R2_ACCESS_KEY_ID"),
         secretAccessKey: requireEnv("R2_SECRET_ACCESS_KEY"),
       },
     });
 
-    // Optional custom domain (e.g. https://files.paperdock.com).
+    // Optional custom domain (e.g. https://files.krucraft.com).
     // If not set, getUrl() constructs a URL from the R2 endpoint.
     this.publicUrl = process.env.R2_PUBLIC_URL?.replace(/\/$/, "") ?? null;
   }
@@ -129,22 +135,66 @@ export class R2Provider implements StorageProvider {
   /**
    * Generate a time-limited presigned URL for a private GET request.
    *
-   * The default lifetime is 900 seconds (15 minutes), which is short enough
-   * to prevent link sharing while giving users ample time to start the
-   * download.
+   * The default lifetime is 900 seconds (15 minutes).
    *
-   * The download route redirects the user to this URL.  Cloudflare's edge
-   * serves the file directly — the Next.js server is not in the data path.
+   * The `intent` option controls the `Content-Disposition` header that R2
+   * embeds in its response:
+   *
+   *   "download" (default) → attachment; filename="<sanitised>"
+   *   "preview"            → inline
+   *
+   * Both disposition and content-type are embedded as signed query parameters
+   * in the presigned URL (`response-content-disposition` /
+   * `response-content-type`).  R2 injects them into its own response headers,
+   * so the browser receives the correct behaviour regardless of what the
+   * Next.js server sends on the 307 redirect.
+   *
+   * `forcePathStyle: true` is required for R2 — without it the AWS SDK v3
+   * generates virtual-hosted-style URLs whose HMAC-SHA256 canonical string
+   * does not match what R2 computes → AccessDenied.
    */
-  async getSignedUrl(key: string, expiresInSeconds = 900): Promise<string> {
+  async getSignedUrl(
+    key: string,
+    options?: {
+      intent?: "download" | "preview";
+      expiresInSeconds?: number;
+      filename?: string;
+      contentType?: string;
+    },
+  ): Promise<string> {
+    const expiresIn = options?.expiresInSeconds ?? 900;
+    const intent = options?.intent ?? "download";
+
+    // Build the Content-Disposition value to embed in the signed URL.
+    let responseContentDisposition: string | undefined;
+    if (intent === "preview") {
+      responseContentDisposition = "inline";
+    } else {
+      // Sanitise the filename before embedding it in the presigned URL.
+      const safeFilename = options?.filename
+        ? options.filename.replace(/[^\w.\-]/g, "_")
+        : undefined;
+      if (safeFilename) {
+        responseContentDisposition = `attachment; filename="${safeFilename}"`;
+      }
+    }
+
     const command = new GetObjectCommand({
       Bucket: this.bucket,
       Key: key,
+      // Embedding disposition and type in the command causes R2 to include
+      // them as signed query parameters and inject them into the response
+      // headers — the client receives the correct disposition even though it
+      // follows a plain 307 redirect with no extra response headers.
+      ...(responseContentDisposition && {
+        ResponseContentDisposition: responseContentDisposition,
+      }),
+      ...(options?.contentType && {
+        ResponseContentType: options.contentType,
+      }),
     });
 
-    return awsGetSignedUrl(this.client, command, {
-      expiresIn: expiresInSeconds,
-    });
+    return awsGetSignedUrl(this.client, command, { expiresIn });
   }
 
   // ── delete ────────────────────────────────────────────────────────────────

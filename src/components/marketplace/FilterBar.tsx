@@ -43,14 +43,14 @@ export function FilterBar({ total }: Props) {
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex flex-col gap-3 rounded-2xl border border-surface-200 bg-white p-3 shadow-card sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-4">
       {/* Result count */}
-      <p className="shrink-0 text-meta text-text-muted">
+      <p className="shrink-0 text-sm font-medium text-text-secondary">
         {total === 1 ? "1 resource" : `${formatNumber(total)} resources`}
       </p>
 
       {/* Filter selects */}
-      <div className="flex items-center gap-2">
+      <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
         <FilterSelect
           value={price}
           options={PRICE_OPTIONS}
@@ -84,13 +84,13 @@ function FilterSelect({
   const isActive = value !== "" && value !== "newest";
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0">
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={ariaLabel}
         className={[
-          "appearance-none cursor-pointer rounded-lg border py-2 pl-3 pr-8",
+          "min-h-11 w-full appearance-none cursor-pointer rounded-xl border py-2.5 pl-3.5 pr-9",
           "text-sm font-medium outline-none transition-colors",
           "focus:border-brand-400 focus:ring-2 focus:ring-brand-500/15",
           isActive

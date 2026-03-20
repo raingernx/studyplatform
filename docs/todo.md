@@ -1,4 +1,4 @@
-# PaperDock Development TODO
+# KruCraft Development TODO
 
 ## Marketplace UX
 

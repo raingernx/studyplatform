@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { PaginationButton, PaginationInfo } from "@/design-system";
 import { cn } from "@/lib/utils";
 
 export interface TablePaginationProps {
@@ -45,31 +46,29 @@ export function TablePagination({
     >
       <div>
         {totalItems != null && from != null && to != null && (
-          <span>
+          <PaginationInfo>
             Showing {from}–{to} of {totalItems} {entityLabel}
-          </span>
+          </PaginationInfo>
         )}
       </div>
       <div className="flex items-center gap-2">
-        <button
-          type="button"
+        <PaginationButton
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="rounded-md border border-border-subtle bg-white px-3 py-1.5 text-sm font-medium text-text-primary transition hover:bg-surface-100 disabled:cursor-not-allowed disabled:opacity-50"
+          size="sm"
         >
           Previous
-        </button>
-        <span className="px-2 text-text-muted">
+        </PaginationButton>
+        <PaginationInfo className="px-2">
           Page {page} of {totalPages || 1}
-        </span>
-        <button
-          type="button"
+        </PaginationInfo>
+        <PaginationButton
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages || totalPages === 0}
-          className="rounded-md border border-border-subtle bg-white px-3 py-1.5 text-sm font-medium text-text-primary transition hover:bg-surface-100 disabled:cursor-not-allowed disabled:opacity-50"
+          size="sm"
         >
           Next
-        </button>
+        </PaginationButton>
       </div>
     </div>
   );

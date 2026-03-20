@@ -24,8 +24,9 @@ export function DashboardSidebarItem({
       onClick={onNavigate}
       className={cn(
         "group flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13px] font-medium leading-5 transition-colors",
-        "text-muted-foreground hover:bg-neutral-50 hover:text-foreground",
-        active && "bg-slate-900 font-semibold text-white shadow-sm",
+        active
+          ? "bg-slate-900 font-semibold text-white shadow-sm hover:bg-slate-900 hover:text-white"
+          : "text-muted-foreground hover:bg-neutral-50 hover:text-foreground",
       )}
       aria-current={active ? "page" : undefined}
     >

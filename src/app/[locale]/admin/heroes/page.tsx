@@ -2,13 +2,13 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { Megaphone, Plus } from "lucide-react";
 import { authOptions } from "@/lib/auth";
-import { Link } from "@/i18n/navigation";
+import Link from "next/link";
 import { routes } from "@/lib/routes";
 import { formatDate } from "@/lib/format";
 import { getFallbackHero, getHeroList, hasEligibleCmsHero } from "@/services/heroes/hero.service";
 import { HeroListActions } from "@/components/admin/heroes/HeroListActions";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Button } from "@/design-system";
+import { Card } from "@/design-system";
 
 export const metadata = {
   title: "Heroes – Admin",

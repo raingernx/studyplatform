@@ -8,8 +8,9 @@ import {
   findPurchaseAnalyticsContextByXenditInvoiceId,
   findPurchaseByUserAndResource,
 } from "@/repositories/purchases/purchase.repository";
+import { findResourceById } from "@/repositories/resources/resource.repository";
 import { recordPurchaseAnalytics } from "@/analytics/event.service";
-import { PaymentServiceError } from "@/services/payments/payment.service";
+import { buildPurchaseSnapshot, PaymentServiceError } from "@/services/payments/payment.service";
 
 interface XenditInvoicePayload {
   id?: string;
@@ -98,12 +99,26 @@ export async function handleXenditWebhookPayload(payload: unknown) {
     return;
   }
 
+  const resource = await findResourceById(resourceId);
+  if (!resource) {
+    console.error("[XENDIT WEBHOOK] Recovery failed - resource not found.", {
+      invoiceId,
+      purchaseId,
+      resourceId,
+    });
+    return;
+  }
+
   const recovered = await completeRecoveredPurchase({
     userId,
     resourceId,
     amount: invoice.paid_amount ?? invoice.amount ?? 0,
     currency: (invoice.currency ?? "thb").toLowerCase(),
     paymentProvider: "XENDIT",
+    ...buildPurchaseSnapshot(
+      resource,
+      invoice.paid_amount ?? invoice.amount ?? resource.price,
+    ),
     xenditInvoiceId: invoiceId,
   });
 

@@ -1,4 +1,4 @@
-PaperDock is a SaaS marketplace for digital study resources.
+KruCraft is a SaaS marketplace for digital study resources.
 
 Core flows:
 - browse resources

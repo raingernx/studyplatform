@@ -1,5 +1,5 @@
 ---
-description: Rules for implementing Gumroad Design System (Community) from Figma into PaperDock (Next.js + TypeScript + Tailwind).
+description: Rules for implementing Gumroad Design System (Community) from Figma into KruCraft (Next.js + TypeScript + Tailwind).
 globs: src/app/**/*.tsx, src/components/**/*.tsx
 alwaysApply: false
 ---

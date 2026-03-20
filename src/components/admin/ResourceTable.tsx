@@ -6,7 +6,13 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FileText, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
+import {
+  Button,
+  RowActions,
+  RowActionButton,
+  RowActionMenuTrigger,
+  Select,
+} from "@/design-system";
 import {
   Dropdown,
   DropdownItem,
@@ -14,7 +20,6 @@ import {
   DropdownSeparator,
   DropdownTrigger,
 } from "@/components/ui/Dropdown";
-import { Select } from "@/components/ui/Select";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { formatPrice, formatDate } from "@/lib/format";
 import { useNotifications } from "@/features/notifications/useNotifications";
@@ -547,58 +552,49 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                             Delete this resource?
                           </span>
                         </div>
-                        <div className="flex justify-end gap-2">
-                          <Button
+                        <RowActions>
+                          <RowActionButton
                             type="button"
-                            size="sm"
-                            variant="outline"
-                            className="border-border-subtle text-text-secondary hover:bg-surface-50"
+                            tone="muted"
                             disabled={isRowLoading}
                             onClick={() => setConfirmDeleteId(null)}
                           >
                             Cancel
-                          </Button>
-                          <Button
+                          </RowActionButton>
+                          <RowActionButton
                             type="button"
-                            size="sm"
-                            variant="outline"
-                            className="border-danger-200 bg-danger-600 text-white hover:bg-danger-700 hover:text-white"
+                            variant="danger"
                             disabled={isRowLoading}
                             onClick={() => handleDelete(resource)}
                           >
                             Delete permanently
-                          </Button>
-                        </div>
+                          </RowActionButton>
+                        </RowActions>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-end gap-2">
+                      <RowActions>
                         {isDraft && (
-                          <Button
+                          <RowActionButton
                             type="button"
-                            variant="outline"
-                            size="sm"
                             disabled={isRowLoading}
                             onClick={() => handlePublish(resource)}
                           >
                             Publish
-                          </Button>
+                          </RowActionButton>
                         )}
                         {isPublished && (
-                          <Button
+                          <RowActionButton
                             type="button"
-                            variant="outline"
-                            size="sm"
-                            className="cursor-default border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700"
+                            tone="success"
+                            className="cursor-default"
                             disabled
                           >
                             Published ✓
-                          </Button>
+                          </RowActionButton>
                         )}
                         {isArchived && (
-                          <Button
+                          <RowActionButton
                             type="button"
-                            variant="outline"
-                            size="sm"
                             disabled={isRowLoading}
                             onClick={async () => {
                               setRowLoadingId(resource.id);
@@ -626,22 +622,24 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                             }}
                           >
                             Restore
-                          </Button>
+                          </RowActionButton>
                         )}
-                        <Button asChild variant="outline" size="sm">
+                        <RowActionButton asChild>
                           <Link
                             href={`/admin/resources/${resource.id}`}
                             className="flex items-center gap-1"
                           >
-                            <Pencil className="h-3.5 w-3.5" />
-                            <span>Edit</span>
+                            <span className="inline-flex items-center gap-1">
+                              <Pencil className="h-3.5 w-3.5" />
+                              <span>Edit</span>
+                            </span>
                           </Link>
-                        </Button>
+                        </RowActionButton>
                         <Dropdown>
                           <DropdownTrigger asChild>
-                            <Button variant="outline" size="sm" aria-label="More actions">
+                            <RowActionMenuTrigger>
                               <MoreHorizontal className="h-4 w-4" />
-                            </Button>
+                            </RowActionMenuTrigger>
                           </DropdownTrigger>
                           <DropdownMenu align="end">
                             <DropdownItem asChild>
@@ -694,7 +692,7 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                             </DropdownItem>
                           </DropdownMenu>
                         </Dropdown>
-                      </div>
+                      </RowActions>
                     )}
                   </td>
                 </tr>

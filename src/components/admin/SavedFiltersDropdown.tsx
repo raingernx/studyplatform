@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/design-system";
 
 type FilterState = {
   search: string;
@@ -85,4 +85,3 @@ export function SavedFiltersDropdown({
     </div>
   );
 }
-

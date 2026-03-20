@@ -20,6 +20,7 @@ export interface CreateCreatorRevenueInput {
 
 export interface ResourceEventAggregateRow {
   resourceId: string;
+  publishedAt: Date;
   views: number;
   downloads: number;
   last24hDownloads: number;
@@ -31,9 +32,26 @@ export interface ResourceRevenueAggregateRow {
   resourceId: string;
   purchases: number;
   revenue: number;
+  last30dRevenue: number;
   last24hPurchases: number;
   last7dPurchases: number;
   last30dPurchases: number;
+}
+
+export interface ResourceRatingAggregateRow {
+  resourceId: string;
+  averageRating: number;
+  reviewCount: number;
+}
+
+export interface TrendingResourceSignalRow {
+  resourceId: string;
+  publishedAt: Date;
+  recentDownloads: number;
+  recentSales: number;
+  recentRevenue: number;
+  averageRating: number;
+  reviewCount: number;
 }
 
 export interface CreatorResourceCountRow {
@@ -64,6 +82,26 @@ export interface PlatformRevenueRow {
   date: Date;
   totalSales: number;
   totalRevenue: number;
+}
+
+export interface PlatformOverviewCounts {
+  totalResources: number;
+  totalUsers: number;
+}
+
+export interface TopCreatorThisWeekRow {
+  creatorId: string;
+  resources: number;
+  totalSales: number;
+  last30dDownloads: number;
+  last7dRevenue: number;
+  creator: {
+    name: string | null;
+    image: string | null;
+    creatorDisplayName: string | null;
+    creatorSlug: string | null;
+    creatorBio: string | null;
+  };
 }
 
 interface ResourceIdRow {
@@ -138,6 +176,18 @@ export async function upsertCreatorRevenue(input: CreateCreatorRevenueInput) {
   });
 }
 
+export async function findPlatformOverviewCounts(): Promise<PlatformOverviewCounts> {
+  const [totalResources, totalUsers] = await Promise.all([
+    prisma.resource.count({ where: { deletedAt: null } }),
+    prisma.user.count(),
+  ]);
+
+  return {
+    totalResources,
+    totalUsers,
+  };
+}
+
 export async function fetchResourceEventAggregates(
   last24h: Date,
   last7d: Date,
@@ -146,6 +196,7 @@ export async function fetchResourceEventAggregates(
   return prisma.$queryRaw<ResourceEventAggregateRow[]>`
     SELECT
       r.id AS "resourceId",
+      r."createdAt" AS "publishedAt",
       COUNT(*) FILTER (WHERE ae."eventType" = 'RESOURCE_VIEW')::int AS views,
       COUNT(*) FILTER (WHERE ae."eventType" = 'RESOURCE_DOWNLOAD')::int AS downloads,
       COUNT(*) FILTER (
@@ -178,12 +229,28 @@ export async function fetchResourceRevenueAggregates(
       r.id AS "resourceId",
       COUNT(cr.id)::int AS purchases,
       COALESCE(SUM(cr.amount), 0)::int AS revenue,
+      COALESCE(SUM(cr.amount) FILTER (WHERE cr."createdAt" >= ${last30d}), 0)::int AS "last30dRevenue",
       COUNT(cr.id) FILTER (WHERE cr."createdAt" >= ${last24h})::int AS "last24hPurchases",
       COUNT(cr.id) FILTER (WHERE cr."createdAt" >= ${last7d})::int AS "last7dPurchases",
       COUNT(cr.id) FILTER (WHERE cr."createdAt" >= ${last30d})::int AS "last30dPurchases"
     FROM "Resource" r
     LEFT JOIN "creator_revenue" cr
       ON cr."resourceId" = r.id
+    WHERE r."deletedAt" IS NULL
+    GROUP BY r.id
+  `;
+}
+
+export async function fetchResourceRatingAggregates(): Promise<ResourceRatingAggregateRow[]> {
+  return prisma.$queryRaw<ResourceRatingAggregateRow[]>`
+    SELECT
+      r.id AS "resourceId",
+      COALESCE(AVG(rv.rating), 0)::double precision AS "averageRating",
+      COUNT(rv.id)::int AS "reviewCount"
+    FROM "Resource" r
+    LEFT JOIN "Review" rv
+      ON rv."resourceId" = r.id
+      AND rv."isVisible" = true
     WHERE r."deletedAt" IS NULL
     GROUP BY r.id
   `;
@@ -319,10 +386,87 @@ export async function findTopTrendingResourceIds(limit: number) {
   return rows.map((row) => row.resourceId);
 }
 
+export async function findTrendingResourceSignals(
+  since: Date,
+  limit: number,
+): Promise<TrendingResourceSignalRow[]> {
+  return prisma.$queryRaw<TrendingResourceSignalRow[]>`
+    SELECT
+      r.id AS "resourceId",
+      r."createdAt" AS "publishedAt",
+      COALESCE(d."recentDownloads", 0)::int AS "recentDownloads",
+      COALESCE(p."recentSales", 0)::int AS "recentSales",
+      COALESCE(p."recentRevenue", 0)::int AS "recentRevenue",
+      COALESCE(rv."averageRating", 0)::double precision AS "averageRating",
+      COALESCE(rv."reviewCount", 0)::int AS "reviewCount"
+    FROM "Resource" r
+    LEFT JOIN (
+      SELECT
+        de."resourceId",
+        COUNT(*) FILTER (
+          WHERE de."createdAt" >= ${since}
+        )::int AS "recentDownloads"
+      FROM "DownloadEvent" de
+      GROUP BY de."resourceId"
+    ) d
+      ON d."resourceId" = r.id
+    LEFT JOIN (
+      SELECT
+        p."resourceId",
+        COUNT(*) FILTER (
+          WHERE p.status = 'COMPLETED'
+            AND p."createdAt" >= ${since}
+        )::int AS "recentSales",
+        COALESCE(
+          SUM(COALESCE(p."authorRevenue", p.amount)) FILTER (
+            WHERE p.status = 'COMPLETED'
+              AND p."createdAt" >= ${since}
+          ),
+          0
+        )::int AS "recentRevenue"
+      FROM "Purchase" p
+      GROUP BY p."resourceId"
+    ) p
+      ON p."resourceId" = r.id
+    LEFT JOIN (
+      SELECT
+        rv."resourceId",
+        COALESCE(AVG(rv.rating), 0)::double precision AS "averageRating",
+        COUNT(rv.id)::int AS "reviewCount"
+      FROM "Review" rv
+      WHERE rv."isVisible" = true
+      GROUP BY rv."resourceId"
+    ) rv
+      ON rv."resourceId" = r.id
+    WHERE r."deletedAt" IS NULL
+      AND r.status = 'PUBLISHED'
+      AND (r.visibility IS NULL OR r.visibility = 'PUBLIC')
+      AND (
+        COALESCE(d."recentDownloads", 0) > 0
+        OR
+        COALESCE(p."recentSales", 0) > 0
+        OR COALESCE(p."recentRevenue", 0) > 0
+        OR COALESCE(rv."reviewCount", 0) > 0
+      )
+    ORDER BY
+      COALESCE(p."recentSales", 0) DESC,
+      COALESCE(d."recentDownloads", 0) DESC,
+      COALESCE(p."recentRevenue", 0) DESC,
+      COALESCE(rv."averageRating", 0) DESC,
+      COALESCE(rv."reviewCount", 0) DESC,
+      r."createdAt" DESC
+    LIMIT ${limit}
+  `;
+}
+
 export async function findTopDownloadedResourceIds(limit: number) {
   const rows = await prisma.resourceStat.findMany({
     select: { resourceId: true },
-    orderBy: [{ downloads: "desc" }, { purchases: "desc" }],
+    orderBy: [
+      { downloads: "desc" },
+      { purchases: "desc" },
+      { trendingScore: "desc" },
+    ],
     take: limit,
   });
 
@@ -353,7 +497,7 @@ export async function findFeaturedResourceIds(limit: number) {
     WHERE r."deletedAt" IS NULL
       AND r.status = 'PUBLISHED'
       AND r.featured = true
-    ORDER BY rs."trendingScore" DESC, rs.downloads DESC
+    ORDER BY rs."trendingScore" DESC, rs.purchases DESC, rs.downloads DESC
     LIMIT ${limit}
   `;
 
@@ -369,7 +513,7 @@ export async function findFreeResourceIds(limit: number) {
     WHERE r."deletedAt" IS NULL
       AND r.status = 'PUBLISHED'
       AND r."isFree" = true
-    ORDER BY rs.downloads DESC, rs."trendingScore" DESC
+    ORDER BY rs."trendingScore" DESC, rs.downloads DESC, rs.purchases DESC
     LIMIT ${limit}
   `;
 
@@ -385,6 +529,45 @@ export async function findResourceStatByResourceId(resourceId: string) {
 export async function findCreatorStatByCreatorId(creatorId: string) {
   return prisma.creatorStat.findUnique({
     where: { creatorId },
+  });
+}
+
+export async function findTopCreatorThisWeek(): Promise<TopCreatorThisWeekRow | null> {
+  return prisma.creatorStat.findFirst({
+    where: {
+      resources: { gt: 0 },
+      creator: {
+        creatorStatus: "ACTIVE",
+        creatorSlug: { not: null },
+      },
+      OR: [
+        { last7dRevenue: { gt: 0 } },
+        { last30dDownloads: { gt: 0 } },
+        { totalSales: { gt: 0 } },
+      ],
+    },
+    orderBy: [
+      { last7dRevenue: "desc" },
+      { last30dDownloads: "desc" },
+      { totalSales: "desc" },
+      { resources: "desc" },
+    ],
+    select: {
+      creatorId: true,
+      resources: true,
+      totalSales: true,
+      last30dDownloads: true,
+      last7dRevenue: true,
+      creator: {
+        select: {
+          name: true,
+          image: true,
+          creatorDisplayName: true,
+          creatorSlug: true,
+          creatorBio: true,
+        },
+      },
+    },
   });
 }
 
@@ -434,6 +617,73 @@ export async function findTopResourcesByCreator(
     },
     orderBy: [{ downloads: "desc" }, { revenue: "desc" }],
     take: limit,
+  });
+}
+
+export async function findRecentCompletedPurchases(limit: number) {
+  return prisma.purchase.findMany({
+    where: { status: "COMPLETED" },
+    take: limit,
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      amount: true,
+      createdAt: true,
+      user: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+      resource: {
+        select: {
+          title: true,
+        },
+      },
+    },
+  });
+}
+
+export async function findRecentResources(limit: number) {
+  return prisma.resource.findMany({
+    where: { deletedAt: null },
+    take: limit,
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      createdAt: true,
+      author: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+}
+
+export async function reconcileResourceDownloadCounts() {
+  return prisma.$transaction(async (tx) => {
+    const resetCount = await tx.resource.updateMany({
+      where: { downloadCount: { not: 0 } },
+      data: { downloadCount: 0 },
+    });
+
+    const reconciledCount = await tx.$executeRaw`
+      UPDATE "Resource" r
+      SET "downloadCount" = counts.downloads
+      FROM (
+        SELECT "resourceId", COUNT(*)::int AS downloads
+        FROM "DownloadEvent"
+        GROUP BY "resourceId"
+      ) counts
+      WHERE r.id = counts."resourceId"
+    `;
+
+    return {
+      resetCount,
+      reconciledCount,
+    };
   });
 }
 

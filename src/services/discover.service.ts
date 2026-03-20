@@ -12,17 +12,24 @@
 import { unstable_cache } from "next/cache";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { calculateTrendingScore } from "@/analytics/aggregation.service";
 import { CACHE_KEYS, CACHE_TTLS, rememberJson } from "@/lib/cache";
 import { LISTED_RESOURCE_WHERE } from "@/lib/query/resourceFilters";
 import { RESOURCE_CARD_SELECT } from "@/lib/query/resourceSelect";
+import { attachResourceTrustSignals } from "@/services/review.service";
 import { resolveHomepageHero } from "@/services/heroes/hero.resolver";
 import {
   findFeaturedResourceIds,
   findFreeResourceIds,
   findNewestResourceIds,
+  findTopCreatorThisWeek,
   findTopDownloadedResourceIds,
+  findTrendingResourceSignals,
   findTopTrendingResourceIds,
 } from "@/repositories/analytics/analytics.repository";
+
+const DAY_MS = 86_400_000;
+const TRENDING_WINDOW_DAYS = 30;
 
 async function findFallbackResourceIds(
   limit: number,
@@ -62,6 +69,47 @@ export function withPreview<
   };
 }
 
+export async function getTrendingResources(limit = 8) {
+  const since = new Date(Date.now() - DAY_MS * TRENDING_WINDOW_DAYS);
+  const candidates = await findTrendingResourceSignals(since, Math.max(limit * 4, 24));
+
+  if (candidates.length === 0) {
+    const fallbackIds = await findTopTrendingResourceIds(limit);
+    const fallbackPool = await loadDiscoverResourcesByIds(fallbackIds);
+
+    return fallbackIds
+      .map((id) => fallbackPool.get(id))
+      .filter((resource): resource is NonNullable<typeof resource> => Boolean(resource))
+      .map(withPreview);
+  }
+
+  const rankedIds = candidates
+    .map((candidate) => ({
+      resourceId: candidate.resourceId,
+      trendScore: calculateTrendingScore({
+        recentDownloads: candidate.recentDownloads,
+        recentSales: candidate.recentSales,
+        recentRevenue: candidate.recentRevenue,
+        averageRating: candidate.averageRating,
+        reviewCount: candidate.reviewCount,
+        ageInDays: Math.max(
+          0,
+          (Date.now() - candidate.publishedAt.getTime()) / DAY_MS,
+        ),
+      }),
+    }))
+    .sort((left, right) => right.trendScore - left.trendScore)
+    .slice(0, limit)
+    .map((row) => row.resourceId);
+
+  const pool = await loadDiscoverResourcesByIds(rankedIds);
+
+  return rankedIds
+    .map((id) => pool.get(id))
+    .filter((resource): resource is NonNullable<typeof resource> => Boolean(resource))
+    .map(withPreview);
+}
+
 // ── Discover sections ─────────────────────────────────────────────────────────
 
 /**
@@ -78,16 +126,15 @@ export function withPreview<
 export const getDiscoverData = unstable_cache(
   async function _getDiscoverData() {
     const [
-      trendingIdsFromStats,
+      trendingResources,
       popularIdsFromStats,
       newestIdsFromStats,
       featuredIdsFromStats,
       freeIdsFromStats,
+      topCreator,
       categories,
     ] = await Promise.all([
-      rememberJson(CACHE_KEYS.trendingResources, CACHE_TTLS.homepageList, () =>
-        findTopTrendingResourceIds(8),
-      ),
+      getTrendingResources(8),
       rememberJson(CACHE_KEYS.popularResources, CACHE_TTLS.homepageList, () =>
         findTopDownloadedResourceIds(8),
       ),
@@ -100,16 +147,16 @@ export const getDiscoverData = unstable_cache(
       rememberJson(CACHE_KEYS.freeResources, CACHE_TTLS.homepageList, () =>
         findFreeResourceIds(4),
       ),
+      rememberJson(CACHE_KEYS.topCreator, CACHE_TTLS.homepageList, () =>
+        findTopCreatorThisWeek(),
+      ),
       prisma.category.findMany({
         include: { _count: { select: { resources: true } } },
         orderBy: { name: "asc" },
       }),
     ]);
 
-    const [trendingIds, popularIds, newestIds, featuredIds, freeIds] = await Promise.all([
-      trendingIdsFromStats.length > 0
-        ? trendingIdsFromStats
-        : findFallbackResourceIds(8, [{ downloadCount: "desc" }, { createdAt: "desc" }]),
+    const [popularIds, newestIds, featuredIds, freeIds] = await Promise.all([
       popularIdsFromStats.length > 0
         ? popularIdsFromStats
         : findFallbackResourceIds(8, [{ downloadCount: "desc" }, { createdAt: "desc" }]),
@@ -130,7 +177,7 @@ export const getDiscoverData = unstable_cache(
 
     const resourceIds = Array.from(
       new Set([
-        ...trendingIds,
+        ...trendingResources.map((resource) => resource.id),
         ...popularIds,
         ...newestIds,
         ...featuredIds,
@@ -148,12 +195,12 @@ export const getDiscoverData = unstable_cache(
         )
         .map(withPreview);
 
-    const trending = mapSection(trendingIds).slice(0, 4);
+    const trending = trendingResources.slice(0, 4);
     const newReleases = mapSection(newestIds).slice(0, 4);
     const featured = mapSection(featuredIds).slice(0, 4);
     const freeResources = mapSection(freeIds).slice(0, 4);
     const mostDownloaded = mapSection(popularIds).slice(0, 4);
-    const recommended = mapSection(trendingIds).slice(0, 8);
+    const recommended = trendingResources.slice(0, 8);
 
     return {
       trending,
@@ -162,6 +209,7 @@ export const getDiscoverData = unstable_cache(
       freeResources,
       mostDownloaded,
       recommended,
+      topCreator,
       categories,
     };
   },
@@ -181,7 +229,9 @@ async function loadDiscoverResourcesByIds(resourceIds: string[]) {
           select: RESOURCE_CARD_SELECT,
         });
 
-  return new Map(rows.map((row) => [row.id, row]));
+  const resources = await attachResourceTrustSignals(rows);
+
+  return new Map(resources.map((row) => [row.id, row]));
 }
 
 // ── Convenience type ──────────────────────────────────────────────────────────

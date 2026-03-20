@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Lock, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { FormSection } from "@/components/ui/form-section";
+import { Button, FormSection } from "@/design-system";
 
 export function SecuritySettings() {
   const [isChanging, setIsChanging] = useState(false);
@@ -12,7 +11,6 @@ export function SecuritySettings() {
     setIsChanging(true);
     // Mock API for now
     setTimeout(() => {
-      // eslint-disable-next-line no-console
       console.log("Change password clicked");
       setIsChanging(false);
     }, 500);
@@ -51,4 +49,3 @@ export function SecuritySettings() {
     </FormSection>
   );
 }
-

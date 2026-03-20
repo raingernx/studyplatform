@@ -1,6 +1,6 @@
-# PaperDock – Service Map
+# KruCraft – Service Map
 
-This document maps the service layer of the PaperDock backend.
+This document maps the service layer of the KruCraft backend.
 
 Purpose:
 

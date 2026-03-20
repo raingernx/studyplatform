@@ -5,7 +5,8 @@
  * Searches title, description, category name, and tag names.
  *
  * Results are scoped to published, non-deleted resources and ordered by
- * download count so popular resources float to the top.
+ * marketplace ranking signals from cached resource stats so higher-quality,
+ * higher-conversion resources float to the top.
  *
  * This intentionally uses simple Postgres ILIKE (via Prisma's `insensitive`
  * mode) rather than a dedicated search index.  It is fast enough for typical
@@ -46,7 +47,8 @@ export interface SearchResult {
  *   - category name (ILIKE)
  *   - any tag name  (ILIKE)
  *
- * Returns at most `limit` results (default 20), ordered by downloadCount desc.
+ * Returns at most `limit` results (default 20), ordered by cached ranking
+ * signals before falling back to recency.
  * Returns an empty array when `query` is blank.
  */
 export async function searchResources(filters: SearchFilters): Promise<SearchResult[]> {
@@ -87,7 +89,12 @@ export async function searchResources(filters: SearchFilters): Promise<SearchRes
       },
       _count: { select: { purchases: true, reviews: true } },
     },
-    orderBy: { downloadCount: "desc" },
+    orderBy: [
+      { resourceStat: { trendingScore: "desc" } },
+      { resourceStat: { purchases: "desc" } },
+      { resourceStat: { downloads: "desc" } },
+      { createdAt: "desc" },
+    ] as any,
     take:    limit,
   });
 

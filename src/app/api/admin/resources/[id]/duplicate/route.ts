@@ -63,7 +63,6 @@ export async function POST(_req: Request, { params }: Params) {
     const baseSlug = `${existing.slug}-copy`;
     let candidate = baseSlug;
     let attempt = 0;
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const conflict = await prisma.resource.findUnique({
         where: { slug: candidate },

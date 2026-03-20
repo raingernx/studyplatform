@@ -1,4 +1,4 @@
-import { ResourceCard, type ResourceCardResource } from "@/components/resources/ResourceCard";
+import { ResourceCard, type ResourceCardResource } from "@/design-system";
 
 interface RelatedResourcesProps {
   resources: ResourceCardResource[];
@@ -9,9 +9,14 @@ export function RelatedResources({ resources, ownedIds = [] }: RelatedResourcesP
   if (resources.length === 0) return null;
 
   return (
-    <section>
-      <h2 className="font-display text-lg font-semibold text-zinc-900">More like this</h2>
-      <div className="mt-4 grid grid-cols-2 gap-6 md:grid-cols-4">
+    <section className="space-y-4">
+      <div className="space-y-1">
+        <h2 className="font-display text-lg font-semibold text-zinc-900">You might also like</h2>
+        <p className="text-sm leading-6 text-zinc-500">
+          Related picks from the same study flow, kept below the main decision area so you can compare after you decide.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-4">
         {resources.map((resource) => (
           <ResourceCard
             key={resource.id ?? resource.slug ?? resource.title}

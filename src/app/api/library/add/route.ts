@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import {
+  addFreeResourceToLibrary,
+  LibraryServiceError,
+} from "@/services/purchases/library.service";
 
 const AddToLibrarySchema = z.object({
   resourceId: z.string().cuid(),
@@ -52,50 +55,14 @@ export async function POST(req: Request) {
     const { resourceId } = parsed.data;
     const userId = session.user.id;
 
-    // ── 3. Verify resource exists, is published, and is actually free ──────
-    const resource = await prisma.resource.findUnique({
-      where: { id: resourceId },
-      select: { id: true, isFree: true, status: true },
-    });
-
-    if (!resource || resource.status !== "PUBLISHED") {
-      return NextResponse.json(
-        { error: "Resource not found." },
-        { status: 404 }
-      );
-    }
-
-    if (!resource.isFree) {
-      return NextResponse.json(
-        { error: "This resource requires payment. Please use the checkout flow." },
-        { status: 400 }
-      );
-    }
-
-    // ── 4. Upsert purchase record (idempotent) ────────────────────────────
-    //
-    // The @@unique([userId, resourceId]) constraint means there is at most
-    // one row per pair. Using upsert avoids a race condition between the
-    // existence check and the insert.
-    await prisma.purchase.upsert({
-      where: { userId_resourceId: { userId, resourceId } },
-      update: {
-        // Bring any pre-existing PENDING/FAILED row up to COMPLETED.
-        status: "COMPLETED",
-        paymentProvider: "FREE",
-      },
-      create: {
-        userId,
-        resourceId,
-        amount: 0,
-        currency: "usd",
-        status: "COMPLETED",
-        paymentProvider: "FREE",
-      },
-    });
+    await addFreeResourceToLibrary(userId, resourceId);
 
     return NextResponse.json({ success: true });
   } catch (err) {
+    if (err instanceof LibraryServiceError) {
+      return NextResponse.json(err.payload, { status: err.status });
+    }
+
     console.error("[LIBRARY_ADD]", err);
     return NextResponse.json(
       { error: "Internal server error." },

@@ -46,13 +46,6 @@ export const RESOURCE_CARD_SELECT = {
     orderBy: { order: "asc" as const },
     select:  { imageUrl: true },
   },
-
-  _count: {
-    select: {
-      purchases: true,
-      reviews:   true,
-    },
-  },
 } as const;
 
 /**

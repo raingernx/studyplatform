@@ -1,13 +1,12 @@
 import path from "path";
 import { fileURLToPath } from "url";
-import createNextIntlPlugin from "next-intl/plugin";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig = {
   transpilePackages: ["geist"],
   experimental: {
-    optimizePackageImports: ["lucide-react"],
+    optimizePackageImports: ["lucide-react", "date-fns"],
   },
   turbopack: {
     root: path.join(__dirname),
@@ -33,6 +32,4 @@ const nextConfig = {
   serverExternalPackages: ["@prisma/client"],
 };
 
-const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
-
-export default withNextIntl(nextConfig);
+export default nextConfig;

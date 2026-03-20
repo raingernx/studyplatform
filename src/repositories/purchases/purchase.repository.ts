@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 import { prisma } from "@/lib/prisma";
 
 export interface UpsertPendingPurchaseInput {
@@ -6,6 +8,8 @@ export interface UpsertPendingPurchaseInput {
   amount: number;
   currency: string;
   paymentProvider: "STRIPE" | "XENDIT";
+  authorId: string;
+  authorRevenue: number;
   clearXenditInvoiceId?: boolean;
 }
 
@@ -29,8 +33,110 @@ export interface CompleteRecoveredPurchaseInput {
   amount: number;
   currency: string;
   paymentProvider: "STRIPE" | "XENDIT";
+  authorId: string;
+  authorRevenue: number;
   stripeSessionId?: string | null;
   xenditInvoiceId?: string | null;
+}
+
+export interface UpsertCompletedFreePurchaseInput {
+  userId: string;
+  resourceId: string;
+  authorId: string;
+  authorRevenue: number;
+}
+
+const PURCHASE_WITH_RESOURCE_INCLUDE = {
+  resource: {
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      description: true,
+      level: true,
+      previewUrl: true,
+      isFree: true,
+      price: true,
+      mimeType: true,
+      fileKey: true,
+      fileUrl: true,
+      downloadCount: true,
+      author: { select: { id: true, name: true } },
+      category: { select: { id: true, name: true, slug: true } },
+      previews: { orderBy: { order: "asc" as const }, select: { imageUrl: true } },
+    },
+  },
+} as const;
+
+const PURCHASE_PREFERENCE_SIGNAL_SELECT = {
+  createdAt: true,
+  resource: {
+    select: {
+      id: true,
+      title: true,
+      level: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
+  },
+} as const;
+
+const DOWNLOAD_EVENT_WITH_RESOURCE_SELECT = {
+  id: true,
+  createdAt: true,
+  resource: {
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      previewUrl: true,
+      fileSize: true,
+      type: true,
+      price: true,
+      isFree: true,
+      author: { select: { name: true } },
+      category: { select: { name: true } },
+    },
+  },
+} as const;
+
+const DOWNLOAD_DEDUP_WINDOW_MS = 60_000;
+
+async function completeMatchedPurchase(
+  tx: Prisma.TransactionClient,
+  where: Prisma.PurchaseWhereInput,
+  data?: Prisma.PurchaseUpdateManyMutationInput,
+): Promise<PurchaseCompletionResult> {
+  const purchase = await tx.purchase.findFirst({
+    where,
+    select: { id: true, resourceId: true },
+  });
+
+  if (!purchase) {
+    return { matched: false, completed: false, resourceId: null };
+  }
+
+  const updated = await tx.purchase.updateMany({
+    where: {
+      id: purchase.id,
+      status: { not: "COMPLETED" },
+    },
+    data: {
+      status: "COMPLETED",
+      ...(data ?? {}),
+    },
+  });
+
+  if (updated.count === 0) {
+    return { matched: true, completed: false, resourceId: purchase.resourceId };
+  }
+
+  return { matched: true, completed: true, resourceId: purchase.resourceId };
 }
 
 export async function findPurchaseByUserAndResource(
@@ -58,6 +164,95 @@ export async function findCompletedPurchaseByUserAndResource(
       status: "COMPLETED",
     },
     select: { id: true },
+  });
+}
+
+export async function findCompletedResourceIdsByUser(userId: string) {
+  return prisma.purchase.findMany({
+    where: { userId, status: "COMPLETED" },
+    select: { resourceId: true },
+  });
+}
+
+export async function findCompletedResourceIdsByUserFromSet(
+  userId: string,
+  resourceIds: string[],
+) {
+  return prisma.purchase.findMany({
+    where: {
+      userId,
+      resourceId: { in: resourceIds },
+      status: "COMPLETED",
+    },
+    select: { resourceId: true },
+  });
+}
+
+export async function findCompletedSalesCountByResource(resourceId: string) {
+  return prisma.purchase.count({
+    where: {
+      resourceId,
+      status: "COMPLETED",
+    },
+  });
+}
+
+export async function findCompletedSalesCountsByResourceIds(resourceIds: string[]) {
+  if (resourceIds.length === 0) {
+    return [];
+  }
+
+  return prisma.purchase.groupBy({
+    by: ["resourceId"],
+    where: {
+      resourceId: { in: resourceIds },
+      status: "COMPLETED",
+    },
+    _count: {
+      _all: true,
+    },
+  });
+}
+
+export async function findCompletedPurchasesByUser(userId: string) {
+  return prisma.purchase.findMany({
+    where: { userId, status: "COMPLETED" },
+    include: PURCHASE_WITH_RESOURCE_INCLUDE,
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function findRecentPurchasePreferenceSignalsByUser(
+  userId: string,
+  take: number,
+) {
+  return prisma.purchase.findMany({
+    where: { userId, status: "COMPLETED" },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: PURCHASE_PREFERENCE_SIGNAL_SELECT,
+  });
+}
+
+export async function findPurchaseHistoryByUser(userId: string) {
+  return prisma.purchase.findMany({
+    where: { userId },
+    include: PURCHASE_WITH_RESOURCE_INCLUDE,
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function countDownloadEventsByUser(userId: string) {
+  return prisma.downloadEvent.count({
+    where: { userId },
+  });
+}
+
+export async function findDownloadHistoryByUser(userId: string) {
+  return prisma.downloadEvent.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    select: DOWNLOAD_EVENT_WITH_RESOURCE_SELECT,
   });
 }
 
@@ -185,12 +380,20 @@ export async function findPurchaseAnalyticsContextByXenditInvoiceId(
 
 export async function upsertPendingPurchase(input: UpsertPendingPurchaseInput) {
   const updateData: {
+    amount: number;
+    currency: string;
     status: "PENDING";
     paymentProvider: "STRIPE" | "XENDIT";
+    authorId: string;
+    authorRevenue: number;
     xenditInvoiceId?: null;
   } = {
+    amount: input.amount,
+    currency: input.currency,
     status: "PENDING",
     paymentProvider: input.paymentProvider,
+    authorId: input.authorId,
+    authorRevenue: input.authorRevenue,
   };
 
   if (input.clearXenditInvoiceId) {
@@ -212,6 +415,40 @@ export async function upsertPendingPurchase(input: UpsertPendingPurchaseInput) {
       currency: input.currency,
       status: "PENDING",
       paymentProvider: input.paymentProvider,
+      authorId: input.authorId,
+      authorRevenue: input.authorRevenue,
+    },
+    select: { id: true },
+  });
+}
+
+export async function upsertCompletedFreePurchase(
+  input: UpsertCompletedFreePurchaseInput,
+) {
+  return prisma.purchase.upsert({
+    where: {
+      userId_resourceId: {
+        userId: input.userId,
+        resourceId: input.resourceId,
+      },
+    },
+    update: {
+      amount: 0,
+      currency: "usd",
+      status: "COMPLETED",
+      paymentProvider: "FREE",
+      authorId: input.authorId,
+      authorRevenue: input.authorRevenue,
+    },
+    create: {
+      userId: input.userId,
+      resourceId: input.resourceId,
+      amount: 0,
+      currency: "usd",
+      status: "COMPLETED",
+      paymentProvider: "FREE",
+      authorId: input.authorId,
+      authorRevenue: input.authorRevenue,
     },
     select: { id: true },
   });
@@ -251,33 +488,7 @@ export async function completeStripePurchaseBySession(
   stripeSessionId: string,
 ): Promise<PurchaseCompletionResult> {
   return prisma.$transaction(async (tx) => {
-    const purchase = await tx.purchase.findFirst({
-      where: { stripeSessionId },
-      select: { id: true, resourceId: true },
-    });
-
-    if (!purchase) {
-      return { matched: false, completed: false, resourceId: null };
-    }
-
-    const updated = await tx.purchase.updateMany({
-      where: {
-        id: purchase.id,
-        status: { not: "COMPLETED" },
-      },
-      data: { status: "COMPLETED" },
-    });
-
-    if (updated.count === 0) {
-      return { matched: true, completed: false, resourceId: purchase.resourceId };
-    }
-
-    await tx.resource.update({
-      where: { id: purchase.resourceId },
-      data: { downloadCount: { increment: 1 } },
-    });
-
-    return { matched: true, completed: true, resourceId: purchase.resourceId };
+    return completeMatchedPurchase(tx, { stripeSessionId });
   });
 }
 
@@ -285,33 +496,7 @@ export async function completeStripePurchaseByPaymentIntent(
   stripePaymentIntentId: string,
 ): Promise<PurchaseCompletionResult> {
   return prisma.$transaction(async (tx) => {
-    const purchase = await tx.purchase.findFirst({
-      where: { stripePaymentIntentId },
-      select: { id: true, resourceId: true },
-    });
-
-    if (!purchase) {
-      return { matched: false, completed: false, resourceId: null };
-    }
-
-    const updated = await tx.purchase.updateMany({
-      where: {
-        id: purchase.id,
-        status: { not: "COMPLETED" },
-      },
-      data: { status: "COMPLETED" },
-    });
-
-    if (updated.count === 0) {
-      return { matched: true, completed: false, resourceId: purchase.resourceId };
-    }
-
-    await tx.resource.update({
-      where: { id: purchase.resourceId },
-      data: { downloadCount: { increment: 1 } },
-    });
-
-    return { matched: true, completed: true, resourceId: purchase.resourceId };
+    return completeMatchedPurchase(tx, { stripePaymentIntentId });
   });
 }
 
@@ -319,33 +504,7 @@ export async function completeXenditPurchaseByInvoiceId(
   xenditInvoiceId: string,
 ): Promise<PurchaseCompletionResult> {
   return prisma.$transaction(async (tx) => {
-    const purchase = await tx.purchase.findFirst({
-      where: { xenditInvoiceId },
-      select: { id: true, resourceId: true },
-    });
-
-    if (!purchase) {
-      return { matched: false, completed: false, resourceId: null };
-    }
-
-    const updated = await tx.purchase.updateMany({
-      where: {
-        id: purchase.id,
-        status: { not: "COMPLETED" },
-      },
-      data: { status: "COMPLETED" },
-    });
-
-    if (updated.count === 0) {
-      return { matched: true, completed: false, resourceId: purchase.resourceId };
-    }
-
-    await tx.resource.update({
-      where: { id: purchase.resourceId },
-      data: { downloadCount: { increment: 1 } },
-    });
-
-    return { matched: true, completed: true, resourceId: purchase.resourceId };
+    return completeMatchedPurchase(tx, { xenditInvoiceId });
   });
 }
 
@@ -354,36 +513,7 @@ export async function completeXenditPurchaseById(
   xenditInvoiceId: string | null,
 ): Promise<PurchaseCompletionResult> {
   return prisma.$transaction(async (tx) => {
-    const purchase = await tx.purchase.findUnique({
-      where: { id: purchaseId },
-      select: { id: true, resourceId: true },
-    });
-
-    if (!purchase) {
-      return { matched: false, completed: false, resourceId: null };
-    }
-
-    const updated = await tx.purchase.updateMany({
-      where: {
-        id: purchase.id,
-        status: { not: "COMPLETED" },
-      },
-      data: {
-        status: "COMPLETED",
-        ...(xenditInvoiceId ? { xenditInvoiceId } : {}),
-      },
-    });
-
-    if (updated.count === 0) {
-      return { matched: true, completed: false, resourceId: purchase.resourceId };
-    }
-
-    await tx.resource.update({
-      where: { id: purchase.resourceId },
-      data: { downloadCount: { increment: 1 } },
-    });
-
-    return { matched: true, completed: true, resourceId: purchase.resourceId };
+    return completeMatchedPurchase(tx, { id: purchaseId }, xenditInvoiceId ? { xenditInvoiceId } : undefined);
   });
 }
 
@@ -413,6 +543,8 @@ export async function completeRecoveredPurchase(
           currency: input.currency,
           status: "COMPLETED",
           paymentProvider: input.paymentProvider,
+          authorId: input.authorId,
+          authorRevenue: input.authorRevenue,
           ...(input.stripeSessionId ? { stripeSessionId: input.stripeSessionId } : {}),
           ...(input.xenditInvoiceId ? { xenditInvoiceId: input.xenditInvoiceId } : {}),
         },
@@ -426,16 +558,13 @@ export async function completeRecoveredPurchase(
           currency: input.currency,
           status: "COMPLETED",
           paymentProvider: input.paymentProvider,
+          authorId: input.authorId,
+          authorRevenue: input.authorRevenue,
           ...(input.stripeSessionId ? { stripeSessionId: input.stripeSessionId } : {}),
           ...(input.xenditInvoiceId ? { xenditInvoiceId: input.xenditInvoiceId } : {}),
         },
       });
     }
-
-    await tx.resource.update({
-      where: { id: input.resourceId },
-      data: { downloadCount: { increment: 1 } },
-    });
 
     return { matched: Boolean(existing), completed: true, resourceId: input.resourceId };
   });
@@ -464,17 +593,38 @@ export interface RecordDownloadAnalyticsInput {
 export async function recordDownloadAnalytics(
   input: RecordDownloadAnalyticsInput,
 ) {
-  await Promise.all([
-    prisma.resource.update({
-      where: { id: input.resourceId },
-      data: { downloadCount: { increment: 1 } },
-    }),
-    prisma.downloadEvent.create({
+  const cutoff = new Date(Date.now() - DOWNLOAD_DEDUP_WINDOW_MS);
+
+  await prisma.$transaction(async (tx) => {
+    const recentEvent = await tx.downloadEvent.findFirst({
+      where: {
+        resourceId: input.resourceId,
+        createdAt: { gte: cutoff },
+        ...(input.userId
+          ? { userId: input.userId }
+          : input.ip
+            ? { ip: input.ip }
+            : {}),
+      },
+      select: { id: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (recentEvent) {
+      return;
+    }
+
+    await tx.downloadEvent.create({
       data: {
         resourceId: input.resourceId,
         userId: input.userId,
         ip: input.ip,
       },
-    }),
-  ]);
+    });
+
+    await tx.resource.update({
+      where: { id: input.resourceId },
+      data: { downloadCount: { increment: 1 } },
+    });
+  });
 }

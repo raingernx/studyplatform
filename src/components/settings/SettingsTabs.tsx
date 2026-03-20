@@ -38,7 +38,6 @@ export function SettingsTabs({ user, preferences }: SettingsTabsProps) {
         marketingEmails={preferences.marketingEmails}
       />
       <PreferenceSettings
-        language={preferences.language as any}
         theme={preferences.theme as any}
         currency={preferences.currency as any}
         timezone={preferences.timezone as any}

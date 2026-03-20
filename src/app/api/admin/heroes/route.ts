@@ -3,6 +3,29 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import {
+  HERO_BADGE_BG_COLOR_VALUES,
+  HERO_BADGE_TEXT_COLOR_VALUES,
+  HERO_BODY_FONT_VALUES,
+  HERO_CONTENT_WIDTH_VALUES,
+  HERO_HEADING_FONT_VALUES,
+  HERO_HEIGHT_VALUES,
+  HERO_MOBILE_SUBTITLE_SIZE_VALUES,
+  HERO_MOBILE_TITLE_SIZE_VALUES,
+  HERO_OVERLAY_COLOR_VALUES,
+  HERO_PRIMARY_CTA_COLOR_VALUES,
+  HERO_PRIMARY_CTA_VARIANT_VALUES,
+  HERO_SECONDARY_CTA_COLOR_VALUES,
+  HERO_SECONDARY_CTA_VARIANT_VALUES,
+  HERO_SPACING_VALUES,
+  HERO_SUBTITLE_COLOR_VALUES,
+  HERO_SUBTITLE_SIZE_VALUES,
+  HERO_SUBTITLE_WEIGHT_VALUES,
+  HERO_TEXT_ALIGN_VALUES,
+  HERO_TITLE_COLOR_VALUES,
+  HERO_TITLE_SIZE_VALUES,
+  HERO_TITLE_WEIGHT_VALUES,
+} from "@/lib/heroes/hero-style";
+import {
   createHero,
   getHeroList,
   HeroServiceError,
@@ -10,6 +33,14 @@ import {
 } from "@/services/heroes/hero.service";
 
 const heroTypeSchema = z.enum(["featured", "promotion", "seasonal", "search", "fallback"]);
+const overlayOpacitySchema = z
+  .number()
+  .int()
+  .min(0, "Overlay opacity must be at least 0.")
+  .max(80, "Overlay opacity must be 80 or less.")
+  .refine((value) => value % 5 === 0, {
+    message: "Overlay opacity must be in 5-point steps.",
+  });
 
 const HeroCreateSchema = z.object({
   name: z.string().min(1, "Name is required."),
@@ -24,6 +55,28 @@ const HeroCreateSchema = z.object({
   imageUrl: z.string().nullable().optional(),
   mediaUrl: z.string().nullable().optional(),
   mediaType: z.enum(["image", "gif"]).nullable().optional(),
+  textAlign: z.enum(HERO_TEXT_ALIGN_VALUES).nullable().optional(),
+  contentWidth: z.enum(HERO_CONTENT_WIDTH_VALUES).nullable().optional(),
+  heroHeight: z.enum(HERO_HEIGHT_VALUES).nullable().optional(),
+  spacingPreset: z.enum(HERO_SPACING_VALUES).nullable().optional(),
+  headingFont: z.enum(HERO_HEADING_FONT_VALUES).nullable().optional(),
+  bodyFont: z.enum(HERO_BODY_FONT_VALUES).nullable().optional(),
+  titleSize: z.enum(HERO_TITLE_SIZE_VALUES).nullable().optional(),
+  subtitleSize: z.enum(HERO_SUBTITLE_SIZE_VALUES).nullable().optional(),
+  titleWeight: z.enum(HERO_TITLE_WEIGHT_VALUES).nullable().optional(),
+  subtitleWeight: z.enum(HERO_SUBTITLE_WEIGHT_VALUES).nullable().optional(),
+  mobileTitleSize: z.enum(HERO_MOBILE_TITLE_SIZE_VALUES).nullable().optional(),
+  mobileSubtitleSize: z.enum(HERO_MOBILE_SUBTITLE_SIZE_VALUES).nullable().optional(),
+  titleColor: z.enum(HERO_TITLE_COLOR_VALUES).nullable().optional(),
+  subtitleColor: z.enum(HERO_SUBTITLE_COLOR_VALUES).nullable().optional(),
+  badgeTextColor: z.enum(HERO_BADGE_TEXT_COLOR_VALUES).nullable().optional(),
+  badgeBgColor: z.enum(HERO_BADGE_BG_COLOR_VALUES).nullable().optional(),
+  primaryCtaVariant: z.enum(HERO_PRIMARY_CTA_VARIANT_VALUES).nullable().optional(),
+  secondaryCtaVariant: z.enum(HERO_SECONDARY_CTA_VARIANT_VALUES).nullable().optional(),
+  primaryCtaColor: z.enum(HERO_PRIMARY_CTA_COLOR_VALUES).nullable().optional(),
+  secondaryCtaColor: z.enum(HERO_SECONDARY_CTA_COLOR_VALUES).nullable().optional(),
+  overlayColor: z.enum(HERO_OVERLAY_COLOR_VALUES).nullable().optional(),
+  overlayOpacity: overlayOpacitySchema.nullable().optional(),
   priority: z.number().int().default(0),
   weight: z.number().int().min(1).default(1),
   isActive: z.boolean().default(true),

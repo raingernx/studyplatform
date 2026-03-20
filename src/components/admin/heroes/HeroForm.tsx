@@ -1,17 +1,50 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { ImagePlus, Upload, X } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter } from "next/navigation";
 import { routes } from "@/lib/routes";
-import { AdminFormLayout } from "@/components/admin/AdminFormLayout";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
-import { Switch } from "@/components/ui/Switch";
-import { Textarea } from "@/components/ui/Textarea";
+import { cn } from "@/lib/utils";
+import {
+  Button,
+  Card,
+  Input,
+  PageContent,
+  PickerActionButton,
+  PickerActions,
+  Select,
+  Switch,
+  Textarea,
+} from "@/design-system";
+import { HeroSurface } from "@/components/marketplace/HeroSurface";
+import {
+  HERO_COLOR_TOKEN_OPTIONS,
+  HERO_STYLE_DEFAULTS,
+  HERO_STYLE_OPTIONS,
+  type HeroColorTokenOption,
+  type HeroBadgeBgColor,
+  type HeroBadgeTextColor,
+  type HeroBodyFont,
+  type HeroContentWidth,
+  type HeroHeadingFont,
+  type HeroHeight,
+  type HeroMobileSubtitleSize,
+  type HeroMobileTitleSize,
+  type HeroOverlayColor,
+  type HeroPrimaryCtaColor,
+  type HeroPrimaryCtaVariant,
+  type HeroSecondaryCtaColor,
+  type HeroSecondaryCtaVariant,
+  type HeroSpacingPreset,
+  type HeroSubtitleColor,
+  type HeroSubtitleSize,
+  type HeroSubtitleWeight,
+  type HeroTextAlign,
+  type HeroTitleColor,
+  type HeroTitleSize,
+  type HeroTitleWeight,
+} from "@/lib/heroes/hero-style";
 
 const HERO_MEDIA_ACCEPT = "image/png,image/jpeg,image/jpg,image/webp,image/gif";
 const HERO_MEDIA_MAX_BYTES = 5 * 1024 * 1024;
@@ -39,6 +72,28 @@ export interface HeroFormValues {
   imageUrl: string;
   mediaUrl: string;
   mediaType: MediaTypeValue;
+  textAlign: HeroTextAlign;
+  contentWidth: HeroContentWidth;
+  heroHeight: HeroHeight;
+  spacingPreset: HeroSpacingPreset;
+  headingFont: HeroHeadingFont;
+  bodyFont: HeroBodyFont;
+  titleSize: HeroTitleSize;
+  subtitleSize: HeroSubtitleSize;
+  titleWeight: HeroTitleWeight;
+  subtitleWeight: HeroSubtitleWeight;
+  mobileTitleSize: HeroMobileTitleSize;
+  mobileSubtitleSize: HeroMobileSubtitleSize;
+  titleColor: HeroTitleColor;
+  subtitleColor: HeroSubtitleColor;
+  badgeTextColor: HeroBadgeTextColor;
+  badgeBgColor: HeroBadgeBgColor;
+  primaryCtaVariant: HeroPrimaryCtaVariant;
+  secondaryCtaVariant: HeroSecondaryCtaVariant;
+  primaryCtaColor: HeroPrimaryCtaColor;
+  secondaryCtaColor: HeroSecondaryCtaColor;
+  overlayColor: HeroOverlayColor;
+  overlayOpacity: number;
   priority: number;
   weight: number;
   experimentId: string;
@@ -62,10 +117,97 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-xs text-red-600">{message}</p>;
 }
 
-function getPreviewSrc(values: HeroFormValues) {
-  const mediaUrl = values.mediaUrl.trim();
-  const imageUrl = values.imageUrl.trim();
-  return mediaUrl || imageUrl || null;
+function HeroColorField<T extends string>({
+  label,
+  name,
+  value,
+  options,
+  helper,
+  onChange,
+}: {
+  label: string;
+  name: string;
+  value: T;
+  options: readonly HeroColorTokenOption<T>[];
+  helper?: string;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <fieldset className="space-y-2">
+      <legend className="text-sm font-medium text-text-primary">{label}</legend>
+      {helper ? <p className="text-xs text-text-secondary">{helper}</p> : null}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {options.map((option) => {
+          const checked = option.value === value;
+
+          return (
+            <label
+              key={option.value}
+              className={cn(
+                "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors",
+                checked
+                  ? "border-brand-500 bg-brand-50 shadow-sm"
+                  : "border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50",
+              )}
+            >
+              <input
+                type="radio"
+                name={name}
+                value={option.value}
+                checked={checked}
+                onChange={() => onChange(option.value)}
+                className="sr-only"
+              />
+              <span
+                aria-hidden
+                className={cn("h-5 w-5 shrink-0 rounded-full", option.swatchClassName)}
+              />
+              <span className="min-w-0 text-sm font-medium text-text-primary">
+                {option.label}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+function buildPreviewConfig(values: HeroFormValues) {
+  return {
+    title: values.title,
+    subtitle: values.subtitle,
+    badgeText: values.badgeText || null,
+    primaryCtaText: values.primaryCtaText,
+    primaryCtaLink: values.primaryCtaLink,
+    secondaryCtaText: values.secondaryCtaText || null,
+    secondaryCtaLink: values.secondaryCtaLink || null,
+    imageUrl: values.imageUrl || null,
+    mediaUrl: values.mediaUrl || null,
+    mediaType: values.mediaType || null,
+    textAlign: values.textAlign,
+    contentWidth: values.contentWidth,
+    heroHeight: values.heroHeight,
+    spacingPreset: values.spacingPreset,
+    headingFont: values.headingFont,
+    bodyFont: values.bodyFont,
+    titleSize: values.titleSize,
+    subtitleSize: values.subtitleSize,
+    titleWeight: values.titleWeight,
+    subtitleWeight: values.subtitleWeight,
+    mobileTitleSize: values.mobileTitleSize,
+    mobileSubtitleSize: values.mobileSubtitleSize,
+    titleColor: values.titleColor,
+    subtitleColor: values.subtitleColor,
+    badgeTextColor: values.badgeTextColor,
+    badgeBgColor: values.badgeBgColor,
+    primaryCtaVariant: values.primaryCtaVariant,
+    secondaryCtaVariant: values.secondaryCtaVariant,
+    primaryCtaColor: values.primaryCtaColor,
+    secondaryCtaColor: values.secondaryCtaColor,
+    overlayColor: values.overlayColor,
+    overlayOpacity: values.overlayOpacity,
+  };
 }
 
 export function HeroForm({ mode, heroId, initialValues, isFallback = false }: HeroFormProps) {
@@ -77,10 +219,19 @@ export function HeroForm({ mode, heroId, initialValues, isFallback = false }: He
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const previewSrc = useMemo(() => getPreviewSrc(values), [values]);
+  const previewConfig = useMemo(() => buildPreviewConfig(values), [values]);
   const visibleHeroTypes = isFallback
     ? HERO_TYPES
     : HERO_TYPES.filter((type) => type.value !== "fallback");
+  const secondaryCtaColorOptions = useMemo(
+    () =>
+      values.secondaryCtaVariant === "secondary"
+        ? HERO_COLOR_TOKEN_OPTIONS.secondaryCtaColor
+        : HERO_COLOR_TOKEN_OPTIONS.secondaryCtaColor.filter(
+            (option) => option.value !== "dark",
+          ),
+    [values.secondaryCtaVariant],
+  );
 
   function updateValue<K extends keyof HeroFormValues>(key: K, value: HeroFormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -110,6 +261,28 @@ export function HeroForm({ mode, heroId, initialValues, isFallback = false }: He
       imageUrl: values.imageUrl || null,
       mediaUrl: values.mediaUrl || null,
       mediaType: values.mediaType || null,
+      textAlign: values.textAlign,
+      contentWidth: values.contentWidth,
+      heroHeight: values.heroHeight,
+      spacingPreset: values.spacingPreset,
+      headingFont: values.headingFont,
+      bodyFont: values.bodyFont,
+      titleSize: values.titleSize,
+      subtitleSize: values.subtitleSize,
+      titleWeight: values.titleWeight,
+      subtitleWeight: values.subtitleWeight,
+      mobileTitleSize: values.mobileTitleSize,
+      mobileSubtitleSize: values.mobileSubtitleSize,
+      titleColor: values.titleColor,
+      subtitleColor: values.subtitleColor,
+      badgeTextColor: values.badgeTextColor,
+      badgeBgColor: values.badgeBgColor,
+      primaryCtaVariant: values.primaryCtaVariant,
+      secondaryCtaVariant: values.secondaryCtaVariant,
+      primaryCtaColor: values.primaryCtaColor,
+      secondaryCtaColor: values.secondaryCtaColor,
+      overlayColor: values.overlayColor,
+      overlayOpacity: values.overlayOpacity,
       priority: Number.isFinite(values.priority) ? values.priority : 0,
       weight: Number.isFinite(values.weight) ? values.weight : 1,
       experimentId: values.experimentId || null,
@@ -196,8 +369,24 @@ export function HeroForm({ mode, heroId, initialValues, isFallback = false }: He
   }
 
   return (
-    <AdminFormLayout
-      form={
+    <PageContent className="space-y-6">
+      <aside className="min-w-0">
+        <Card className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+          <div className="space-y-1 border-b border-surface-100 px-5 py-4 sm:px-6">
+            <p className="text-xs font-semibold uppercase tracking-tight text-zinc-500">
+              Live Preview
+            </p>
+            <p className="text-sm text-text-secondary">
+              This uses the same hero surface contract as the public discover hero.
+            </p>
+          </div>
+          <div className="p-4 sm:p-5">
+            <HeroSurface config={previewConfig} className="rounded-[1.25rem]" />
+          </div>
+        </Card>
+      </aside>
+
+      <div className="min-w-0 space-y-6">
         <Card className="w-full min-w-0 rounded-xl border border-zinc-200 bg-white px-8 pb-8 shadow-sm">
           <form className="space-y-8 pt-8" onSubmit={handleSubmit}>
             <div className="space-y-1">
@@ -535,28 +724,441 @@ export function HeroForm({ mode, heroId, initialValues, isFallback = false }: He
                   className="hidden"
                   onChange={handleMediaUpload}
                 />
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
+                <PickerActions>
+                  <PickerActionButton
                     type="button"
-                    variant="outline"
-                    size="sm"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
                   >
                     <Upload className="h-4 w-4" />
                     {uploading ? "Uploading…" : "Upload image or GIF"}
-                  </Button>
+                  </PickerActionButton>
                   {values.mediaUrl ? (
-                    <Button
+                    <PickerActionButton
                       type="button"
-                      variant="outline"
-                      size="sm"
+                      tone="danger"
                       onClick={handleRemoveMedia}
                     >
                       <X className="h-4 w-4" />
                       Remove media
-                    </Button>
+                    </PickerActionButton>
                   ) : null}
+                </PickerActions>
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t border-surface-100 pt-8">
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-text-primary">Layout</h3>
+                <p className="text-xs text-text-secondary">
+                  Control alignment, content width, hero height, and spacing without breaking the layout.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-text-align">
+                    Text Alignment
+                  </label>
+                  <Select
+                    id="hero-text-align"
+                    value={values.textAlign}
+                    onChange={(event) =>
+                      updateValue("textAlign", event.target.value as HeroTextAlign)
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.textAlign.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-content-width">
+                    Content Width
+                  </label>
+                  <Select
+                    id="hero-content-width"
+                    value={values.contentWidth}
+                    onChange={(event) =>
+                      updateValue("contentWidth", event.target.value as HeroContentWidth)
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.contentWidth.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-height">
+                    Hero Height
+                  </label>
+                  <Select
+                    id="hero-height"
+                    value={values.heroHeight}
+                    onChange={(event) =>
+                      updateValue("heroHeight", event.target.value as HeroHeight)
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.heroHeight.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-spacing-preset">
+                    Vertical Spacing
+                  </label>
+                  <Select
+                    id="hero-spacing-preset"
+                    value={values.spacingPreset}
+                    onChange={(event) =>
+                      updateValue("spacingPreset", event.target.value as HeroSpacingPreset)
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.spacingPreset.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t border-surface-100 pt-8">
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-text-primary">Typography</h3>
+                <p className="text-xs text-text-secondary">
+                  Use bounded font and size presets so the hero stays responsive and readable.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-heading-font">
+                    Heading Font
+                  </label>
+                  <Select
+                    id="hero-heading-font"
+                    value={values.headingFont}
+                    onChange={(event) =>
+                      updateValue("headingFont", event.target.value as HeroHeadingFont)
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.headingFont.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-body-font">
+                    Body Font
+                  </label>
+                  <Select
+                    id="hero-body-font"
+                    value={values.bodyFont}
+                    onChange={(event) =>
+                      updateValue("bodyFont", event.target.value as HeroBodyFont)
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.bodyFont.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-title-size">
+                    Title Size
+                  </label>
+                  <Select
+                    id="hero-title-size"
+                    value={values.titleSize}
+                    onChange={(event) =>
+                      updateValue("titleSize", event.target.value as HeroTitleSize)
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.titleSize.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-subtitle-size">
+                    Subtitle Size
+                  </label>
+                  <Select
+                    id="hero-subtitle-size"
+                    value={values.subtitleSize}
+                    onChange={(event) =>
+                      updateValue("subtitleSize", event.target.value as HeroSubtitleSize)
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.subtitleSize.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-title-weight">
+                    Title Weight
+                  </label>
+                  <Select
+                    id="hero-title-weight"
+                    value={values.titleWeight}
+                    onChange={(event) =>
+                      updateValue("titleWeight", event.target.value as HeroTitleWeight)
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.titleWeight.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-subtitle-weight">
+                    Subtitle Weight
+                  </label>
+                  <Select
+                    id="hero-subtitle-weight"
+                    value={values.subtitleWeight}
+                    onChange={(event) =>
+                      updateValue("subtitleWeight", event.target.value as HeroSubtitleWeight)
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.subtitleWeight.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-mobile-title-size">
+                    Mobile Title Size
+                  </label>
+                  <Select
+                    id="hero-mobile-title-size"
+                    value={values.mobileTitleSize}
+                    onChange={(event) =>
+                      updateValue("mobileTitleSize", event.target.value as HeroMobileTitleSize)
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.mobileTitleSize.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-mobile-subtitle-size">
+                    Mobile Subtitle Size
+                  </label>
+                  <Select
+                    id="hero-mobile-subtitle-size"
+                    value={values.mobileSubtitleSize}
+                    onChange={(event) =>
+                      updateValue(
+                        "mobileSubtitleSize",
+                        event.target.value as HeroMobileSubtitleSize,
+                      )
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.mobileSubtitleSize.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t border-surface-100 pt-8">
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-text-primary">Colors</h3>
+                <p className="text-xs text-text-secondary">
+                  Choose from curated token-based colors so text stays on-brand and easy to read.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <HeroColorField
+                  label="Title Color"
+                  name="hero-title-color"
+                  value={values.titleColor}
+                  options={HERO_COLOR_TOKEN_OPTIONS.titleColor}
+                  helper="Use a strong high-contrast title tone for the hero headline."
+                  onChange={(value) => updateValue("titleColor", value as HeroTitleColor)}
+                />
+                <HeroColorField
+                  label="Subtitle Color"
+                  name="hero-subtitle-color"
+                  value={values.subtitleColor}
+                  options={HERO_COLOR_TOKEN_OPTIONS.subtitleColor}
+                  helper="Subtitle colors are tuned for readable supporting copy."
+                  onChange={(value) =>
+                    updateValue("subtitleColor", value as HeroSubtitleColor)
+                  }
+                />
+                <HeroColorField
+                  label="Badge Text Color"
+                  name="hero-badge-text-color"
+                  value={values.badgeTextColor}
+                  options={HERO_COLOR_TOKEN_OPTIONS.badgeTextColor}
+                  helper="Badge text should stay short and high contrast."
+                  onChange={(value) =>
+                    updateValue("badgeTextColor", value as HeroBadgeTextColor)
+                  }
+                />
+                <HeroColorField
+                  label="Badge Background"
+                  name="hero-badge-bg-color"
+                  value={values.badgeBgColor}
+                  options={HERO_COLOR_TOKEN_OPTIONS.badgeBgColor}
+                  helper="Pick a small supporting surface that still reads over media."
+                  onChange={(value) =>
+                    updateValue("badgeBgColor", value as HeroBadgeBgColor)
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t border-surface-100 pt-8">
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-text-primary">Buttons</h3>
+                <p className="text-xs text-text-secondary">
+                  CTA styles are limited to approved design-system button variants.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-primary-cta-variant">
+                    Primary CTA Style
+                  </label>
+                  <Select
+                    id="hero-primary-cta-variant"
+                    value={values.primaryCtaVariant}
+                    onChange={(event) =>
+                      updateValue(
+                        "primaryCtaVariant",
+                        event.target.value as HeroPrimaryCtaVariant,
+                      )
+                    }
+                  >
+                    {HERO_STYLE_OPTIONS.primaryCtaVariant.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-secondary-cta-variant">
+                    Secondary CTA Style
+                  </label>
+                  <Select
+                    id="hero-secondary-cta-variant"
+                    value={values.secondaryCtaVariant}
+                    onChange={(event) => {
+                      const nextVariant = event.target.value as HeroSecondaryCtaVariant;
+
+                      setValues((prev) => ({
+                        ...prev,
+                        secondaryCtaVariant: nextVariant,
+                        secondaryCtaColor:
+                          (nextVariant === "outline" || nextVariant === "ghost") &&
+                          prev.secondaryCtaColor === "dark"
+                            ? "white"
+                            : prev.secondaryCtaColor,
+                      }));
+                    }}
+                  >
+                    {HERO_STYLE_OPTIONS.secondaryCtaVariant.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <HeroColorField
+                  label="Primary CTA Color"
+                  name="hero-primary-cta-color"
+                  value={values.primaryCtaColor}
+                  options={HERO_COLOR_TOKEN_OPTIONS.primaryCtaColor}
+                  helper="Filled primary CTA colors always use system-controlled text contrast."
+                  onChange={(value) =>
+                    updateValue("primaryCtaColor", value as HeroPrimaryCtaColor)
+                  }
+                />
+                <HeroColorField
+                  label="Secondary CTA Color"
+                  name="hero-secondary-cta-color"
+                  value={values.secondaryCtaColor}
+                  options={secondaryCtaColorOptions}
+                  helper="Outline and ghost styles only show compatible high-contrast color presets."
+                  onChange={(value) =>
+                    updateValue("secondaryCtaColor", value as HeroSecondaryCtaColor)
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t border-surface-100 pt-8">
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-text-primary">Background & Overlay</h3>
+                <p className="text-xs text-text-secondary">
+                  Keep media readable with a controlled overlay color and bounded opacity.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <HeroColorField
+                  label="Overlay Color"
+                  name="hero-overlay-color"
+                  value={values.overlayColor}
+                  options={HERO_COLOR_TOKEN_OPTIONS.overlayColor}
+                  helper="Overlay colors are limited to a few safe tones for readable text over media."
+                  onChange={(value) =>
+                    updateValue("overlayColor", value as HeroOverlayColor)
+                  }
+                />
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary" htmlFor="hero-overlay-opacity">
+                    Overlay Opacity ({values.overlayOpacity}%)
+                  </label>
+                  <input
+                    id="hero-overlay-opacity"
+                    type="range"
+                    min={0}
+                    max={80}
+                    step={5}
+                    value={values.overlayOpacity}
+                    onChange={(event) =>
+                      updateValue(
+                        "overlayOpacity",
+                        Number.parseInt(event.target.value || String(HERO_STYLE_DEFAULTS.overlayOpacity), 10),
+                      )
+                    }
+                    className="h-10 w-full accent-brand-600"
+                  />
+                  <p className="text-xs text-text-muted">
+                    Use higher opacity for light media or lower opacity for dark, high-contrast artwork.
+                  </p>
                 </div>
               </div>
             </div>
@@ -575,75 +1177,21 @@ export function HeroForm({ mode, heroId, initialValues, isFallback = false }: He
             </div>
           </form>
         </Card>
-      }
-      sidebar={
-        <>
-          <Card className="p-5">
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-tight text-zinc-500">
-                  Live Preview
-                </p>
-                <p className="mt-1 text-sm text-text-secondary">
-                  This mirrors the current HeroBanner contract without changing the homepage component.
-                </p>
-              </div>
-              <div className="overflow-hidden rounded-2xl border border-surface-200 bg-surface-100">
-                <div className="relative min-h-[220px] bg-zinc-900">
-                  {previewSrc ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={previewSrc}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-white/60">
-                      <ImagePlus className="h-10 w-10" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent" />
-                  <div className="relative flex min-h-[220px] flex-col justify-end gap-3 p-5 text-white">
-                    <p className="text-xs text-white/70">
-                      {values.badgeText || "Optional badge text"}
-                    </p>
-                    <h3 className="font-display text-2xl font-semibold leading-tight">
-                      {values.title || "Hero title"}
-                    </h3>
-                    <p className="text-sm text-white/85">
-                      {values.subtitle || "Hero subtitle"}
-                    </p>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      <span className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-zinc-900">
-                        {values.primaryCtaText || "Primary CTA"}
-                      </span>
-                      {values.secondaryCtaText ? (
-                        <span className="rounded-lg border border-white/40 px-3 py-1.5 text-xs font-semibold">
-                          {values.secondaryCtaText}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
 
-          <Card className="p-5">
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-tight text-zinc-500">
-                Render Rules
-              </p>
-              <div className="space-y-2 text-sm text-text-secondary">
-                <p>Heroes render only when active and inside their schedule window.</p>
-                <p>Lower priority values render first when multiple heroes are eligible.</p>
-                <p>Weight distributes traffic within the same priority and A/B group bucket.</p>
-                <p>If no campaign hero qualifies, the protected fallback hero in Marketing → Heroes is used.</p>
-              </div>
+        <Card className="p-5">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-tight text-zinc-500">
+              Render Rules
+            </p>
+            <div className="space-y-2 text-sm text-text-secondary">
+              <p>Heroes render only when active and inside their schedule window.</p>
+              <p>Lower priority values render first when multiple heroes are eligible.</p>
+              <p>Weight distributes traffic within the same priority and A/B group bucket.</p>
+              <p>If no campaign hero qualifies, the protected fallback hero in Marketing → Heroes is used.</p>
             </div>
-          </Card>
-        </>
-      }
-    />
+          </div>
+        </Card>
+      </div>
+    </PageContent>
   );
 }

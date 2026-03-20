@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { useDropzone, FileRejection } from "react-dropzone";
 import { ImagePlus, UploadCloud } from "lucide-react";
+import { PickerDropzoneShell } from "@/design-system";
 
 interface ImageDropzoneProps {
   onFilesAccepted: (files: File[]) => void;
@@ -67,14 +68,12 @@ export function ImageDropzone({
 
   return (
     <div className="w-full min-w-0 space-y-1.5">
-      <div
+      <PickerDropzoneShell
         {...getRootProps()}
-        className={[
-          "flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-4 py-6 text-center text-[13px] transition",
-          borderColor,
-          bgColor,
-          disabled ? "cursor-not-allowed opacity-60" : "hover:border-brand-400",
-        ].join(" ")}
+        active={isDragActive}
+        reject={isDragReject}
+        disabled={Boolean(disabled)}
+        className={[borderColor, bgColor].join(" ")}
       >
         <input {...getInputProps()} />
         <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-surface-100 text-brand-600">
@@ -91,9 +90,8 @@ export function ImageDropzone({
           JPEG, PNG, WebP, or GIF — up to{" "}
           {Math.round(maxSizeBytes / (1024 * 1024))} MB each.
         </p>
-      </div>
+      </PickerDropzoneShell>
       {error && <p className="text-[12px] text-red-600">{error}</p>}
     </div>
   );
 }
-

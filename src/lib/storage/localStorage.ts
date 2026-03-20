@@ -60,13 +60,24 @@ export class LocalStorageProvider implements StorageProvider {
    * Resolves to the absolute filesystem path for the given key.
    *
    * The local provider has no concept of signed URLs — it returns the same
-   * value as `getUrl()` so the download route can detect a filesystem path
+   * value as `getUrl()` so the service layer can detect a filesystem path
    * (no "https://" prefix) and fall back to disk streaming instead of
    * redirecting.
    *
-   * `expiresInSeconds` is accepted but ignored.
+   * `options` (intent, expiresInSeconds, filename, contentType) are accepted
+   * but ignored here.  The `intent` is acted upon by the service layer, which
+   * sets `Content-Disposition: attachment` (download) or `inline` (preview)
+   * directly on the streamed Response when serving from disk.
    */
-  async getSignedUrl(key: string, _expiresInSeconds = 900): Promise<string> {
+  async getSignedUrl(
+    key: string,
+    _options?: {
+      intent?: "download" | "preview";
+      expiresInSeconds?: number;
+      filename?: string;
+      contentType?: string;
+    },
+  ): Promise<string> {
     return this.getUrl(key);
   }
 

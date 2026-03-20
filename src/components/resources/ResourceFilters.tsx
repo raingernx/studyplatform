@@ -3,8 +3,8 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Card } from "@/design-system";
 import { Tag } from "@/components/ui/Tag";
-import { Card } from "@/components/ui/Card";
 
 export interface FilterCategory {
   id: string;

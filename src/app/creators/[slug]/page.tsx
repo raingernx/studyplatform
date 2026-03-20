@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, FileText, Globe, Instagram, Layers3, Linkedin, Sparkles, Youtube } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
+import { PageContainer, PageContentWide } from "@/design-system";
 import { ResourceCard } from "@/components/resources/ResourceCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { getCreatorPublicProfile } from "@/services/creator.service";
@@ -17,12 +18,12 @@ export async function generateMetadata({ params }: CreatorProfilePageProps) {
 
   if (!creator) {
     return {
-      title: "Creator – PaperDock",
+      title: "Creator",
     };
   }
 
   return {
-    title: `${creator.displayName} – Creator on PaperDock`,
+    title: `${creator.displayName} – Creator`,
     description: creator.bio ?? `Browse resources from ${creator.displayName}.`,
   };
 }
@@ -74,7 +75,9 @@ export default async function CreatorPublicProfilePage({
     <div className="min-h-screen bg-zinc-50">
       <Navbar />
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
+      <main>
+        <PageContainer className="py-10">
+          <PageContentWide>
         <section className="overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-card">
           <div className="relative h-48 bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400">
             {creator.banner && (
@@ -109,6 +112,12 @@ export default async function CreatorPublicProfilePage({
                         Active creator
                       </span>
                     )}
+                    {creator.statusBadge && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        {creator.statusBadge.label}
+                      </span>
+                    )}
                   </div>
                   <p className="mt-1 text-sm text-zinc-500">
                     /creators/{creator.slug}
@@ -117,6 +126,9 @@ export default async function CreatorPublicProfilePage({
                     {creator.resourceCount} published resource
                     {creator.resourceCount === 1 ? "" : "s"}
                   </p>
+                  {creator.statusBadge?.description && (
+                    <p className="mt-2 text-sm text-zinc-600">{creator.statusBadge.description}</p>
+                  )}
                 </div>
               </div>
 
@@ -158,14 +170,20 @@ export default async function CreatorPublicProfilePage({
               <Sparkles className="h-4 w-4" />
               <span className="text-xs font-semibold uppercase tracking-wide">Status</span>
             </div>
-            <p className="mt-3 text-2xl font-bold text-zinc-900">{creator.status}</p>
+            <p className="mt-3 text-2xl font-bold text-zinc-900">
+              {creator.statusBadge?.label ?? creator.status}
+            </p>
           </div>
           <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-card">
             <div className="flex items-center gap-2 text-zinc-500">
               <FileText className="h-4 w-4" />
               <span className="text-xs font-semibold uppercase tracking-wide">Slug</span>
             </div>
-            <p className="mt-3 text-lg font-semibold text-zinc-900">{creator.slug ?? "—"}</p>
+            <p className="mt-3 text-lg font-semibold text-zinc-900">
+              {creator.momentum?.last30dDownloads
+                ? `${creator.momentum.last30dDownloads.toLocaleString()} recent downloads`
+                : creator.slug ?? "—"}
+            </p>
           </div>
         </div>
 
@@ -197,6 +215,8 @@ export default async function CreatorPublicProfilePage({
             </div>
           )}
         </section>
+          </PageContentWide>
+        </PageContainer>
       </main>
     </div>
   );

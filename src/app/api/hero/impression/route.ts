@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { checkRateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 import {
   HeroServiceError,
   recordHeroImpressionEvent,
@@ -23,6 +24,22 @@ function handleError(error: unknown) {
 export async function POST(req: Request) {
   let body: unknown;
   try {
+    const ip = getClientIp(req);
+    const rl = await checkRateLimit(LIMITS.heroAnalytics, ip);
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many hero analytics requests. Please try again shortly." },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": String(rl.limit),
+            "X-RateLimit-Remaining": String(rl.remaining),
+            "Retry-After": String(Math.ceil((rl.reset - Date.now()) / 1000)),
+          },
+        },
+      );
+    }
+
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });

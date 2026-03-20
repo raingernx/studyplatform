@@ -11,10 +11,13 @@
  * RESOURCE_CARD_SELECT projection for maximum query efficiency.
  */
 
+import { unstable_cache } from "next/cache";
+import { CACHE_TAGS, CACHE_TTLS } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { LISTED_RESOURCE_WHERE } from "@/lib/query/resourceFilters";
-import { RESOURCE_CARD_WITH_TAGS_SELECT } from "@/lib/query/resourceSelect";
+import { RESOURCE_CARD_SELECT } from "@/lib/query/resourceSelect";
 import { withPreview } from "@/services/discover.service";
+import { attachResourceTrustSignals } from "@/services/review.service";
 
 // ── Re-export withPreview for callers that used the old import path ────────────
 export { withPreview };
@@ -32,6 +35,99 @@ export const RESOURCE_CARD_INCLUDE = {
   tags:     { include: { tag: { select: { name: true, slug: true } } } },
   previews: { orderBy: { order: "asc" as const }, select: { imageUrl: true } },
   _count:   { select: { purchases: true, reviews: true } },
+} as const;
+
+const RESOURCE_DETAIL_SELECT = {
+  id: true,
+  title: true,
+  slug: true,
+  description: true,
+  type: true,
+  status: true,
+  featured: true,
+  level: true,
+  isFree: true,
+  price: true,
+  downloadCount: true,
+  categoryId: true,
+  fileSize: true,
+  fileName: true,
+  fileUrl: true,
+  fileKey: true,
+  mimeType: true,
+  updatedAt: true,
+  previewUrl: true,
+  author: {
+    select: {
+      id: true,
+      name: true,
+      image: true,
+    },
+  },
+  category: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+  },
+  previews: {
+    orderBy: { order: "asc" as const },
+    select: {
+      id: true,
+      imageUrl: true,
+      order: true,
+    },
+  },
+  tags: {
+    select: {
+      tag: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
+  },
+  resourceStat: {
+    select: {
+      downloads: true,
+      purchases: true,
+      last30dDownloads: true,
+      last30dPurchases: true,
+      trendingScore: true,
+    },
+  },
+} as const;
+
+const RELATED_RESOURCE_SELECT = {
+  id: true,
+  title: true,
+  slug: true,
+  price: true,
+  isFree: true,
+  featured: true,
+  downloadCount: true,
+  createdAt: true,
+  previewUrl: true,
+  author: {
+    select: {
+      name: true,
+    },
+  },
+  category: {
+    select: {
+      name: true,
+      slug: true,
+    },
+  },
+  previews: {
+    orderBy: { order: "asc" as const },
+    select: {
+      imageUrl: true,
+    },
+  },
 } as const;
 
 // ── Filtered marketplace listing ──────────────────────────────────────────────
@@ -60,13 +156,30 @@ export interface MarketplaceFilters {
 export function buildOrderBy(sort: string) {
   switch (sort) {
     case "downloads":
-    case "popular":    return { downloadCount: "desc" } as const;
+    case "popular":
+      return [
+        { resourceStat: { downloads: "desc" } },
+        { resourceStat: { purchases: "desc" } },
+        { resourceStat: { trendingScore: "desc" } },
+        { createdAt: "desc" },
+      ] as const;
     case "price_asc":  return { price: "asc" }          as const;
     case "price_desc": return { price: "desc" }         as const;
-    case "trending":   return [{ downloadCount: "desc" }, { purchases: { _count: "desc" } }] as const;
+    case "trending":
+      return [
+        { resourceStat: { trendingScore: "desc" } },
+        { resourceStat: { purchases: "desc" } },
+        { resourceStat: { downloads: "desc" } },
+        { createdAt: "desc" },
+      ] as const;
     // Internal / legacy — not exposed in the public sort UI
     case "oldest":     return { createdAt: "asc" }      as const;
-    case "featured":   return [{ featured: "desc" }, { createdAt: "desc" }] as const;
+    case "featured":
+      return [
+        { featured: "desc" },
+        { resourceStat: { trendingScore: "desc" } },
+        { createdAt: "desc" },
+      ] as const;
     case "newest":
     default:           return { createdAt: "desc" }     as const;
   }
@@ -76,7 +189,7 @@ export function buildOrderBy(sort: string) {
  * Returns a paginated list of published resources matching the supplied
  * filters, together with the full category list for the filter sidebar.
  */
-export async function getMarketplaceResources(filters: MarketplaceFilters) {
+async function loadMarketplaceResources(filters: MarketplaceFilters) {
   const {
     search,
     category,
@@ -101,10 +214,28 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
       }
     : {};
 
-  const categoryWhere =
+  const categoryId =
     trimmedCategory && trimmedCategory !== "all"
-      ? { category: { slug: trimmedCategory } }
-      : {};
+      ? (
+          await prisma.category.findUnique({
+            where: { slug: trimmedCategory },
+            select: { id: true },
+          })
+        )?.id
+      : undefined;
+
+  if (trimmedCategory && trimmedCategory !== "all" && !categoryId) {
+    const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
+
+    return {
+      resources: [],
+      total: 0,
+      totalPages: 1,
+      categories,
+    };
+  }
+
+  const categoryWhere = categoryId ? { categoryId } : {};
 
   const priceWhere =
     price === "free" ? { isFree: true } : price === "paid" ? { isFree: false } : {};
@@ -129,8 +260,7 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
   const [rawItems, total, categories] = await Promise.all([
     prisma.resource.findMany({
       where,
-      select:  RESOURCE_CARD_WITH_TAGS_SELECT,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      select: RESOURCE_CARD_SELECT,
       orderBy: buildOrderBy(sort) as any,
       skip,
       take: pageSize,
@@ -139,13 +269,26 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
     prisma.category.findMany({ orderBy: { name: "asc" } }),
   ]);
 
+  const resources = await attachResourceTrustSignals(rawItems.map(withPreview));
+
   return {
-    resources:  rawItems.map(withPreview),
+    resources,
     total,
     totalPages: Math.max(1, Math.ceil(total / pageSize)),
     categories,
   };
 }
+
+export const getMarketplaceResources = unstable_cache(
+  async function _getMarketplaceResources(filters: MarketplaceFilters) {
+    return loadMarketplaceResources(filters);
+  },
+  ["marketplace-resources"],
+  {
+    revalidate: CACHE_TTLS.publicPage,
+    tags: [CACHE_TAGS.discover],
+  },
+);
 
 // ── Single resource detail ────────────────────────────────────────────────────
 
@@ -153,16 +296,7 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
 export async function getResourceBySlug(slug: string) {
   return prisma.resource.findUnique({
     where: { slug },
-    include: {
-      author:   { select: { id: true, name: true, image: true } },
-      category: { select: { id: true, name: true, slug: true } },
-      previews: { orderBy: { order: "asc" } },
-      tags:     { include: { tag: { select: { name: true, slug: true } } } },
-      reviews:  {
-        orderBy: { createdAt: "desc" },
-        include: { user: { select: { name: true } } },
-      },
-    },
+    select: RESOURCE_DETAIL_SELECT,
   });
 }
 
@@ -175,12 +309,35 @@ export async function getRelatedResources(categoryId: string, excludeId: string,
       id: { not: excludeId },
     },
     take,
-    include: {
-      author:   { select: { name: true } },
-      category: { select: { name: true, slug: true } },
-      previews: { orderBy: { order: "asc" }, select: { imageUrl: true } },
-    },
+    select: RELATED_RESOURCE_SELECT,
   });
 
-  return raw.map(withPreview);
+  return attachResourceTrustSignals(raw.map(withPreview));
 }
+
+export const getPublicResourcePageData = unstable_cache(
+  async function _getPublicResourcePageData(slug: string) {
+    const resource = await getResourceBySlug(slug);
+
+    if (!resource || resource.status !== "PUBLISHED") {
+      return {
+        resource: null,
+        relatedResources: [],
+      };
+    }
+
+    const relatedResources = resource.categoryId
+      ? await getRelatedResources(resource.categoryId, resource.id, 4)
+      : [];
+
+    return {
+      resource,
+      relatedResources,
+    };
+  },
+  ["public-resource-page"],
+  {
+    revalidate: CACHE_TTLS.publicPage,
+    tags: [CACHE_TAGS.discover],
+  },
+);

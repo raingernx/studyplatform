@@ -1,7 +1,7 @@
 "use client";
 
 import type { FilterCategory } from "@/components/resources/ResourceFilters";
-import { Card } from "@/components/ui/Card";
+import { Card } from "@/design-system";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 

@@ -1,6 +1,6 @@
-## Design System – PaperDock
+## Design System – KruCraft
 
-This document captures the current PaperDock design system as implemented in the Next.js + Tailwind codebase so it can be reconstructed as a full Figma Design System.
+This document captures the current KruCraft design system as implemented in the Next.js + Tailwind codebase so it can be reconstructed as a full Figma Design System.
 
 ---
 
@@ -139,7 +139,7 @@ Create the following semantic sets:
   - `Inter` (`--font-inter`), `Noto Sans Thai` (`--font-noto-sans-thai`), fallbacks `system-ui`, `sans-serif`.
 - **Display (headings)**: `font-display`
   - `Fraunces` (`--font-fraunces`), `Noto Serif Thai` (`--font-noto-serif-thai`), fallback `serif`.
-- **Special logo**: `.apotek-logo` (Apotek variable via Adobe Fonts) for the PaperDock logotype.
+- **Special logo**: `.apotek-logo` (Apotek variable via Adobe Fonts) for the KruCraft logotype.
 
 **Type scale (from `tailwind.config.ts`):**
 

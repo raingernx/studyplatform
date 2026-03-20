@@ -1,4 +1,4 @@
-# PaperDock Launch Checklist
+# KruCraft Launch Checklist
 
 ## Marketplace
 

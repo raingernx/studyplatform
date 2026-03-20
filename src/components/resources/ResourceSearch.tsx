@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Search, X } from "lucide-react";
+import { SearchInput } from "@/design-system";
 
 export function ResourceSearch() {
   const router = useRouter();
@@ -34,28 +34,14 @@ export function ResourceSearch() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="relative w-full">
-      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-      <input
+    <form onSubmit={handleSubmit} className="w-full">
+      <SearchInput
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Search resources..."
-        className="w-full rounded-xl border border-border-subtle bg-white px-11 py-3 text-sm
-                   text-text-primary placeholder-text-muted shadow-sm outline-none transition
-                   focus:ring-2 focus:ring-brand-500"
+        onClear={handleClear}
       />
-      {value && (
-        <button
-          type="button"
-          onClick={handleClear}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400
-                     transition-colors hover:text-zinc-600"
-          aria-label="Clear search"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
     </form>
   );
 }

@@ -1,6 +1,7 @@
 import {
   fetchCreatorDownloadAggregates,
   fetchCreatorResourceCounts,
+  fetchResourceRatingAggregates,
   fetchCreatorRevenueAggregates,
   fetchPlatformDownloadRows,
   fetchPlatformNewResourceRows,
@@ -16,18 +17,28 @@ import {
 const DAY_MS = 86_400_000;
 
 export interface TrendingScoreInput {
-  last24hDownloads: number;
-  last24hPurchases: number;
-  last7dDownloads: number;
-  last7dPurchases: number;
+  recentDownloads: number;
+  recentSales: number;
+  recentRevenue: number;
+  averageRating: number;
+  reviewCount: number;
+  ageInDays?: number;
 }
 
 export function calculateTrendingScore(input: TrendingScoreInput) {
-  return (
-    input.last24hDownloads * 5 +
-    input.last24hPurchases * 10 +
-    input.last7dDownloads * 2 +
-    input.last7dPurchases * 4
+  const freshnessMultiplier = Math.max(
+    0.35,
+    1 - Math.min(input.ageInDays ?? 0, 120) / 180,
+  );
+
+  return Math.round(
+    (
+      input.recentDownloads * 1.5 +
+      input.recentSales * 4 +
+      input.recentRevenue * 0.01 +
+      input.averageRating * 18 +
+      input.reviewCount * 1.5
+    ) * freshnessMultiplier,
   );
 }
 
@@ -42,19 +53,22 @@ export async function aggregateResourceStats(now = new Date()) {
   const last7d = new Date(now.getTime() - DAY_MS * 7);
   const last30d = new Date(now.getTime() - DAY_MS * 30);
 
-  const [eventRows, revenueRows] = await Promise.all([
+  const [eventRows, revenueRows, ratingRows] = await Promise.all([
     fetchResourceEventAggregates(last24h, last7d, last30d),
     fetchResourceRevenueAggregates(last24h, last7d, last30d),
+    fetchResourceRatingAggregates(),
   ]);
 
   const revenueByResourceId = new Map(
     revenueRows.map((row) => [row.resourceId, row]),
   );
+  const ratingByResourceId = new Map(
+    ratingRows.map((row) => [row.resourceId, row]),
+  );
 
   const rows = eventRows.map((eventRow) => {
     const revenueRow = revenueByResourceId.get(eventRow.resourceId);
-    const last24hPurchases = revenueRow?.last24hPurchases ?? 0;
-    const last7dPurchases = revenueRow?.last7dPurchases ?? 0;
+    const ratingRow = ratingByResourceId.get(eventRow.resourceId);
 
     return {
       resourceId: eventRow.resourceId,
@@ -65,14 +79,19 @@ export async function aggregateResourceStats(now = new Date()) {
       last24hDownloads: eventRow.last24hDownloads,
       last7dDownloads: eventRow.last7dDownloads,
       last30dDownloads: eventRow.last30dDownloads,
-      last24hPurchases,
-      last7dPurchases,
+      last24hPurchases: revenueRow?.last24hPurchases ?? 0,
+      last7dPurchases: revenueRow?.last7dPurchases ?? 0,
       last30dPurchases: revenueRow?.last30dPurchases ?? 0,
       trendingScore: calculateTrendingScore({
-        last24hDownloads: eventRow.last24hDownloads,
-        last24hPurchases,
-        last7dDownloads: eventRow.last7dDownloads,
-        last7dPurchases,
+        recentDownloads: eventRow.last30dDownloads,
+        recentSales: revenueRow?.last30dPurchases ?? 0,
+        recentRevenue: revenueRow?.last30dRevenue ?? 0,
+        averageRating: ratingRow?.averageRating ?? 0,
+        reviewCount: ratingRow?.reviewCount ?? 0,
+        ageInDays: Math.max(
+          0,
+          (now.getTime() - eventRow.publishedAt.getTime()) / DAY_MS,
+        ),
       }),
     };
   });

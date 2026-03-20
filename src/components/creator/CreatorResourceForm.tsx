@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "@/i18n/navigation";
-import { Button } from "@/components/ui/Button";
+import { useRouter } from "next/navigation";
+import { Button, Input, Select, Textarea } from "@/design-system";
 import { routes } from "@/lib/routes";
 
 export interface CreatorResourceFormCategory {
@@ -151,7 +151,7 @@ export function CreatorResourceForm({
         <div className="grid gap-4">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Title</label>
-            <input
+            <Input
               name="title"
               value={form.title}
               onChange={handleChange}
@@ -163,7 +163,7 @@ export function CreatorResourceForm({
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Slug</label>
-            <input
+            <Input
               name="slug"
               value={form.slug}
               onChange={handleChange}
@@ -174,7 +174,7 @@ export function CreatorResourceForm({
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Description</label>
-            <textarea
+            <Textarea
               name="description"
               value={form.description}
               onChange={handleChange}
@@ -194,7 +194,7 @@ export function CreatorResourceForm({
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Status</label>
-            <select
+            <Select
               name="status"
               value={form.status}
               onChange={handleChange}
@@ -203,12 +203,12 @@ export function CreatorResourceForm({
               <option value="DRAFT">Draft</option>
               <option value="PUBLISHED">Published</option>
               <option value="ARCHIVED">Archived</option>
-            </select>
+            </Select>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Type</label>
-            <select
+            <Select
               name="type"
               value={form.type}
               onChange={handleChange}
@@ -216,12 +216,12 @@ export function CreatorResourceForm({
             >
               <option value="PDF">PDF</option>
               <option value="DOCUMENT">Document</option>
-            </select>
+            </Select>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Category</label>
-            <select
+            <Select
               name="categoryId"
               value={form.categoryId}
               onChange={handleChange}
@@ -233,12 +233,12 @@ export function CreatorResourceForm({
                   {category.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Price (THB)</label>
-            <input
+            <Input
               name="price"
               type="number"
               min="0"
@@ -268,7 +268,7 @@ export function CreatorResourceForm({
         <div className="mt-5 grid gap-4">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">File URL</label>
-            <input
+            <Input
               name="fileUrl"
               value={form.fileUrl}
               onChange={handleChange}
@@ -282,7 +282,7 @@ export function CreatorResourceForm({
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Preview image URLs</label>
-            <textarea
+            <Textarea
               value={previewInput}
               onChange={(event) => setPreviewInput(event.target.value)}
               rows={5}

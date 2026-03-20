@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Trash2, RotateCcw } from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
+import { RowActions, RowActionButton } from "@/design-system";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/format";
 
@@ -37,7 +37,6 @@ export function AdminResourcesTrashTable({
 
     if (!res.ok) {
       // For now, simple alert; could be replaced with toast/notification.
-      // eslint-disable-next-line no-alert
       alert("Failed to restore resource.");
       return;
     }
@@ -46,7 +45,6 @@ export function AdminResourcesTrashTable({
   }
 
   async function handlePermanentDelete(resource: TrashResourceRow) {
-    // eslint-disable-next-line no-alert
     const confirmed = window.confirm(
       `Permanently delete "${resource.title}"? This cannot be undone.`,
     );
@@ -59,7 +57,6 @@ export function AdminResourcesTrashTable({
     setLoadingId(null);
 
     if (!res.ok) {
-      // eslint-disable-next-line no-alert
       alert("Failed to permanently delete resource.");
       return;
     }
@@ -146,30 +143,25 @@ export function AdminResourcesTrashTable({
 
                   {/* Actions */}
                   <td className="px-4 py-3 align-middle text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
+                    <RowActions>
+                      <RowActionButton
                         type="button"
-                        size="sm"
-                        variant="outline"
                         disabled={loadingId === resource.id}
                         onClick={() => handleRestore(resource)}
-                        className="inline-flex items-center gap-1.5"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                         Restore
-                      </Button>
-                      <Button
+                      </RowActionButton>
+                      <RowActionButton
                         type="button"
-                        size="sm"
-                        variant="outline"
+                        tone="danger"
                         disabled={loadingId === resource.id}
                         onClick={() => handlePermanentDelete(resource)}
-                        className="inline-flex items-center gap-1.5 border-danger-200 text-danger-600 hover:bg-danger-50 hover:text-danger-700"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                         Delete
-                      </Button>
-                    </div>
+                      </RowActionButton>
+                    </RowActions>
                   </td>
                 </tr>
               ))
@@ -180,4 +172,3 @@ export function AdminResourcesTrashTable({
     </div>
   );
 }
-

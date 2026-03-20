@@ -1,4 +1,4 @@
-# PaperDock – System Architecture
+# KruCraft – System Architecture
 
 ## Overview
 
@@ -79,7 +79,7 @@ External integrations include:
 
 # Backend Layers
 
-PaperDock backend follows a layered architecture to keep responsibilities separated.
+KruCraft backend follows a layered architecture to keep responsibilities separated.
 
 routes → services → repositories → Prisma → database
 

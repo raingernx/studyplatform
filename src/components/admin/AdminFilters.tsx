@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Input } from "@/components/ui/Input";
+import { Input } from "@/design-system";
 import { cn } from "@/lib/utils";
 
 /** Simple admin list filters: search + optional status. For resources, users, orders. */

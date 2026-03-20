@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
+import Link from "next/link";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { Button } from "@/components/ui/Button";
 import { formatDate } from "@/lib/format";
+import { getAdminReviews } from "@/services/review.service";
+import { ReviewVisibilityAction } from "@/components/admin/ReviewVisibilityAction";
 
 export const metadata = {
   title: "Reviews – Admin",
@@ -21,28 +22,19 @@ export default async function AdminReviewsPage() {
     redirect("/dashboard");
   }
 
-  const reviews = await prisma.review.findMany({
-    take: 50,
-    orderBy: { createdAt: "desc" },
-    include: {
-      user: { select: { id: true, name: true, email: true } },
-      resource: { select: { id: true, title: true } },
-    },
-  });
+  const reviews = await getAdminReviews(session.user.id);
 
   return (
     <>
-      {/* Header */}
       <div className="mb-6">
         <h1 className="font-display text-h2 font-semibold tracking-tight text-text-primary">
           Reviews
         </h1>
         <p className="mt-1 text-meta text-text-secondary">
-          Moderate user feedback on resources.
+          Review marketplace feedback and hide public reviews when moderation is needed.
         </p>
       </div>
 
-      {/* Reviews table */}
       <div className="overflow-hidden rounded-2xl border border-border-subtle bg-white shadow-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] text-left text-sm">
@@ -85,7 +77,17 @@ export default async function AdminReviewsPage() {
                 reviews.map((review) => (
                   <tr key={review.id} className="bg-white">
                     <td className="px-5 py-3 text-sm font-medium text-text-primary">
-                      {review.resource.title}
+                      <div className="flex flex-col gap-1">
+                        <Link
+                          href={`/resources/${review.resource.slug}`}
+                          className="transition hover:text-brand-700"
+                        >
+                          {review.resource.title}
+                        </Link>
+                        <span className="text-xs font-normal text-text-muted">
+                          {review.resource.slug}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-3 py-3 text-sm text-text-secondary">
                       <div className="flex flex-col">
@@ -107,22 +109,22 @@ export default async function AdminReviewsPage() {
                       {formatDate(review.createdAt)}
                     </td>
                     <td className="px-3 py-3 text-sm text-text-secondary">
-                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
-                        Pending
+                      <span
+                        className={[
+                          "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                          review.isVisible
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-zinc-100 text-zinc-600",
+                        ].join(" ")}
+                      >
+                        {review.isVisible ? "Visible" : "Hidden"}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-right">
-                      <div className="inline-flex items-center gap-2">
-                        <Button variant="outline" size="sm" type="button">
-                          Approve
-                        </Button>
-                        <Button variant="outline" size="sm" type="button">
-                          Hide
-                        </Button>
-                        <Button variant="outline" size="sm" type="button">
-                          Delete
-                        </Button>
-                      </div>
+                      <ReviewVisibilityAction
+                        reviewId={review.id}
+                        isVisible={review.isVisible}
+                      />
                     </td>
                   </tr>
                 ))
@@ -134,4 +136,3 @@ export default async function AdminReviewsPage() {
     </>
   );
 }
-

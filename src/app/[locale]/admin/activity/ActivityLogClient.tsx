@@ -2,10 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
-import { Button } from "@/components/ui/Button";
+import { Button, Card, Input, Select } from "@/design-system";
 import { Badge } from "@/components/ui/Badge";
 
 type ActivityAction =
@@ -340,4 +337,3 @@ export function ActivityLogClient() {
     </div>
   );
 }
-

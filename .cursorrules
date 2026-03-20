@@ -1,7 +1,7 @@
-# PaperDock Cursor Rules
+# KruCraft Cursor Rules
 
 ## Project Overview
-PaperDock is a marketplace for downloadable learning resources and documents.
+KruCraft is a marketplace for downloadable learning resources and documents.
 Users can browse resources, purchase them, and access them in their personal library.
 Creators can upload resources and manage them through an admin interface.
 
@@ -152,7 +152,7 @@ Never rewrite large parts of the project unless required.
 
 # Goal
 
-Maintain a clean, scalable SaaS architecture for PaperDock.
+Maintain a clean, scalable SaaS architecture for KruCraft.
 
 Code should remain:
 - readable
@@ -170,7 +170,7 @@ Code should remain:
 
 # UI Component Architecture Rules
 
-PaperDock must follow a unified component architecture to prevent UI duplication
+KruCraft must follow a unified component architecture to prevent UI duplication
 and maintain a consistent design system.
 
 Component folders must follow this structure:

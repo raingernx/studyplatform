@@ -51,13 +51,13 @@ export function ScrollableCategoryNav({ children }: ScrollableCategoryNavProps) 
   };
 
   return (
-    <div className="flex min-w-0 max-w-[640px] items-center gap-1">
+    <div className="flex min-w-0 flex-1 items-center gap-1 sm:max-w-[640px]">
       {canScrollLeft && (
         <button
           type="button"
           onClick={scrollLeft}
           aria-label="Scroll categories left"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900"
+          className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 sm:flex"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -65,7 +65,7 @@ export function ScrollableCategoryNav({ children }: ScrollableCategoryNavProps) 
 
       <div
         ref={scrollRef}
-        className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto overflow-y-hidden scroll-smooth whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto overflow-y-hidden scroll-smooth whitespace-nowrap pr-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {children}
       </div>
@@ -75,7 +75,7 @@ export function ScrollableCategoryNav({ children }: ScrollableCategoryNavProps) 
           type="button"
           onClick={scrollRight}
           aria-label="Scroll categories right"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900"
+          className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 sm:flex"
         >
           <ChevronRight className="h-4 w-4" />
         </button>

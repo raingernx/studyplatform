@@ -1,11 +1,8 @@
-import createMiddleware from "next-intl/middleware";
-import {routing} from "./i18n/routing";
+// i18n removed. next-intl previously used this file as an edge-middleware
+// proxy. It is no longer referenced by anything, but Next.js expects proxy
+// files to export a callable function when the file exists.
+import { NextResponse } from "next/server";
 
-export default createMiddleware(routing);
-
-export const config = {
-  matcher: [
-    "/((?!api|trpc|_next|_vercel|.*\\..*).*)",
-  ],
-};
-
+export default function proxy() {
+  return NextResponse.next();
+}

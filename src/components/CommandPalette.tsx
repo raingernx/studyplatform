@@ -27,7 +27,16 @@ export function CommandPalette() {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      const key = event.key.toLowerCase();
+      if (!(event instanceof KeyboardEvent)) {
+        return;
+      }
+
+      const key =
+        typeof event.key === "string" ? event.key.toLowerCase() : "";
+
+      if (!key) {
+        return;
+      }
 
       // ⌘+K or Ctrl+K
       if ((event.metaKey || event.ctrlKey) && key === "k") {
@@ -98,4 +107,3 @@ export function CommandPalette() {
     </div>
   );
 }
-

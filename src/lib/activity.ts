@@ -77,7 +77,6 @@ export async function logActivity({
     });
   } catch (err) {
     // Activity logging must never break primary flows.
-    // eslint-disable-next-line no-console
     console.error("[ACTIVITY_LOG_ERROR]", err);
   }
 }

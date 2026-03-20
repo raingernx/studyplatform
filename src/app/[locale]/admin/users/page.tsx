@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { Input } from "@/design-system";
+import { Button } from "@/design-system";
 import { formatNumber, formatDate } from "@/lib/format";
 
 export const metadata = {
@@ -12,7 +12,7 @@ export const metadata = {
 };
 
 interface AdminUsersPageProps {
-  searchParams?: { q?: string };
+  searchParams?: Promise<{ q?: string }>;
 }
 
 export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
@@ -26,7 +26,8 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
     redirect("/dashboard");
   }
 
-  const query = searchParams?.q?.trim() ?? "";
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const query = resolvedSearchParams.q?.trim() ?? "";
 
   const users = await prisma.user.findMany({
     take: 50,
@@ -39,7 +40,12 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
           ],
         }
       : undefined,
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
       _count: { select: { resources: true } },
     },
   });

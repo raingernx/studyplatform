@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
-import { Input } from "@/components/ui/Input";
+import { Input } from "@/design-system";
 import { cn } from "@/lib/utils";
 
 type SearchType = "resource" | "user" | "order";
@@ -175,4 +175,3 @@ export function AdminGlobalSearch() {
     </div>
   );
 }
-

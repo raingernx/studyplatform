@@ -1,11 +1,14 @@
-/**
- * Purchase Service
- *
- * Centralises all Prisma queries that read or check Purchase rows so that
- * individual page components and API routes stay free of raw DB logic.
- */
-
-import { prisma } from "@/lib/prisma";
+import {
+  countDownloadEventsByUser,
+  findCompletedPurchaseByUserAndResource,
+  findCompletedPurchasesByUser,
+  findRecentPurchasePreferenceSignalsByUser,
+  findCompletedResourceIdsByUser,
+  findCompletedResourceIdsByUserFromSet,
+  findDownloadHistoryByUser,
+  findPurchaseByUserAndResource,
+  findPurchaseHistoryByUser,
+} from "@/repositories/purchases/purchase.repository";
 
 // ── Ownership checks ──────────────────────────────────────────────────────────
 
@@ -14,10 +17,7 @@ import { prisma } from "@/lib/prisma";
  * Used by the download route and resource detail page.
  */
 export async function hasPurchased(userId: string, resourceId: string): Promise<boolean> {
-  const purchase = await prisma.purchase.findFirst({
-    where: { userId, resourceId, status: "COMPLETED" },
-    select: { id: true },
-  });
+  const purchase = await findCompletedPurchaseByUserAndResource(userId, resourceId);
   return purchase !== null;
 }
 
@@ -26,10 +26,7 @@ export async function hasPurchased(userId: string, resourceId: string): Promise<
  * Used by listing pages to mark owned cards.
  */
 export async function getOwnedResourceIds(userId: string): Promise<Set<string>> {
-  const purchases = await prisma.purchase.findMany({
-    where: { userId, status: "COMPLETED" },
-    select: { resourceId: true },
-  });
+  const purchases = await findCompletedResourceIdsByUser(userId);
   return new Set(purchases.map((p) => p.resourceId));
 }
 
@@ -42,14 +39,7 @@ export async function getOwnedIdsFromSet(
   resourceIds: string[]
 ): Promise<string[]> {
   if (resourceIds.length === 0) return [];
-  const purchases = await prisma.purchase.findMany({
-    where: {
-      userId,
-      resourceId: { in: resourceIds },
-      status: "COMPLETED",
-    },
-    select: { resourceId: true },
-  });
+  const purchases = await findCompletedResourceIdsByUserFromSet(userId, resourceIds);
   return purchases.map((p) => p.resourceId);
 }
 
@@ -60,45 +50,23 @@ export async function getOwnedIdsFromSet(
  * Used by checkout routes for idempotency / duplicate-purchase guards.
  */
 export async function getExistingPurchase(userId: string, resourceId: string) {
-  return prisma.purchase.findFirst({
-    where: { userId, resourceId },
-  });
+  return findPurchaseByUserAndResource(userId, resourceId);
 }
-
-// ── User purchase history ─────────────────────────────────────────────────────
-
-/** Standard include for purchase history lists (library, downloads, purchases page). */
-const PURCHASE_WITH_RESOURCE_INCLUDE = {
-  resource: {
-    select: {
-      id:            true,
-      title:         true,
-      slug:          true,
-      description:   true,
-      previewUrl:    true,
-      isFree:        true,
-      price:         true,
-      mimeType:      true,
-      fileKey:       true,
-      fileUrl:       true,
-      downloadCount: true,
-      author:        { select: { id: true, name: true } },
-      category:      { select: { id: true, name: true, slug: true } },
-      previews:      { orderBy: { order: "asc" as const }, select: { imageUrl: true } },
-    },
-  },
-} as const;
 
 /**
  * Returns all COMPLETED purchases for a user, ordered newest first.
  * Covers dashboard, library, and downloads pages.
  */
 export async function getUserPurchases(userId: string) {
-  return prisma.purchase.findMany({
-    where: { userId, status: "COMPLETED" },
-    include: PURCHASE_WITH_RESOURCE_INCLUDE,
-    orderBy: { createdAt: "desc" },
-  });
+  return findCompletedPurchasesByUser(userId);
+}
+
+export async function getUserDownloadCount(userId: string) {
+  return countDownloadEventsByUser(userId);
+}
+
+export async function getUserDownloadHistory(userId: string) {
+  return findDownloadHistoryByUser(userId);
 }
 
 /**
@@ -106,9 +74,80 @@ export async function getUserPurchases(userId: string) {
  * Used by the purchases history page which shows PENDING / FAILED records too.
  */
 export async function getUserPurchaseHistory(userId: string) {
-  return prisma.purchase.findMany({
-    where: { userId },
-    include: PURCHASE_WITH_RESOURCE_INCLUDE,
-    orderBy: { createdAt: "desc" },
+  return findPurchaseHistoryByUser(userId);
+}
+
+export interface UserLearningProfile {
+  hasHistory: boolean;
+  recentStudyTitle: string | null;
+  recentCategoryName: string | null;
+  topCategories: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    score: number;
+  }>;
+  preferredLevels: Array<"BEGINNER" | "INTERMEDIATE" | "ADVANCED">;
+}
+
+export async function getUserLearningProfile(
+  userId: string,
+  take: number = 24,
+): Promise<UserLearningProfile> {
+  const rows = await findRecentPurchasePreferenceSignalsByUser(userId, take);
+
+  if (rows.length === 0) {
+    return {
+      hasHistory: false,
+      recentStudyTitle: null,
+      recentCategoryName: null,
+      topCategories: [],
+      preferredLevels: [],
+    };
+  }
+
+  const categoryScores = new Map<
+    string,
+    { id: string; name: string; slug: string; score: number }
+  >();
+  const levelScores = new Map<"BEGINNER" | "INTERMEDIATE" | "ADVANCED", number>();
+
+  rows.forEach((row, index) => {
+    const weight = Math.max(1, 4 - Math.floor(index / 4));
+    const category = row.resource.category;
+
+    if (category) {
+      const existing = categoryScores.get(category.id);
+      if (existing) {
+        existing.score += weight;
+      } else {
+        categoryScores.set(category.id, {
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          score: weight,
+        });
+      }
+    }
+
+    if (row.resource.level) {
+      levelScores.set(
+        row.resource.level,
+        (levelScores.get(row.resource.level) ?? 0) + weight,
+      );
+    }
   });
+
+  return {
+    hasHistory: true,
+    recentStudyTitle: rows[0]?.resource.title ?? null,
+    recentCategoryName: rows[0]?.resource.category?.name ?? null,
+    topCategories: Array.from(categoryScores.values())
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 3),
+    preferredLevels: Array.from(levelScores.entries())
+      .sort((left, right) => right[1] - left[1])
+      .map(([level]) => level)
+      .slice(0, 2),
+  };
 }

@@ -7,10 +7,13 @@
  * free of raw Prisma calls and makes the queries easy to cache or test.
  */
 
-import { prisma } from "@/lib/prisma";
 import {
+  findRecentCompletedPurchases,
+  findRecentResources,
+  findPlatformOverviewCounts,
   findPlatformStatsSince,
   findTopResourcesByDownloads,
+  reconcileResourceDownloadCounts,
 } from "@/repositories/analytics/analytics.repository";
 
 // ── Daily bucket helpers ──────────────────────────────────────────────────────
@@ -73,6 +76,12 @@ export interface PlatformMetrics {
   topResources: TopResource[];
 }
 
+export interface AdminDashboardOverview {
+  metrics: PlatformMetrics;
+  recentPurchases: Awaited<ReturnType<typeof findRecentCompletedPurchases>>;
+  recentResources: Awaited<ReturnType<typeof findRecentResources>>;
+}
+
 // ── Main function ─────────────────────────────────────────────────────────────
 
 /**
@@ -86,13 +95,11 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
   const days          = lastNDays(30);
 
   const [
-    totalResources,
-    totalUsers,
+    overviewCounts,
     platformStats,
     topResourcesRaw,
   ] = await Promise.all([
-    prisma.resource.count({ where: { deletedAt: null } }),
-    prisma.user.count(),
+    findPlatformOverviewCounts(),
     findPlatformStatsSince(new Date(Date.UTC(2020, 0, 1))),
     findTopResourcesByDownloads(10),
   ]);
@@ -166,11 +173,11 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
   );
 
   return {
-    totalResources,
+    totalResources: overviewCounts.totalResources,
     totalDownloads,
     totalPurchases,
     totalRevenue,
-    totalUsers,
+    totalUsers: overviewCounts.totalUsers,
 
     downloadsLast30Days:    downloadsLast30,
     purchasesLast30Days:    purchasesLast30,
@@ -184,4 +191,22 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
 
     topResources,
   };
+}
+
+export async function getAdminDashboardOverview(): Promise<AdminDashboardOverview> {
+  const [metrics, recentPurchases, recentResources] = await Promise.all([
+    getPlatformMetrics(),
+    findRecentCompletedPurchases(10),
+    findRecentResources(5),
+  ]);
+
+  return {
+    metrics,
+    recentPurchases,
+    recentResources,
+  };
+}
+
+export async function reconcileHistoricalDownloadCounts() {
+  return reconcileResourceDownloadCounts();
 }

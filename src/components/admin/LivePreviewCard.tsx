@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { FileText } from "lucide-react";
-import { Card } from "@/components/ui/Card";
+import { Card } from "@/design-system";
 import type { ResourceCardData } from "@/components/resources/ResourceCard";
 import { formatPrice } from "@/lib/format";
 

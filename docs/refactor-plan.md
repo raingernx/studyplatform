@@ -1,4 +1,4 @@
-## Refactor Plan – PaperDock
+## Refactor Plan – KruCraft
 
 ### Routing Improvements
 

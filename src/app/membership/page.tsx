@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
+import {
+  PageContainer,
+  PageContent,
+  PageContentNarrow,
+} from "@/design-system";
+import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
 import { PricingCard, type PricingTier } from "@/components/ui/PricingCard";
 import { Check, HelpCircle } from "lucide-react";
 
@@ -92,6 +98,7 @@ const COMPARISON_ROWS = [
 ];
 
 export default function MembershipPage() {
+  const platform = usePlatformConfig();
   const [billing, setBilling] = useState<"monthly" | "annual">("annual");
 
   return (
@@ -99,17 +106,30 @@ export default function MembershipPage() {
       <Navbar />
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-slate-900 via-blue-950 to-purple-950 px-4 py-20 text-center sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-purple-950 py-20 text-center sm:py-24">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute left-1/2 top-0 h-80 w-80 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
+          <div className="absolute right-0 top-12 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl" />
         </div>
-        <div className="relative mx-auto max-w-2xl">
-          <h1 className="text-4xl font-bold text-white sm:text-5xl">
-            Simple, transparent pricing
-          </h1>
-          <p className="mt-4 text-lg text-blue-200">
-            Start free, upgrade when you&apos;re ready. Cancel any time.
-          </p>
+        <PageContainer>
+          <PageContentNarrow className="relative space-y-6">
+          <div className="space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-200/80">
+              Membership
+            </p>
+            <h1 className="text-4xl font-bold text-white sm:text-5xl">
+              Simple, transparent pricing
+            </h1>
+            <p className="mx-auto max-w-2xl text-lg leading-8 text-blue-200">
+              Start free, upgrade when you&apos;re ready, and choose the plan that matches how deeply you want to learn.
+            </p>
+          </div>
+
+          <div className="flex justify-center">
+            <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/85 backdrop-blur-sm">
+              Cancel any time. No hidden fees.
+            </span>
+          </div>
 
           {/* Billing toggle */}
           <div className="mt-8 inline-flex items-center gap-3 rounded-xl bg-white/10 p-1 backdrop-blur-sm">
@@ -137,24 +157,36 @@ export default function MembershipPage() {
               </span>
             </button>
           </div>
-        </div>
+          </PageContentNarrow>
+        </PageContainer>
       </section>
 
       {/* ── Pricing cards ────────────────────────────────────────────────────── */}
-      <section className="relative -mt-8 px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
+      <section className="relative -mt-8 pb-20">
+        <PageContainer>
+          <PageContent className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {TIERS.map((tier) => (
             <PricingCard key={tier.id} tier={tier} billing={billing} />
           ))}
-        </div>
+          </PageContent>
+        </PageContainer>
       </section>
 
       {/* ── Feature comparison table ─────────────────────────────────────────── */}
-      <section className="bg-white px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="mb-8 text-center text-2xl font-bold text-gray-900">
-            Compare plans
-          </h2>
+      <section className="bg-white py-16">
+        <PageContainer>
+          <PageContent className="space-y-8">
+          <div className="text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+              Plan details
+            </p>
+            <h2 className="mt-3 text-2xl font-bold text-gray-900">
+              Compare plans
+            </h2>
+            <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-500">
+              A clearer look at what changes as you move from free access to premium and team workflows.
+            </p>
+          </div>
 
           <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
             <table className="w-full text-sm">
@@ -195,19 +227,24 @@ export default function MembershipPage() {
               </tbody>
             </table>
           </div>
-        </div>
+          </PageContent>
+        </PageContainer>
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────────────────────── */}
-      <section className="bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold text-gray-900">
+      <section className="bg-gray-50 py-16">
+        <PageContainer>
+          <PageContentNarrow className="space-y-10">
+          <div className="text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+              FAQ
+            </p>
+            <h2 className="mt-3 text-2xl font-bold text-gray-900">
               Frequently asked questions
             </h2>
             <p className="mt-2 text-gray-500">
               Can&apos;t find the answer you need?{" "}
-              <a href="mailto:support@studyplatform.dev" className="text-blue-600 hover:underline">
+              <a href={`mailto:${platform.supportEmail}`} className="text-blue-600 hover:underline">
                 Email us
               </a>
               .
@@ -232,18 +269,23 @@ export default function MembershipPage() {
               </div>
             ))}
           </div>
-        </div>
+          </PageContentNarrow>
+        </PageContainer>
       </section>
 
       {/* ── Bottom CTA ───────────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-700 px-4 py-14 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl font-bold text-white sm:text-3xl">
+      <section className="bg-gradient-to-r from-blue-600 to-purple-700 py-14">
+        <PageContainer>
+          <PageContentNarrow className="text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100/75">
+            Start today
+          </p>
+          <h2 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
             Ready to start learning?
           </h2>
           <p className="mt-3 text-blue-100">
             Join thousands of students who accelerate their learning with
-            PaperDock.
+            {` ${platform.platformShortName}.`}
           </p>
           <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <button
@@ -253,7 +295,8 @@ export default function MembershipPage() {
               Get started free
             </button>
           </div>
-        </div>
+          </PageContentNarrow>
+        </PageContainer>
       </section>
     </div>
   );

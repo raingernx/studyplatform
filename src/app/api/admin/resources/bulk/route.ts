@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
 import { authOptions } from "@/lib/auth";
+import { CACHE_TAGS } from "@/lib/cache";
 import {
   createAdminResourcesInBulk,
   mutateAdminResourcesInBulk,
@@ -54,7 +55,8 @@ export async function POST(req: Request) {
     const result = await createAdminResourcesInBulk(await req.json(), session.user.id);
 
     if (result.data.success > 0) {
-      revalidateTag("discover", "max");
+      revalidateTag(CACHE_TAGS.discover, "max");
+      revalidateTag(CACHE_TAGS.creatorPublic, "max");
     }
 
     return NextResponse.json(result);
@@ -71,7 +73,8 @@ export async function PATCH(req: Request) {
     const result = await mutateAdminResourcesInBulk(await req.json());
 
     if (result.data.updated > 0 || result.data.deleted > 0) {
-      revalidateTag("discover", "max");
+      revalidateTag(CACHE_TAGS.discover, "max");
+      revalidateTag(CACHE_TAGS.creatorPublic, "max");
     }
 
     return NextResponse.json(result);

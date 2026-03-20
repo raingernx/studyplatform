@@ -19,6 +19,8 @@ export interface CreateAdminResourceRecordInput {
   isFree: boolean;
   price: number;
   fileUrl: string | null;
+  stripePriceId?: string | null;
+  stripeProductId?: string | null;
   categoryId: string | null;
   featured: boolean;
   level?: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | null;
@@ -55,11 +57,18 @@ export interface UpdateAdminResourceRecordInput {
 }
 
 const RESOURCE_LIST_INCLUDE = {
+  id: true,
+  title: true,
+  slug: true,
+  price: true,
+  isFree: true,
+  featured: true,
+  createdAt: true,
+  downloadCount: true,
+  previewUrl: true,
   author: { select: { id: true, name: true, image: true } },
-  category: true,
-  tags: { include: { tag: true } },
+  category: { select: { id: true, name: true, slug: true } },
   previews: { orderBy: { order: "asc" as const }, select: { imageUrl: true } },
-  _count: { select: { purchases: true, reviews: true } },
 } as const;
 
 const ADMIN_RESOURCE_LIST_INCLUDE = {
@@ -68,12 +77,43 @@ const ADMIN_RESOURCE_LIST_INCLUDE = {
   _count: { select: { purchases: true } },
 } as const;
 
+const OWNED_RESOURCE_CREATE_INCLUDE = {
+  author: { select: { id: true, name: true } },
+  category: true,
+  tags: { include: { tag: true } },
+} as const;
+
+const CREATOR_DASHBOARD_RESOURCE_SELECT = {
+  id: true,
+  title: true,
+  slug: true,
+  status: true,
+  isFree: true,
+  price: true,
+  previewUrl: true,
+  createdAt: true,
+  updatedAt: true,
+  previews: {
+    take: 1,
+    orderBy: { order: "asc" as const },
+    select: { imageUrl: true },
+  },
+} as const;
+
 export async function findPublicResources(params: FindPublicResourcesParams) {
   const { page, pageSize, categorySlug, tagSlug, search, isFree } = params;
 
+  const categoryId = categorySlug
+    ? (await findCategoryBySlug(categorySlug))?.id
+    : undefined;
+
+  if (categorySlug && !categoryId) {
+    return { items: [], total: 0 };
+  }
+
   const where = {
     ...LISTED_RESOURCE_WHERE,
-    ...(categorySlug && { category: { slug: categorySlug } }),
+    ...(categoryId && { categoryId }),
     ...(tagSlug && { tags: { some: { tag: { slug: tagSlug } } } }),
     ...(isFree !== undefined && { isFree }),
     ...(search && {
@@ -87,7 +127,7 @@ export async function findPublicResources(params: FindPublicResourcesParams) {
   const [items, total] = await Promise.all([
     prisma.resource.findMany({
       where,
-      include: RESOURCE_LIST_INCLUDE,
+      select: RESOURCE_LIST_INCLUDE,
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -105,11 +145,117 @@ export async function findAdminActor(userId: string) {
   });
 }
 
-export async function findAdminResources() {
+export async function findAdminResources(authorId?: string) {
   return prisma.resource.findMany({
-    where: { deletedAt: null },
+    where: {
+      deletedAt: null,
+      ...(authorId ? { authorId } : {}),
+    },
     include: ADMIN_RESOURCE_LIST_INCLUDE,
     orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function findCreatorOwnedResources(authorId: string) {
+  return prisma.resource.findMany({
+    where: {
+      authorId,
+      deletedAt: null,
+    },
+    select: CREATOR_DASHBOARD_RESOURCE_SELECT,
+    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+  });
+}
+
+export async function findRecommendedResourcesExcludingIds(
+  resourceIds: string[],
+  take: number,
+) {
+  return prisma.resource.findMany({
+    where: {
+      ...LISTED_RESOURCE_WHERE,
+      ...(resourceIds.length > 0 ? { id: { notIn: resourceIds } } : {}),
+    },
+    select: RESOURCE_LIST_INCLUDE,
+    orderBy: [
+      { resourceStat: { trendingScore: "desc" } },
+      { resourceStat: { purchases: "desc" } },
+      { resourceStat: { downloads: "desc" } },
+      { createdAt: "desc" },
+    ],
+    take,
+  });
+}
+
+export async function findNewResourcesInCategoryExcludingIds(
+  categoryId: string,
+  resourceIds: string[],
+  take: number,
+) {
+  return prisma.resource.findMany({
+    where: {
+      ...LISTED_RESOURCE_WHERE,
+      categoryId,
+      ...(resourceIds.length > 0 ? { id: { notIn: resourceIds } } : {}),
+    },
+    select: RESOURCE_LIST_INCLUDE,
+    orderBy: [
+      { createdAt: "desc" },
+      { resourceStat: { trendingScore: "desc" } },
+      { resourceStat: { purchases: "desc" } },
+    ],
+    take,
+  });
+}
+
+export async function findNewResourcesInCategoriesExcludingIds(
+  categoryIds: string[],
+  resourceIds: string[],
+  take: number,
+) {
+  if (categoryIds.length === 0) {
+    return [];
+  }
+
+  return prisma.resource.findMany({
+    where: {
+      ...LISTED_RESOURCE_WHERE,
+      categoryId: { in: categoryIds },
+      ...(resourceIds.length > 0 ? { id: { notIn: resourceIds } } : {}),
+    },
+    select: RESOURCE_LIST_INCLUDE,
+    orderBy: [
+      { createdAt: "desc" },
+      { resourceStat: { trendingScore: "desc" } },
+      { resourceStat: { purchases: "desc" } },
+    ],
+    take,
+  });
+}
+
+export async function findRecommendedResourcesByLevelsExcludingIds(
+  levels: Array<"BEGINNER" | "INTERMEDIATE" | "ADVANCED">,
+  resourceIds: string[],
+  take: number,
+) {
+  if (levels.length === 0) {
+    return [];
+  }
+
+  return prisma.resource.findMany({
+    where: {
+      ...LISTED_RESOURCE_WHERE,
+      level: { in: levels },
+      ...(resourceIds.length > 0 ? { id: { notIn: resourceIds } } : {}),
+    },
+    select: RESOURCE_LIST_INCLUDE,
+    orderBy: [
+      { resourceStat: { trendingScore: "desc" } },
+      { resourceStat: { purchases: "desc" } },
+      { resourceStat: { downloads: "desc" } },
+      { createdAt: "desc" },
+    ],
+    take,
   });
 }
 
@@ -172,6 +318,8 @@ export async function createAdminResourceRecord(input: CreateAdminResourceRecord
       isFree: input.isFree,
       price: input.price,
       fileUrl: input.fileUrl,
+      stripePriceId: input.stripePriceId ?? null,
+      stripeProductId: input.stripeProductId ?? null,
       categoryId: input.categoryId,
       featured: input.featured,
       level: input.level ?? null,
@@ -190,6 +338,86 @@ export async function createAdminResourceRecord(input: CreateAdminResourceRecord
           order,
         })),
       },
+    },
+  });
+}
+
+export async function createOwnedResourceRecord(input: CreateAdminResourceRecordInput) {
+  return prisma.resource.create({
+    data: {
+      title: input.title,
+      slug: input.slug,
+      description: input.description,
+      type: input.type,
+      status: input.status,
+      isFree: input.isFree,
+      price: input.price,
+      fileUrl: input.fileUrl,
+      stripePriceId: input.stripePriceId ?? null,
+      stripeProductId: input.stripeProductId ?? null,
+      categoryId: input.categoryId,
+      featured: input.featured,
+      level: input.level ?? null,
+      license: input.license ?? null,
+      visibility: input.visibility ?? null,
+      previewUrl: input.previewUrl,
+      authorId: input.authorId,
+      tags: input.tagIds.length
+        ? {
+            create: input.tagIds.map((tagId) => ({
+              tag: { connect: { id: tagId } },
+            })),
+          }
+        : undefined,
+      previews: input.previewUrls.length
+        ? {
+            create: input.previewUrls.map((imageUrl, order) => ({
+              imageUrl,
+              order,
+            })),
+          }
+        : undefined,
+    },
+    include: OWNED_RESOURCE_CREATE_INCLUDE,
+  });
+}
+
+export async function deleteStaleDraftResources(cutoff: Date) {
+  return prisma.resource.deleteMany({
+    where: {
+      title: "",
+      description: "",
+      fileUrl: null,
+      fileKey: null,
+      status: "DRAFT",
+      createdAt: {
+        lt: cutoff,
+      },
+    },
+  });
+}
+
+export async function createDraftResourceRecord(input: {
+  title: string;
+  slug: string;
+  authorId: string;
+}) {
+  return prisma.resource.create({
+    data: {
+      title: input.title,
+      slug: input.slug,
+      description: "",
+      type: "PDF",
+      status: "DRAFT",
+      isFree: true,
+      price: 0,
+      fileUrl: null,
+      categoryId: null,
+      featured: false,
+      authorId: input.authorId,
+    },
+    select: {
+      id: true,
     },
   });
 }

@@ -53,7 +53,7 @@ export function DashboardSidebar({
     return normalizedPath === href || normalizedPath.startsWith(`${href}/`);
   };
 
-  const resolvedHeader = header ?? <Logo variant="full" size="sidebar" />;
+  const resolvedHeader = header ?? <Logo variant="full" size="md" />;
 
   const content = (
     <SidebarContainer className="h-full shrink-0">

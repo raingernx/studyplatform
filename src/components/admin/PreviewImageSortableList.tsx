@@ -17,6 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Trash2 } from "lucide-react";
+import { MediaPreview, PickerIconButton, PreviewCard } from "@/design-system";
 
 interface PreviewImageSortableListProps {
   images: string[];
@@ -52,11 +53,9 @@ function SortableItem({ id, index, url, onRemove, onSetCover }: SortableItemProp
     <div
       ref={setNodeRef}
       style={style}
-      className={[
-        "flex items-center gap-3 rounded-xl border border-border-subtle bg-white px-3 py-2 shadow-sm transition",
-        isDragging ? "ring-2 ring-brand-400" : "",
-      ].join(" ")}
+      className={isDragging ? "ring-2 ring-brand-400 rounded-xl" : undefined}
     >
+      <PreviewCard className="flex items-center gap-3 border-border-subtle bg-white px-3 py-2 shadow-sm transition">
       <button
         type="button"
         className="cursor-grab text-text-muted hover:text-text-secondary"
@@ -67,7 +66,7 @@ function SortableItem({ id, index, url, onRemove, onSetCover }: SortableItemProp
         <GripVertical className="h-4 w-4" />
       </button>
 
-      <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg">
+      <MediaPreview className="h-16 w-24 shrink-0">
         <Image
           src={url}
           alt=""
@@ -76,7 +75,7 @@ function SortableItem({ id, index, url, onRemove, onSetCover }: SortableItemProp
           sizes="96px"
           className="h-16 w-24 object-cover"
         />
-      </div>
+      </MediaPreview>
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-[12px] text-text-primary">{url}</p>
@@ -93,14 +92,14 @@ function SortableItem({ id, index, url, onRemove, onSetCover }: SortableItemProp
         ) : null}
       </div>
 
-      <button
-        type="button"
+      <PickerIconButton
         onClick={() => onRemove(index)}
-        className="shrink-0 rounded-lg p-1.5 text-text-secondary transition hover:bg-red-50 hover:text-red-500"
+        tone="danger"
         aria-label="Remove image"
       >
         <Trash2 className="h-4 w-4" />
-      </button>
+      </PickerIconButton>
+      </PreviewCard>
     </div>
   );
 }
@@ -159,4 +158,3 @@ export function PreviewImageSortableList({
     </DndContext>
   );
 }
-

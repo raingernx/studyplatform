@@ -1,6 +1,6 @@
-# PaperDock – Payments Architecture
+# KruCraft – Payments Architecture
 
-This document describes the payment system of PaperDock.
+This document describes the payment system of KruCraft.
 
 Payments are handled through Stripe and optionally Xendit.
 

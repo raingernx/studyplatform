@@ -2,9 +2,9 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { Card } from "@/design-system";
+import { Input } from "@/design-system";
+import { Button } from "@/design-system";
 import { formatPrice, formatNumber, formatDate } from "@/lib/format";
 
 export const metadata = {

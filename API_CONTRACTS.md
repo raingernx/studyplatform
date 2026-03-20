@@ -1,6 +1,6 @@
-# PaperDock – API Contracts
+# KruCraft – API Contracts
 
-This document defines the public API contracts of the PaperDock backend.
+This document defines the public API contracts of the KruCraft backend.
 
 AI agents and developers must not change these contracts unless explicitly instructed.
 

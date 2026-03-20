@@ -1,8 +1,5 @@
-import {defineRouting} from "next-intl/routing";
-import {defaultLocale, locales} from "./config";
-
-export const routing = defineRouting({
-  locales: [...locales],
-  defaultLocale,
-});
-
+// i18n removed — stub kept so proxy.ts compiles without next-intl.
+export const routing = {
+  locales: ["th"] as const,
+  defaultLocale: "th" as const,
+};

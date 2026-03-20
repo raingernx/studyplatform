@@ -1,4 +1,4 @@
-# PaperDock — Session 1: Architecture Scaffold
+# KruCraft — Session 1: Architecture Scaffold
 
 Next.js 14 (App Router) · Tailwind CSS · PostgreSQL · Prisma · NextAuth · Stripe
 
@@ -76,6 +76,8 @@ npm run db:seed       # create admin user, categories, tags, sample resource
 # 4. Run the dev server
 npm run dev
 # → http://localhost:3000
+# Uses Webpack by default for local development
+# Optional Turbopack fallback: npm run dev:turbo
 
 # 5. Stripe webhooks (separate terminal)
 stripe listen --forward-to localhost:3000/api/stripe/webhook

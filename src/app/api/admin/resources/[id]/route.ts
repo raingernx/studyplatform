@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
 import { authOptions } from "@/lib/auth";
+import { CACHE_TAGS } from "@/lib/cache";
 import {
   ResourceServiceError,
   trashAdminResource,
@@ -56,7 +57,8 @@ export async function PATCH(req: Request, { params }: Params) {
     }
 
     const result = await updateAdminResource(id, await req.json(), session.user.id);
-    revalidateTag("discover", "max");
+    revalidateTag(CACHE_TAGS.discover, "max");
+    revalidateTag(CACHE_TAGS.creatorPublic, "max");
 
     return NextResponse.json(result);
   } catch (err) {
@@ -75,7 +77,8 @@ export async function DELETE(_req: Request, { params }: Params) {
     }
 
     const result = await trashAdminResource(id, session.user.id);
-    revalidateTag("discover", "max");
+    revalidateTag(CACHE_TAGS.discover, "max");
+    revalidateTag(CACHE_TAGS.creatorPublic, "max");
 
     return NextResponse.json(result);
   } catch (err) {

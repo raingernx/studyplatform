@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/design-system";
 import { CreditCard, QrCode, Download, Lock, BookmarkPlus, CheckCircle } from "lucide-react";
 import { formatPrice } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 interface BuyButtonProps {
   resourceId: string;
@@ -15,6 +16,13 @@ interface BuyButtonProps {
   /** Whether the resource currently has a downloadable file attached. */
   hasFile?: boolean;
 }
+
+const buyButtonToneClassName = {
+  dark:
+    "bg-zinc-900 text-white hover:bg-zinc-700 active:bg-zinc-800 focus-visible:ring-zinc-700/50",
+  accent:
+    "bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 focus-visible:ring-orange-400/50",
+} as const;
 
 export function BuyButton({
   resourceId,
@@ -41,13 +49,24 @@ export function BuyButton({
       <div className="space-y-3">
         {hasFile ? (
           <a href={`/api/download/${resourceId}`}>
-            <Button variant="dark" size="lg" fullWidth className="gap-2">
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              className={cn("gap-2", buyButtonToneClassName.dark)}
+            >
               <Download className="h-4 w-4" />
               Download
             </Button>
           </a>
         ) : (
-          <Button variant="dark" size="lg" fullWidth disabled className="gap-2">
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            disabled
+            className={cn("gap-2", buyButtonToneClassName.dark)}
+          >
             <Download className="h-4 w-4" />
             File not available yet
           </Button>
@@ -96,7 +115,7 @@ export function BuyButton({
         <Button
           onClick={handleAddToLibrary}
           loading={loadingLibrary}
-          variant="default"
+          variant="primary"
           size="lg"
           fullWidth
           className="gap-2"
@@ -171,10 +190,10 @@ export function BuyButton({
         onClick={handleStripe}
         loading={loadingStripe}
         disabled={isAnyLoading}
-        variant="accent"
+        variant="primary"
         size="lg"
         fullWidth
-        className="gap-2 shadow-md"
+        className={cn("gap-2 shadow-md", buyButtonToneClassName.accent)}
       >
         <CreditCard className="h-4 w-4" />
         Pay with Card · {formatPrice(price)}

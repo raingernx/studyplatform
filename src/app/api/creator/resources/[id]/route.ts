@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
+import { CACHE_TAGS } from "@/lib/cache";
 import { CreatorServiceError, updateCreatorResource } from "@/services/creator.service";
 
 type Params = {
@@ -50,6 +52,8 @@ export async function PATCH(req: Request, { params }: Params) {
 
     const { id } = await params;
     const resource = await updateCreatorResource(session.user.id, id, await req.json());
+    revalidateTag(CACHE_TAGS.discover, "max");
+    revalidateTag(CACHE_TAGS.creatorPublic, "max");
 
     return NextResponse.json({ data: resource });
   } catch (error) {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
-import { getTranslations } from "next-intl/server";
+import { PageContainer, PageContentWide } from "@/design-system";
 
 const CREATORS_LINKS = [
   { href: "/resources", label: "Sell resources" },
@@ -29,17 +29,21 @@ const LEGAL_LINKS = [
   { href: "/cookies", label: "Cookie Policy" },
 ];
 
-export async function Footer() {
-  const t = await getTranslations("footer");
+interface FooterProps {
+  platformName: string;
+}
+
+export function Footer({ platformName }: FooterProps) {
   return (
     <footer className="border-t border-zinc-100 bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <PageContainer className="py-14">
+        <PageContentWide>
         <div className="grid gap-10 md:grid-cols-5">
           {/* Brand */}
           <div>
             <Logo variant="full" size="sm" />
             <p className="mt-3 max-w-[200px] text-[13px] leading-relaxed text-zinc-500 font-thai">
-              {t("tagline")}
+              มาร์เก็ตเพลสสำหรับสื่อการเรียนรู้แบบดาวน์โหลด
             </p>
           </div>
 
@@ -123,7 +127,7 @@ export async function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-zinc-100 pt-6 sm:flex-row">
           <p className="text-[12px] text-zinc-400 font-thai">
-            © {new Date().getFullYear()} PaperDock. {t("copyright")}
+            © {new Date().getFullYear()} {platformName}. สงวนลิขสิทธิ์ทั้งหมด
           </p>
           <div className="flex items-center gap-4">
             <Link
@@ -146,7 +150,8 @@ export async function Footer() {
             </Link>
           </div>
         </div>
-      </div>
+        </PageContentWide>
+      </PageContainer>
     </footer>
   );
 }

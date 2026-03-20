@@ -6,7 +6,7 @@ import {
 } from "@/repositories/purchases/purchase.repository";
 import { findResourceById } from "@/repositories/resources/resource.repository";
 import { findCheckoutUserById } from "@/repositories/users/user.repository";
-import { PaymentServiceError } from "@/services/payments/payment.service";
+import { buildPurchaseSnapshot, PaymentServiceError } from "@/services/payments/payment.service";
 
 export async function createXenditCheckout(body: unknown, userId: string) {
   const resourceId =
@@ -51,6 +51,7 @@ export async function createXenditCheckout(body: unknown, userId: string) {
     currency: "thb",
     paymentProvider: "XENDIT",
     clearXenditInvoiceId: true,
+    ...buildPurchaseSnapshot(resource),
   });
 
   const invoice = await xenditClient.Invoice.createInvoice({
@@ -79,13 +80,6 @@ export async function createXenditCheckout(body: unknown, userId: string) {
   }
 
   await setPurchaseXenditInvoiceId(purchase.id, invoice.id);
-
-  console.log("[XENDIT CHECKOUT] Invoice created:", {
-    purchaseId: purchase.id,
-    invoiceId: invoice.id,
-    amount: resource.price / 100,
-    currency: "THB",
-  });
 
   return { data: { url: invoice.invoiceUrl } };
 }

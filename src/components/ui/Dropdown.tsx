@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * Dropdown — Radix DropdownMenu wrapped with PaperDock styling.
+ * Dropdown — Radix DropdownMenu wrapped with KruCraft styling.
  *
  * Usage:
  *   <Dropdown>

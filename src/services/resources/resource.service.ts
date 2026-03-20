@@ -4,11 +4,19 @@ import { logAdminAction } from "@/lib/auditLogger";
 import { slugify } from "@/lib/utils";
 import {
   createAdminResourceRecord,
+  createDraftResourceRecord,
   createAdminResourcesBulk,
+  createOwnedResourceRecord,
+  deleteStaleDraftResources,
   findAdminActor,
   findAdminResources,
   findCategoryBySlug,
+  findCreatorOwnedResources,
+  findNewResourcesInCategoryExcludingIds,
+  findNewResourcesInCategoriesExcludingIds,
   findPublicResources,
+  findRecommendedResourcesByLevelsExcludingIds,
+  findRecommendedResourcesExcludingIds,
   findResourceById,
   findResourceBySlug,
   findTagBySlug,
@@ -38,6 +46,19 @@ const previewUrlSchema = z.string().refine(
       "Preview must be a URL or uploaded image path (e.g. https://… or /uploads/…)",
   },
 );
+
+const CreateOwnedResourceSchema = z.object({
+  title: z.string().trim().min(3, "Title must be at least 3 characters"),
+  description: z.string().trim().min(10, "Description must be at least 10 characters"),
+  categoryId: z.string().cuid().optional(),
+  isFree: z.boolean().default(false),
+  price: z.number().int().min(0, "Price must be 0 or greater").default(0),
+  stripePriceId: z.string().optional(),
+  stripeProductId: z.string().optional(),
+  tagIds: z.array(z.string().cuid()).optional(),
+  previewUrl: previewUrlSchema.nullable().optional(),
+  previewUrls: z.array(previewUrlSchema).optional(),
+});
 
 const CreateAdminResourceSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -222,6 +243,81 @@ export async function listAdminResources() {
   return findAdminResources();
 }
 
+export async function getCreatorResources(userId: string) {
+  const resources = await findCreatorOwnedResources(userId);
+
+  return resources.map((resource) => ({
+    ...resource,
+    previewUrl: resource.previewUrl ?? resource.previews[0]?.imageUrl ?? null,
+  }));
+}
+
+export async function getRecommendedResources(
+  excludedResourceIds: string[],
+  limit: number = 6,
+) {
+  const resources = await findRecommendedResourcesExcludingIds(
+    excludedResourceIds,
+    limit,
+  );
+
+  return resources.map((resource) => ({
+    ...resource,
+    previewUrl: resource.previewUrl ?? resource.previews?.[0]?.imageUrl ?? null,
+  }));
+}
+
+export async function getNewResourcesInCategory(
+  categoryId: string,
+  excludedResourceIds: string[],
+  limit: number = 4,
+) {
+  const resources = await findNewResourcesInCategoryExcludingIds(
+    categoryId,
+    excludedResourceIds,
+    limit,
+  );
+
+  return resources.map((resource) => ({
+    ...resource,
+    previewUrl: resource.previewUrl ?? resource.previews?.[0]?.imageUrl ?? null,
+  }));
+}
+
+export async function getNewResourcesInCategories(
+  categoryIds: string[],
+  excludedResourceIds: string[],
+  limit: number = 6,
+) {
+  const resources = await findNewResourcesInCategoriesExcludingIds(
+    categoryIds,
+    excludedResourceIds,
+    limit,
+  );
+
+  return resources.map((resource) => ({
+    ...resource,
+    previewUrl: resource.previewUrl ?? resource.previews?.[0]?.imageUrl ?? null,
+  }));
+}
+
+export async function getRecommendedResourcesByLevels(
+  levels: Array<"BEGINNER" | "INTERMEDIATE" | "ADVANCED">,
+  excludedResourceIds: string[],
+  limit: number = 4,
+) {
+  const resources = await findRecommendedResourcesByLevelsExcludingIds(
+    levels,
+    excludedResourceIds,
+    limit,
+  );
+
+  return resources.map((resource) => ({
+    ...resource,
+    previewUrl: resource.previewUrl ?? resource.previews?.[0]?.imageUrl ?? null,
+  }));
+}
+
 export async function createAdminResource(input: unknown, adminUserId: string) {
   const actor = await findAdminActor(adminUserId);
 
@@ -292,6 +388,61 @@ export async function createAdminResource(input: unknown, adminUserId: string) {
   ]);
 
   return { success: true, data: resource };
+}
+
+export async function createOwnedResource(input: unknown, ownerUserId: string) {
+  const actor = await findAdminActor(ownerUserId);
+
+  if (!actor) {
+    throw new ResourceServiceError(401, {
+      error: "User not found. Please sign out and sign in again.",
+    });
+  }
+
+  if (!["ADMIN", "INSTRUCTOR"].includes(actor.role)) {
+    throw new ResourceServiceError(403, {
+      error: "Forbidden.",
+    });
+  }
+
+  const parsed = CreateOwnedResourceSchema.safeParse(input);
+
+  if (!parsed.success) {
+    const { flattened, fieldErrors } = buildFieldErrors(parsed.error);
+    throw new ResourceServiceError(400, {
+      error: "Validation failed",
+      fields: fieldErrors,
+      errors: {
+        fieldErrors: flattened.fieldErrors,
+        formErrors: flattened.formErrors,
+      },
+    });
+  }
+
+  const slug = await generateUniqueSlug(toSlugBase(parsed.data.title));
+  const previewUrls = (parsed.data.previewUrls ?? []).filter((url) => url.trim() !== "");
+  const previewUrl = parsed.data.previewUrl ?? previewUrls[0] ?? null;
+
+  const resource = await createOwnedResourceRecord({
+    title: parsed.data.title,
+    slug,
+    description: parsed.data.description,
+    type: "PDF",
+    status: "DRAFT",
+    isFree: parsed.data.isFree || parsed.data.price === 0,
+    price: parsed.data.isFree ? 0 : parsed.data.price,
+    fileUrl: null,
+    stripePriceId: parsed.data.stripePriceId ?? null,
+    stripeProductId: parsed.data.stripeProductId ?? null,
+    categoryId: parsed.data.categoryId ?? null,
+    featured: false,
+    authorId: ownerUserId,
+    tagIds: parsed.data.tagIds ?? [],
+    previewUrls,
+    previewUrl,
+  });
+
+  return { data: resource };
 }
 
 export async function createAdminResourcesInBulk(input: unknown, adminUserId: string) {
@@ -407,6 +558,35 @@ export async function createAdminResourcesInBulk(input: unknown, adminUserId: st
       errors,
     },
   };
+}
+
+export async function createAdminResourceDraft(adminUserId: string) {
+  const actor = await findAdminActor(adminUserId);
+
+  if (!actor) {
+    throw new ResourceServiceError(401, {
+      error: "User not found. Please sign out and sign in again.",
+    });
+  }
+
+  if (actor.role !== "ADMIN") {
+    throw new ResourceServiceError(403, {
+      error: "Forbidden. Admin access required.",
+    });
+  }
+
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  await deleteStaleDraftResources(cutoff);
+
+  const title = "Untitled draft";
+  const baseSlug = toSlugBase(title) || "draft-resource";
+  const slug = await generateUniqueSlug(baseSlug);
+
+  return createDraftResourceRecord({
+    title,
+    slug,
+    authorId: adminUserId,
+  });
 }
 
 export async function mutateAdminResourcesInBulk(input: unknown) {

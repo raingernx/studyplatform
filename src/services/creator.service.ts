@@ -1,8 +1,10 @@
 import type { CreatorStatus, UserRole } from "@prisma/client";
+import { unstable_cache } from "next/cache";
 import { z } from "zod";
-import { CACHE_KEYS, CACHE_TTLS, rememberJson } from "@/lib/cache";
+import { CACHE_KEYS, CACHE_TAGS, CACHE_TTLS, rememberJson } from "@/lib/cache";
 import { slugify } from "@/lib/utils";
 import { findCreatorStatByCreatorId } from "@/repositories/analytics/analytics.repository";
+import { getCreatorPayouts, sumCreatorPayouts } from "@/repositories/payouts/payout.repository";
 import {
   createCreatorResourceRecord,
   enableCreatorAccessRecord,
@@ -17,14 +19,21 @@ import {
   findCreatorRecentSales,
   findCreatorResourceById,
   findCreatorResourceBySlug,
+  findCreatorResourceStatusSummary,
   findCreatorResourcesByUserId,
+  getCreatorResourcePerformance,
+  getCreatorStats,
   findCreatorRevenueSeries,
   findCreatorSales,
   findCreatorSlugOwner,
+  findCreatorRecentVisibleReviews,
   updateCreatorProfileRecord,
   updateCreatorResourceRecord,
   updateCreatorResourceStatusRecord,
+  getCreatorReviewOverview,
+  getCreatorResourceReviewSummaries,
   type CreatorResourceFilters,
+  getCreatorVisibleRatingDistribution,
 } from "@/repositories/creators/creator.repository";
 import { findResourceBySlug } from "@/repositories/resources/resource.repository";
 
@@ -214,6 +223,46 @@ export interface CreatorProfile {
   socialLinks: CreatorSocialLinks;
 }
 
+export interface CreatorDashboardStats {
+  totalRevenue: number;
+  totalSales: number;
+  totalResources: number;
+}
+
+export interface CreatorDashboardPerformanceItem {
+  resourceId: string;
+  title: string;
+  slug: string;
+  status: string;
+  price: number;
+  isFree: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  downloadCount: number;
+  salesCount: number;
+  revenue: number;
+  averageRating: number | null;
+  visibleReviewCount: number;
+}
+
+export interface CreatorBalance {
+  totalEarnings: number;
+  totalPayouts: number;
+  availableBalance: number;
+  payouts: {
+    id: string;
+    amount: number;
+    status: string;
+    createdAt: Date;
+  }[];
+}
+
+export interface CreatorResourceStatusSummary {
+  draft: number;
+  published: number;
+  archived: number;
+}
+
 export interface CreatorSocialLinks {
   website?: string;
   twitter?: string;
@@ -254,6 +303,40 @@ export interface CreatorAnalyticsData {
     resourceSlug: string;
     userId: string | null;
     createdAt: Date;
+  }[];
+}
+
+export interface CreatorReviewAnalyticsData {
+  overview: {
+    averageRating: number | null;
+    totalVisibleReviews: number;
+    resourcesWithVisibleReviews: number;
+  };
+  distribution: {
+    rating: number;
+    count: number;
+  }[];
+  resources: {
+    resourceId: string;
+    title: string;
+    slug: string;
+    status: string;
+    price: number;
+    isFree: boolean;
+    updatedAt: Date;
+    averageRating: number | null;
+    visibleReviewCount: number;
+    lastReviewDate: Date | null;
+  }[];
+  recentReviews: {
+    id: string;
+    rating: number;
+    body: string | null;
+    createdAt: Date;
+    reviewerName: string;
+    reviewerEmail: string | null;
+    resourceTitle: string;
+    resourceSlug: string;
   }[];
 }
 
@@ -351,6 +434,14 @@ function normalizeCreatorProfileInput(input: unknown) {
 
 function toPointDate(date: Date) {
   return date.toISOString().slice(0, 10);
+}
+
+function normalizeAverageRating(value: number | null | undefined) {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return null;
+  }
+
+  return Math.round(value * 10) / 10;
 }
 
 function startOfRange(range: CreatorAnalyticsRange) {
@@ -567,6 +658,83 @@ export async function getCreatorResources(userId: string): Promise<CreatorManage
   return sortCreatorResources(resources.map(mapManagementResource), "latest");
 }
 
+export async function getCreatorDashboardStats(
+  userId: string,
+): Promise<CreatorDashboardStats> {
+  await requireCreatorAccess(userId);
+
+  const stats = await getCreatorStats(userId);
+
+  return {
+    totalRevenue: stats.totalRevenue ?? 0,
+    totalSales: stats.totalSales ?? 0,
+    totalResources: stats.totalResources ?? 0,
+  };
+}
+
+export async function getCreatorDashboardPerformance(
+  userId: string,
+): Promise<CreatorDashboardPerformanceItem[]> {
+  await requireCreatorAccess(userId);
+
+  const performance = await getCreatorResourcePerformance(userId);
+
+  return performance.map((resource) => ({
+    resourceId: resource.resourceId,
+    title: resource.title,
+    slug: resource.slug,
+    status: resource.status,
+    price: resource.price,
+    isFree: resource.isFree,
+    createdAt: resource.createdAt,
+    updatedAt: resource.updatedAt,
+    downloadCount: resource.downloadCount ?? 0,
+    salesCount: resource.salesCount ?? 0,
+    revenue: resource.revenue ?? 0,
+    averageRating: normalizeAverageRating(resource.averageRating),
+    visibleReviewCount: resource.visibleReviewCount ?? 0,
+  }));
+}
+
+export async function getCreatorBalance(userId: string): Promise<CreatorBalance> {
+  await requireCreatorAccess(userId);
+
+  const [stats, payouts, totalPayouts] = await Promise.all([
+    getCreatorStats(userId),
+    getCreatorPayouts(userId),
+    sumCreatorPayouts(userId),
+  ]);
+
+  const totalEarnings = stats.totalRevenue ?? 0;
+  const normalizedPayouts = totalPayouts ?? 0;
+
+  return {
+    totalEarnings,
+    totalPayouts: normalizedPayouts,
+    availableBalance: totalEarnings - normalizedPayouts,
+    payouts: payouts.map((payout) => ({
+      id: payout.id,
+      amount: payout.amount,
+      status: payout.status,
+      createdAt: payout.createdAt,
+    })),
+  };
+}
+
+export async function getCreatorResourceStatusSummary(
+  userId: string,
+): Promise<CreatorResourceStatusSummary> {
+  await requireCreatorAccess(userId);
+
+  const summary = await findCreatorResourceStatusSummary(userId);
+
+  return {
+    draft: summary.draft ?? 0,
+    published: summary.published ?? 0,
+    archived: summary.archived ?? 0,
+  };
+}
+
 export type CreatorResource = Awaited<ReturnType<typeof getCreatorResources>>[number];
 
 export async function getCreatorResourceManagementData(
@@ -688,6 +856,53 @@ export async function getCreatorAnalytics(
   };
 }
 
+export async function getCreatorReviewAnalytics(
+  userId: string,
+): Promise<CreatorReviewAnalyticsData> {
+  await requireCreatorAccess(userId);
+
+  const [overview, resources, recentReviews, distribution] = await Promise.all([
+    getCreatorReviewOverview(userId),
+    getCreatorResourceReviewSummaries(userId),
+    findCreatorRecentVisibleReviews(userId, 8),
+    getCreatorVisibleRatingDistribution(userId),
+  ]);
+
+  return {
+    overview: {
+      averageRating: normalizeAverageRating(overview.averageRating),
+      totalVisibleReviews: overview.totalVisibleReviews ?? 0,
+      resourcesWithVisibleReviews: overview.resourcesWithVisibleReviews ?? 0,
+    },
+    distribution: distribution.map((row) => ({
+      rating: row.rating,
+      count: row.count,
+    })),
+    resources: resources.map((resource) => ({
+      resourceId: resource.resourceId,
+      title: resource.title,
+      slug: resource.slug,
+      status: resource.status,
+      price: resource.price,
+      isFree: resource.isFree,
+      updatedAt: resource.updatedAt,
+      averageRating: normalizeAverageRating(resource.averageRating),
+      visibleReviewCount: resource.visibleReviewCount ?? 0,
+      lastReviewDate: resource.lastReviewDate ?? null,
+    })),
+    recentReviews: recentReviews.map((review) => ({
+      id: review.id,
+      rating: review.rating,
+      body: review.body ?? null,
+      createdAt: review.createdAt,
+      reviewerName: review.user.name ?? review.user.email ?? "Anonymous buyer",
+      reviewerEmail: review.user.email ?? null,
+      resourceTitle: review.resource.title,
+      resourceSlug: review.resource.slug,
+    })),
+  };
+}
+
 export async function getCreatorSales(userId: string) {
   await requireCreatorAccess(userId);
 
@@ -800,29 +1015,64 @@ export async function updateCreatorProfile(userId: string, input: unknown) {
   });
 }
 
-export async function getCreatorPublicProfile(slug: string) {
-  const creator = (await findCreatorProfileBySlug(slug)) ?? (await findCreatorPublicProfileById(slug));
+export const getCreatorPublicProfile = unstable_cache(
+  async function _getCreatorPublicProfile(slug: string) {
+    const creator =
+      (await findCreatorProfileBySlug(slug)) ??
+      (await findCreatorPublicProfileById(slug));
 
-  if (!creator) {
-    return null;
-  }
+    if (!creator) {
+      return null;
+    }
 
-  return {
-    id: creator.id,
-    displayName: creator.creatorDisplayName ?? creator.name ?? "Creator",
-    image: creator.image,
-    banner: creator.creatorBanner,
-    bio: creator.creatorBio,
-    slug: creator.creatorSlug,
-    status: creator.creatorStatus,
-    socialLinks: parseSocialLinks(creator.creatorSocialLinks),
-    resourceCount: creator._count.resources,
-    resources: creator.resources.map((resource) => ({
-      ...resource,
-      previewUrl: resource.previewUrl ?? resource.previews[0]?.imageUrl ?? null,
-    })),
-  };
-}
+    const creatorStat = await findCreatorStatByCreatorId(creator.id);
+    const statusBadge =
+      creatorStat &&
+      (creatorStat.last7dRevenue > 0 || creatorStat.last30dDownloads > 0 || creatorStat.totalSales > 0)
+        ? creatorStat.last7dRevenue > 0 &&
+          (creatorStat.last30dDownloads >= 100 || creatorStat.totalSales >= 25)
+          ? {
+              label: "Top creator",
+              description: "Leading recent creator performance across revenue and learner demand.",
+            }
+          : creatorStat.last30dDownloads >= 50 || creatorStat.totalSales >= 10
+            ? {
+                label: "Rising creator",
+                description: "Building momentum quickly with strong recent learner activity.",
+              }
+            : null
+        : null;
+
+    return {
+      id: creator.id,
+      displayName: creator.creatorDisplayName ?? creator.name ?? "Creator",
+      image: creator.image,
+      banner: creator.creatorBanner,
+      bio: creator.creatorBio,
+      slug: creator.creatorSlug,
+      status: creator.creatorStatus,
+      socialLinks: parseSocialLinks(creator.creatorSocialLinks),
+      resourceCount: creator._count.resources,
+      statusBadge,
+      momentum: creatorStat
+        ? {
+            totalSales: creatorStat.totalSales,
+            last30dDownloads: creatorStat.last30dDownloads,
+            last7dRevenue: creatorStat.last7dRevenue,
+          }
+        : null,
+      resources: creator.resources.map((resource) => ({
+        ...resource,
+        previewUrl: resource.previewUrl ?? resource.previews[0]?.imageUrl ?? null,
+      })),
+    };
+  },
+  ["creator-public-profile"],
+  {
+    revalidate: CACHE_TTLS.publicPage,
+    tags: [CACHE_TAGS.creatorPublic],
+  },
+);
 
 export async function getCreatorResourceForEdit(userId: string, resourceId: string) {
   await requireCreatorAccess(userId);
@@ -943,17 +1193,45 @@ export async function updateCreatorResource(userId: string, resourceId: string, 
   return updated;
 }
 
-export async function updateCreatorResourceStatus(userId: string, resourceId: string, input: unknown) {
-  await requireCreatorAccess(userId);
+async function ensureCreatorResourcePublishable(userId: string, resourceId: string) {
+  const resource = await findCreatorResourceById(userId, resourceId);
 
-  const parsed = CreatorResourceStatusSchema.safeParse(input);
-  if (!parsed.success) {
-    throw new CreatorServiceError(400, {
-      error: "Validation failed.",
+  if (!resource) {
+    throw new CreatorServiceError(404, {
+      error: "Resource not found.",
     });
   }
 
-  const result = await updateCreatorResourceStatusRecord(userId, resourceId, parsed.data.status);
+  const missingFields: string[] = [];
+
+  if (!resource.title.trim() || resource.title.trim().length < 3) {
+    missingFields.push("title");
+  }
+
+  if (!resource.description.trim() || resource.description.trim().length < 10) {
+    missingFields.push("description");
+  }
+
+  if (!resource.slug.trim()) {
+    missingFields.push("slug");
+  }
+
+  if (!resource.fileUrl?.trim()) {
+    missingFields.push("file");
+  }
+
+  if (missingFields.length > 0) {
+    throw new CreatorServiceError(400, {
+      error: "Complete the required fields before publishing this resource.",
+      fields: missingFields,
+    });
+  }
+
+  return resource;
+}
+
+async function applyCreatorResourceStatus(userId: string, resourceId: string, status: "DRAFT" | "PUBLISHED" | "ARCHIVED") {
+  const result = await updateCreatorResourceStatusRecord(userId, resourceId, status);
 
   if (result.count === 0) {
     throw new CreatorServiceError(404, {
@@ -962,4 +1240,39 @@ export async function updateCreatorResourceStatus(userId: string, resourceId: st
   }
 
   return { success: true };
+}
+
+export async function publishCreatorResource(userId: string, resourceId: string) {
+  await requireCreatorAccess(userId);
+  await ensureCreatorResourcePublishable(userId, resourceId);
+
+  return applyCreatorResourceStatus(userId, resourceId, "PUBLISHED");
+}
+
+export async function unpublishCreatorResource(userId: string, resourceId: string) {
+  await requireCreatorAccess(userId);
+  return applyCreatorResourceStatus(userId, resourceId, "DRAFT");
+}
+
+export async function archiveCreatorResource(userId: string, resourceId: string) {
+  await requireCreatorAccess(userId);
+  return applyCreatorResourceStatus(userId, resourceId, "ARCHIVED");
+}
+
+export async function updateCreatorResourceStatus(userId: string, resourceId: string, input: unknown) {
+  const parsed = CreatorResourceStatusSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new CreatorServiceError(400, {
+      error: "Validation failed.",
+    });
+  }
+
+  switch (parsed.data.status) {
+    case "PUBLISHED":
+      return publishCreatorResource(userId, resourceId);
+    case "ARCHIVED":
+      return archiveCreatorResource(userId, resourceId);
+    default:
+      return unpublishCreatorResource(userId, resourceId);
+  }
 }

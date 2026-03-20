@@ -30,25 +30,6 @@ export function NotificationItem({ notification, onDismiss }: NotificationItemPr
 
   const Icon = iconConfig.Icon;
 
-  // #region agent log
-  fetch("http://127.0.0.1:7472/ingest/8f36f62e-5ee6-48fc-ac11-6d3f136199e5", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Debug-Session-Id": "b78fc7",
-    },
-    body: JSON.stringify({
-      sessionId: "b78fc7",
-      runId: "notifications-pre-fix-remake",
-      hypothesisId: "H_admin_toast_layout",
-      location: "NotificationItem.tsx:80",
-      message: "Admin NotificationItem rendered",
-      data: { type, hasAction: Boolean(actionLabel) },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -104,4 +85,3 @@ export function NotificationItem({ notification, onDismiss }: NotificationItemPr
     </motion.div>
   );
 }
-

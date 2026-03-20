@@ -14,8 +14,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, Loader2, FileText } from "lucide-react";
+import { Search, FileText } from "lucide-react";
 import Image from "next/image";
+import { SearchInput } from "@/design-system";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -161,38 +162,21 @@ export function LiveSearch({
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       {/* Input */}
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          autoFocus={autoFocus}
-          placeholder={placeholder}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onFocus={() => results.length > 0 && setOpen(true)}
-          aria-label="Search resources"
-          aria-autocomplete="list"
-          aria-expanded={open}
-          className="w-full rounded-xl border border-border-subtle bg-white px-11 py-3 text-sm
-                     text-text-primary placeholder-text-muted shadow-sm outline-none transition
-                     focus:ring-2 focus:ring-brand-500"
-        />
-        {loading && (
-          <Loader2 className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-zinc-400" />
-        )}
-        {!loading && query && (
-          <button
-            type="button"
-            onClick={handleClear}
-            aria-label="Clear search"
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 transition-colors hover:text-zinc-600"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
+      <SearchInput
+        ref={inputRef}
+        type="text"
+        value={query}
+        autoFocus={autoFocus}
+        placeholder={placeholder}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onFocus={() => results.length > 0 && setOpen(true)}
+        aria-label="Search resources"
+        aria-autocomplete="list"
+        aria-expanded={open}
+        loading={loading}
+        onClear={handleClear}
+      />
 
       {/* Dropdown */}
       {open && results.length > 0 && (

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Container } from "./Container";
+import { Container } from "@/design-system";
 
 type SectionSpacing = "hero" | "normal" | "compact";
 

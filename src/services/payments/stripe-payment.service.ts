@@ -11,7 +11,7 @@ import {
   findCheckoutUserById,
   updateUserStripeCustomerId,
 } from "@/repositories/users/user.repository";
-import { PaymentServiceError } from "@/services/payments/payment.service";
+import { buildPurchaseSnapshot, PaymentServiceError } from "@/services/payments/payment.service";
 
 const StripeCheckoutSchema = z.discriminatedUnion("mode", [
   z.object({
@@ -94,6 +94,7 @@ export async function createLegacyStripeCheckout(body: unknown, userId: string) 
     amount: resource.price,
     currency: "usd",
     paymentProvider: "STRIPE",
+    ...buildPurchaseSnapshot(resource),
   });
 
   const checkoutSession = await stripe.checkout.sessions.create({
@@ -115,8 +116,6 @@ export async function createLegacyStripeCheckout(body: unknown, userId: string) 
       },
     },
   });
-
-  console.log("CHECKOUT SESSION CREATED:", checkoutSession.id);
 
   await setPurchaseStripeSessionId(purchase.id, checkoutSession.id);
 
@@ -171,6 +170,7 @@ export async function createStripeCheckout(body: unknown, userId: string) {
       amount: resource.price,
       currency: "thb",
       paymentProvider: "STRIPE",
+      ...buildPurchaseSnapshot(resource),
     });
 
     const checkoutSession = await stripe.checkout.sessions.create({

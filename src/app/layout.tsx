@@ -1,44 +1,68 @@
 import "./globals.css";
-import { Geist, Inter, Noto_Sans_Thai } from "next/font/google";
+import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { PlatformConfigProvider } from "@/components/providers/PlatformConfigProvider";
 import { PublicSiteFooter } from "@/components/layout/PublicSiteFooter";
 import { Footer } from "@/components/layout/Footer";
+import { fontVariables } from "@/lib/fonts";
+import { resolveTypographyTheme } from "@/lib/typography/resolve-typography-theme";
+import { typographyThemeToCssVars } from "@/lib/typography/typography-theme-to-css-vars";
+import { getPlatform } from "@/services/platform.service";
+import {
+  buildTypographyThemeSettings,
+  getTypographySettingsOrDefault,
+} from "@/services/platformTypographySettings.service";
+import { buildPlatformMetadata } from "@/lib/platform/platform-metadata";
+import { Providers } from "./providers";
 
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist",
-  display: "swap",
-});
+function cssVarsToStyle(vars: Record<string, string>): React.CSSProperties {
+  return vars;
+}
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const platform = await getPlatform();
+  return buildPlatformMetadata(platform);
+}
 
-const notoSansThai = Noto_Sans_Thai({
-  subsets: ["thai"],
-  variable: "--font-thai",
-  display: "swap",
-});
-
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [platform, typographySettings] = await Promise.all([
+    getPlatform(),
+    getTypographySettingsOrDefault(),
+  ]);
+  const theme = resolveTypographyTheme(
+    buildTypographyThemeSettings(typographySettings),
+  );
+  const cssVars = typographyThemeToCssVars(theme);
+  const style = cssVarsToStyle(cssVars);
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("Typography Theme:", theme);
+  }
+
   return (
     <html
       lang="th"
-      className={`${geist.variable} ${inter.variable} ${notoSansThai.variable}`}
+      data-typography={typographySettings.presetKey}
+      data-typography-scale={theme.headingScale}
     >
-      <body className="font-sans antialiased">
-        <ThemeProvider>
-          {children}
-          <PublicSiteFooter>
-            <Footer />
-          </PublicSiteFooter>
-        </ThemeProvider>
+      <body
+        className={`${fontVariables} font-sans ${typographySettings.enableFontSmoothing ? "antialiased" : ""}`.trim()}
+        style={style}
+      >
+        <PlatformConfigProvider initialConfig={platform}>
+          <ThemeProvider>
+            <Providers>
+              {children}
+              <PublicSiteFooter>
+                <Footer platformName={platform.platformShortName} />
+              </PublicSiteFooter>
+            </Providers>
+          </ThemeProvider>
+        </PlatformConfigProvider>
       </body>
     </html>
   );

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Prisma Schema  –  PaperDock
+// Prisma Schema  –  KruCraft
 // Stack: PostgreSQL · NextAuth (PrismaAdapter) · Stripe
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -103,6 +103,7 @@ model User {
   auditLogs        AuditLog[]
   creatorStat      CreatorStat?
   creatorRevenue   CreatorRevenue[] @relation("CreatorRevenueCreator")
+  payouts          Payout[]
   preferences      UserPreference?
 }
 
@@ -168,6 +169,49 @@ model HomepageHero {
   updatedAt        DateTime @updatedAt
 }
 
+model PlatformSettings {
+  id                     String   @id @default(cuid())
+  name                   String
+  description            String?
+  shortName              String?
+  siteUrl                String?
+  defaultMetaTitle       String?
+  defaultMetaDescription String?
+  ogSiteName             String?
+  logoUrl                String?
+  logoFullUrl            String?
+  logoIconUrl            String?
+  logoOgUrl              String?
+  logoEmailUrl           String?
+  faviconUrl             String?
+  supportEmail           String?
+  emailSenderName        String?
+  defaultLanguage        String?
+  defaultCurrency        String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model PlatformTypographySettings {
+  id                  String   @id @default(cuid())
+  singletonKey        String?  @unique
+  presetKey           String   @default("modern-education")
+  headingLatin        String?
+  headingThai         String?
+  bodyLatin           String?
+  bodyThai            String?
+  uiLatin             String?
+  uiThai              String?
+  mono                String?
+  baseFontSize        String?
+  headingScale        String?
+  lineHeightDensity   String?
+  letterSpacingPreset String?
+  enableFontSmoothing Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
 model Hero {
   id               String   @id @default(cuid())
   name             String
@@ -182,6 +226,28 @@ model Hero {
   imageUrl         String?
   mediaUrl         String?
   mediaType        String?
+  textAlign        String?
+  contentWidth     String?
+  heroHeight       String?
+  spacingPreset    String?
+  headingFont      String?
+  bodyFont         String?
+  titleSize        String?
+  subtitleSize     String?
+  titleWeight      String?
+  subtitleWeight   String?
+  mobileTitleSize  String?
+  mobileSubtitleSize String?
+  titleColor       String?
+  subtitleColor    String?
+  badgeTextColor   String?
+  badgeBgColor     String?
+  primaryCtaVariant String?
+  secondaryCtaVariant String?
+  primaryCtaColor  String?
+  secondaryCtaColor String?
+  overlayColor     String?
+  overlayOpacity   Int?
   priority         Int      @default(0)
   weight           Int      @default(1)
   isActive         Boolean  @default(true)
@@ -286,6 +352,8 @@ model Resource {
   @@index([status, downloadCount])
   @@index([status, featured])
   @@index([deletedAt])
+  @@index([deletedAt, createdAt])
+  @@index([authorId, deletedAt, createdAt])
 }
 
 model ResourceVersion {
@@ -350,6 +418,8 @@ model Purchase {
   amount     Int // in smallest currency unit (e.g. satang for THB)
   currency   String         @default("usd")
   status     PurchaseStatus @default(PENDING)
+  authorId   String?
+  authorRevenue Int?
 
   // Which payment provider processed this purchase.
   // Null on existing rows is treated as "STRIPE" in application logic.
@@ -375,6 +445,20 @@ model Purchase {
   @@unique([userId, resourceId]) // one purchase record per user per resource
   @@index([userId, status])
   @@index([resourceId])
+  @@index([status, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model Payout {
+  id        String   @id @default(cuid())
+  authorId  String
+  amount    Int
+  status    String
+  createdAt DateTime @default(now())
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId, createdAt])
 }
 
 // ─── Reviews ─────────────────────────────────────────────────────────────────
@@ -384,6 +468,7 @@ model Review {
   userId     String
   resourceId String
   rating     Int // 1–5
+  isVisible  Boolean  @default(true)
   body       String?  @db.Text
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -392,6 +477,7 @@ model Review {
   resource Resource @relation(fields: [resourceId], references: [id])
 
   @@unique([userId, resourceId])
+  @@index([resourceId, isVisible, createdAt])
 }
 
 // ─── User Preferences ──────────────────────────────────────────────────────────

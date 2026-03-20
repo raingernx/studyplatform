@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { Pencil, Power, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter } from "next/navigation";
 import { routes } from "@/lib/routes";
-import { Button } from "@/components/ui/Button";
+import { RowActions, RowActionButton } from "@/design-system";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface HeroListActionsProps {
@@ -81,40 +81,35 @@ export function HeroListActions(props: HeroListActionsProps) {
     }
   }
 
-  return (
+    return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
+      <RowActions className="flex-wrap">
+        <RowActionButton
           type="button"
-          variant="outline"
-          size="sm"
           onClick={handleEdit}
         >
           <Pencil className="h-4 w-4" />
           Edit
-        </Button>
-        <Button
+        </RowActionButton>
+        <RowActionButton
           type="button"
-          variant="outline"
-          size="sm"
           onClick={handleToggle}
           disabled={isFallback}
           loading={busyAction === "toggle"}
         >
           <Power className="h-4 w-4" />
           {isFallback ? "Always active" : isActive ? "Disable" : "Enable"}
-        </Button>
-        <Button
+        </RowActionButton>
+        <RowActionButton
           type="button"
-          variant="destructive"
-          size="sm"
+          tone="danger"
           disabled={isFallback}
           onClick={() => setConfirmOpen(true)}
         >
           <Trash2 className="h-4 w-4" />
           {isFallback ? "Protected" : "Delete"}
-        </Button>
-      </div>
+        </RowActionButton>
+      </RowActions>
 
       <ConfirmDialog
         open={confirmOpen}

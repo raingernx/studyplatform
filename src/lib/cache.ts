@@ -12,6 +12,14 @@ export const CACHE_TTLS = {
   homepageList: 60,
   hero: 60,
   stats: 300,
+  publicPage: 120,
+  platform: 300,
+} as const;
+
+export const CACHE_TAGS = {
+  discover: "discover",
+  creatorPublic: "creator-public",
+  platform: "platform",
 } as const;
 
 export const CACHE_KEYS = {
@@ -21,6 +29,9 @@ export const CACHE_KEYS = {
   newestResources: "newest_resources",
   featuredResources: "featured_resources",
   freeResources: "free_resources",
+  topCreator: "top_creator",
+  platformSettings: "platform_settings",
+  platformTypographySettings: "platform_typography_settings",
   resourceStats: (resourceId: string) => `resource_stats:${resourceId}`,
   creatorStats: (creatorId: string) => `creator_stats:${creatorId}`,
 } as const;

@@ -154,8 +154,10 @@ export function SidebarItem({
     <button
       type="button"
       className={cn(
-        "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-        active && "bg-slate-900 font-semibold text-white",
+        "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors",
+        active
+          ? "bg-slate-900 font-semibold text-white hover:bg-slate-900 hover:text-white"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground",
         className,
       )}
       {...props}

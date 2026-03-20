@@ -1,45 +1,12 @@
-import type {Metadata} from "next";
-import {NextIntlClientProvider, hasLocale} from "next-intl";
-import {getMessages, setRequestLocale} from "next-intl/server";
-import {routing} from "@/i18n/routing";
-import {Providers} from "../providers";
-
-export const metadata: Metadata = {
-  title: {default: "PaperDock", template: "%s | PaperDock"},
-  description: "PaperDock is a marketplace for high-quality educational resources.",
-  icons: {
-    icon: [
-      {url: "/logo/72ppi/favicon-32x32.png", sizes: "32x32", type: "image/png"},
-      {url: "/logo/72ppi/favicon-48x48.png", sizes: "48x48", type: "image/png"},
-    ],
-  },
-};
+// This layout is kept as a passthrough to avoid 404s for any [locale] routes
+// that survive the /th → / redirect in middleware. It no longer injects any
+// i18n context — all routes have been migrated to flat paths.
+import { Providers } from "../providers";
 
 type Props = {
   children: React.ReactNode;
-  params: Promise<{locale: string}>;
 };
 
-export async function generateStaticParams() {
-  return routing.locales.map((locale) => ({locale}));
+export default function LocaleLayout({ children }: Props) {
+  return <Providers>{children}</Providers>;
 }
-
-export default async function LocaleLayout({children, params}: Props) {
-  const {locale} = await params;
-
-  if (!hasLocale(routing.locales, locale)) {
-    // Let next-intl middleware handle 404s for invalid locales
-    return null;
-  }
-
-  setRequestLocale(locale);
-
-  const messages = await getMessages();
-
-  return (
-    <NextIntlClientProvider messages={messages} locale={locale}>
-      <Providers>{children}</Providers>
-    </NextIntlClientProvider>
-  );
-}
-

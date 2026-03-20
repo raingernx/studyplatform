@@ -5,6 +5,7 @@ import { Topbar } from "./Topbar";
 import { AdminUXProvider } from "@/features/admin-ux/AdminUXProvider";
 import { NotificationStack } from "@/components/admin/NotificationStack";
 import { CommandPalette } from "@/components/CommandPalette";
+import { PageContentWide } from "@/design-system";
 import { DashboardShell } from "@/components/layout/dashboard/DashboardShell";
 import { getDashboardNav } from "@/lib/dashboard/getDashboardNav";
 import { getDashboardShellVariant } from "@/lib/dashboard/dashboard-permissions";
@@ -41,7 +42,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         }
         sidebarFooter={sidebarFooter}
         contentClassName="bg-muted-50"
-        mainClassName="px-8 py-8"
         afterMain={<NotificationStack />}
         renderTopbar={({ onMenuToggle }) => (
           <Topbar
@@ -51,7 +51,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           />
         )}
       >
-        {children}
+        <PageContentWide>{children}</PageContentWide>
       </DashboardShell>
       <CommandPalette />
     </AdminUXProvider>

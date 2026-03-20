@@ -1,6 +1,6 @@
-# PaperDock – Analytics Architecture
+# KruCraft – Analytics Architecture
 
-This document describes the analytics system used by the PaperDock marketplace.
+This document describes the analytics system used by the KruCraft marketplace.
 
 The analytics system powers:
 

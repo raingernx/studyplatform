@@ -30,9 +30,9 @@ interface ResourceFilesProps {
 export function ResourceFiles({ files }: ResourceFilesProps) {
   if (files.length === 0) {
     return (
-      <section id="included">
+      <section id="included" className="rounded-2xl border border-surface-200 bg-white p-5 shadow-card sm:p-6">
         <h2 className="font-display text-lg font-semibold text-zinc-900">Included files</h2>
-        <div className="mt-3 rounded-xl border border-zinc-200 bg-white px-4 py-4">
+        <div className="mt-3 rounded-xl border border-zinc-200 bg-surface-50 px-4 py-4">
           <p className="text-[13px] text-zinc-500">
             File details for this resource will appear here once the creator uploads the final
             asset.
@@ -43,9 +43,9 @@ export function ResourceFiles({ files }: ResourceFilesProps) {
   }
 
   return (
-    <section id="included">
+    <section id="included" className="rounded-2xl border border-surface-200 bg-white p-5 shadow-card sm:p-6">
       <h2 className="font-display text-lg font-semibold text-zinc-900">Included files</h2>
-      <ul className="mt-3 rounded-xl border border-zinc-200 bg-white divide-y divide-zinc-100">
+      <ul className="mt-3 divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-surface-50">
         {files.map((file, i) => (
           <li
             key={file.name + (file.size ?? "") + i}

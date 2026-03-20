@@ -8,7 +8,9 @@ import type { DashboardUser } from "./DashboardLayout";
 import { routes } from "@/lib/routes";
 import { getDashboardNav } from "@/lib/dashboard/getDashboardNav";
 import { getDashboardShellVariant } from "@/lib/dashboard/dashboard-permissions";
+import { PageContentWide } from "@/design-system";
 import { DashboardShell as SharedDashboardShell } from "@/components/layout/dashboard/DashboardShell";
+import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
 
 interface DashboardShellProps {
   user: DashboardUser;
@@ -16,6 +18,7 @@ interface DashboardShellProps {
 }
 
 export function DashboardShell({ user, children }: DashboardShellProps) {
+  const platform = usePlatformConfig();
   const isSubscribed = user.subscriptionStatus === "ACTIVE";
   const shellVariant = getDashboardShellVariant({
     area: "dashboard",
@@ -45,7 +48,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
 
   const footer = (
     <a
-      href="mailto:support@paperdock.app"
+      href={`mailto:${platform.supportEmail}`}
       className="flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-medium text-neutral-400 transition hover:bg-neutral-50 hover:text-neutral-600"
     >
       <HelpCircle className="h-4 w-4" />
@@ -73,7 +76,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
         <DashboardTopbar user={user} onMenuToggle={onMenuToggle} />
       )}
     >
-      {children}
+      <PageContentWide>{children}</PageContentWide>
     </SharedDashboardShell>
   );
 }

@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { User, Mail, Camera } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { FormSection } from "@/components/ui/form-section";
+import { Button, FormSection } from "@/design-system";
 import { Avatar } from "@/components/ui/Avatar";
 
 type ProfileSettingsProps = {

@@ -9,7 +9,7 @@ export interface InputProps extends Omit<React.ComponentProps<"input">, "prefix"
 }
 
 /**
- * PaperDock Input — h-10, rounded-lg, brand-500 focus ring.
+ * KruCraft Input — h-10, rounded-lg, brand-500 focus ring.
  * Wrap in a `<label>` or use `htmlFor` on an adjacent `<label>` for accessibility.
  */
 function Input({ className, type, leftAdornment, rightAdornment, ...props }: InputProps) {
@@ -26,7 +26,7 @@ function Input({ className, type, leftAdornment, rightAdornment, ...props }: Inp
           data-slot="input"
           className={cn(
             "h-10 w-full min-w-0 rounded-lg border border-surface-200 bg-white",
-            "px-3 py-2 text-sm text-text-primary placeholder:text-text-muted",
+            "font-ui px-3 py-2 text-sm text-text-primary placeholder:text-text-muted",
             "transition-colors outline-none",
             "focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20",
             "disabled:cursor-not-allowed disabled:bg-surface-50 disabled:opacity-60",
@@ -52,7 +52,7 @@ function Input({ className, type, leftAdornment, rightAdornment, ...props }: Inp
       data-slot="input"
       className={cn(
         "h-10 w-full min-w-0 rounded-lg border border-surface-200 bg-white",
-        "px-3 py-2 text-sm text-text-primary placeholder:text-text-muted",
+        "font-ui px-3 py-2 text-sm text-text-primary placeholder:text-text-muted",
         "transition-colors outline-none",
         "focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20",
         "disabled:cursor-not-allowed disabled:bg-surface-50 disabled:opacity-60",

@@ -1,6 +1,6 @@
 "use client";
 
-import { Input } from "@/components/ui/Input";
+import { Input } from "@/design-system";
 import { cn } from "@/lib/utils";
 
 /** Price input + free toggle. Controlled. */

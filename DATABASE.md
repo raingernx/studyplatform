@@ -1,6 +1,6 @@
 # DATABASE.md
 
-This document describes the database architecture for PaperDock.
+This document describes the database architecture for KruCraft.
 
 Database: PostgreSQL  
 ORM: Prisma

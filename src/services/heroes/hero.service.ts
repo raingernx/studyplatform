@@ -19,6 +19,32 @@ import { revalidateTag } from "next/cache";
 import { deleteCachedKey } from "@/lib/cache";
 import { HERO_CACHE_TAG } from "@/lib/cache/heroCache";
 import { resolveHomepageHero, type ResolvedHomepageHeroConfig } from "@/services/heroes/hero.resolver";
+import {
+  normalizeHeroOverlayOpacity,
+  normalizeHeroStyle,
+  type HeroBadgeBgColor,
+  type HeroBadgeTextColor,
+  type HeroBodyFont,
+  type HeroContentWidth,
+  type HeroHeadingFont,
+  type HeroHeight,
+  type HeroMobileSubtitleSize,
+  type HeroMobileTitleSize,
+  type HeroOverlayColor,
+  type HeroPrimaryCtaColor,
+  type HeroPrimaryCtaVariant,
+  type HeroSecondaryCtaColor,
+  type HeroSecondaryCtaVariant,
+  type HeroSpacingPreset,
+  type HeroStyleFields,
+  type HeroSubtitleColor,
+  type HeroSubtitleSize,
+  type HeroSubtitleWeight,
+  type HeroTextAlign,
+  type HeroTitleColor,
+  type HeroTitleSize,
+  type HeroTitleWeight,
+} from "@/lib/heroes/hero-style";
 
 export type ActiveHeroConfig = ResolvedHomepageHeroConfig;
 
@@ -57,6 +83,28 @@ export interface HeroRecord {
   imageUrl: string | null;
   mediaUrl: string | null;
   mediaType: string | null;
+  textAlign: string | null;
+  contentWidth: string | null;
+  heroHeight: string | null;
+  spacingPreset: string | null;
+  headingFont: string | null;
+  bodyFont: string | null;
+  titleSize: string | null;
+  subtitleSize: string | null;
+  titleWeight: string | null;
+  subtitleWeight: string | null;
+  mobileTitleSize: string | null;
+  mobileSubtitleSize: string | null;
+  titleColor: string | null;
+  subtitleColor: string | null;
+  badgeTextColor: string | null;
+  badgeBgColor: string | null;
+  primaryCtaVariant: string | null;
+  secondaryCtaVariant: string | null;
+  primaryCtaColor: string | null;
+  secondaryCtaColor: string | null;
+  overlayColor: string | null;
+  overlayOpacity: number | null;
   priority: number;
   weight: number;
   isActive: boolean;
@@ -86,7 +134,7 @@ export interface HeroVariantAnalytics {
   ctr: number;
 }
 
-export interface HeroMutationInput {
+export interface HeroMutationInput extends HeroStyleFields {
   name?: string;
   type?: string;
   title?: string;
@@ -138,6 +186,12 @@ function trimRequired(value: string | null | undefined, field: string) {
 function trimOptional(value: string | null | undefined) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+function normalizeOptionalStyle<T extends string>(
+  value: string | null | undefined,
+): T | null {
+  return trimOptional(value) as T | null;
 }
 
 function validateExperimentFields(
@@ -214,6 +268,28 @@ function toHeroConfig(
         imageUrl?: string | null;
         mediaUrl?: string | null;
         mediaType?: string | null;
+        textAlign?: string | null;
+        contentWidth?: string | null;
+        heroHeight?: string | null;
+        spacingPreset?: string | null;
+        headingFont?: string | null;
+        bodyFont?: string | null;
+        titleSize?: string | null;
+        subtitleSize?: string | null;
+        titleWeight?: string | null;
+        subtitleWeight?: string | null;
+        mobileTitleSize?: string | null;
+        mobileSubtitleSize?: string | null;
+        titleColor?: string | null;
+        subtitleColor?: string | null;
+        badgeTextColor?: string | null;
+        badgeBgColor?: string | null;
+        primaryCtaVariant?: string | null;
+        secondaryCtaVariant?: string | null;
+        primaryCtaColor?: string | null;
+        secondaryCtaColor?: string | null;
+        overlayColor?: string | null;
+        overlayOpacity?: number | null;
       }
     | null,
 ): ActiveHeroConfig | null {
@@ -234,6 +310,34 @@ function toHeroConfig(
     imageUrl: hero.imageUrl ?? null,
     mediaUrl: hero.mediaUrl ?? null,
     mediaType: hero.mediaType ?? null,
+    textAlign: normalizeOptionalStyle<HeroTextAlign>(hero.textAlign),
+    contentWidth: normalizeOptionalStyle<HeroContentWidth>(hero.contentWidth),
+    heroHeight: normalizeOptionalStyle<HeroHeight>(hero.heroHeight),
+    spacingPreset: normalizeOptionalStyle<HeroSpacingPreset>(hero.spacingPreset),
+    headingFont: normalizeOptionalStyle<HeroHeadingFont>(hero.headingFont),
+    bodyFont: normalizeOptionalStyle<HeroBodyFont>(hero.bodyFont),
+    titleSize: normalizeOptionalStyle<HeroTitleSize>(hero.titleSize),
+    subtitleSize: normalizeOptionalStyle<HeroSubtitleSize>(hero.subtitleSize),
+    titleWeight: normalizeOptionalStyle<HeroTitleWeight>(hero.titleWeight),
+    subtitleWeight: normalizeOptionalStyle<HeroSubtitleWeight>(hero.subtitleWeight),
+    mobileTitleSize: normalizeOptionalStyle<HeroMobileTitleSize>(hero.mobileTitleSize),
+    mobileSubtitleSize:
+      normalizeOptionalStyle<HeroMobileSubtitleSize>(hero.mobileSubtitleSize),
+    titleColor: normalizeOptionalStyle<HeroTitleColor>(hero.titleColor),
+    subtitleColor: normalizeOptionalStyle<HeroSubtitleColor>(hero.subtitleColor),
+    badgeTextColor:
+      normalizeOptionalStyle<HeroBadgeTextColor>(hero.badgeTextColor),
+    badgeBgColor: normalizeOptionalStyle<HeroBadgeBgColor>(hero.badgeBgColor),
+    primaryCtaVariant:
+      normalizeOptionalStyle<HeroPrimaryCtaVariant>(hero.primaryCtaVariant),
+    secondaryCtaVariant:
+      normalizeOptionalStyle<HeroSecondaryCtaVariant>(hero.secondaryCtaVariant),
+    primaryCtaColor:
+      normalizeOptionalStyle<HeroPrimaryCtaColor>(hero.primaryCtaColor),
+    secondaryCtaColor:
+      normalizeOptionalStyle<HeroSecondaryCtaColor>(hero.secondaryCtaColor),
+    overlayColor: normalizeOptionalStyle<HeroOverlayColor>(hero.overlayColor),
+    overlayOpacity: hero.overlayOpacity ?? null,
   };
 }
 
@@ -321,6 +425,28 @@ function mapHeroRecord(hero: Awaited<ReturnType<typeof findHeroById>>): HeroReco
     imageUrl: hero.imageUrl,
     mediaUrl: hero.mediaUrl,
     mediaType: hero.mediaType,
+    textAlign: hero.textAlign,
+    contentWidth: hero.contentWidth,
+    heroHeight: hero.heroHeight,
+    spacingPreset: hero.spacingPreset,
+    headingFont: hero.headingFont,
+    bodyFont: hero.bodyFont,
+    titleSize: hero.titleSize,
+    subtitleSize: hero.subtitleSize,
+    titleWeight: hero.titleWeight,
+    subtitleWeight: hero.subtitleWeight,
+    mobileTitleSize: hero.mobileTitleSize,
+    mobileSubtitleSize: hero.mobileSubtitleSize,
+    titleColor: hero.titleColor,
+    subtitleColor: hero.subtitleColor,
+    badgeTextColor: hero.badgeTextColor,
+    badgeBgColor: hero.badgeBgColor,
+    primaryCtaVariant: hero.primaryCtaVariant,
+    secondaryCtaVariant: hero.secondaryCtaVariant,
+    primaryCtaColor: hero.primaryCtaColor,
+    secondaryCtaColor: hero.secondaryCtaColor,
+    overlayColor: hero.overlayColor,
+    overlayOpacity: hero.overlayOpacity,
     priority: hero.priority,
     weight: hero.weight,
     isActive: hero.isActive,
@@ -355,6 +481,7 @@ export async function createHero(input: HeroMutationInput) {
   const startDate = normalizeDate(input.startDate);
   const endDate = normalizeDate(input.endDate);
   const experiment = validateExperimentFields(input.experimentId, input.variant);
+  const style = normalizeHeroStyle(input);
 
   if (startDate && endDate && endDate <= startDate) {
     throw new HeroServiceError(400, {
@@ -378,6 +505,28 @@ export async function createHero(input: HeroMutationInput) {
     imageUrl: trimOptional(input.imageUrl),
     mediaUrl: trimOptional(input.mediaUrl),
     mediaType: trimOptional(input.mediaType),
+    textAlign: style.textAlign,
+    contentWidth: style.contentWidth,
+    heroHeight: style.heroHeight,
+    spacingPreset: style.spacingPreset,
+    headingFont: style.headingFont,
+    bodyFont: style.bodyFont,
+    titleSize: style.titleSize,
+    subtitleSize: style.subtitleSize,
+    titleWeight: style.titleWeight,
+    subtitleWeight: style.subtitleWeight,
+    mobileTitleSize: style.mobileTitleSize,
+    mobileSubtitleSize: style.mobileSubtitleSize,
+    titleColor: style.titleColor,
+    subtitleColor: style.subtitleColor,
+    badgeTextColor: style.badgeTextColor,
+    badgeBgColor: style.badgeBgColor,
+    primaryCtaVariant: style.primaryCtaVariant,
+    secondaryCtaVariant: style.secondaryCtaVariant,
+    primaryCtaColor: style.primaryCtaColor,
+    secondaryCtaColor: style.secondaryCtaColor,
+    overlayColor: style.overlayColor,
+    overlayOpacity: style.overlayOpacity,
     priority: input.priority ?? 0,
     weight: Math.max(1, input.weight ?? 1),
     isActive: input.isActive ?? true,
@@ -411,6 +560,86 @@ export async function updateHero(id: string, input: HeroMutationInput) {
     input.experimentId !== undefined ? input.experimentId : existing.experimentId,
     input.variant !== undefined ? input.variant : existing.variant,
   );
+  const nextStyle = normalizeHeroStyle({
+    textAlign:
+      input.textAlign !== undefined ? input.textAlign : existing.textAlign,
+    contentWidth:
+      input.contentWidth !== undefined
+        ? input.contentWidth
+        : existing.contentWidth,
+    heroHeight:
+      input.heroHeight !== undefined ? input.heroHeight : existing.heroHeight,
+    spacingPreset:
+      input.spacingPreset !== undefined
+        ? input.spacingPreset
+        : existing.spacingPreset,
+    headingFont:
+      input.headingFont !== undefined
+        ? input.headingFont
+        : existing.headingFont,
+    bodyFont:
+      input.bodyFont !== undefined ? input.bodyFont : existing.bodyFont,
+    titleSize:
+      input.titleSize !== undefined ? input.titleSize : existing.titleSize,
+    subtitleSize:
+      input.subtitleSize !== undefined
+        ? input.subtitleSize
+        : existing.subtitleSize,
+    titleWeight:
+      input.titleWeight !== undefined
+        ? input.titleWeight
+        : existing.titleWeight,
+    subtitleWeight:
+      input.subtitleWeight !== undefined
+        ? input.subtitleWeight
+        : existing.subtitleWeight,
+    mobileTitleSize:
+      input.mobileTitleSize !== undefined
+        ? input.mobileTitleSize
+        : existing.mobileTitleSize,
+    mobileSubtitleSize:
+      input.mobileSubtitleSize !== undefined
+        ? input.mobileSubtitleSize
+        : existing.mobileSubtitleSize,
+    titleColor:
+      input.titleColor !== undefined ? input.titleColor : existing.titleColor,
+    subtitleColor:
+      input.subtitleColor !== undefined
+        ? input.subtitleColor
+        : existing.subtitleColor,
+    badgeTextColor:
+      input.badgeTextColor !== undefined
+        ? input.badgeTextColor
+        : existing.badgeTextColor,
+    badgeBgColor:
+      input.badgeBgColor !== undefined
+        ? input.badgeBgColor
+        : existing.badgeBgColor,
+    primaryCtaVariant:
+      input.primaryCtaVariant !== undefined
+        ? input.primaryCtaVariant
+        : existing.primaryCtaVariant,
+    secondaryCtaVariant:
+      input.secondaryCtaVariant !== undefined
+        ? input.secondaryCtaVariant
+        : existing.secondaryCtaVariant,
+    primaryCtaColor:
+      input.primaryCtaColor !== undefined
+        ? input.primaryCtaColor
+        : existing.primaryCtaColor,
+    secondaryCtaColor:
+      input.secondaryCtaColor !== undefined
+        ? input.secondaryCtaColor
+        : existing.secondaryCtaColor,
+    overlayColor:
+      input.overlayColor !== undefined
+        ? input.overlayColor
+        : existing.overlayColor,
+    overlayOpacity:
+      input.overlayOpacity !== undefined
+        ? normalizeHeroOverlayOpacity(input.overlayOpacity)
+        : existing.overlayOpacity,
+  });
 
   if (!existing.isFallback && nextType === "fallback") {
     throw new HeroServiceError(400, {
@@ -472,6 +701,62 @@ export async function updateHero(id: string, input: HeroMutationInput) {
     ...(input.imageUrl !== undefined && { imageUrl: trimOptional(input.imageUrl) }),
     ...(input.mediaUrl !== undefined && { mediaUrl: trimOptional(input.mediaUrl) }),
     ...(input.mediaType !== undefined && { mediaType: trimOptional(input.mediaType) }),
+    ...(input.textAlign !== undefined && { textAlign: nextStyle.textAlign }),
+    ...(input.contentWidth !== undefined && {
+      contentWidth: nextStyle.contentWidth,
+    }),
+    ...(input.heroHeight !== undefined && { heroHeight: nextStyle.heroHeight }),
+    ...(input.spacingPreset !== undefined && {
+      spacingPreset: nextStyle.spacingPreset,
+    }),
+    ...(input.headingFont !== undefined && {
+      headingFont: nextStyle.headingFont,
+    }),
+    ...(input.bodyFont !== undefined && { bodyFont: nextStyle.bodyFont }),
+    ...(input.titleSize !== undefined && { titleSize: nextStyle.titleSize }),
+    ...(input.subtitleSize !== undefined && {
+      subtitleSize: nextStyle.subtitleSize,
+    }),
+    ...(input.titleWeight !== undefined && {
+      titleWeight: nextStyle.titleWeight,
+    }),
+    ...(input.subtitleWeight !== undefined && {
+      subtitleWeight: nextStyle.subtitleWeight,
+    }),
+    ...(input.mobileTitleSize !== undefined && {
+      mobileTitleSize: nextStyle.mobileTitleSize,
+    }),
+    ...(input.mobileSubtitleSize !== undefined && {
+      mobileSubtitleSize: nextStyle.mobileSubtitleSize,
+    }),
+    ...(input.titleColor !== undefined && { titleColor: nextStyle.titleColor }),
+    ...(input.subtitleColor !== undefined && {
+      subtitleColor: nextStyle.subtitleColor,
+    }),
+    ...(input.badgeTextColor !== undefined && {
+      badgeTextColor: nextStyle.badgeTextColor,
+    }),
+    ...(input.badgeBgColor !== undefined && {
+      badgeBgColor: nextStyle.badgeBgColor,
+    }),
+    ...(input.primaryCtaVariant !== undefined && {
+      primaryCtaVariant: nextStyle.primaryCtaVariant,
+    }),
+    ...(input.secondaryCtaVariant !== undefined && {
+      secondaryCtaVariant: nextStyle.secondaryCtaVariant,
+    }),
+    ...(input.primaryCtaColor !== undefined && {
+      primaryCtaColor: nextStyle.primaryCtaColor,
+    }),
+    ...(input.secondaryCtaColor !== undefined && {
+      secondaryCtaColor: nextStyle.secondaryCtaColor,
+    }),
+    ...(input.overlayColor !== undefined && {
+      overlayColor: nextStyle.overlayColor,
+    }),
+    ...(input.overlayOpacity !== undefined && {
+      overlayOpacity: nextStyle.overlayOpacity,
+    }),
     ...(input.priority !== undefined && {
       priority: existing.isFallback ? 0 : input.priority,
     }),
@@ -545,6 +830,7 @@ export async function upsertFallbackHero(
   > & { name?: string },
 ) {
   const existing = await findFallbackHero();
+  const style = normalizeHeroStyle(input);
 
   if (existing) {
     return updateHero(existing.id, {
@@ -559,6 +845,28 @@ export async function upsertFallbackHero(
       imageUrl: input.imageUrl,
       mediaUrl: input.mediaUrl,
       mediaType: input.mediaType,
+      textAlign: style.textAlign,
+      contentWidth: style.contentWidth,
+      heroHeight: style.heroHeight,
+      spacingPreset: style.spacingPreset,
+      headingFont: style.headingFont,
+      bodyFont: style.bodyFont,
+      titleSize: style.titleSize,
+      subtitleSize: style.subtitleSize,
+      titleWeight: style.titleWeight,
+      subtitleWeight: style.subtitleWeight,
+      mobileTitleSize: style.mobileTitleSize,
+      mobileSubtitleSize: style.mobileSubtitleSize,
+      titleColor: style.titleColor,
+      subtitleColor: style.subtitleColor,
+      badgeTextColor: style.badgeTextColor,
+      badgeBgColor: style.badgeBgColor,
+      primaryCtaVariant: style.primaryCtaVariant,
+      secondaryCtaVariant: style.secondaryCtaVariant,
+      primaryCtaColor: style.primaryCtaColor,
+      secondaryCtaColor: style.secondaryCtaColor,
+      overlayColor: style.overlayColor,
+      overlayOpacity: style.overlayOpacity,
       type: "fallback",
       priority: 0,
       weight: 1,
@@ -585,6 +893,28 @@ export async function upsertFallbackHero(
     imageUrl: trimOptional(input.imageUrl),
     mediaUrl: trimOptional(input.mediaUrl),
     mediaType: trimOptional(input.mediaType),
+    textAlign: style.textAlign,
+    contentWidth: style.contentWidth,
+    heroHeight: style.heroHeight,
+    spacingPreset: style.spacingPreset,
+    headingFont: style.headingFont,
+    bodyFont: style.bodyFont,
+    titleSize: style.titleSize,
+    subtitleSize: style.subtitleSize,
+    titleWeight: style.titleWeight,
+    subtitleWeight: style.subtitleWeight,
+    mobileTitleSize: style.mobileTitleSize,
+    mobileSubtitleSize: style.mobileSubtitleSize,
+    titleColor: style.titleColor,
+    subtitleColor: style.subtitleColor,
+    badgeTextColor: style.badgeTextColor,
+    badgeBgColor: style.badgeBgColor,
+    primaryCtaVariant: style.primaryCtaVariant,
+    secondaryCtaVariant: style.secondaryCtaVariant,
+    primaryCtaColor: style.primaryCtaColor,
+    secondaryCtaColor: style.secondaryCtaColor,
+    overlayColor: style.overlayColor,
+    overlayOpacity: style.overlayOpacity,
     priority: 0,
     weight: 1,
     isActive: true,

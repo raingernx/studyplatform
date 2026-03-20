@@ -8,3 +8,13 @@ export class PaymentServiceError extends Error {
     this.payload = payload;
   }
 }
+
+export function buildPurchaseSnapshot(
+  resource: { authorId: string; price: number },
+  amount: number = resource.price,
+) {
+  return {
+    authorId: resource.authorId,
+    authorRevenue: amount,
+  };
+}

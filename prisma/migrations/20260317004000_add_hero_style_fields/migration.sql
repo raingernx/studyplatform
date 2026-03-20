@@ -1,0 +1,22 @@
+-- AlterTable
+ALTER TABLE "Hero"
+ADD COLUMN "textAlign" TEXT,
+ADD COLUMN "contentWidth" TEXT,
+ADD COLUMN "heroHeight" TEXT,
+ADD COLUMN "spacingPreset" TEXT,
+ADD COLUMN "headingFont" TEXT,
+ADD COLUMN "bodyFont" TEXT,
+ADD COLUMN "titleSize" TEXT,
+ADD COLUMN "subtitleSize" TEXT,
+ADD COLUMN "titleWeight" TEXT,
+ADD COLUMN "subtitleWeight" TEXT,
+ADD COLUMN "mobileTitleSize" TEXT,
+ADD COLUMN "mobileSubtitleSize" TEXT,
+ADD COLUMN "titleColor" TEXT,
+ADD COLUMN "subtitleColor" TEXT,
+ADD COLUMN "badgeTextColor" TEXT,
+ADD COLUMN "badgeBgColor" TEXT,
+ADD COLUMN "primaryCtaVariant" TEXT,
+ADD COLUMN "secondaryCtaVariant" TEXT,
+ADD COLUMN "overlayColor" TEXT,
+ADD COLUMN "overlayOpacity" INTEGER;

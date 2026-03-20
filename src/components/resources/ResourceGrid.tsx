@@ -1,12 +1,13 @@
 "use client";
 
 import { useRef, Suspense } from "react";
+import Link from "next/link";
 import { Search } from "lucide-react";
 import { ResourceCard, ResourceCardSkeleton, type ResourceCardData } from "./ResourceCard";
 import { ResourcePagination } from "./ResourcePagination";
 
 export const RESOURCE_GRID_CLASSES =
-  "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch";
+  "grid grid-cols-1 gap-4 items-stretch sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4 xl:gap-6";
 
 interface ResourceGridProps {
   resources: ResourceCardData[];
@@ -43,11 +44,20 @@ export function ResourceGrid({
   // ── Empty state ─────────────────────────────────────────────────────────────
   if (resources.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border-2
-                      border-dashed border-zinc-200 py-24 text-center animate-fade-in">
-        <Search className="mb-3 h-10 w-10 text-zinc-300" />
-        <p className="text-base font-semibold text-zinc-500">No resources found</p>
-        <p className="mt-1 text-sm text-zinc-400">Try adjusting your filters or search term</p>
+      <div className="animate-fade-in rounded-[28px] border border-surface-200 bg-white px-6 py-16 text-center shadow-card sm:px-8 sm:py-20">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-50">
+          <Search className="h-7 w-7 text-zinc-300" />
+        </div>
+        <p className="mt-5 text-lg font-semibold tracking-tight text-zinc-900">No resources found</p>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
+          Try broadening your filters or return to the main library to start a wider browse.
+        </p>
+        <Link
+          href="/resources"
+          className="mt-5 inline-flex items-center rounded-full border border-surface-200 bg-surface-50 px-4 py-2 text-sm font-medium text-text-primary transition hover:border-surface-300 hover:bg-white"
+        >
+          Browse all resources
+        </Link>
       </div>
     );
   }
@@ -55,7 +65,7 @@ export function ResourceGrid({
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div ref={gridContainerRef} className="space-y-6 animate-fade-in">
+    <div ref={gridContainerRef} className="space-y-8 animate-fade-in">
       {/* ── Grid: consistent height, no vertical stretch; 16:10 thumb prevents layout shift ── */}
       <div className={RESOURCE_GRID_CLASSES}>
         {resources.map((resource) => (
@@ -79,4 +89,3 @@ export function ResourceGrid({
     </div>
   );
 }
-

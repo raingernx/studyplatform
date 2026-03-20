@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
+import { CACHE_TAGS } from "@/lib/cache";
 import {
   CreatorServiceError,
   getCreatorProfile,
@@ -64,6 +66,7 @@ export async function PATCH(req: Request) {
     }
 
     const updated = await updateCreatorProfile(session.user.id, await req.json());
+    revalidateTag(CACHE_TAGS.creatorPublic, "max");
     return NextResponse.json({ data: updated });
   } catch (error) {
     return handleCreatorError(error, "[CREATOR_PROFILE_PATCH]");

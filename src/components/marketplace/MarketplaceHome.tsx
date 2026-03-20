@@ -7,6 +7,7 @@ import { ResourceCard, type ResourceCardData } from "@/components/resources/Reso
 import { RESOURCE_GRID_CLASSES } from "@/components/resources/ResourceGrid";
 import Link from "next/link";
 import { ArrowRight, Sparkles, Grid3x3 } from "lucide-react";
+import { getPlatform } from "@/services/platform.service";
 
 /**
  * Full-page marketplace home sections.
@@ -16,6 +17,7 @@ import { ArrowRight, Sparkles, Grid3x3 } from "lucide-react";
 export async function MarketplaceHome() {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
+  const platform = await getPlatform();
 
   const listedWhere = LISTED_RESOURCE_WHERE;
   const [trendingRaw, newReleasesRaw, categories, purchases] = await Promise.all([
@@ -95,7 +97,7 @@ export async function MarketplaceHome() {
   const hasCats = categoriesWithPreviews.some((c) => c.resources.length > 0);
 
   if (!hasTrending && !hasNew && !hasCats) {
-    return <EmptyMarketplace />;
+    return <EmptyMarketplace platformShortName={platform.platformShortName} />;
   }
 
   return (
@@ -177,7 +179,11 @@ export async function MarketplaceHome() {
   );
 }
 
-function EmptyMarketplace() {
+function EmptyMarketplace({
+  platformShortName,
+}: {
+  platformShortName: string;
+}) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-white py-20 text-center">
       <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-50">
@@ -187,7 +193,7 @@ function EmptyMarketplace() {
         No resources yet
       </p>
       <p className="mt-1.5 max-w-xs text-[13px] text-zinc-500">
-        Be the first to publish a resource on PaperDock.
+        Be the first to publish a resource on {platformShortName}.
       </p>
       <Link
         href="/admin/resources/new"

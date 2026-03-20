@@ -41,9 +41,13 @@ export async function handleResourceDownload(
       );
     }
 
+    // Check user.id explicitly — a session with a user object but no id
+    // (misconfigured callback / replayed token) would pass a session?.user
+    // guard while leaving user.id undefined in all subsequent calls.
     const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
 
-    if (!session?.user) {
+    if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized. Please sign in to download resources." },
         { status: 401 },
@@ -61,7 +65,7 @@ export async function handleResourceDownload(
 
     if (!resource.isFree) {
       const purchase = await findCompletedPurchaseByUserAndResource(
-        session.user.id,
+        userId,
         resourceId,
       );
 
@@ -80,10 +84,10 @@ export async function handleResourceDownload(
       );
     }
 
-    recordDownloadSideEffects(resourceId, session.user.id, ip);
+    recordDownloadSideEffects(resourceId, userId, ip);
     recordAnalyticsEvent({
       eventType: "RESOURCE_DOWNLOAD",
-      userId: session.user.id,
+      userId,
       resourceId,
       creatorId: resource.authorId,
       metadata: { ip },
@@ -148,18 +152,22 @@ async function serveFileKey(
     );
   }
 
-  const fileSource = await storage.getSignedUrl(fileKey);
+  // Request a "download" intent so the storage provider embeds
+  // Content-Disposition: attachment in the presigned URL.  R2 injects this
+  // into its own response — the browser saves the file rather than rendering
+  // it inline regardless of the object's stored metadata.
+  const fileSource = await storage.getSignedUrl(fileKey, {
+    intent: "download",
+    filename: resource.fileName ?? fileKey,
+    contentType: resource.mimeType ?? "application/octet-stream",
+  });
 
   if (fileSource.startsWith("https://") || fileSource.startsWith("http://")) {
-    const contentType = resource.mimeType ?? "application/octet-stream";
-    const downloadName = resource.fileName ?? fileKey;
-    const safeFilename = downloadName.replace(/[^\w.\-]/g, "_");
-
     return NextResponse.redirect(fileSource, {
       status: 307,
       headers: {
-        "Content-Disposition": `attachment; filename="${safeFilename}"`,
-        "Content-Type": contentType,
+        // Prevent the browser from caching the redirect itself; the presigned
+        // URL already has a 15-minute expiry baked in.
         "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "@/i18n/navigation";
-import { Button } from "@/components/ui/Button";
+import { useRouter } from "next/navigation";
+import { Button } from "@/design-system";
 import { routes } from "@/lib/routes";
 
 export function BecomeCreatorButton() {

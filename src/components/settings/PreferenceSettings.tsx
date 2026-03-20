@@ -1,22 +1,13 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Globe, Sun, Coins, Clock4 } from "lucide-react";
-import { useLocale } from "next-intl";
-import { usePathname, useRouter } from "@/i18n/navigation";
-import { Select } from "@/components/ui/Select";
-import { Button } from "@/components/ui/Button";
-import { FormSection } from "@/components/ui/form-section";
+import { Sun, Coins, Clock4 } from "lucide-react";
+import { Button, FormSection, Select } from "@/design-system";
+import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
 
-type LocaleValue = "th" | "en";
 type ThemeValue = "light" | "dark" | "system";
 type CurrencyValue = "THB" | "USD";
 type TimezoneValue = "Asia/Bangkok" | "UTC";
-
-const LANGUAGE_OPTIONS: { value: LocaleValue; label: string }[] = [
-  { value: "th", label: "ไทย" },
-  { value: "en", label: "English" },
-];
 
 const THEME_OPTIONS: { value: ThemeValue; label: string }[] = [
   { value: "light", label: "Light" },
@@ -35,25 +26,20 @@ const TIMEZONE_OPTIONS: { value: TimezoneValue; label: string }[] = [
 ];
 
 type PreferenceSettingsProps = {
-  language: LocaleValue;
   theme: ThemeValue;
   currency: CurrencyValue;
   timezone: TimezoneValue;
 };
 
 export function PreferenceSettings({
-  language: initialLanguage,
   theme: initialTheme,
   currency: initialCurrency,
   timezone: initialTimezone,
 }: PreferenceSettingsProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const currentLocale = useLocale() as LocaleValue;
+  const platform = usePlatformConfig();
   const [isSaving, startTransition] = useTransition();
 
   const [initialPreferences, setInitialPreferences] = useState<PreferenceSettingsProps>(() => ({
-    language: initialLanguage ?? currentLocale,
     theme: initialTheme ?? "system",
     currency: initialCurrency ?? "THB",
     timezone: initialTimezone ?? "Asia/Bangkok",
@@ -76,16 +62,9 @@ export function PreferenceSettings({
   }, [initialPreferences.theme]);
 
   const hasChanges =
-    pendingPreferences.language !== initialPreferences.language ||
     pendingPreferences.theme !== initialPreferences.theme ||
     pendingPreferences.currency !== initialPreferences.currency ||
     pendingPreferences.timezone !== initialPreferences.timezone;
-
-  function handleLanguageChange(value: LocaleValue) {
-    setPendingPreferences((prev) =>
-      prev.language === value ? prev : { ...prev, language: value },
-    );
-  }
 
   function handleThemeChange(value: ThemeValue) {
     setPendingPreferences((prev) =>
@@ -109,9 +88,6 @@ export function PreferenceSettings({
     if (!hasChanges) return;
 
     const updates: Partial<PreferenceSettingsProps> = {};
-    if (pendingPreferences.language !== initialPreferences.language) {
-      updates.language = pendingPreferences.language;
-    }
     if (pendingPreferences.theme !== initialPreferences.theme) {
       updates.theme = pendingPreferences.theme;
     }
@@ -131,16 +107,6 @@ export function PreferenceSettings({
         // Ignore network errors for now; UI will remain on pending values.
       });
     });
-
-    // Apply side effects only after user explicitly saves.
-    if (updates.language && typeof window !== "undefined") {
-      const value = updates.language;
-      const maxAge = 60 * 60 * 24 * 365;
-      document.cookie = `locale=${value}; path=/; max-age=${maxAge}`;
-      document.cookie = `NEXT_LOCALE=${value}; path=/; max-age=${maxAge}`;
-      window.localStorage.setItem("user_language", value);
-      router.replace(pathname, { locale: value });
-    }
 
     if (updates.theme && typeof window !== "undefined" && typeof document !== "undefined") {
       window.localStorage.setItem("user_theme", updates.theme);
@@ -167,7 +133,7 @@ export function PreferenceSettings({
   return (
     <FormSection
       title="Preferences"
-      description="Customize how PaperDock looks and behaves for you."
+      description={`Customize how ${platform.platformShortName} looks and behaves for you.`}
       footer={
         <Button
           type="button"
@@ -180,30 +146,6 @@ export function PreferenceSettings({
         </Button>
       }
     >
-        {/* Language */}
-        <div className="grid gap-3 md:grid-cols-[240px_minmax(0,1fr)] md:items-center">
-          <div>
-            <p className="flex items-center gap-2 text-[13px] font-medium text-zinc-900">
-              <Globe className="h-4 w-4 text-zinc-400" />
-              Language
-            </p>
-            <p className="mt-0.5 text-[12px] text-zinc-500">
-              Choose the language used for the interface.
-            </p>
-          </div>
-          <Select
-            value={pendingPreferences.language}
-            onChange={(e) => handleLanguageChange(e.target.value as LocaleValue)}
-            className="w-full max-w-xs rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[13px] text-zinc-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 font-thai"
-          >
-            {LANGUAGE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </Select>
-        </div>
-
         {/* Theme */}
         <div className="grid gap-3 md:grid-cols-[240px_minmax(0,1fr)] md:items-center">
           <div>
@@ -278,4 +220,3 @@ export function PreferenceSettings({
       </FormSection>
   );
 }
-

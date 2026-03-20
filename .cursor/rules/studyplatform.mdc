@@ -1,5 +1,5 @@
 ---
-description: PaperDock project architecture and rules
+description: KruCraft project architecture and rules
 globs: ["src/**/*", "prisma/**/*", "middleware.ts"]
 alwaysApply: true
 ---

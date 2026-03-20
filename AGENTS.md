@@ -409,6 +409,39 @@ Keep API routes modular.
 
 Avoid creating unnecessary duplicate logic.
 
+For new UI work, prefer importing primitives, layout helpers, and composed building blocks from:
+
+```
+src/design-system/*
+```
+
+Only import directly from:
+
+```
+src/components/ui
+```
+
+when extending or maintaining the primitive layer itself. Treat files in
+`src/components/ui` as transitional primitive implementations, not as the
+default import surface for app code, and avoid adding new feature-level
+primitives there.
+
+Deprecated wrappers and temporary compatibility shims must not be used for new
+work. If a shim remains in the repo, keep it as a thin pass-through only and do
+not add new styling, behavior, or feature logic to it.
+
+For app and feature code, import DS-covered primitives and composed UI from:
+
+```
+@/design-system
+```
+
+Do not add new primitives under `src/components/ui`, do not recreate deleted
+wrapper patterns like `PrimaryButton`, `SecondaryButton`, `SearchInput`, or
+duplicate `FormSection` / `PageContainer` aliases, and if a needed primitive is
+missing, add it to `src/design-system` first. Treat remaining legacy backbone
+files as implementation details only.
+
 ---
 
 # Performance Guidelines

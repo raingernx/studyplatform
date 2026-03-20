@@ -13,6 +13,8 @@ export interface LibraryResource {
   authorName?: string | null;
   previewUrl?: string | null;
   downloadedAt: Date;
+  /** MIME type of the primary file — used to decide whether to show a Preview CTA. */
+  mimeType?: string | null;
 }
 
 export interface LibraryItemClient extends LibraryResource {
@@ -28,6 +30,7 @@ function toCardResource(item: LibraryItemClient): ResourceCardResource {
     authorName: item.authorName,
     previewUrl: item.previewUrl,
     downloadedAt: item.downloadedAt,
+    mimeType: item.mimeType,
     description: "",
     tags: [],
     isFree: true,

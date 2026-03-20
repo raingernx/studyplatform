@@ -12,7 +12,7 @@ export interface ChipCategory {
 
 /**
  * Discover — removes the category param and navigates to the current
- * locale-prefixed path (e.g. /th/resources). Active only when no category
+ * current path.
  * is present. Never treat category=all as Discover.
  */
 export function DiscoverButton() {
@@ -35,7 +35,7 @@ export function DiscoverButton() {
       href={discoverUrl}
       scroll={false}
       className={cn(
-        "inline-flex shrink-0 items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition",
+        "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-medium transition sm:px-4",
         isDiscover
           ? "border-blue-600 bg-blue-600 text-white"
           : "border-zinc-200 text-zinc-600 hover:bg-zinc-50"
@@ -52,8 +52,8 @@ interface CategoryChipsProps {
 }
 
 /**
- * Category filter chips. Links stay on the current locale-prefixed path
- * (e.g. /th/resources?category=all) so that next-intl middleware redirects
+ * Category filter chips. Links stay on the current path
+ * 
  * are never needed and searchParams always reach the server component.
  */
 export function CategoryChips({ categories }: CategoryChipsProps) {
@@ -75,7 +75,7 @@ export function CategoryChips({ categories }: CategoryChipsProps) {
     <div
       role="navigation"
       aria-label="Filter by category"
-      className="flex shrink-0 items-center gap-2"
+      className="flex shrink-0 items-center gap-2 pr-3"
     >
       <Chip label="All" href={chipUrl("all")} active={isAll} />
       {categories.map((cat) => (
@@ -106,7 +106,7 @@ function Chip({
       href={href}
       scroll={false}
       className={cn(
-        "shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-sm font-medium transition",
+        "inline-flex min-h-9 shrink-0 items-center whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition",
         active
           ? "border-blue-600 bg-blue-600 text-white"
           : "border-zinc-200 text-zinc-600 hover:bg-zinc-50"

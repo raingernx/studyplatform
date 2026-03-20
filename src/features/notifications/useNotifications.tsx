@@ -60,25 +60,6 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         onAction: options?.onAction,
       };
 
-      // #region agent log
-      fetch("http://127.0.0.1:7472/ingest/8f36f62e-5ee6-48fc-ac11-6d3f136199e5", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "b78fc7",
-        },
-        body: JSON.stringify({
-          sessionId: "b78fc7",
-          runId: "notifications-pre-fix",
-          hypothesisId: "H_badge_count",
-          location: "useNotifications.tsx:45",
-          message: "NotificationsProvider.notify called",
-          data: { type, hasAction: Boolean(options?.actionLabel) },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
-
       setNotifications((prev) => [entry, ...prev].slice(0, 50));
       return id;
     },
@@ -133,4 +114,3 @@ export function useNotifications(): NotificationsContextValue {
   }
   return ctx;
 }
-

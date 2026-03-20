@@ -1,6 +1,6 @@
-# PaperDock – Cache Architecture
+# KruCraft – Cache Architecture
 
-This document describes the caching strategy used in PaperDock.
+This document describes the caching strategy used in KruCraft.
 
 The purpose of caching is to reduce database load, improve page speed,
 and ensure the marketplace can scale to large traffic volumes.
@@ -28,7 +28,7 @@ Caching is especially important for:
 
 # Cache Layers
 
-PaperDock uses multiple caching layers.
+KruCraft uses multiple caching layers.
 
 Client Request
 ↓

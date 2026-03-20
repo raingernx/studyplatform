@@ -48,7 +48,7 @@ const config: Config = {
           800: "#4c1d95",
           900: "#2e1065",
 
-          // PaperDock logo accent system
+          // KruCraft logo accent system
           blue: "#2563EB",
           "blue-light": "#DBEAFE",
           "blue-soft": "#EFF6FF",
@@ -94,7 +94,7 @@ const config: Config = {
           900: "#18181b",
           950: "#09090b",
         },
-        // Gumroad-style brand / PaperDock brand system
+        // Gumroad-style brand / KruCraft brand system
         brand: {
           50:  "#eff6ff",
           100: "#dbeafe",
@@ -152,8 +152,10 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans:    ["var(--font-inter)", "var(--font-thai)", "system-ui", "sans-serif"],
-        display: ["var(--font-geist)", "var(--font-thai)", "system-ui", "sans-serif"],
+        sans: ["var(--font-body)"],
+        display: ["var(--font-heading)"],
+        ui: ["var(--font-ui)"],
+        mono: ["var(--font-mono)"],
       },
       fontSize: {
         "2xs":     ["0.65rem",                    { lineHeight: "1rem"  }],

@@ -1,6 +1,6 @@
-import {createNavigation} from "next-intl/navigation";
-import {routing} from "./routing";
-
-export const {Link, redirect, usePathname, useRouter, getPathname} =
-  createNavigation(routing);
-
+// i18n removed — re-exports from next/navigation so any stale import compiles.
+export { usePathname, useRouter, redirect } from "next/navigation";
+export { default as Link } from "next/link";
+export function getPathname(_opts: unknown): string {
+  return "";
+}

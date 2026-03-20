@@ -2,12 +2,36 @@ import { cookies, headers } from "next/headers";
 import { cache } from "react";
 import { getCachedEligibleHomepageHeroes } from "@/lib/cache/heroCache";
 import { findFallbackHero, findLegacyHomepageHero } from "@/repositories/heroes/hero.repository";
+import type {
+  HeroBadgeBgColor,
+  HeroBadgeTextColor,
+  HeroBodyFont,
+  HeroContentWidth,
+  HeroHeadingFont,
+  HeroHeight,
+  HeroMobileSubtitleSize,
+  HeroMobileTitleSize,
+  HeroOverlayColor,
+  HeroPrimaryCtaColor,
+  HeroPrimaryCtaVariant,
+  HeroSecondaryCtaColor,
+  HeroSecondaryCtaVariant,
+  HeroSpacingPreset,
+  HeroStyleFields,
+  HeroSubtitleColor,
+  HeroSubtitleSize,
+  HeroSubtitleWeight,
+  HeroTextAlign,
+  HeroTitleColor,
+  HeroTitleSize,
+  HeroTitleWeight,
+} from "@/lib/heroes/hero-style";
 
 export interface HomepageHeroSelectionContext {
   userId?: string | null;
 }
 
-export interface ResolvedHomepageHeroConfig {
+export interface ResolvedHomepageHeroConfig extends HeroStyleFields {
   heroId?: string | null;
   source?: "cms" | "fallback";
   experimentId?: string | null;
@@ -34,6 +58,12 @@ function normalizeOptionalString(value: string | null | undefined) {
   return trimmed ? trimmed : null;
 }
 
+function normalizeOptionalStyle<T extends string>(
+  value: string | null | undefined,
+): T | null {
+  return normalizeOptionalString(value) as T | null;
+}
+
 function toResolvedConfig(
   hero:
     | {
@@ -50,6 +80,28 @@ function toResolvedConfig(
         imageUrl?: string | null;
         mediaUrl?: string | null;
         mediaType?: string | null;
+        textAlign?: string | null;
+        contentWidth?: string | null;
+        heroHeight?: string | null;
+        spacingPreset?: string | null;
+        headingFont?: string | null;
+        bodyFont?: string | null;
+        titleSize?: string | null;
+        subtitleSize?: string | null;
+        titleWeight?: string | null;
+        subtitleWeight?: string | null;
+        mobileTitleSize?: string | null;
+        mobileSubtitleSize?: string | null;
+        titleColor?: string | null;
+        subtitleColor?: string | null;
+        badgeTextColor?: string | null;
+        badgeBgColor?: string | null;
+        primaryCtaVariant?: string | null;
+        secondaryCtaVariant?: string | null;
+        primaryCtaColor?: string | null;
+        secondaryCtaColor?: string | null;
+        overlayColor?: string | null;
+        overlayOpacity?: number | null;
       }
     | null,
   source?: "cms" | "fallback",
@@ -73,6 +125,35 @@ function toResolvedConfig(
     imageUrl: normalizeOptionalString(hero.imageUrl),
     mediaUrl: normalizeOptionalString(hero.mediaUrl),
     mediaType: normalizeOptionalString(hero.mediaType),
+    textAlign: normalizeOptionalStyle<HeroTextAlign>(hero.textAlign),
+    contentWidth: normalizeOptionalStyle<HeroContentWidth>(hero.contentWidth),
+    heroHeight: normalizeOptionalStyle<HeroHeight>(hero.heroHeight),
+    spacingPreset: normalizeOptionalStyle<HeroSpacingPreset>(hero.spacingPreset),
+    headingFont: normalizeOptionalStyle<HeroHeadingFont>(hero.headingFont),
+    bodyFont: normalizeOptionalStyle<HeroBodyFont>(hero.bodyFont),
+    titleSize: normalizeOptionalStyle<HeroTitleSize>(hero.titleSize),
+    subtitleSize: normalizeOptionalStyle<HeroSubtitleSize>(hero.subtitleSize),
+    titleWeight: normalizeOptionalStyle<HeroTitleWeight>(hero.titleWeight),
+    subtitleWeight: normalizeOptionalStyle<HeroSubtitleWeight>(hero.subtitleWeight),
+    mobileTitleSize: normalizeOptionalStyle<HeroMobileTitleSize>(hero.mobileTitleSize),
+    mobileSubtitleSize:
+      normalizeOptionalStyle<HeroMobileSubtitleSize>(hero.mobileSubtitleSize),
+    titleColor: normalizeOptionalStyle<HeroTitleColor>(hero.titleColor),
+    subtitleColor: normalizeOptionalStyle<HeroSubtitleColor>(hero.subtitleColor),
+    badgeTextColor:
+      normalizeOptionalStyle<HeroBadgeTextColor>(hero.badgeTextColor),
+    badgeBgColor: normalizeOptionalStyle<HeroBadgeBgColor>(hero.badgeBgColor),
+    primaryCtaVariant:
+      normalizeOptionalStyle<HeroPrimaryCtaVariant>(hero.primaryCtaVariant),
+    secondaryCtaVariant:
+      normalizeOptionalStyle<HeroSecondaryCtaVariant>(hero.secondaryCtaVariant),
+    primaryCtaColor:
+      normalizeOptionalStyle<HeroPrimaryCtaColor>(hero.primaryCtaColor),
+    secondaryCtaColor:
+      normalizeOptionalStyle<HeroSecondaryCtaColor>(hero.secondaryCtaColor),
+    overlayColor: normalizeOptionalStyle<HeroOverlayColor>(hero.overlayColor),
+    overlayOpacity:
+      typeof hero.overlayOpacity === "number" ? hero.overlayOpacity : null,
   };
 }
 

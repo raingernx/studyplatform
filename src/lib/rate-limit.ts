@@ -1,5 +1,5 @@
 /**
- * Rate limiting utility — PaperDock
+ * Rate limiting utility — KruCraft
  *
  * Uses @upstash/ratelimit backed by Upstash Redis.
  * Works in serverless (Vercel, Railway) and edge environments because it
@@ -73,7 +73,7 @@ function makeLimiter(requests: number, windowSeconds: number) {
     redis,
     limiter: Ratelimit.slidingWindow(requests, `${windowSeconds} s`),
     analytics: false,
-    prefix: "paperdock:rl",
+    prefix: "krucraft:rl",
   });
 }
 
@@ -92,6 +92,12 @@ export const LIMITS = {
 
   /** Checkout initiation: 5 per minute per IP to prevent cart-stuffing. */
   checkout: makeLimiter(5, 60),
+
+  /** Review writes: 5 per minute per IP to prevent spam edits/submissions. */
+  reviewWrite: makeLimiter(5, 60),
+
+  /** Hero analytics: 30 per minute per IP to reduce impression/click spam. */
+  heroAnalytics: makeLimiter(30, 60),
 } as const;
 
 // ── Public helper ─────────────────────────────────────────────────────────────

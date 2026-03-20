@@ -13,13 +13,21 @@ import {
   ImagePlus,
   GripVertical,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Textarea, FileUploadWidget, Switch, Select } from "@/components/ui/forms";
+import {
+  Button,
+  MediaPreview,
+  PickerActionButton,
+  PickerActions,
+  PickerIconButton,
+  Select,
+  Switch,
+  Textarea,
+} from "@/design-system";
+import { FileUploadWidget } from "@/components/ui/forms";
 import { ImageDropzone } from "@/components/admin/ImageDropzone";
 import { PreviewImageSortableList } from "@/components/admin/PreviewImageSortableList";
 import { TagInput } from "@/components/admin/TagInput";
 import { UserSearchSelect } from "@/components/admin/UserSearchSelect";
-import { FormSection } from "@/components/admin/FormSection";
 import type { ResourceCardData } from "@/components/resources/ResourceCard";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -203,29 +211,29 @@ function PreviewUrlsEditor({
               placeholder={i === 0 ? "Thumbnail URL or path (e.g. /uploads/… or https://…)" : "https://… or /uploads/… (preview image)"}
               className="input-base w-full min-w-0 flex-1"
             />
-            <button
-              type="button"
+            <PickerIconButton
               onClick={() => remove(i)}
-              className="shrink-0 rounded-lg p-1.5 text-text-secondary transition hover:bg-red-50 hover:text-red-500"
+              tone="danger"
               aria-label="Remove preview"
             >
               <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            </PickerIconButton>
           </div>
         ))}
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-2">
-        <button
+      <PickerActions className="mt-2">
+        <PickerActionButton
           type="button"
           onClick={add}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-border-subtle px-4 py-2 text-[12px] font-medium text-text-secondary transition hover:border-brand-400 hover:text-brand-600"
+          actionStyle="dashed"
         >
           <ImagePlus className="h-3.5 w-3.5" />
           Add URL
-        </button>
+        </PickerActionButton>
         {onUploadImage && (
-          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-dashed border-border-subtle px-4 py-2 text-[12px] font-medium text-text-secondary transition hover:border-brand-400 hover:text-brand-600">
+          <PickerActionButton asChild actionStyle="dashed">
+            <label className="cursor-pointer">
             <input
               type="file"
               accept="image/*"
@@ -243,9 +251,10 @@ function PreviewUrlsEditor({
             />
             <ImagePlus className="h-3.5 w-3.5" />
             Upload image
-          </label>
+            </label>
+          </PickerActionButton>
         )}
-      </div>
+      </PickerActions>
     </div>
   );
 }
@@ -906,17 +915,17 @@ export function ResourceForm({
           <div className="w-full min-w-0 space-y-2">
             <Label htmlFor="thumbnail-upload">Thumbnail</Label>
             {normalizedPreviewUrls[0] && (
-              <div className="relative inline-block overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+              <MediaPreview>
                 <img
                   src={normalizedPreviewUrls[0]}
                   alt="Thumbnail preview"
                   className="h-32 w-auto max-w-[240px] object-cover"
                 />
-              </div>
+              </MediaPreview>
             )}
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-[12px] font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50">
+            <PickerActions>
+              <PickerActionButton asChild disabled={thumbnailUploading}>
+                <label className="cursor-pointer">
                 <input
                   id="thumbnail-upload"
                   type="file"
@@ -935,8 +944,9 @@ export function ResourceForm({
                   <ImagePlus className="h-3.5 w-3.5" />
                 )}
                 {thumbnailUploading ? "Uploading…" : "Upload thumbnail"}
-              </label>
-            </div>
+                </label>
+              </PickerActionButton>
+            </PickerActions>
             {imageUploadError && (
               <p className="text-[12px] text-red-600">{imageUploadError}</p>
             )}

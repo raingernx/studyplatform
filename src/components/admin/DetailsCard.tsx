@@ -21,8 +21,8 @@ export function DetailsCard({
   ] as const;
 
   return (
-    <div className="w-full rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-tight text-zinc-500">
+    <div className="w-full rounded-2xl border border-surface-200 bg-white p-5 shadow-card">
+      <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
         Details
       </h3>
       <dl className="space-y-3 text-xs">

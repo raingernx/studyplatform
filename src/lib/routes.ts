@@ -11,9 +11,9 @@
  *   router.push(routes.library);
  *
  * Notes:
- *   - These are path segments WITHOUT a locale prefix. next-intl's
- *     `<Link>` and `useRouter` from `@/i18n/navigation` prepend the
- *     current locale automatically.
+ *   - 
+
+
  *   - API routes are intentionally excluded — they are always non-localized
  *     and should remain hardcoded close to their consumers.
  */
@@ -74,6 +74,7 @@ export const routes = {
   adminHeroes: "/admin/heroes",
   adminNewHero: "/admin/heroes/new",
   adminSettings: "/admin/settings",
+  adminTypographySettings: "/admin/settings/typography",
 
   /**
    * Admin edit page for a specific resource.

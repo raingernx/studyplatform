@@ -19,8 +19,8 @@ export function StatsCard({ downloads, purchases, reviews }: StatsCardProps) {
   ] as const;
 
   return (
-    <div className="min-w-0 rounded-xl border border-zinc-200 bg-white p-5">
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-tight text-zinc-500">
+    <div className="min-w-0 rounded-2xl border border-surface-200 bg-white p-5 shadow-card">
+      <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
         Stats
       </h3>
       <div className="grid grid-cols-3 gap-4">
