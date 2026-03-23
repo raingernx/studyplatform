@@ -49,8 +49,8 @@ import {
 } from "@/lib/ranking-experiment";
 import { getOwnedResourceIds, getUserLearningProfile } from "@/services/purchase.service";
 import {
-  getNewResourcesInCategories,
-  getRecommendedResourcesByLevels,
+  getCachedNewResourcesInCategories,
+  getCachedRecommendedResourcesByLevels,
 } from "@/services/resources/resource.service";
 import { getBehaviorBasedRecommendations, getPhase1Recommendations } from "@/services/recommendations/behavior-profile.service";
 import { assignRecommendationVariant, RECOMMENDATION_EXPERIMENT_ID } from "@/lib/recommendations/experiment";
@@ -226,7 +226,6 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
   const recentCategoryId = learningProfile?.recentCategoryId ?? null;
   const personalizedLevelIds = learningProfile?.preferredLevels ?? [];
   const topCategoryIds = learningProfile?.topCategories.map((c) => c.id) ?? [];
-  const ownedArr = Array.from(ownedIds);
 
   // Global trending (owned already excluded at render time; Phase 2 uses this
   // as a final fallback when the behavior profile is empty or too weak).
@@ -238,14 +237,24 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
   // Guests always see the generic global feed (no variant assigned).
   const recommendationVariant = userId ? assignRecommendationVariant(userId) : null;
 
+  // ── Personalised recommendation sections ──────────────────────────────────
+  //
+  // "Because you studied X" and "Recommended for your level" use cached base
+  // queries (no per-user NOT IN clause in SQL) so results are shared across
+  // all users with the same category/level preferences.  Owned exclusion is
+  // applied in memory after the cache hit using the freshly-fetched ownedIds.
+  // This removes two per-request DB queries from the critical path for
+  // authenticated discover-mode users who have purchase history.
   const [becauseYouStudied, recommendedForLevel, recommendedForYou] =
     isDiscoverMode && userId && learningProfile?.hasHistory
       ? await Promise.all([
           recentCategoryId
-            ? getNewResourcesInCategories([recentCategoryId], ownedArr, 5)
+            ? getCachedNewResourcesInCategories([recentCategoryId], 8)
+                .then((rs) => rs.filter((r) => !ownedIds.has(r.id)).slice(0, 5))
             : Promise.resolve([]),
           personalizedLevelIds.length > 0
-            ? getRecommendedResourcesByLevels(personalizedLevelIds, ownedArr, 4)
+            ? getCachedRecommendedResourcesByLevels(personalizedLevelIds, 6)
+                .then((rs) => rs.filter((r) => !ownedIds.has(r.id)).slice(0, 4))
             : Promise.resolve([]),
           // Variant A → Phase 1 (category-trending control arm)
           // Variant B → Phase 2 (behavior-based treatment arm)
