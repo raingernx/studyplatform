@@ -1,7 +1,9 @@
+import { unstable_cache } from "next/cache";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity";
 import { logAdminAction } from "@/lib/auditLogger";
 import { slugify } from "@/lib/utils";
+import { CACHE_TAGS, CACHE_TTLS } from "@/lib/cache";
 import {
   createAdminResourceRecord,
   createDraftResourceRecord,
@@ -341,6 +343,55 @@ export async function getTopTrendingInCategories(
     previewUrl: resource.previewUrl ?? resource.previews?.[0]?.imageUrl ?? null,
   }));
 }
+
+/**
+ * Cached base query for "new resources in categories" sections.
+ *
+ * Differs from getNewResourcesInCategories in two ways:
+ *  1. Owned exclusion is intentionally absent — so the result can be shared
+ *     across all users whose most-recent category is the same.  Call sites
+ *     apply `filter(r => !ownedIds.has(r.id))` in memory after the cache hit.
+ *  2. Returns slightly more items (default limit + buffer) so the in-memory
+ *     filter still leaves enough to fill the section after owned items drop out.
+ *
+ * Cache key: ["new-in-categories-cached", categoryIds, limit]
+ * TTL / invalidation: same as all public discover content (120 s, "discover" tag).
+ *
+ * createdAt comes back as an ISO string after JSON round-trip through the cache.
+ * ResourceCardData already types it as `Date | string`, so card components
+ * handle both forms correctly.
+ */
+export const getCachedNewResourcesInCategories = unstable_cache(
+  async function _getCachedNewResourcesInCategories(
+    categoryIds: string[],
+    limit: number = 8,
+  ) {
+    return getNewResourcesInCategories(categoryIds, [], limit);
+  },
+  ["new-in-categories-cached"],
+  { revalidate: CACHE_TTLS.publicPage, tags: [CACHE_TAGS.discover] },
+);
+
+/**
+ * Cached base query for "recommended by level" sections.
+ *
+ * Same design as getCachedNewResourcesInCategories: no owned exclusion,
+ * shared across all users with matching level preferences.  Call sites
+ * apply the owned filter in memory.
+ *
+ * Cache key: ["recommended-by-levels-cached", levels, limit]
+ * TTL / invalidation: 120 s, "discover" tag.
+ */
+export const getCachedRecommendedResourcesByLevels = unstable_cache(
+  async function _getCachedRecommendedResourcesByLevels(
+    levels: Array<"BEGINNER" | "INTERMEDIATE" | "ADVANCED">,
+    limit: number = 6,
+  ) {
+    return getRecommendedResourcesByLevels(levels, [], limit);
+  },
+  ["recommended-by-levels-cached"],
+  { revalidate: CACHE_TTLS.publicPage, tags: [CACHE_TAGS.discover] },
+);
 
 export async function createAdminResource(input: unknown, adminUserId: string) {
   const actor = await findAdminActor(adminUserId);

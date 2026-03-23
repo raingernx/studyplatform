@@ -33,12 +33,12 @@ import {
   findPhase2CandidateResources,
   findTopTrendingInCategoriesExcludingIds,
 } from "@/repositories/resources/resource.repository";
-import { CACHE_KEYS, CACHE_TTLS, rememberJson } from "@/lib/cache";
+import { unstable_cache } from "next/cache";
+import { CACHE_KEYS, CACHE_TAGS, CACHE_TTLS, rememberJson } from "@/lib/cache";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const BEHAVIOR_WINDOW_DAYS = 30;
-const MIN_CANDIDATES       = 5;
 const MAX_PER_CATEGORY     = 2;
 const MAX_PER_AUTHOR       = 2;
 const TOP_CATEGORIES_TAKE  = 3;
@@ -351,6 +351,35 @@ async function getCachedUserInterestProfile(
   };
 }
 
+// ── Cached candidate pool ─────────────────────────────────────────────────────
+//
+// Fetches the Phase 2 candidate pool (up to CANDIDATE_POOL_SIZE + buffer)
+// WITHOUT per-user owned/heavyViewed exclusion, so the result can be cached
+// and shared across all users whose top-category and top-tag profiles match.
+//
+// Owned and heavy-viewed exclusion is applied in memory inside
+// getBehaviorBasedRecommendations after the cache hit.  Fetching a slightly
+// larger pool (CANDIDATE_POOL_SIZE + 20) ensures the in-memory filter still
+// leaves enough candidates to fill the diversity pass.
+//
+// Cache key: ["phase2-candidate-pool", topCategoryIds, topTagIds, limit]
+// TTL: 120 s (CACHE_TTLS.publicPage), invalidated by the "discover" tag.
+//
+// Phase2Candidate.createdAt comes back as an ISO string after JSON round-trip;
+// it is not used in scoring or diversity, so the string form is harmless.
+
+const getCachedPhase2CandidatePool = unstable_cache(
+  async function _getCachedPhase2CandidatePool(
+    topCategoryIds: string[],
+    topTagIds: string[],
+    limit: number,
+  ): Promise<Phase2Candidate[]> {
+    return findPhase2CandidateResources(topCategoryIds, topTagIds, [], limit) as Promise<Phase2Candidate[]>;
+  },
+  ["phase2-candidate-pool"],
+  { revalidate: CACHE_TTLS.publicPage, tags: [CACHE_TAGS.discover] },
+);
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
@@ -358,7 +387,7 @@ async function getCachedUserInterestProfile(
  *
  * Fallback chain:
  *  1. hasBehavior = false → Phase 1 (top-trending in purchase-history categories)
- *  2. Phase 2 pool < MIN_CANDIDATES → pad with Phase 1 (no duplicates), then global
+ *  2. Phase 2 pool < limit → pad with Phase 1 (no duplicates), then global
  *  3. topCategoryIds is empty → global fallback only
  *
  * @param userId          Authenticated user id
@@ -415,18 +444,19 @@ export async function getBehaviorBasedRecommendations(
     return (await getPhase1()).map((r) => withReason(r, profile));
   }
 
-  // ── Fetch Phase 2 candidates ─────────────────────────────────────────────
-  const excludeIds = [
-    ...ownedArr,
-    ...Array.from(profile.heavyViewedResourceIds),
-  ];
-
-  const candidates = (await findPhase2CandidateResources(
+  // ── Fetch Phase 2 candidates (shared cached pool, filter in memory) ─────
+  // getCachedPhase2CandidatePool omits per-user exclusions so results can be
+  // shared across users with the same category/tag profile.  We apply owned
+  // and heavy-viewed exclusion here in memory after the cache hit.
+  const poolRaw = await getCachedPhase2CandidatePool(
     profile.topCategoryIds,
     profile.topTagIds,
-    excludeIds,
-    CANDIDATE_POOL_SIZE,
-  )) as Phase2Candidate[];
+    CANDIDATE_POOL_SIZE + 20,
+  );
+
+  const candidates = poolRaw.filter(
+    (r) => !ownedIds.has(r.id) && !profile.heavyViewedResourceIds.has(r.id),
+  );
 
   // ── Score + rank ─────────────────────────────────────────────────────────
   const scored = candidates

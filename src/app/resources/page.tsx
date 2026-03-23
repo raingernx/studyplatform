@@ -19,6 +19,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Container } from "@/components/layout/container";
 import { ResourceGrid } from "@/components/resources/ResourceGrid";
 import { ResourceCard, type ResourceCardData } from "@/components/resources/ResourceCard";
+import { ResourceCardSkeleton } from "@/components/resources/ResourceCardSkeleton";
 import { HeroSearch } from "@/components/marketplace/HeroSearch";
 import { HeroBanner } from "@/components/marketplace/HeroBanner";
 import { DiscoverButton, CategoryChips, type ChipCategory } from "@/components/marketplace/CategoryChips";
@@ -49,11 +50,11 @@ import {
 } from "@/lib/ranking-experiment";
 import { getOwnedResourceIds, getUserLearningProfile } from "@/services/purchase.service";
 import {
-  getNewResourcesInCategories,
-  getRecommendedResourcesByLevels,
+  getCachedNewResourcesInCategories,
+  getCachedRecommendedResourcesByLevels,
 } from "@/services/resources/resource.service";
 import { getBehaviorBasedRecommendations, getPhase1Recommendations } from "@/services/recommendations/behavior-profile.service";
-import { assignRecommendationVariant, RECOMMENDATION_EXPERIMENT_ID } from "@/lib/recommendations/experiment";
+import { assignRecommendationVariant, RECOMMENDATION_EXPERIMENT_ID, type RecommendationVariant } from "@/lib/recommendations/experiment";
 import { RecommendationSection } from "@/components/recommendations/RecommendationSection";
 import { recordAnalyticsEvents } from "@/analytics/event.service";
 
@@ -226,7 +227,6 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
   const recentCategoryId = learningProfile?.recentCategoryId ?? null;
   const personalizedLevelIds = learningProfile?.preferredLevels ?? [];
   const topCategoryIds = learningProfile?.topCategories.map((c) => c.id) ?? [];
-  const ownedArr = Array.from(ownedIds);
 
   // Global trending (owned already excluded at render time; Phase 2 uses this
   // as a final fallback when the behavior profile is empty or too weak).
@@ -238,48 +238,10 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
   // Guests always see the generic global feed (no variant assigned).
   const recommendationVariant = userId ? assignRecommendationVariant(userId) : null;
 
-  const [becauseYouStudied, recommendedForLevel, recommendedForYou] =
-    isDiscoverMode && userId && learningProfile?.hasHistory
-      ? await Promise.all([
-          recentCategoryId
-            ? getNewResourcesInCategories([recentCategoryId], ownedArr, 5)
-            : Promise.resolve([]),
-          personalizedLevelIds.length > 0
-            ? getRecommendedResourcesByLevels(personalizedLevelIds, ownedArr, 4)
-            : Promise.resolve([]),
-          // Variant A → Phase 1 (category-trending control arm)
-          // Variant B → Phase 2 (behavior-based treatment arm)
-          recommendationVariant === "phase1"
-            ? getPhase1Recommendations(topCategoryIds, ownedIds, globalFiltered, 5)
-            : getBehaviorBasedRecommendations(
-                userId,
-                ownedIds,
-                topCategoryIds,
-                globalFiltered,
-                5,
-              ),
-        ])
-      : [[], [], globalFiltered.slice(0, 5) as ResourceCardData[]];
-
-  // Record recommendation impressions (fire-and-forget, non-blocking).
-  // One RESOURCE_VIEW event per shown resource, tagged with experiment context,
-  // so per-resource and per-variant CTR can be queried from analytics_events.
-  if (userId && recommendationVariant && (recommendedForYou as ResourceCardData[]).length > 0) {
-    void recordAnalyticsEvents(
-      (recommendedForYou as ResourceCardData[]).map((r, position) => ({
-        eventType:  "RESOURCE_VIEW" as const,
-        userId,
-        resourceId: r.id,
-        metadata: {
-          source:     "recommendation_impression",
-          experiment: RECOMMENDATION_EXPERIMENT_ID,
-          variant:    recommendationVariant,
-          section:    "recommended_for_you",
-          position,
-        },
-      })),
-    ).catch(() => undefined);
-  }
+  // Personalised recommendation sections (becauseYouStudied, recommendedForLevel,
+  // recommendedForYou) are fetched inside <DiscoverPersonalisedContent> and
+  // stream in after the main discover sections.  The page no longer awaits
+  // step 6 — only steps 1–5 block the initial HTML flush.
   const discoverResourceCount = discoverCategoriesWithCount.reduce(
     (sum, item) => sum + item._count.resources,
     0,
@@ -541,80 +503,49 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
                 </section>
               )}
 
-              {/* Because you studied X — only shown when user has real purchase history in a specific category */}
-              {becauseYouStudied.length > 0 && learningProfile?.recentStudyTitle && learningProfile?.recentCategoryName && (
+              {/* ── Personalised recommendation sections ──────────────────── */}
+              {/*                                                               */}
+              {/* Authenticated users with purchase history: the three          */}
+              {/* recommendation sections are fetched inside an async server    */}
+              {/* component that streams in after the main discover content     */}
+              {/* (trending, categories, new releases) has already rendered.    */}
+              {/*                                                               */}
+              {/* Guests and users with no purchase history: "Popular right     */}
+              {/* now" renders synchronously from the already-resolved          */}
+              {/* globalFiltered array — no Suspense needed.                   */}
+              {userId && learningProfile?.hasHistory ? (
+                <Suspense fallback={<PersonalisationFallback />}>
+                  <DiscoverPersonalisedContent
+                    userId={userId}
+                    topCategoryIds={topCategoryIds}
+                    personalizedLevelIds={personalizedLevelIds}
+                    recentCategoryId={recentCategoryId}
+                    recentStudyTitle={learningProfile.recentStudyTitle ?? null}
+                    recentCategoryName={learningProfile.recentCategoryName ?? null}
+                    ownedIds={ownedIds}
+                    globalFiltered={globalFiltered}
+                    recommendationVariant={recommendationVariant}
+                  />
+                </Suspense>
+              ) : globalFiltered.slice(0, 5).length > 0 ? (
                 <section className="space-y-5">
                   <SectionHeader
-                    title={`Because you studied ${learningProfile.recentStudyTitle}`}
-                    description={`More resources in ${learningProfile.recentCategoryName} you haven't tried yet.`}
-                    viewAllHref={`/resources?category=all&sort=newest`}
+                    title="Popular right now"
+                    description="Top resources other learners are exploring this week."
+                    viewAllHref="/resources?sort=trending&category=all"
                   />
                   <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-                    {(becauseYouStudied as ResourceCardData[]).map((resource) => (
+                    {globalFiltered.slice(0, 5).map((resource) => (
                       <ResourceCard
                         key={resource.id}
-                        resource={{
-                          ...resource,
-                          socialProofLabel: `More in ${learningProfile.recentCategoryName}`,
-                        }}
+                        resource={resource}
                         variant="marketplace"
                         owned={ownedIds.has(resource.id)}
                       />
                     ))}
                   </div>
                 </section>
-              )}
-
-              {recommendedForLevel.length > 0 && (learningProfile?.preferredLevels?.length ?? 0) > 0 && (
-                <section className="space-y-5">
-                  <SectionHeader
-                    title="Recommended for your level"
-                    description="Deterministic picks shaped by the difficulty level your recent purchases suggest."
-                    viewAllHref="/resources?sort=trending&category=all"
-                  />
-                  <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
-                    {(recommendedForLevel as ResourceCardData[]).map((resource) => (
-                      <ResourceCard
-                        key={resource.id}
-                        resource={{
-                          ...resource,
-                          socialProofLabel: "Recommended for your current pace",
-                        }}
-                        variant="marketplace"
-                        owned={ownedIds.has(resource.id)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {recommendedForYou.length > 0 && (
-                <section className="space-y-5">
-                  <SectionHeader
-                    title={learningProfile?.hasHistory ? "Recommended for you" : "Popular right now"}
-                    description={learningProfile?.hasHistory
-                      ? "A focused set of picks to help you keep momentum without sorting through the whole library."
-                      : "Top resources other learners are exploring this week."}
-                    viewAllHref="/resources?sort=trending&category=all"
-                  />
-                  <RecommendationSection
-                    variant={recommendationVariant}
-                    section="recommended_for_you"
-                  >
-                    <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-                      {(recommendedForYou as ResourceCardData[]).map((resource) => (
-                        <div key={resource.id} data-resource-id={resource.id}>
-                          <ResourceCard
-                            resource={resource}
-                            variant="marketplace"
-                            owned={ownedIds.has(resource.id)}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </RecommendationSection>
-                </section>
-              )}
+              ) : null}
 
               {/* New releases */}
               {discoverData.newReleases.length > 0 && (
@@ -976,5 +907,170 @@ function SidebarFallback() {
         />
       ))}
     </div>
+  );
+}
+
+// ── Streaming personalisation component ───────────────────────────────────────
+
+/**
+ * Async server component that owns the three personalised recommendation
+ * sections.  Suspends while its queries are in-flight so the rest of the
+ * discover page (trending, categories, new releases, etc.) renders
+ * immediately and streams to the client first.
+ *
+ * Only mounted when `userId && learningProfile?.hasHistory` — all props are
+ * therefore guaranteed non-null at the call-site.
+ */
+async function DiscoverPersonalisedContent({
+  userId,
+  topCategoryIds,
+  personalizedLevelIds,
+  recentCategoryId,
+  recentStudyTitle,
+  recentCategoryName,
+  ownedIds,
+  globalFiltered,
+  recommendationVariant,
+}: {
+  userId: string;
+  topCategoryIds: string[];
+  personalizedLevelIds: Array<"BEGINNER" | "INTERMEDIATE" | "ADVANCED">;
+  recentCategoryId: string | null;
+  recentStudyTitle: string | null;
+  recentCategoryName: string | null;
+  ownedIds: Set<string>;
+  globalFiltered: ResourceCardData[];
+  recommendationVariant: RecommendationVariant | null;
+}) {
+  const [becauseYouStudied, recommendedForLevel, recommendedForYou] = await Promise.all([
+    recentCategoryId
+      ? getCachedNewResourcesInCategories([recentCategoryId], 8)
+          .then((rs) => rs.filter((r) => !ownedIds.has(r.id)).slice(0, 5))
+      : Promise.resolve([] as ResourceCardData[]),
+    personalizedLevelIds.length > 0
+      ? getCachedRecommendedResourcesByLevels(personalizedLevelIds, 6)
+          .then((rs) => rs.filter((r) => !ownedIds.has(r.id)).slice(0, 4))
+      : Promise.resolve([] as ResourceCardData[]),
+    recommendationVariant === "phase1"
+      ? getPhase1Recommendations(topCategoryIds, ownedIds, globalFiltered, 5)
+      : getBehaviorBasedRecommendations(userId, ownedIds, topCategoryIds, globalFiltered, 5),
+  ]);
+
+  // Record recommendation impressions (fire-and-forget, non-blocking).
+  if (recommendationVariant && (recommendedForYou as ResourceCardData[]).length > 0) {
+    void recordAnalyticsEvents(
+      (recommendedForYou as ResourceCardData[]).map((r, position) => ({
+        eventType:  "RESOURCE_VIEW" as const,
+        userId,
+        resourceId: r.id,
+        metadata: {
+          source:     "recommendation_impression",
+          experiment: RECOMMENDATION_EXPERIMENT_ID,
+          variant:    recommendationVariant,
+          section:    "recommended_for_you",
+          position,
+        },
+      })),
+    ).catch(() => undefined);
+  }
+
+  return (
+    <>
+      {/* Because you studied X */}
+      {(becauseYouStudied as ResourceCardData[]).length > 0 && recentStudyTitle && recentCategoryName && (
+        <section className="space-y-5">
+          <SectionHeader
+            title={`Because you studied ${recentStudyTitle}`}
+            description={`More resources in ${recentCategoryName} you haven't tried yet.`}
+            viewAllHref="/resources?category=all&sort=newest"
+          />
+          <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+            {(becauseYouStudied as ResourceCardData[]).map((resource) => (
+              <ResourceCard
+                key={resource.id}
+                resource={{
+                  ...resource,
+                  socialProofLabel: `More in ${recentCategoryName}`,
+                }}
+                variant="marketplace"
+                owned={ownedIds.has(resource.id)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Recommended for your level */}
+      {(recommendedForLevel as ResourceCardData[]).length > 0 && personalizedLevelIds.length > 0 && (
+        <section className="space-y-5">
+          <SectionHeader
+            title="Recommended for your level"
+            description="Deterministic picks shaped by the difficulty level your recent purchases suggest."
+            viewAllHref="/resources?sort=trending&category=all"
+          />
+          <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
+            {(recommendedForLevel as ResourceCardData[]).map((resource) => (
+              <ResourceCard
+                key={resource.id}
+                resource={{
+                  ...resource,
+                  socialProofLabel: "Recommended for your current pace",
+                }}
+                variant="marketplace"
+                owned={ownedIds.has(resource.id)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Recommended for you */}
+      {(recommendedForYou as ResourceCardData[]).length > 0 && (
+        <section className="space-y-5">
+          <SectionHeader
+            title="Recommended for you"
+            description="A focused set of picks to help you keep momentum without sorting through the whole library."
+            viewAllHref="/resources?sort=trending&category=all"
+          />
+          <RecommendationSection
+            variant={recommendationVariant}
+            section="recommended_for_you"
+          >
+            <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+              {(recommendedForYou as ResourceCardData[]).map((resource) => (
+                <div key={resource.id} data-resource-id={resource.id}>
+                  <ResourceCard
+                    resource={resource}
+                    variant="marketplace"
+                    owned={ownedIds.has(resource.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          </RecommendationSection>
+        </section>
+      )}
+    </>
+  );
+}
+
+function PersonalisationFallback() {
+  return (
+    <section className="space-y-5">
+      {/* SectionHeader skeleton */}
+      <div className="flex flex-col gap-3 border-b border-surface-200/80 pb-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1.5">
+          <div className="h-6 w-48 animate-pulse rounded-lg bg-surface-100" />
+          <div className="h-4 w-64 animate-pulse rounded bg-surface-100" />
+        </div>
+        <div className="h-6 w-16 animate-pulse rounded-full bg-surface-100" />
+      </div>
+      {/* Card grid */}
+      <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <ResourceCardSkeleton key={i} />
+        ))}
+      </div>
+    </section>
   );
 }

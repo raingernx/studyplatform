@@ -1,5 +1,5 @@
-import { ResourcesPageSkeleton } from "@/components/skeletons/ResourcesPageSkeleton";
+import { ResourcesRouteSkeleton } from "@/components/skeletons/ResourcesRouteSkeleton";
 
 export default function Loading() {
-  return <ResourcesPageSkeleton />;
+  return <ResourcesRouteSkeleton />;
 }
