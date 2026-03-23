@@ -9,7 +9,13 @@ const redis =
     : null;
 
 export const CACHE_TTLS = {
-  homepageList: 60,
+  // Increased from 60 → 300: discover-section ID lists (trending/popular/newest/
+  // featured/free) are queried inside the unstable_cache wrapper for getDiscoverData
+  // (outer TTL: 120 s). Keeping the Redis TTL shorter than the outer cache caused
+  // Redis misses while the outer cache was still warm, triggering unnecessary DB
+  // work on every Redis expiry cycle.  300 s ensures the Redis entries outlive
+  // the outer cache so they are always warm on a getDiscoverData cache miss.
+  homepageList: 300,
   hero: 60,
   stats: 300,
   publicPage: 120,

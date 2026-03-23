@@ -57,7 +57,14 @@ import { assignRecommendationVariant, RECOMMENDATION_EXPERIMENT_ID } from "@/lib
 import { RecommendationSection } from "@/components/recommendations/RecommendationSection";
 import { recordAnalyticsEvents } from "@/analytics/event.service";
 
-export const dynamic = "force-dynamic";
+// force-dynamic removed: the page already opts into per-request dynamic rendering
+// naturally via two request-scoped reads:
+//   - await cookies()          → reads the ranking-experiment assignment cookie
+//   - await getServerSession() → reads the session JWT from request cookies
+// Both of these make the page inherently dynamic on every request regardless of
+// this annotation. The explicit force-dynamic was redundant and prevented Next.js
+// from applying any route-level optimizations (streaming, partial cache, etc.).
+// Pages that genuinely need the annotation (dashboard, admin) keep their own.
 
 export const metadata = {
   title: "Discover Study Resources",

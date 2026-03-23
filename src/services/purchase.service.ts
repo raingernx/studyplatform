@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import {
   countDownloadEventsByUser,
   findCompletedPurchaseByUserAndResource,
@@ -9,6 +10,7 @@ import {
   findPurchaseByUserAndResource,
   findPurchaseHistoryByUser,
 } from "@/repositories/purchases/purchase.repository";
+import { CACHE_TTLS } from "@/lib/cache";
 
 // ── Ownership checks ──────────────────────────────────────────────────────────
 
@@ -105,66 +107,77 @@ export interface UserLearningProfile {
   preferredLevels: Array<"BEGINNER" | "INTERMEDIATE" | "ADVANCED">;
 }
 
-export async function getUserLearningProfile(
-  userId: string,
-  take: number = 24,
-): Promise<UserLearningProfile> {
-  const rows = await findRecentPurchasePreferenceSignalsByUser(userId, take);
+/**
+ * Returns a user's learning profile derived from their recent purchases.
+ *
+ * Cached per user for CACHE_TTLS.publicPage seconds via Next.js Data Cache.
+ * The profile is used only to personalise the /resources recommendation
+ * pipeline — a short lag after a new purchase is acceptable.
+ */
+export const getUserLearningProfile = unstable_cache(
+  async function _getUserLearningProfile(
+    userId: string,
+    take: number = 24,
+  ): Promise<UserLearningProfile> {
+    const rows = await findRecentPurchasePreferenceSignalsByUser(userId, take);
 
-  if (rows.length === 0) {
-    return {
-      hasHistory: false,
-      recentStudyTitle: null,
-      recentCategoryId: null,
-      recentCategoryName: null,
-      topCategories: [],
-      preferredLevels: [],
-    };
-  }
+    if (rows.length === 0) {
+      return {
+        hasHistory: false,
+        recentStudyTitle: null,
+        recentCategoryId: null,
+        recentCategoryName: null,
+        topCategories: [],
+        preferredLevels: [],
+      };
+    }
 
-  const categoryScores = new Map<
-    string,
-    { id: string; name: string; slug: string; score: number }
-  >();
-  const levelScores = new Map<"BEGINNER" | "INTERMEDIATE" | "ADVANCED", number>();
+    const categoryScores = new Map<
+      string,
+      { id: string; name: string; slug: string; score: number }
+    >();
+    const levelScores = new Map<"BEGINNER" | "INTERMEDIATE" | "ADVANCED", number>();
 
-  rows.forEach((row, index) => {
-    const weight = Math.max(1, 4 - Math.floor(index / 4));
-    const category = row.resource.category;
+    rows.forEach((row, index) => {
+      const weight = Math.max(1, 4 - Math.floor(index / 4));
+      const category = row.resource.category;
 
-    if (category) {
-      const existing = categoryScores.get(category.id);
-      if (existing) {
-        existing.score += weight;
-      } else {
-        categoryScores.set(category.id, {
-          id: category.id,
-          name: category.name,
-          slug: category.slug,
-          score: weight,
-        });
+      if (category) {
+        const existing = categoryScores.get(category.id);
+        if (existing) {
+          existing.score += weight;
+        } else {
+          categoryScores.set(category.id, {
+            id: category.id,
+            name: category.name,
+            slug: category.slug,
+            score: weight,
+          });
+        }
       }
-    }
 
-    if (row.resource.level) {
-      levelScores.set(
-        row.resource.level,
-        (levelScores.get(row.resource.level) ?? 0) + weight,
-      );
-    }
-  });
+      if (row.resource.level) {
+        levelScores.set(
+          row.resource.level,
+          (levelScores.get(row.resource.level) ?? 0) + weight,
+        );
+      }
+    });
 
-  return {
-    hasHistory: true,
-    recentStudyTitle: rows[0]?.resource.title ?? null,
-    recentCategoryId: rows[0]?.resource.category?.id ?? null,
-    recentCategoryName: rows[0]?.resource.category?.name ?? null,
-    topCategories: Array.from(categoryScores.values())
-      .sort((left, right) => right.score - left.score)
-      .slice(0, 3),
-    preferredLevels: Array.from(levelScores.entries())
-      .sort((left, right) => right[1] - left[1])
-      .map(([level]) => level)
-      .slice(0, 2),
-  };
-}
+    return {
+      hasHistory: true,
+      recentStudyTitle: rows[0]?.resource.title ?? null,
+      recentCategoryId: rows[0]?.resource.category?.id ?? null,
+      recentCategoryName: rows[0]?.resource.category?.name ?? null,
+      topCategories: Array.from(categoryScores.values())
+        .sort((left, right) => right.score - left.score)
+        .slice(0, 3),
+      preferredLevels: Array.from(levelScores.entries())
+        .sort((left, right) => right[1] - left[1])
+        .map(([level]) => level)
+        .slice(0, 2),
+    };
+  },
+  ["user-learning-profile"],
+  { revalidate: CACHE_TTLS.publicPage },
+);

@@ -1,7 +1,14 @@
 import "./globals.css";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+// force-dynamic removed: neither getPlatform() nor getTypographySettingsOrDefault()
+// access request-specific data (cookies/headers/session). Both are wrapped in
+// unstable_cache (Data Cache, 300 s TTL) and react.cache() for per-request
+// deduplication — they work identically in static and dynamic rendering contexts.
+// Platform config freshness is guaranteed by revalidateTag("platform") in the
+// admin settings mutation routes. Pages that genuinely need per-request rendering
+// declare their own `export const dynamic = "force-dynamic"` (e.g. /resources,
+// all dashboard/admin pages).
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { PlatformConfigProvider } from "@/components/providers/PlatformConfigProvider";
 import { PublicSiteFooter } from "@/components/layout/PublicSiteFooter";

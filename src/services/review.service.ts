@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import {
   createReviewRecord,
   findAdminReviews,
@@ -15,6 +16,7 @@ import {
 } from "@/repositories/purchases/purchase.repository";
 import { findAdminActor, findResourceById } from "@/repositories/resources/resource.repository";
 import { hasPurchased } from "@/services/purchase.service";
+import { CACHE_TAGS, CACHE_TTLS } from "@/lib/cache";
 
 export class ReviewServiceError extends Error {
   status: number;
@@ -96,9 +98,24 @@ export async function createReview(
   });
 }
 
-export async function getResourceReviews(resourceId: string, take = 5) {
-  return findResourceReviews(resourceId, take);
-}
+/**
+ * Returns up to `take` visible reviews for a resource.
+ *
+ * Cached via Next.js Data Cache (unstable_cache) for CACHE_TTLS.publicPage
+ * seconds.  The "discover" cache tag is used so this entry is invalidated
+ * whenever a review is submitted, updated, or hidden by an admin — those
+ * mutation routes all call `revalidateTag(CACHE_TAGS.discover)`.
+ *
+ * User-specific data (viewerReview, ownership) is handled separately and
+ * is never cached.
+ */
+export const getResourceReviews = unstable_cache(
+  async function _getResourceReviews(resourceId: string, take: number) {
+    return findResourceReviews(resourceId, take);
+  },
+  ["resource-reviews"],
+  { revalidate: CACHE_TTLS.publicPage, tags: [CACHE_TAGS.discover] },
+);
 
 export async function getUserResourceReview(userId: string, resourceId: string) {
   return findReviewByUserAndResource(userId, resourceId);
@@ -179,18 +196,33 @@ export async function unhideReview(adminUserId: string, reviewId: string) {
   return updateAdminReviewVisibility(adminUserId, reviewId, true);
 }
 
-export async function getResourceTrustSummary(resourceId: string) {
-  const [ratingSummary, totalSales] = await Promise.all([
-    getResourceRatingSummary(resourceId),
-    findCompletedSalesCountByResource(resourceId),
-  ]);
+/**
+ * Returns aggregated trust signals (average rating, review count, total sales)
+ * for a single resource.
+ *
+ * Cached via Next.js Data Cache (unstable_cache) for CACHE_TTLS.publicPage
+ * seconds.  The "discover" tag ensures the entry is invalidated when reviews
+ * are submitted or when admin modifies the resource — those mutation routes
+ * call `revalidateTag(CACHE_TAGS.discover)`.  A new completed purchase does
+ * not currently invalidate this cache; totalSales may lag by up to
+ * CACHE_TTLS.publicPage seconds, which is acceptable for a public trust signal.
+ */
+export const getResourceTrustSummary = unstable_cache(
+  async function _getResourceTrustSummary(resourceId: string) {
+    const [ratingSummary, totalSales] = await Promise.all([
+      getResourceRatingSummary(resourceId),
+      findCompletedSalesCountByResource(resourceId),
+    ]);
 
-  return {
-    averageRating: normalizeAverageRating(ratingSummary._avg.rating),
-    totalReviews: ratingSummary._count._all,
-    totalSales,
-  };
-}
+    return {
+      averageRating: normalizeAverageRating(ratingSummary._avg.rating),
+      totalReviews: ratingSummary._count._all,
+      totalSales,
+    };
+  },
+  ["resource-trust-summary"],
+  { revalidate: CACHE_TTLS.publicPage, tags: [CACHE_TAGS.discover] },
+);
 
 export async function attachResourceTrustSignals<T extends { id: string }>(resources: T[]) {
   if (resources.length === 0) {
