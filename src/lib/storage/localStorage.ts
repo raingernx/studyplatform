@@ -34,7 +34,11 @@ export class LocalStorageProvider implements StorageProvider {
    * Creates the upload directory if it does not yet exist.
    * Returns the key unchanged.
    */
-  async upload(file: Buffer, key: string): Promise<string> {
+  async upload(
+    file: Buffer,
+    key: string,
+    _options?: { contentType?: string },
+  ): Promise<string> {
     if (!VALID_KEY_REGEX.test(key)) {
       throw new Error(`[LocalStorageProvider] Invalid storage key: "${key}"`);
     }

@@ -13,14 +13,22 @@ export interface StorageProvider {
   /**
    * Persist a file and return its storage key.
    *
-   * @param file - Raw file contents as a Buffer
-   * @param key  - Unique storage key (e.g. "a1b2c3d4-filename.pdf").
-   *               The provider may use this as-is or transform it.
-   * @returns    The storage key under which the file was saved.
-   *             For local storage this equals `key`.
-   *             For S3/R2 this would be the object key.
+   * @param file    - Raw file contents as a Buffer
+   * @param key     - Unique storage key (e.g. "a1b2c3d4-filename.pdf").
+   *                  The provider may use this as-is or transform it.
+   * @param options - Optional upload metadata.
+   *   - contentType: MIME type stored on the object so cloud providers
+   *                  (R2, S3) serve the correct Content-Type header on
+   *                  public GET requests.  Ignored by LocalStorageProvider.
+   * @returns       The storage key under which the file was saved.
+   *                For local storage this equals `key`.
+   *                For S3/R2 this is the object key.
    */
-  upload(file: Buffer, key: string): Promise<string>;
+  upload(
+    file: Buffer,
+    key: string,
+    options?: { contentType?: string },
+  ): Promise<string>;
 
   /**
    * Return a URL (or path) that allows the file to be served.

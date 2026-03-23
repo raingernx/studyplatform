@@ -1,14 +1,12 @@
 import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { storage } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
-const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
 const ALLOWED_MIME_TYPES = new Map<string, string>([
   ["image/png", "png"],
   ["image/jpeg", "jpg"],
@@ -16,6 +14,16 @@ const ALLOWED_MIME_TYPES = new Map<string, string>([
   ["image/webp", "webp"],
 ]);
 
+const R2_VARS = ["R2_ENDPOINT", "R2_BUCKET", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"];
+
+/**
+ * POST /api/admin/upload/logo
+ * Body: multipart/form-data with field "file" (image).
+ * Returns: { url: string } — public R2 URL suitable for storing in DB fields
+ * such as logoUrl, faviconUrl, etc.
+ *
+ * Requires R2 to be configured. Returns 503 if R2 env vars are missing.
+ */
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -24,6 +32,17 @@ export async function POST(req: Request) {
     }
     if (session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    }
+
+    if (!R2_VARS.every((v) => !!process.env[v])) {
+      console.error("[ADMIN_LOGO_UPLOAD] R2 storage is not configured.");
+      return NextResponse.json(
+        {
+          error:
+            "Image storage is not configured. Set R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY.",
+        },
+        { status: 503 },
+      );
     }
 
     const formData = await req.formData();
@@ -51,15 +70,12 @@ export async function POST(req: Request) {
       );
     }
 
-    await mkdir(UPLOAD_DIR, { recursive: true });
-
-    const fileName = `logo-${Date.now()}-${randomUUID()}.${extension}`;
-    const filePath = path.join(UPLOAD_DIR, fileName);
+    const key = `logo-${Date.now()}-${randomUUID()}.${extension}`;
     const buffer = Buffer.from(await file.arrayBuffer());
+    await storage.upload(buffer, key, { contentType: file.type });
 
-    await writeFile(filePath, buffer);
-
-    return NextResponse.json({ url: `/uploads/${fileName}` });
+    const url = storage.getUrl(key);
+    return NextResponse.json({ url });
   } catch (error) {
     console.error("[ADMIN_LOGO_UPLOAD]", error);
     return NextResponse.json(

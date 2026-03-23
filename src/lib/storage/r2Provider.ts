@@ -92,15 +92,21 @@ export class R2Provider implements StorageProvider {
    *
    * Returns the key so callers can store it in the database.
    */
-  async upload(file: Buffer, key: string): Promise<string> {
+  async upload(
+    file: Buffer,
+    key: string,
+    options?: { contentType?: string },
+  ): Promise<string> {
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
         Body: file,
-        // ContentType is not set here because the upload route stores the
-        // mimeType on the Resource row and sets Content-Disposition at
-        // download time via the signed URL.
+        // ContentType is set when provided (e.g. image uploads) so R2 serves
+        // the correct Content-Type header on public GET requests.
+        // For resource files the mimeType is set at download time via the
+        // signed URL's ResponseContentType parameter instead.
+        ...(options?.contentType && { ContentType: options.contentType }),
       })
     );
 

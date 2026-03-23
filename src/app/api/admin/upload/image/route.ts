@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
+import { storage } from "@/lib/storage";
 
-/** Images are stored in public/uploads so they are publicly accessible at /uploads/… */
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
+export const runtime = "nodejs";
 
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB per image
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -16,10 +13,15 @@ const ALLOWED_MIME_TYPES = new Set([
   "image/gif",
 ]);
 
+const R2_VARS = ["R2_ENDPOINT", "R2_BUCKET", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"];
+
 /**
  * POST /api/admin/upload/image
  * Body: multipart/form-data with field "file" (image).
- * Returns: { url: string } — public URL path e.g. /uploads/abc123.jpg
+ * Returns: { url: string } — public R2 URL suitable for storing in DB fields
+ * such as imageUrl, previewUrl, etc.
+ *
+ * Requires R2 to be configured. Returns 503 if R2 env vars are missing.
  */
 export async function POST(req: Request) {
   try {
@@ -31,13 +33,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     }
 
+    if (!R2_VARS.every((v) => !!process.env[v])) {
+      console.error("[UPLOAD_IMAGE] R2 storage is not configured.");
+      return NextResponse.json(
+        {
+          error:
+            "Image storage is not configured. Set R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY.",
+        },
+        { status: 503 },
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get("file");
 
     if (!(file instanceof File) || file.size === 0) {
       return NextResponse.json(
         { error: "file is required and must not be empty." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -46,7 +59,7 @@ export async function POST(req: Request) {
         {
           error: `Image too large. Maximum size is ${MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB.`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -54,7 +67,7 @@ export async function POST(req: Request) {
     if (!ALLOWED_MIME_TYPES.has(mimeType)) {
       return NextResponse.json(
         { error: "Invalid image type. Use JPEG, PNG, WebP, or GIF." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -62,23 +75,18 @@ export async function POST(req: Request) {
     const randomHex = Array.from(crypto.getRandomValues(new Uint8Array(8)))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
-    const fileName = `${randomHex}.${ext}`;
+    const key = `${randomHex}.${ext}`;
 
-    if (!existsSync(UPLOAD_DIR)) {
-      await mkdir(UPLOAD_DIR, { recursive: true });
-    }
-
-    const filePath = path.join(UPLOAD_DIR, fileName);
     const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(filePath, buffer);
+    await storage.upload(buffer, key, { contentType: mimeType });
 
-    const url = `/uploads/${fileName}`;
+    const url = storage.getUrl(key);
     return NextResponse.json({ url });
   } catch (err) {
     console.error("[UPLOAD_IMAGE]", err);
     return NextResponse.json(
       { error: "Internal server error." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
