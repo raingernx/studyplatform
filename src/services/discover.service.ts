@@ -132,7 +132,6 @@ export const getDiscoverData = unstable_cache(
       featuredIdsFromStats,
       freeIdsFromStats,
       topCreator,
-      categories,
     ] = await Promise.all([
       getTrendingResources(8),
       rememberJson(CACHE_KEYS.popularResources, CACHE_TTLS.homepageList, () =>
@@ -150,10 +149,6 @@ export const getDiscoverData = unstable_cache(
       rememberJson(CACHE_KEYS.topCreator, CACHE_TTLS.homepageList, () =>
         findTopCreatorThisWeek(),
       ),
-      prisma.category.findMany({
-        include: { _count: { select: { resources: true } } },
-        orderBy: { name: "asc" },
-      }),
     ]);
 
     const [popularIds, newestIds, featuredIds, freeIds] = await Promise.all([
@@ -210,7 +205,6 @@ export const getDiscoverData = unstable_cache(
       mostDownloaded,
       recommended,
       topCreator,
-      categories,
     };
   },
   ["discover-data"],

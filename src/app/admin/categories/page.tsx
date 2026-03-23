@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useMemo, useState, type FormEvent } from "react";
 import { Plus } from "lucide-react";
 

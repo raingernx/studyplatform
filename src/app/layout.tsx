@@ -1,5 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
+
+export const dynamic = "force-dynamic";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { PlatformConfigProvider } from "@/components/providers/PlatformConfigProvider";
 import { PublicSiteFooter } from "@/components/layout/PublicSiteFooter";
@@ -39,15 +41,12 @@ export default async function RootLayout({
   const cssVars = typographyThemeToCssVars(theme);
   const style = cssVarsToStyle(cssVars);
 
-  if (process.env.NODE_ENV === "development") {
-    console.log("Typography Theme:", theme);
-  }
-
   return (
     <html
       lang="th"
       data-typography={typographySettings.presetKey}
       data-typography-scale={theme.headingScale}
+      data-scroll-behavior="smooth"
     >
       <body
         className={`${fontVariables} font-sans ${typographySettings.enableFontSmoothing ? "antialiased" : ""}`.trim()}

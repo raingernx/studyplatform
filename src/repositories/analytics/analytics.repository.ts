@@ -156,6 +156,19 @@ export async function createAnalyticsEvent(input: CreateAnalyticsEventInput) {
   });
 }
 
+export async function createManyAnalyticsEvents(inputs: CreateAnalyticsEventInput[]) {
+  if (inputs.length === 0) return;
+  return prisma.analyticsEvent.createMany({
+    data: inputs.map((input) => ({
+      eventType: input.eventType,
+      userId: input.userId ?? null,
+      resourceId: input.resourceId ?? null,
+      creatorId: input.creatorId ?? null,
+      metadata: input.metadata ?? Prisma.JsonNull,
+    })),
+  });
+}
+
 export async function upsertCreatorRevenue(input: CreateCreatorRevenueInput) {
   return prisma.creatorRevenue.upsert({
     where: { purchaseId: input.purchaseId },

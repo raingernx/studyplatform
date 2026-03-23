@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams?: { payment?: string };
+  searchParams?: Promise<{ payment?: string }>;
 }
 
 export default async function Page({ params, searchParams }: PageProps) {
@@ -17,7 +17,8 @@ export default async function Page({ params, searchParams }: PageProps) {
     notFound();
   }
 
-  const payment = searchParams?.payment;
+  const resolvedSearchParams = await searchParams;
+  const payment = resolvedSearchParams?.payment;
   const query = payment ? `?payment=${encodeURIComponent(payment)}` : "";
 
   redirect(`/resources/${resource.slug}${query}`);

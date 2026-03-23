@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { isMissingTableError } from "@/lib/prismaErrors";
 import { logActivity } from "@/lib/activity";
 import { Navbar } from "@/components/layout/Navbar";
 import { Container } from "@/components/layout/container";
@@ -176,10 +177,25 @@ export async function generateMetadata({ params }: Props) {
 export default async function ResourceDetailPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
-  const session = await getServerSession(authOptions);
+
+  let session = null;
+  try {
+    session = await getServerSession(authOptions);
+  } catch (error) {
+    if (!isMissingTableError(error)) throw error;
+    // Auth tables missing (local dev schema drift) — treat as unauthenticated.
+  }
   const userId = session?.user?.id;
 
-  const { resource, relatedResources } = await getPublicResourcePageData(slug);
+  let resourcePageData;
+  try {
+    resourcePageData = await getPublicResourcePageData(slug);
+  } catch (error) {
+    if (!isMissingTableError(error)) throw error;
+    // Resource table missing (local dev schema drift) — render 404.
+    notFound();
+  }
+  const { resource, relatedResources } = resourcePageData ?? { resource: null, relatedResources: [] };
 
   if (!resource || resource.status !== "PUBLISHED") {
     notFound();

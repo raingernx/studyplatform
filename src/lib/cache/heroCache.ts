@@ -3,7 +3,7 @@ import { listEligibleHomepageHeroes } from "@/repositories/heroes/hero.repositor
 
 export const HERO_CACHE_KEY = "homepage-active-hero";
 export const HERO_CACHE_TAG = "hero";
-export const HERO_CACHE_TTL_SECONDS = 60;
+export const HERO_CACHE_TTL_SECONDS = 120;
 
 export const getCachedEligibleHomepageHeroes = unstable_cache(
   async function loadEligibleHomepageHeroes() {

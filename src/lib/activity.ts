@@ -66,7 +66,7 @@ export async function logActivity({
   try {
     await prisma.activityLog.create({
       data: {
-        userId: userId ?? undefined,
+        userId: userId ?? null,
         action,
         entity: resolvedEntity,
         entityId: entityId ?? undefined,
@@ -76,7 +76,33 @@ export async function logActivity({
       },
     });
   } catch (err) {
-    // Activity logging must never break primary flows.
+    // If the userId FK is stale (user deleted after the session was issued),
+    // retry once as an anonymous log so the event data is still preserved.
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2003" &&
+      typeof err.meta?.field_name === "string" &&
+      err.meta.field_name.includes("userId")
+    ) {
+      console.warn("[ACTIVITY_LOG] userId FK miss — retrying as anonymous log");
+      try {
+        await prisma.activityLog.create({
+          data: {
+            userId: null,
+            action,
+            entity: resolvedEntity,
+            entityId: entityId ?? undefined,
+            metadata: resolvedMetadata,
+            ip: ip ?? undefined,
+            userAgent: userAgent ?? undefined,
+          },
+        });
+      } catch {
+        // Swallow — activity logging must never break primary flows.
+      }
+      return;
+    }
+    // Unexpected DB error — still worth surfacing.
     console.error("[ACTIVITY_LOG_ERROR]", err);
   }
 }

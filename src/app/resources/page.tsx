@@ -55,7 +55,7 @@ import {
 import { getBehaviorBasedRecommendations, getPhase1Recommendations } from "@/services/recommendations/behavior-profile.service";
 import { assignRecommendationVariant, RECOMMENDATION_EXPERIMENT_ID } from "@/lib/recommendations/experiment";
 import { RecommendationSection } from "@/components/recommendations/RecommendationSection";
-import { recordAnalyticsEvent } from "@/analytics/event.service";
+import { recordAnalyticsEvents } from "@/analytics/event.service";
 
 export const dynamic = "force-dynamic";
 
@@ -192,20 +192,26 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
     discoverCategoriesWithCount = [];
   }
 
-  // ── Owned IDs (both modes) ──────────────────────────────────────────────────
+  // ── Owned IDs + learning profile (both independent reads, run in parallel) ──
 
   let ownedIds = new Set<string>();
-  try {
-    if (userId) ownedIds = await getOwnedResourceIds(userId);
-  } catch (error) {
-    if (!isMissingTableError(error)) throw error;
+  const [ownedIdsResult, learningProfileResult] = await Promise.allSettled([
+    userId ? getOwnedResourceIds(userId) : Promise.resolve(new Set<string>()),
+    isDiscoverMode && userId
+      ? getUserLearningProfile(userId)
+      : Promise.resolve(null),
+  ]);
+
+  if (ownedIdsResult.status === "fulfilled") {
+    ownedIds = ownedIdsResult.value;
+  } else if (!isMissingTableError(ownedIdsResult.reason)) {
+    throw ownedIdsResult.reason;
   }
-  if (isDiscoverMode && userId) {
-    try {
-      learningProfile = await getUserLearningProfile(userId);
-    } catch (error) {
-      if (!isMissingTableError(error)) throw error;
-    }
+
+  if (learningProfileResult.status === "fulfilled") {
+    learningProfile = learningProfileResult.value;
+  } else if (!isMissingTableError(learningProfileResult.reason)) {
+    throw learningProfileResult.reason;
   }
   // Category of the most recently purchased resource — used for the "Because you studied X"
   // section so the title and the card results actually agree on the same subject.
@@ -252,22 +258,20 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
   // One RESOURCE_VIEW event per shown resource, tagged with experiment context,
   // so per-resource and per-variant CTR can be queried from analytics_events.
   if (userId && recommendationVariant && (recommendedForYou as ResourceCardData[]).length > 0) {
-    void Promise.all(
-      (recommendedForYou as ResourceCardData[]).map((r, position) =>
-        recordAnalyticsEvent({
-          eventType:  "RESOURCE_VIEW",
-          userId,
-          resourceId: r.id,
-          metadata: {
-            source:     "recommendation_impression",
-            experiment: RECOMMENDATION_EXPERIMENT_ID,
-            variant:    recommendationVariant,
-            section:    "recommended_for_you",
-            position,
-          },
-        }).catch(() => undefined),
-      ),
-    );
+    void recordAnalyticsEvents(
+      (recommendedForYou as ResourceCardData[]).map((r, position) => ({
+        eventType:  "RESOURCE_VIEW" as const,
+        userId,
+        resourceId: r.id,
+        metadata: {
+          source:     "recommendation_impression",
+          experiment: RECOMMENDATION_EXPERIMENT_ID,
+          variant:    recommendationVariant,
+          section:    "recommended_for_you",
+          position,
+        },
+      })),
+    ).catch(() => undefined);
   }
   const discoverResourceCount = discoverCategoriesWithCount.reduce(
     (sum, item) => sum + item._count.resources,

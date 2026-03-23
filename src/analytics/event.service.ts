@@ -1,6 +1,7 @@
 import { type AnalyticsEventType, type Prisma } from "@prisma/client";
 import {
   createAnalyticsEvent,
+  createManyAnalyticsEvents,
   upsertCreatorRevenue,
 } from "@/repositories/analytics/analytics.repository";
 
@@ -78,6 +79,21 @@ export async function recordAnalyticsEvent(
     creatorId: input.creatorId ?? null,
     metadata: normalizeAnalyticsMetadata(input.metadata),
   });
+}
+
+export async function recordAnalyticsEvents(
+  inputs: RecordAnalyticsEventInput[],
+) {
+  if (inputs.length === 0) return;
+  return createManyAnalyticsEvents(
+    inputs.map((input) => ({
+      eventType: input.eventType,
+      userId: input.userId ?? null,
+      resourceId: input.resourceId ?? null,
+      creatorId: input.creatorId ?? null,
+      metadata: normalizeAnalyticsMetadata(input.metadata),
+    })),
+  );
 }
 
 export async function recordPurchaseAnalytics(

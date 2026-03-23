@@ -11,7 +11,6 @@ export function SecuritySettings() {
     setIsChanging(true);
     // Mock API for now
     setTimeout(() => {
-      console.log("Change password clicked");
       setIsChanging(false);
     }, 500);
   }
