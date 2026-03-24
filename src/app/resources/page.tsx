@@ -94,6 +94,17 @@ function getSearchParamValue(value: SearchParamValue) {
   return value;
 }
 
+function hasSessionTokenCookie(
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+) {
+  return cookieStore.getAll().some(({ name }) =>
+    name === "next-auth.session-token" ||
+    name === "__Secure-next-auth.session-token" ||
+    name === "authjs.session-token" ||
+    name === "__Secure-authjs.session-token",
+  );
+}
+
 export default async function ResourcesPage({ searchParams }: ResourcesPageProps) {
   const resolvedParams = searchParams ? await searchParams : {};
 
@@ -120,12 +131,21 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
   // Discover = no category selected; Category = any category (including "all")
   const isDiscoverMode = !category;
 
-  let session: Session | null = null;
+  let cookieStore: Awaited<ReturnType<typeof cookies>> | null = null;
   try {
-    session = await getServerSession(authOptions);
-  } catch (error) {
-    if (!isMissingTableError(error)) throw error;
-    // Auth tables missing in local dev — treat as unauthenticated.
+    cookieStore = await cookies();
+  } catch {
+    cookieStore = null;
+  }
+
+  let session: Session | null = null;
+  if (cookieStore && hasSessionTokenCookie(cookieStore)) {
+    try {
+      session = await getServerSession(authOptions);
+    } catch (error) {
+      if (!isMissingTableError(error)) throw error;
+      // Auth tables missing in local dev — treat as unauthenticated.
+    }
   }
   const userId  = session?.user?.id;
 
@@ -142,13 +162,9 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
   // The discover-mode homepage uses a separate curated data pipeline that is
   // not affected by this experiment.
   let effectiveSort: string = sort;
-  try {
-    const cookieStore = await cookies();
+  if (cookieStore) {
     const rawVariant = cookieStore.get(RANKING_EXPERIMENT_COOKIE)?.value;
     effectiveSort = variantToSort(isValidRankingVariant(rawVariant) ? rawVariant : null);
-  } catch {
-    // Cookie read failure must never disrupt the page. Fall back to "newest".
-    effectiveSort = "newest";
   }
 
   // ── Mode-specific data ──────────────────────────────────────────────────────
