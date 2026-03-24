@@ -15,6 +15,7 @@ import type { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 import { CACHE_TAGS, CACHE_TTLS, getResourceCacheTag } from "@/lib/cache";
 import { logPerformanceEvent } from "@/lib/performance/observability";
+import { DEFAULT_SORT, normaliseSortParam } from "@/config/sortOptions";
 import {
   countMarketplaceResources,
   findActivationRankedResources,
@@ -84,6 +85,63 @@ export interface MarketplaceFilters {
   pageSize?: number;
 }
 
+export const MARKETPLACE_DEFAULT_PAGE = 1;
+export const MARKETPLACE_DEFAULT_PAGE_SIZE = 20;
+
+export interface NormalizedMarketplaceFilters {
+  search: string | null;
+  category: string | null;
+  price: "free" | "paid" | null;
+  featured: boolean;
+  tag: string | null;
+  sort: string;
+  page: number;
+  pageSize: number;
+}
+
+function normalizeOptionalMarketplaceText(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function normalizeMarketplacePage(value: number | null | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return MARKETPLACE_DEFAULT_PAGE;
+  }
+
+  return Math.max(MARKETPLACE_DEFAULT_PAGE, Math.trunc(value));
+}
+
+function normalizeMarketplacePageSize(value: number | null | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return MARKETPLACE_DEFAULT_PAGE_SIZE;
+  }
+
+  return Math.max(1, Math.trunc(value));
+}
+
+export function normalizeMarketplaceFilters(
+  filters: MarketplaceFilters,
+): NormalizedMarketplaceFilters {
+  const category = normalizeOptionalMarketplaceText(filters.category);
+  const rawPrice = normalizeOptionalMarketplaceText(filters.price);
+
+  return {
+    search: normalizeOptionalMarketplaceText(filters.search),
+    category: category === "all" ? null : category,
+    price: rawPrice === "free" || rawPrice === "paid" ? rawPrice : null,
+    featured: filters.featured === true,
+    tag: normalizeOptionalMarketplaceText(filters.tag),
+    sort: normaliseSortParam(filters.sort ?? DEFAULT_SORT),
+    page: normalizeMarketplacePage(filters.page),
+    pageSize: normalizeMarketplacePageSize(filters.pageSize),
+  };
+}
+
+export function getMarketplaceCacheKey(filters: NormalizedMarketplaceFilters) {
+  return JSON.stringify(filters);
+}
+
 /** Builds a Prisma `orderBy` clause from a sort key string.
  *
  * Canonical values (from SORT_OPTIONS in src/config/sortOptions.ts):
@@ -130,37 +188,33 @@ export function buildOrderBy(sort: string) {
  * Returns a paginated list of published resources matching the supplied
  * filters, together with the full category list for the filter sidebar.
  */
-async function loadMarketplaceResources(filters: MarketplaceFilters) {
+async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
   const {
     search,
     category,
     price,
     featured,
     tag,
-    sort     = "recommended",
-    page     = 1,
-    pageSize = 20,
+    sort,
+    page,
+    pageSize,
   } = filters;
 
-  const trimmedSearch   = search?.trim();
-  const trimmedCategory = category?.trim();
-  const trimmedTag      = tag?.trim();
-
-  const searchWhere = trimmedSearch
+  const searchWhere = search
     ? {
         OR: [
-          { title:       { contains: trimmedSearch, mode: "insensitive" as const } },
-          { description: { contains: trimmedSearch, mode: "insensitive" as const } },
+          { title:       { contains: search, mode: "insensitive" as const } },
+          { description: { contains: search, mode: "insensitive" as const } },
         ],
       }
     : {};
 
   const categoryId =
-    trimmedCategory && trimmedCategory !== "all"
-      ? (await findCategoryBySlug(trimmedCategory))?.id
+    category
+      ? (await findCategoryBySlug(category))?.id
       : undefined;
 
-  if (trimmedCategory && trimmedCategory !== "all" && !categoryId) {
+  if (category && !categoryId) {
     const categories = await findCategoriesOrderedByName();
 
     return {
@@ -179,8 +233,8 @@ async function loadMarketplaceResources(filters: MarketplaceFilters) {
     const [{ rows, total }, categories] = await Promise.all([
       findActivationRankedResources({
         categoryId,
-        tagSlug:  trimmedTag,
-        search:   trimmedSearch,
+        tagSlug:  tag ?? undefined,
+        search:   search ?? undefined,
         isFree:   isFreeFilter,
         featured: featured || undefined,
         page,
@@ -209,8 +263,8 @@ async function loadMarketplaceResources(filters: MarketplaceFilters) {
 
   const featuredWhere = featured ? { featured: true } : {};
 
-  const tagWhere = trimmedTag
-    ? { tags: { some: { tag: { slug: trimmedTag } } } }
+  const tagWhere = tag
+    ? { tags: { some: { tag: { slug: tag } } } }
     : {};
 
   const where = {
@@ -247,22 +301,26 @@ async function loadMarketplaceResources(filters: MarketplaceFilters) {
   };
 }
 
-export const getMarketplaceResources = unstable_cache(
-  async function _getMarketplaceResources(filters: MarketplaceFilters) {
-    logPerformanceEvent("cache_execute:getMarketplaceResources", {
-      category: filters.category ?? "all",
-      page: filters.page ?? 1,
-      pageSize: filters.pageSize ?? 12,
-      sort: filters.sort ?? "default",
-    });
-    return loadMarketplaceResources(filters);
-  },
-  ["marketplace-resources"],
-  {
-    revalidate: CACHE_TTLS.publicPage,
-    tags: [CACHE_TAGS.discover],
-  },
-);
+export async function getMarketplaceResources(filters: MarketplaceFilters) {
+  const normalizedFilters = normalizeMarketplaceFilters(filters);
+
+  return unstable_cache(
+    async function _getMarketplaceResourcesByKey() {
+      logPerformanceEvent("cache_execute:getMarketplaceResources", {
+        category: normalizedFilters.category ?? "all",
+        page: normalizedFilters.page,
+        pageSize: normalizedFilters.pageSize,
+        sort: normalizedFilters.sort,
+      });
+      return loadMarketplaceResources(normalizedFilters);
+    },
+    ["marketplace-resources", getMarketplaceCacheKey(normalizedFilters)],
+    {
+      revalidate: CACHE_TTLS.publicPage,
+      tags: [CACHE_TAGS.discover],
+    },
+  )();
+}
 
 // ── Single resource detail ────────────────────────────────────────────────────
 

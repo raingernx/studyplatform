@@ -142,9 +142,12 @@ write_markdown_report() {
 | Route | Cold | Warm 1 | Warm 2 | Warm 3 | Warm Median | ROI | Repeated miss after warm? | Notes |
 |---|---:|---:|---:|---:|---:|---:|---|---|
 | \`/\` | ${COLD_ROOT_TTFB}s |  |  |  |  |  | n/a | redirect only |
-| \`/resources\` | ${COLD_RESOURCES_TTFB}s | ${warm_resources_ttfb_1}s | ${warm_resources_ttfb_2}s | ${warm_resources_ttfb_3}s | ${WARM_RESOURCES_MEDIAN}s | ${ROI_RESOURCES} | manual log check required |  |
-| \`/resources?sort=newest\` | ${COLD_NEWEST_TTFB}s | ${warm_newest_ttfb_1}s | ${warm_newest_ttfb_2}s | ${warm_newest_ttfb_3}s | ${WARM_NEWEST_MEDIAN}s | ${ROI_NEWEST} | manual log check required |  |
-| \`/resources?sort=recommended\` | ${COLD_RECOMMENDED_TTFB}s | ${warm_recommended_ttfb_1}s | ${warm_recommended_ttfb_2}s | ${warm_recommended_ttfb_3}s | ${WARM_RECOMMENDED_MEDIAN}s | ${ROI_RECOMMENDED} | manual log check required |  |
+| \`/resources\` | ${COLD_RESOURCES_TTFB}s | ${warm_resources_ttfb_1}s | ${warm_resources_ttfb_2}s | ${warm_resources_ttfb_3}s | ${WARM_RESOURCES_MEDIAN}s | ${ROI_RESOURCES} | manual log check required | discover mode |
+| \`/resources?sort=newest\` | ${COLD_NEWEST_TTFB}s | ${warm_newest_ttfb_1}s | ${warm_newest_ttfb_2}s | ${warm_newest_ttfb_3}s | ${WARM_NEWEST_MEDIAN}s | ${ROI_NEWEST} | manual log check required | still discover mode without category |
+| \`/resources?sort=recommended\` | ${COLD_RECOMMENDED_TTFB}s | ${warm_recommended_ttfb_1}s | ${warm_recommended_ttfb_2}s | ${warm_recommended_ttfb_3}s | ${WARM_RECOMMENDED_MEDIAN}s | ${ROI_RECOMMENDED} | manual log check required | still discover mode without category |
+| \`/resources?category=all\` | ${COLD_LISTING_DEFAULT_TTFB}s | ${warm_listing_default_ttfb_1}s | ${warm_listing_default_ttfb_2}s | ${warm_listing_default_ttfb_3}s | ${WARM_LISTING_DEFAULT_MEDIAN}s | ${ROI_LISTING_DEFAULT} | manual log check required | listing mode |
+| \`/resources?category=all&sort=newest\` | ${COLD_LISTING_NEWEST_TTFB}s | ${warm_listing_newest_ttfb_1}s | ${warm_listing_newest_ttfb_2}s | ${warm_listing_newest_ttfb_3}s | ${WARM_LISTING_NEWEST_MEDIAN}s | ${ROI_LISTING_NEWEST} | manual log check required | listing mode |
+| \`/resources?category=all&sort=recommended\` | ${COLD_LISTING_RECOMMENDED_TTFB}s | ${warm_listing_recommended_ttfb_1}s | ${warm_listing_recommended_ttfb_2}s | ${warm_listing_recommended_ttfb_3}s | ${WARM_LISTING_RECOMMENDED_MEDIAN}s | ${ROI_LISTING_RECOMMENDED} | manual log check required | listing mode |
 | \`/resources/<HOT_SLUG>\` | ${COLD_DETAIL_HOT_TTFB}s | ${warm_detail_hot_ttfb_1}s | ${warm_detail_hot_ttfb_2}s | ${warm_detail_hot_ttfb_3}s | ${WARM_DETAIL_HOT_MEDIAN}s | ${ROI_DETAIL_HOT} | manual log check required |  |
 | \`/resources/<COLD_SLUG>\` | ${COLD_DETAIL_COLD_TTFB}s | ${warm_detail_cold_ttfb_1}s | ${warm_detail_cold_ttfb_2}s | ${warm_detail_cold_ttfb_3}s | ${WARM_DETAIL_COLD_MEDIAN}s | ${ROI_DETAIL_COLD} | manual log check required | long-tail control |
 | \`/creators/<HOT_CREATOR>\` | ${COLD_CREATOR_HOT_TTFB}s | ${warm_creator_hot_ttfb_1}s | ${warm_creator_hot_ttfb_2}s | ${warm_creator_hot_ttfb_3}s | ${WARM_CREATOR_HOT_MEDIAN}s | ${ROI_CREATOR_HOT} | manual log check required |  |
@@ -155,6 +158,9 @@ write_markdown_report() {
 - resources: cold=${COLD_RESOURCES_TTFB}s warm=${WARM_RESOURCES_MEDIAN}s saved=${ROI_RESOURCES_MS}ms roi=${ROI_RESOURCES}
 - newest: cold=${COLD_NEWEST_TTFB}s warm=${WARM_NEWEST_MEDIAN}s saved=${ROI_NEWEST_MS}ms roi=${ROI_NEWEST}
 - recommended: cold=${COLD_RECOMMENDED_TTFB}s warm=${WARM_RECOMMENDED_MEDIAN}s saved=${ROI_RECOMMENDED_MS}ms roi=${ROI_RECOMMENDED}
+- listing_default: cold=${COLD_LISTING_DEFAULT_TTFB}s warm=${WARM_LISTING_DEFAULT_MEDIAN}s saved=${ROI_LISTING_DEFAULT_MS}ms roi=${ROI_LISTING_DEFAULT}
+- listing_newest: cold=${COLD_LISTING_NEWEST_TTFB}s warm=${WARM_LISTING_NEWEST_MEDIAN}s saved=${ROI_LISTING_NEWEST_MS}ms roi=${ROI_LISTING_NEWEST}
+- listing_recommended: cold=${COLD_LISTING_RECOMMENDED_TTFB}s warm=${WARM_LISTING_RECOMMENDED_MEDIAN}s saved=${ROI_LISTING_RECOMMENDED_MS}ms roi=${ROI_LISTING_RECOMMENDED}
 - detail_hot: cold=${COLD_DETAIL_HOT_TTFB}s warm=${WARM_DETAIL_HOT_MEDIAN}s saved=${ROI_DETAIL_HOT_MS}ms roi=${ROI_DETAIL_HOT}
 - detail_cold: cold=${COLD_DETAIL_COLD_TTFB}s warm=${WARM_DETAIL_COLD_MEDIAN}s saved=${ROI_DETAIL_COLD_MS}ms roi=${ROI_DETAIL_COLD}
 - creator_hot: cold=${COLD_CREATOR_HOT_TTFB}s warm=${WARM_CREATOR_HOT_MEDIAN}s saved=${ROI_CREATOR_HOT_MS}ms roi=${ROI_CREATOR_HOT}
@@ -193,6 +199,9 @@ ${WARM_RESPONSE}
 - discover verdict: manual interpretation against runbook thresholds
 - newest verdict: manual interpretation against runbook thresholds
 - recommended verdict: manual interpretation against runbook thresholds
+- listing default verdict: manual interpretation against runbook thresholds
+- listing newest verdict: manual interpretation against runbook thresholds
+- listing recommended verdict: manual interpretation against runbook thresholds
 - detail hot verdict: manual interpretation against runbook thresholds
 - creator hot verdict: manual interpretation against runbook thresholds
 - warm cost verdict: manual log check required
@@ -216,6 +225,9 @@ ROOT_URL="$BASE/"
 RESOURCES_URL="$BASE/resources"
 NEWEST_URL="$BASE/resources?sort=newest"
 RECOMMENDED_URL="$BASE/resources?sort=recommended"
+LISTING_DEFAULT_URL="$BASE/resources?category=all"
+LISTING_NEWEST_URL="$BASE/resources?category=all&sort=newest"
+LISTING_RECOMMENDED_URL="$BASE/resources?category=all&sort=recommended"
 DETAIL_HOT_URL="$BASE/resources/$HOT_SLUG"
 DETAIL_COLD_URL="$BASE/resources/$COLD_SLUG"
 CREATOR_HOT_URL="$BASE/creators/$HOT_CREATOR"
@@ -229,6 +241,9 @@ cold_root_line="$(measure_redirect "root" "$ROOT_URL")"
 cold_resources_line="$(measure "resources" "$RESOURCES_URL")"
 cold_newest_line="$(measure "newest" "$NEWEST_URL")"
 cold_recommended_line="$(measure "recommended" "$RECOMMENDED_URL")"
+cold_listing_default_line="$(measure "listing_default" "$LISTING_DEFAULT_URL")"
+cold_listing_newest_line="$(measure "listing_newest" "$LISTING_NEWEST_URL")"
+cold_listing_recommended_line="$(measure "listing_recommended" "$LISTING_RECOMMENDED_URL")"
 cold_detail_hot_line="$(measure "detail_hot" "$DETAIL_HOT_URL")"
 cold_detail_cold_line="$(measure "detail_cold" "$DETAIL_COLD_URL")"
 cold_creator_hot_line="$(measure "creator_hot" "$CREATOR_HOT_URL")"
@@ -238,6 +253,9 @@ printf '%s\n' "$cold_root_line"
 printf '%s\n' "$cold_resources_line"
 printf '%s\n' "$cold_newest_line"
 printf '%s\n' "$cold_recommended_line"
+printf '%s\n' "$cold_listing_default_line"
+printf '%s\n' "$cold_listing_newest_line"
+printf '%s\n' "$cold_listing_recommended_line"
 printf '%s\n' "$cold_detail_hot_line"
 printf '%s\n' "$cold_detail_cold_line"
 printf '%s\n' "$cold_creator_hot_line"
@@ -247,6 +265,9 @@ COLD_ROOT_TTFB="$(extract_ttfb "$cold_root_line")"
 COLD_RESOURCES_TTFB="$(extract_ttfb "$cold_resources_line")"
 COLD_NEWEST_TTFB="$(extract_ttfb "$cold_newest_line")"
 COLD_RECOMMENDED_TTFB="$(extract_ttfb "$cold_recommended_line")"
+COLD_LISTING_DEFAULT_TTFB="$(extract_ttfb "$cold_listing_default_line")"
+COLD_LISTING_NEWEST_TTFB="$(extract_ttfb "$cold_listing_newest_line")"
+COLD_LISTING_RECOMMENDED_TTFB="$(extract_ttfb "$cold_listing_recommended_line")"
 COLD_DETAIL_HOT_TTFB="$(extract_ttfb "$cold_detail_hot_line")"
 COLD_DETAIL_COLD_TTFB="$(extract_ttfb "$cold_detail_cold_line")"
 COLD_CREATOR_HOT_TTFB="$(extract_ttfb "$cold_creator_hot_line")"
@@ -273,6 +294,9 @@ print_section "Post-warm repeated measurements"
 warm_resources_runs="$(measure3_capture "resources" "$RESOURCES_URL")"
 warm_newest_runs="$(measure3_capture "newest" "$NEWEST_URL")"
 warm_recommended_runs="$(measure3_capture "recommended" "$RECOMMENDED_URL")"
+warm_listing_default_runs="$(measure3_capture "listing_default" "$LISTING_DEFAULT_URL")"
+warm_listing_newest_runs="$(measure3_capture "listing_newest" "$LISTING_NEWEST_URL")"
+warm_listing_recommended_runs="$(measure3_capture "listing_recommended" "$LISTING_RECOMMENDED_URL")"
 warm_detail_hot_runs="$(measure3_capture "detail_hot" "$DETAIL_HOT_URL")"
 warm_detail_cold_runs="$(measure3_capture "detail_cold" "$DETAIL_COLD_URL")"
 warm_creator_hot_runs="$(measure3_capture "creator_hot" "$CREATOR_HOT_URL")"
@@ -281,6 +305,9 @@ warm_creator_cold_runs="$(measure3_capture "creator_cold" "$CREATOR_COLD_URL")"
 printf '%s\n' "$warm_resources_runs"
 printf '%s\n' "$warm_newest_runs"
 printf '%s\n' "$warm_recommended_runs"
+printf '%s\n' "$warm_listing_default_runs"
+printf '%s\n' "$warm_listing_newest_runs"
+printf '%s\n' "$warm_listing_recommended_runs"
 printf '%s\n' "$warm_detail_hot_runs"
 printf '%s\n' "$warm_detail_cold_runs"
 printf '%s\n' "$warm_creator_hot_runs"
@@ -295,6 +322,15 @@ warm_newest_ttfb_3="$(extract_ttfb "$(printf '%s\n' "$warm_newest_runs" | sed -n
 warm_recommended_ttfb_1="$(extract_ttfb "$(printf '%s\n' "$warm_recommended_runs" | sed -n '1p')")"
 warm_recommended_ttfb_2="$(extract_ttfb "$(printf '%s\n' "$warm_recommended_runs" | sed -n '2p')")"
 warm_recommended_ttfb_3="$(extract_ttfb "$(printf '%s\n' "$warm_recommended_runs" | sed -n '3p')")"
+warm_listing_default_ttfb_1="$(extract_ttfb "$(printf '%s\n' "$warm_listing_default_runs" | sed -n '1p')")"
+warm_listing_default_ttfb_2="$(extract_ttfb "$(printf '%s\n' "$warm_listing_default_runs" | sed -n '2p')")"
+warm_listing_default_ttfb_3="$(extract_ttfb "$(printf '%s\n' "$warm_listing_default_runs" | sed -n '3p')")"
+warm_listing_newest_ttfb_1="$(extract_ttfb "$(printf '%s\n' "$warm_listing_newest_runs" | sed -n '1p')")"
+warm_listing_newest_ttfb_2="$(extract_ttfb "$(printf '%s\n' "$warm_listing_newest_runs" | sed -n '2p')")"
+warm_listing_newest_ttfb_3="$(extract_ttfb "$(printf '%s\n' "$warm_listing_newest_runs" | sed -n '3p')")"
+warm_listing_recommended_ttfb_1="$(extract_ttfb "$(printf '%s\n' "$warm_listing_recommended_runs" | sed -n '1p')")"
+warm_listing_recommended_ttfb_2="$(extract_ttfb "$(printf '%s\n' "$warm_listing_recommended_runs" | sed -n '2p')")"
+warm_listing_recommended_ttfb_3="$(extract_ttfb "$(printf '%s\n' "$warm_listing_recommended_runs" | sed -n '3p')")"
 warm_detail_hot_ttfb_1="$(extract_ttfb "$(printf '%s\n' "$warm_detail_hot_runs" | sed -n '1p')")"
 warm_detail_hot_ttfb_2="$(extract_ttfb "$(printf '%s\n' "$warm_detail_hot_runs" | sed -n '2p')")"
 warm_detail_hot_ttfb_3="$(extract_ttfb "$(printf '%s\n' "$warm_detail_hot_runs" | sed -n '3p')")"
@@ -311,6 +347,9 @@ warm_creator_cold_ttfb_3="$(extract_ttfb "$(printf '%s\n' "$warm_creator_cold_ru
 WARM_RESOURCES_MEDIAN="$(median_ttfb "$warm_resources_ttfb_1" "$warm_resources_ttfb_2" "$warm_resources_ttfb_3")"
 WARM_NEWEST_MEDIAN="$(median_ttfb "$warm_newest_ttfb_1" "$warm_newest_ttfb_2" "$warm_newest_ttfb_3")"
 WARM_RECOMMENDED_MEDIAN="$(median_ttfb "$warm_recommended_ttfb_1" "$warm_recommended_ttfb_2" "$warm_recommended_ttfb_3")"
+WARM_LISTING_DEFAULT_MEDIAN="$(median_ttfb "$warm_listing_default_ttfb_1" "$warm_listing_default_ttfb_2" "$warm_listing_default_ttfb_3")"
+WARM_LISTING_NEWEST_MEDIAN="$(median_ttfb "$warm_listing_newest_ttfb_1" "$warm_listing_newest_ttfb_2" "$warm_listing_newest_ttfb_3")"
+WARM_LISTING_RECOMMENDED_MEDIAN="$(median_ttfb "$warm_listing_recommended_ttfb_1" "$warm_listing_recommended_ttfb_2" "$warm_listing_recommended_ttfb_3")"
 WARM_DETAIL_HOT_MEDIAN="$(median_ttfb "$warm_detail_hot_ttfb_1" "$warm_detail_hot_ttfb_2" "$warm_detail_hot_ttfb_3")"
 WARM_DETAIL_COLD_MEDIAN="$(median_ttfb "$warm_detail_cold_ttfb_1" "$warm_detail_cold_ttfb_2" "$warm_detail_cold_ttfb_3")"
 WARM_CREATOR_HOT_MEDIAN="$(median_ttfb "$warm_creator_hot_ttfb_1" "$warm_creator_hot_ttfb_2" "$warm_creator_hot_ttfb_3")"
@@ -318,6 +357,9 @@ WARM_CREATOR_COLD_MEDIAN="$(median_ttfb "$warm_creator_cold_ttfb_1" "$warm_creat
 ROI_RESOURCES_MS="$(to_ms "$(awk -v cold="$COLD_RESOURCES_TTFB" -v warm="$WARM_RESOURCES_MEDIAN" 'BEGIN { print cold - warm }')")"
 ROI_NEWEST_MS="$(to_ms "$(awk -v cold="$COLD_NEWEST_TTFB" -v warm="$WARM_NEWEST_MEDIAN" 'BEGIN { print cold - warm }')")"
 ROI_RECOMMENDED_MS="$(to_ms "$(awk -v cold="$COLD_RECOMMENDED_TTFB" -v warm="$WARM_RECOMMENDED_MEDIAN" 'BEGIN { print cold - warm }')")"
+ROI_LISTING_DEFAULT_MS="$(to_ms "$(awk -v cold="$COLD_LISTING_DEFAULT_TTFB" -v warm="$WARM_LISTING_DEFAULT_MEDIAN" 'BEGIN { print cold - warm }')")"
+ROI_LISTING_NEWEST_MS="$(to_ms "$(awk -v cold="$COLD_LISTING_NEWEST_TTFB" -v warm="$WARM_LISTING_NEWEST_MEDIAN" 'BEGIN { print cold - warm }')")"
+ROI_LISTING_RECOMMENDED_MS="$(to_ms "$(awk -v cold="$COLD_LISTING_RECOMMENDED_TTFB" -v warm="$WARM_LISTING_RECOMMENDED_MEDIAN" 'BEGIN { print cold - warm }')")"
 ROI_DETAIL_HOT_MS="$(to_ms "$(awk -v cold="$COLD_DETAIL_HOT_TTFB" -v warm="$WARM_DETAIL_HOT_MEDIAN" 'BEGIN { print cold - warm }')")"
 ROI_DETAIL_COLD_MS="$(to_ms "$(awk -v cold="$COLD_DETAIL_COLD_TTFB" -v warm="$WARM_DETAIL_COLD_MEDIAN" 'BEGIN { print cold - warm }')")"
 ROI_CREATOR_HOT_MS="$(to_ms "$(awk -v cold="$COLD_CREATOR_HOT_TTFB" -v warm="$WARM_CREATOR_HOT_MEDIAN" 'BEGIN { print cold - warm }')")"
@@ -325,6 +367,9 @@ ROI_CREATOR_COLD_MS="$(to_ms "$(awk -v cold="$COLD_CREATOR_COLD_TTFB" -v warm="$
 ROI_RESOURCES="$(roi_percent "$COLD_RESOURCES_TTFB" "$WARM_RESOURCES_MEDIAN")"
 ROI_NEWEST="$(roi_percent "$COLD_NEWEST_TTFB" "$WARM_NEWEST_MEDIAN")"
 ROI_RECOMMENDED="$(roi_percent "$COLD_RECOMMENDED_TTFB" "$WARM_RECOMMENDED_MEDIAN")"
+ROI_LISTING_DEFAULT="$(roi_percent "$COLD_LISTING_DEFAULT_TTFB" "$WARM_LISTING_DEFAULT_MEDIAN")"
+ROI_LISTING_NEWEST="$(roi_percent "$COLD_LISTING_NEWEST_TTFB" "$WARM_LISTING_NEWEST_MEDIAN")"
+ROI_LISTING_RECOMMENDED="$(roi_percent "$COLD_LISTING_RECOMMENDED_TTFB" "$WARM_LISTING_RECOMMENDED_MEDIAN")"
 ROI_DETAIL_HOT="$(roi_percent "$COLD_DETAIL_HOT_TTFB" "$WARM_DETAIL_HOT_MEDIAN")"
 ROI_DETAIL_COLD="$(roi_percent "$COLD_DETAIL_COLD_TTFB" "$WARM_DETAIL_COLD_MEDIAN")"
 ROI_CREATOR_HOT="$(roi_percent "$COLD_CREATOR_HOT_TTFB" "$WARM_CREATOR_HOT_MEDIAN")"
@@ -334,6 +379,9 @@ print_section "Warmed medians"
 printf 'resources median=%ss\n' "$WARM_RESOURCES_MEDIAN"
 printf 'newest median=%ss\n' "$WARM_NEWEST_MEDIAN"
 printf 'recommended median=%ss\n' "$WARM_RECOMMENDED_MEDIAN"
+printf 'listing_default median=%ss\n' "$WARM_LISTING_DEFAULT_MEDIAN"
+printf 'listing_newest median=%ss\n' "$WARM_LISTING_NEWEST_MEDIAN"
+printf 'listing_recommended median=%ss\n' "$WARM_LISTING_RECOMMENDED_MEDIAN"
 printf 'detail_hot median=%ss\n' "$WARM_DETAIL_HOT_MEDIAN"
 printf 'detail_cold median=%ss\n' "$WARM_DETAIL_COLD_MEDIAN"
 printf 'creator_hot median=%ss\n' "$WARM_CREATOR_HOT_MEDIAN"
@@ -355,6 +403,21 @@ printf 'recommended cold=%ss warm=%ss saved=%sms roi=%s\n' \
   "$WARM_RECOMMENDED_MEDIAN" \
   "$ROI_RECOMMENDED_MS" \
   "$ROI_RECOMMENDED"
+printf 'listing_default cold=%ss warm=%ss saved=%sms roi=%s\n' \
+  "$COLD_LISTING_DEFAULT_TTFB" \
+  "$WARM_LISTING_DEFAULT_MEDIAN" \
+  "$ROI_LISTING_DEFAULT_MS" \
+  "$ROI_LISTING_DEFAULT"
+printf 'listing_newest cold=%ss warm=%ss saved=%sms roi=%s\n' \
+  "$COLD_LISTING_NEWEST_TTFB" \
+  "$WARM_LISTING_NEWEST_MEDIAN" \
+  "$ROI_LISTING_NEWEST_MS" \
+  "$ROI_LISTING_NEWEST"
+printf 'listing_recommended cold=%ss warm=%ss saved=%sms roi=%s\n' \
+  "$COLD_LISTING_RECOMMENDED_TTFB" \
+  "$WARM_LISTING_RECOMMENDED_MEDIAN" \
+  "$ROI_LISTING_RECOMMENDED_MS" \
+  "$ROI_LISTING_RECOMMENDED"
 printf 'detail_hot cold=%ss warm=%ss saved=%sms roi=%s\n' \
   "$COLD_DETAIL_HOT_TTFB" \
   "$WARM_DETAIL_HOT_MEDIAN" \
@@ -380,7 +443,7 @@ print_section "Runbook reminders"
 printf '%s\n' 'Check [PERF] cache_execute:* logs for cold misses and repeated identical misses after warm.'
 printf '%s\n' 'Check [PERF] public_cache_warm* and internal_performance_warm_endpoint* logs for warm elapsed and coverage.'
 printf '%s\n' 'Check [PREFETCH] logs in the browser console on /resources, especially resource-card-grid.'
-printf '%s\n' 'Threshold targets: redirect <100ms good, full warm <1s good, /resources >=20% or >=100ms saved, detail_hot >=25% or >=150ms saved, prefetch waste <=2:1 good.'
+printf '%s\n' 'Threshold targets: redirect <100ms good, listing-mode /resources?category=all* >=20% or >=100ms saved, full warm <1s good, detail_hot >=25% or >=150ms saved, prefetch waste <=2:1 good.'
 
 if [ -n "$MARKDOWN_OUTPUT_FILE" ]; then
   write_markdown_report "$MARKDOWN_OUTPUT_FILE"

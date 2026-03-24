@@ -9,6 +9,8 @@ import {
 } from "@/services/discover.service";
 import {
   getMarketplaceResources,
+  MARKETPLACE_DEFAULT_PAGE,
+  MARKETPLACE_DEFAULT_PAGE_SIZE,
   getPublicResourcePageData,
   type MarketplaceFilters,
 } from "@/services/resource.service";
@@ -18,13 +20,12 @@ const PUBLIC_WARM_LIMITS = {
   resourceDetails: 8,
   trustSummaries: 4,
   creatorProfiles: 2,
-  marketplacePageSize: 12,
 } as const;
 
 const MARKETPLACE_WARM_VARIANTS: readonly MarketplaceFilters[] = [
-  { page: 1, pageSize: PUBLIC_WARM_LIMITS.marketplacePageSize },
-  { page: 1, pageSize: PUBLIC_WARM_LIMITS.marketplacePageSize, sort: "newest" },
-  { page: 1, pageSize: PUBLIC_WARM_LIMITS.marketplacePageSize, sort: "recommended" },
+  { category: "all", page: MARKETPLACE_DEFAULT_PAGE, pageSize: MARKETPLACE_DEFAULT_PAGE_SIZE },
+  { category: "all", page: MARKETPLACE_DEFAULT_PAGE, pageSize: MARKETPLACE_DEFAULT_PAGE_SIZE, sort: "newest" },
+  { category: "all", page: MARKETPLACE_DEFAULT_PAGE, pageSize: MARKETPLACE_DEFAULT_PAGE_SIZE, sort: "recommended" },
 ];
 
 type ResourceWarmTarget = {

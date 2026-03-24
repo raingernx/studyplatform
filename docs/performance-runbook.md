@@ -32,6 +32,9 @@ Rules:
 - Do not mix anonymous and signed-in results.
 - Measure inside the 120s TTL window.
 - `/` is a redirect to `/resources`, not the real homepage render.
+- `/resources` with no category is discover mode.
+- `/resources?sort=newest` with no category is still discover mode.
+- `/resources?sort=recommended` with no category is still discover mode.
 
 ## 3. Routes to Measure
 
@@ -39,8 +42,11 @@ Rules:
 |---|---|
 | `/` | Redirect health only |
 | `/resources` | Effective public homepage, discover-mode path |
-| `/resources?sort=newest` | Explicit warmed listing variant |
-| `/resources?sort=recommended` | Explicit warmed listing variant, often heaviest listing path |
+| `/resources?sort=newest` | Discover-mode variant check, not direct listing-cache validation |
+| `/resources?sort=recommended` | Discover-mode variant check, not direct listing-cache validation |
+| `/resources?category=all` | Direct marketplace listing-mode validation path |
+| `/resources?category=all&sort=newest` | Direct marketplace listing-mode validation path for warmed newest listing |
+| `/resources?category=all&sort=recommended` | Direct marketplace listing-mode validation path for warmed recommended listing |
 | `/resources/<HOT_SLUG>` | Head detail route expected to benefit from warming |
 | `/resources/<COLD_SLUG>` | Long-tail control, usually not warmed |
 | `/creators/<HOT_CREATOR>` | Head creator route expected to benefit from warming |
@@ -50,6 +56,7 @@ Selection rules:
 
 - `HOT_*`: choose from discover output or warm response targets.
 - `COLD_*`: choose long-tail entries unlikely to be warmed.
+- Use `category=all` listing-mode URLs as the direct validation path for marketplace cache performance.
 
 ## 4. Copy-Paste Commands
 
@@ -105,6 +112,9 @@ measure_redirect "root" "$BASE/"
 measure "resources" "$BASE/resources"
 measure "newest" "$BASE/resources?sort=newest"
 measure "recommended" "$BASE/resources?sort=recommended"
+measure "listing_default" "$BASE/resources?category=all"
+measure "listing_newest" "$BASE/resources?category=all&sort=newest"
+measure "listing_recommended" "$BASE/resources?category=all&sort=recommended"
 measure "detail_hot" "$BASE/resources/$HOT_SLUG"
 measure "detail_cold" "$BASE/resources/$COLD_SLUG"
 measure "creator_hot" "$BASE/creators/$HOT_CREATOR"
@@ -135,6 +145,9 @@ Run each 3 times and use the median TTFB:
 measure3 "resources" "$BASE/resources"
 measure3 "newest" "$BASE/resources?sort=newest"
 measure3 "recommended" "$BASE/resources?sort=recommended"
+measure3 "listing_default" "$BASE/resources?category=all"
+measure3 "listing_newest" "$BASE/resources?category=all&sort=newest"
+measure3 "listing_recommended" "$BASE/resources?category=all&sort=recommended"
 measure3 "detail_hot" "$BASE/resources/$HOT_SLUG"
 measure3 "detail_cold" "$BASE/resources/$COLD_SLUG"
 measure3 "creator_hot" "$BASE/creators/$HOT_CREATOR"
@@ -147,6 +160,9 @@ Median helpers:
 echo "resources median=$(median_ttfb "$BASE/resources")s"
 echo "newest median=$(median_ttfb "$BASE/resources?sort=newest")s"
 echo "recommended median=$(median_ttfb "$BASE/resources?sort=recommended")s"
+echo "listing_default median=$(median_ttfb "$BASE/resources?category=all")s"
+echo "listing_newest median=$(median_ttfb "$BASE/resources?category=all&sort=newest")s"
+echo "listing_recommended median=$(median_ttfb "$BASE/resources?category=all&sort=recommended")s"
 echo "detail_hot median=$(median_ttfb "$BASE/resources/$HOT_SLUG")s"
 echo "detail_cold median=$(median_ttfb "$BASE/resources/$COLD_SLUG")s"
 echo "creator_hot median=$(median_ttfb "$BASE/creators/$HOT_CREATOR")s"
@@ -195,7 +211,7 @@ rg '$begin:math:display$PERF$end:math:display$ public_cache_warm:full|$begin:mat
 | Log | What it means |
 |---|---|
 | `cache_execute:getDiscoverData` | Discover cache body executed; treat as miss/expiry proxy for `/resources` discover mode |
-| `cache_execute:getMarketplaceResources` | Listing cache body executed; use with query shape to inspect warmed variants |
+| `cache_execute:getMarketplaceResources` | Listing cache body executed; use listing-mode URLs such as `/resources?category=all&sort=*` to validate marketplace cache performance directly |
 | `cache_execute:getPublicResourcePageData` | Resource detail cache body executed; best miss proxy for detail pages |
 | `cache_execute:getCreatorPublicProfile` | Creator profile cache body executed; best miss proxy for creator pages |
 | `public_cache_warm_full:start` | Full warm started |
@@ -221,6 +237,12 @@ Limits:
 - Bad: `> 200ms`
 
 ### `/resources` Warm ROI
+
+- Good: `>= 20%` faster or `>= 100ms` saved
+- Watch: `10% to 20%` faster or `50ms to 100ms` saved
+- Bad: below that
+
+### Listing-Mode `/resources?category=all*` Warm ROI
 
 - Good: `>= 20%` faster or `>= 100ms` saved
 - Watch: `10% to 20%` faster or `50ms to 100ms` saved
@@ -300,9 +322,12 @@ Formula:
 | Route | Cold | Warm 1 | Warm 2 | Warm 3 | Warm Median | ROI | Repeated miss after warm? | Notes |
 |---|---:|---:|---:|---:|---:|---:|---|---|
 | `/` |  |  |  |  |  |  | n/a | redirect only |
-| `/resources` |  |  |  |  |  |  |  |  |
-| `/resources?sort=newest` |  |  |  |  |  |  |  |  |
-| `/resources?sort=recommended` |  |  |  |  |  |  |  |  |
+| `/resources` |  |  |  |  |  |  |  | discover mode |
+| `/resources?sort=newest` |  |  |  |  |  |  |  | still discover mode without category |
+| `/resources?sort=recommended` |  |  |  |  |  |  |  | still discover mode without category |
+| `/resources?category=all` |  |  |  |  |  |  |  | listing mode |
+| `/resources?category=all&sort=newest` |  |  |  |  |  |  |  | listing mode |
+| `/resources?category=all&sort=recommended` |  |  |  |  |  |  |  | listing mode |
 | `/resources/<HOT_SLUG>` |  |  |  |  |  |  |  |  |
 | `/resources/<COLD_SLUG>` |  |  |  |  |  |  |  |  |
 | `/creators/<HOT_CREATOR>` |  |  |  |  |  |  |  |  |
@@ -335,6 +360,9 @@ Formula:
 - discover verdict:
 - newest verdict:
 - recommended verdict:
+- listing default verdict:
+- listing newest verdict:
+- listing recommended verdict:
 - detail hot verdict:
 - creator hot verdict:
 - warm cost verdict:
