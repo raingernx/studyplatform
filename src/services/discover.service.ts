@@ -100,7 +100,8 @@ export async function getTrendingResources(limit = 8) {
  * Fetches and returns the six curated sections shown on the Discover home.
  *
  * Wrapped with `unstable_cache` so the six parallel Prisma queries only hit
- * the database once every 120 seconds across all concurrent requests.
+ * the database once every CACHE_TTLS.homepageList seconds across all
+ * concurrent requests.
  * Immediately invalidated via `revalidateTag("discover")` whenever an admin
  * creates, updates, or archives a resource.
  *
@@ -193,7 +194,7 @@ export const getDiscoverData = unstable_cache(
     };
   },
   ["discover-data"],
-  { revalidate: 120, tags: ["discover"] }
+  { revalidate: CACHE_TTLS.homepageList, tags: ["discover"] }
 );
 
 async function loadDiscoverResourcesByIds(resourceIds: string[]) {
@@ -223,7 +224,7 @@ export const getDiscoverCategories = unstable_cache(
     return findDiscoverCategoriesWithCounts();
   },
   ["discover-categories"],
-  { revalidate: 120, tags: ["discover"] }
+  { revalidate: CACHE_TTLS.homepageList, tags: ["discover"] }
 );
 
 /**

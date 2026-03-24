@@ -1,9 +1,10 @@
 import { unstable_cache } from "next/cache";
+import { CACHE_TTLS } from "@/lib/cache";
 import { listEligibleHomepageHeroes } from "@/repositories/heroes/hero.repository";
 
 export const HERO_CACHE_KEY = "homepage-active-hero";
 export const HERO_CACHE_TAG = "hero";
-export const HERO_CACHE_TTL_SECONDS = 120;
+export const HERO_CACHE_TTL_SECONDS = CACHE_TTLS.homepageList;
 
 export const getCachedEligibleHomepageHeroes = unstable_cache(
   async function loadEligibleHomepageHeroes() {
