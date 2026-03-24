@@ -13,6 +13,10 @@ import {
 } from "@/design-system";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { TableToolbar } from "@/components/admin/table";
+import {
+  traceServerStep,
+  withRequestPerformanceTrace,
+} from "@/lib/performance/observability";
 
 export const metadata = {
   title: "Recommendation Experiment – Admin",
@@ -167,7 +171,14 @@ export default async function RecommendationExperimentPage({
 }: {
   searchParams?: Promise<Record<string, string | undefined>>;
 }) {
-  const session = await getServerSession(authOptions);
+  return withRequestPerformanceTrace(
+    "route:/admin/analytics/recommendations",
+    {},
+    async () => {
+  const session = await traceServerStep(
+    "admin_analytics_recommendations.getServerSession",
+    () => getServerSession(authOptions),
+  );
 
   if (!session?.user) redirect("/auth/login?next=/admin/analytics/recommendations");
   if (session.user.role !== "ADMIN") redirect("/dashboard");
@@ -176,7 +187,15 @@ export default async function RecommendationExperimentPage({
   const start  = params.start || null;
   const end    = params.end   || null;
 
-  const report = await getRecommendationReport({ start, end });
+  const report = await traceServerStep(
+    "admin_analytics_recommendations.getRecommendationReport",
+    () => getRecommendationReport({ start, end }),
+    {
+      filterMode: start || end ? "explicit" : "default",
+      start: start ?? "",
+      end: end ?? "",
+    },
+  );
   const { phase1, phase2 } = report;
 
   // ── Derived ────────────────────────────────────────────────────────────────
@@ -404,5 +423,7 @@ export default async function RecommendationExperimentPage({
       </div>
 
     </div>
+  );
+    },
   );
 }

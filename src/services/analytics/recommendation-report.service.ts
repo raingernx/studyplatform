@@ -22,6 +22,7 @@ import {
   type DateFilter,
 } from "@/repositories/analytics/recommendation-report.repository";
 import { CACHE_TTLS } from "@/lib/cache";
+import { recordCacheCall, recordCacheMiss } from "@/lib/performance/observability";
 import { RECOMMENDATION_EXPERIMENT_ID } from "@/lib/recommendations/experiment";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -159,9 +160,23 @@ export async function getRecommendationReport(
   );
   const filterStart = toDateStr(startDate);
   const filterEnd = toDateStr(endDate);
+  const cacheMode = isDefaultRange ? "default" : "explicit";
+
+  recordCacheCall("getRecommendationReport", {
+    experimentId,
+    filterStart,
+    filterEnd,
+    cacheMode,
+  });
 
   return unstable_cache(
     async function _getRecommendationReport() {
+      recordCacheMiss("getRecommendationReport", {
+        experimentId,
+        filterStart,
+        filterEnd,
+        cacheMode,
+      });
       const filter: DateFilter = { start: startDate, end: endDate };
 
       const [impressions, clicks, users, purchases] = await Promise.all([
@@ -186,7 +201,7 @@ export async function getRecommendationReport(
       experimentId,
       filterStart,
       filterEnd,
-      isDefaultRange ? "default" : "explicit",
+      cacheMode,
     ],
     { revalidate: CACHE_TTLS.publicPage },
   )();

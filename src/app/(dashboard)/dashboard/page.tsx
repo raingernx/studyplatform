@@ -19,6 +19,10 @@ import {
 import {
   getDashboardOverviewRecommendations,
 } from "@/services/resources/resource.service";
+import {
+  traceServerStep,
+  withRequestPerformanceTrace,
+} from "@/lib/performance/observability";
 
 export const metadata = {
   title: "Overview",
@@ -121,22 +125,35 @@ function DashboardShelfCard({
 }
 
 export default async function DashboardPage() {
-  const { userId, session } = await requireSession("/dashboard");
+  return withRequestPerformanceTrace("route:/dashboard", {}, async () => {
+  const { userId, session } = await traceServerStep(
+    "dashboard.requireSession",
+    () => requireSession("/dashboard"),
+  );
 
   const [purchases, totalDownloads, learningProfile] = await Promise.all([
-    getUserPurchases(userId),
-    getUserDownloadCount(userId),
-    getUserLearningProfile(userId),
+    traceServerStep("dashboard.getUserPurchases", () => getUserPurchases(userId)),
+    traceServerStep("dashboard.getUserDownloadCount", () => getUserDownloadCount(userId)),
+    traceServerStep("dashboard.getUserLearningProfile", () => getUserLearningProfile(userId)),
   ]);
   const ownedResourceIds = purchases.map((purchase) => purchase.resource.id);
   const topCategoryIds = learningProfile.topCategories.map((category) => category.id);
   const primaryLevel = learningProfile.preferredLevels[0];
   const { recommended, newInCategories, levelRecommendations } =
-    await getDashboardOverviewRecommendations({
-      ownedResourceIds,
-      topCategoryIds,
-      preferredLevels: learningProfile.preferredLevels,
-    });
+    await traceServerStep(
+      "dashboard.getDashboardOverviewRecommendations",
+      () =>
+        getDashboardOverviewRecommendations({
+          ownedResourceIds,
+          topCategoryIds,
+          preferredLevels: learningProfile.preferredLevels,
+        }),
+      {
+        ownedCount: ownedResourceIds.length,
+        topCategoryCount: topCategoryIds.length,
+        preferredLevelCount: learningProfile.preferredLevels.length,
+      },
+    );
 
   const isSubscribed = session.user.subscriptionStatus === "ACTIVE";
   const totalSpent = purchases.reduce((sum, p) => sum + p.amount, 0);
@@ -545,4 +562,5 @@ export default async function DashboardPage() {
       )}
     </div>
   );
+  });
 }

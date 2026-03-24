@@ -14,7 +14,11 @@
 import type { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 import { CACHE_TAGS, CACHE_TTLS, getResourceCacheTag } from "@/lib/cache";
-import { logPerformanceEvent } from "@/lib/performance/observability";
+import {
+  logPerformanceEvent,
+  recordCacheCall,
+  recordCacheMiss,
+} from "@/lib/performance/observability";
 import { DEFAULT_SORT, normaliseSortParam } from "@/config/sortOptions";
 import {
   countMarketplaceResources,
@@ -303,9 +307,23 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
 
 export async function getMarketplaceResources(filters: MarketplaceFilters) {
   const normalizedFilters = normalizeMarketplaceFilters(filters);
+  const cacheKey = getMarketplaceCacheKey(normalizedFilters);
+
+  recordCacheCall("getMarketplaceResources", {
+    cacheKey,
+    category: normalizedFilters.category ?? "all",
+    page: normalizedFilters.page,
+    sort: normalizedFilters.sort,
+  });
 
   return unstable_cache(
     async function _getMarketplaceResourcesByKey() {
+      recordCacheMiss("getMarketplaceResources", {
+        cacheKey,
+        category: normalizedFilters.category ?? "all",
+        page: normalizedFilters.page,
+        sort: normalizedFilters.sort,
+      });
       logPerformanceEvent("cache_execute:getMarketplaceResources", {
         category: normalizedFilters.category ?? "all",
         page: normalizedFilters.page,
@@ -314,7 +332,7 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
       });
       return loadMarketplaceResources(normalizedFilters);
     },
-    ["marketplace-resources", getMarketplaceCacheKey(normalizedFilters)],
+    ["marketplace-resources", cacheKey],
     {
       revalidate: CACHE_TTLS.publicPage,
       tags: [CACHE_TAGS.discover],
@@ -337,8 +355,11 @@ export async function getRelatedResources(categoryId: string, excludeId: string,
 }
 
 export async function getPublicResourcePageData(slug: string) {
+  recordCacheCall("getPublicResourcePageData", { slug });
+
   return unstable_cache(
     async function _getPublicResourcePageData() {
+      recordCacheMiss("getPublicResourcePageData", { slug });
       logPerformanceEvent("cache_execute:getPublicResourcePageData", {
         slug,
       });

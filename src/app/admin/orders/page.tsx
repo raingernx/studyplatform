@@ -18,6 +18,10 @@ import {
   TableToolbar,
 } from "@/components/admin/table";
 import { getAdminOrdersPageData } from "@/services/admin-operations.service";
+import {
+  traceServerStep,
+  withRequestPerformanceTrace,
+} from "@/lib/performance/observability";
 
 export const metadata = {
   title: "Orders – Admin",
@@ -41,7 +45,11 @@ const STATUS_BADGE: Record<string, { label: string; tone: StatusBadgeTone }> = {
 export default async function AdminOrdersPage({
   searchParams,
 }: AdminOrdersPageProps) {
-  const session = await getServerSession(authOptions);
+  return withRequestPerformanceTrace("route:/admin/orders", {}, async () => {
+  const session = await traceServerStep(
+    "admin_orders.getServerSession",
+    () => getServerSession(authOptions),
+  );
 
   if (!session?.user) {
     redirect("/auth/login?next=/admin/orders");
@@ -61,11 +69,19 @@ export default async function AdminOrdersPage({
     totalRevenue,
     ordersToday,
     averageOrderValue,
-  } = await getAdminOrdersPageData({
-    statusFilter,
-    from,
-    to,
-  });
+  } = await traceServerStep(
+    "admin_orders.getAdminOrdersPageData",
+    () =>
+      getAdminOrdersPageData({
+        statusFilter,
+        from,
+        to,
+      }),
+    {
+      hasDateFilter: Boolean(from || to),
+      statusFilter: statusFilter || "all",
+    },
+  );
 
   return (
     <div className="min-w-0 space-y-8">
@@ -242,4 +258,5 @@ export default async function AdminOrdersPage({
       </DataTable>
     </div>
   );
+  });
 }

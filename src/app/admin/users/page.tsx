@@ -17,6 +17,10 @@ import {
   TableToolbar,
 } from "@/components/admin/table";
 import { getAdminUsersPageData } from "@/services/admin-operations.service";
+import {
+  traceServerStep,
+  withRequestPerformanceTrace,
+} from "@/lib/performance/observability";
 
 export const metadata = {
   title: "Users – Admin",
@@ -28,7 +32,11 @@ interface AdminUsersPageProps {
 }
 
 export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
-  const session = await getServerSession(authOptions);
+  return withRequestPerformanceTrace("route:/admin/users", {}, async () => {
+  const session = await traceServerStep(
+    "admin_users.getServerSession",
+    () => getServerSession(authOptions),
+  );
 
   if (!session?.user) {
     redirect("/auth/login?next=/admin/users");
@@ -41,7 +49,11 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const query = resolvedSearchParams.q?.trim() ?? "";
 
-  const users = await getAdminUsersPageData({ query });
+  const users = await traceServerStep(
+    "admin_users.getAdminUsersPageData",
+    () => getAdminUsersPageData({ query }),
+    { hasQuery: Boolean(query) },
+  );
 
   return (
     <div className="min-w-0 space-y-7">
@@ -147,4 +159,5 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
       </DataTable>
     </div>
   );
+  });
 }

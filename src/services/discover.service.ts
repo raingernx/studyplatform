@@ -12,7 +12,11 @@
 import { unstable_cache } from "next/cache";
 import { calculateTrendingScore } from "@/analytics/aggregation.service";
 import { CACHE_KEYS, CACHE_TTLS, rememberJson } from "@/lib/cache";
-import { logPerformanceEvent } from "@/lib/performance/observability";
+import {
+  logPerformanceEvent,
+  recordCacheCall,
+  recordCacheMiss,
+} from "@/lib/performance/observability";
 import { attachResourceTrustSignals } from "@/services/review.service";
 import { resolveHomepageHero } from "@/services/heroes/hero.resolver";
 import {
@@ -111,8 +115,9 @@ export async function getTrendingResources(limit = 8) {
  * The function has no request-scoped dependencies (no session, no params),
  * which is what makes the `unstable_cache` wrapper safe and effective.
  */
-export const getDiscoverData = unstable_cache(
+const readDiscoverData = unstable_cache(
   async function _getDiscoverData() {
+    recordCacheMiss("getDiscoverData");
     logPerformanceEvent("cache_execute:getDiscoverData");
     const [
       trendingIds,
@@ -201,6 +206,11 @@ export const getDiscoverData = unstable_cache(
   { revalidate: CACHE_TTLS.homepageList, tags: ["discover"] }
 );
 
+export async function getDiscoverData() {
+  recordCacheCall("getDiscoverData");
+  return readDiscoverData();
+}
+
 async function loadDiscoverResourcesByIds(resourceIds: string[]) {
   const rows = await findDiscoverResourcesByIds(resourceIds);
 
@@ -223,13 +233,19 @@ export type DiscoverData = Awaited<ReturnType<typeof getDiscoverData>>;
  * callers outside of getDiscoverData — e.g. the marketplace page — never
  * incur an extra DB round-trip when the discover cache is warm.
  */
-export const getDiscoverCategories = unstable_cache(
+const readDiscoverCategories = unstable_cache(
   async function _getDiscoverCategories() {
+    recordCacheMiss("getDiscoverCategories");
     return findDiscoverCategoriesWithCounts();
   },
   ["discover-categories"],
   { revalidate: CACHE_TTLS.homepageList, tags: ["discover"] }
 );
+
+export async function getDiscoverCategories() {
+  recordCacheCall("getDiscoverCategories");
+  return readDiscoverCategories();
+}
 
 /**
  * Returns the hero config used in discover mode.

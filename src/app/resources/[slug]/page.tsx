@@ -23,6 +23,10 @@ import { PendingPurchasePoller } from "@/components/checkout/PendingPurchasePoll
 import { AutoScrollOnSuccess } from "@/components/resource/AutoScrollOnSuccess";
 import { getPublicResourcePageData } from "@/services/resource.service";
 import { getResourceDetailExtras } from "@/services/resources/resource.service";
+import {
+  traceServerStep,
+  withRequestPerformanceTrace,
+} from "@/lib/performance/observability";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -206,38 +210,56 @@ export async function generateMetadata({ params }: Props) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function ResourceDetailPage({ params, searchParams }: Props) {
-  const { slug } = await params;
-  const resolvedSearchParams = searchParams ? await searchParams : {};
+  return withRequestPerformanceTrace("route:/resources/[slug]", {}, async () => {
+    const { slug } = await params;
+    const resolvedSearchParams = searchParams ? await searchParams : {};
 
-  let resourcePageData;
-  try {
-    resourcePageData = await getPublicResourcePageData(slug);
-  } catch (error) {
-    if (!isMissingTableError(error)) throw error;
-    // Resource table missing (local dev schema drift) — render 404.
-    notFound();
-  }
-  const { resource, relatedResources } = resourcePageData ?? { resource: null, relatedResources: [] };
+    let resourcePageData;
+    try {
+      resourcePageData = await traceServerStep(
+        "resource_detail.getPublicResourcePageData",
+        () => getPublicResourcePageData(slug),
+        { slug },
+      );
+    } catch (error) {
+      if (!isMissingTableError(error)) throw error;
+      // Resource table missing (local dev schema drift) — render 404.
+      notFound();
+    }
+    const { resource, relatedResources } = resourcePageData ?? { resource: null, relatedResources: [] };
 
-  if (!resource || resource.status !== "PUBLISHED") {
-    notFound();
-  }
+    if (!resource || resource.status !== "PUBLISHED") {
+      notFound();
+    }
 
-  const session = await getOptionalSession();
-  const userId = session?.user?.id;
+    const session = await traceServerStep(
+      "resource_detail.optional_session",
+      () => getOptionalSession(),
+      { slug },
+    );
+    const userId = session?.user?.id;
 
-  const {
-    isOwned,
-    ownedRelatedIds,
-    trustSummary,
-    reviews,
-    viewerReview,
-  } = await getResourceDetailExtras({
-    resourceId: resource.id,
-    relatedResourceIds: relatedResources.map((related) => related.id),
-    userId,
-    reviewTake: 5,
-  });
+    const {
+      isOwned,
+      ownedRelatedIds,
+      trustSummary,
+      reviews,
+      viewerReview,
+    } = await traceServerStep(
+      "resource_detail.getResourceDetailExtras",
+      () =>
+        getResourceDetailExtras({
+          resourceId: resource.id,
+          relatedResourceIds: relatedResources.map((related) => related.id),
+          userId,
+          reviewTake: 5,
+        }),
+      {
+        personalized: Boolean(userId),
+        relatedCount: relatedResources.length,
+        slug,
+      },
+    );
   const hasFile = Boolean(resource.fileUrl ?? resource.fileKey);
   const paymentStatus =
     typeof resolvedSearchParams.payment === "string"
@@ -543,4 +565,5 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
       </main>
     </div>
   );
+  });
 }

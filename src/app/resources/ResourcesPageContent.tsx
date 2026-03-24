@@ -50,6 +50,7 @@ import {
 import { RecommendationSection } from "@/components/recommendations/RecommendationSection";
 import { ResourcesIntroSectionSkeleton } from "@/components/skeletons/ResourcesIntroSectionSkeleton";
 import { recordAnalyticsEvents } from "@/analytics/event.service";
+import { traceServerStep } from "@/lib/performance/observability";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -76,7 +77,11 @@ export async function ResourcesDiscoverHero({
   let heroConfig: Awaited<ReturnType<typeof getHeroConfig>> = null;
 
   try {
-    heroConfig = await getHeroConfig({ userId });
+    heroConfig = await traceServerStep(
+      "resources.getHeroConfig",
+      () => getHeroConfig({ userId }),
+      { personalized: Boolean(userId) },
+    );
   } catch (error) {
     if (!isMissingTableError(error)) {
       throw error;
@@ -109,16 +114,25 @@ export async function ResourcesPageContent({
   let safePage = 1;
 
   try {
-    const data = await getMarketplaceResources({
-      search,
-      category,
-      price,
-      featured: featured === "true",
-      tag,
-      sort: effectiveSort,
-      page: currentPage,
-      pageSize: ITEMS_PER_PAGE,
-    });
+    const data = await traceServerStep(
+      "resources.getMarketplaceResources",
+      () =>
+        getMarketplaceResources({
+          search,
+          category,
+          price,
+          featured: featured === "true",
+          tag,
+          sort: effectiveSort,
+          page: currentPage,
+          pageSize: ITEMS_PER_PAGE,
+        }),
+      {
+        category: category ?? "all",
+        page: currentPage,
+        sort: effectiveSort,
+      },
+    );
     resources = data.resources as ResourceCardData[];
     total = data.total;
     categories = data.categories;
@@ -664,7 +678,9 @@ async function ResourcesDiscoverDeferredSections({
 
 async function loadDiscoverCategoriesSafe(): Promise<DiscoverCategoriesWithCount> {
   try {
-    return await getDiscoverCategories();
+    return await traceServerStep("resources.getDiscoverCategories", () =>
+      getDiscoverCategories(),
+    );
   } catch (error) {
     if (!isMissingTableError(error)) {
       throw error;
@@ -676,7 +692,9 @@ async function loadDiscoverCategoriesSafe(): Promise<DiscoverCategoriesWithCount
 
 async function loadDiscoverDataSafe(): Promise<DiscoverData | null> {
   try {
-    return await getDiscoverData();
+    return await traceServerStep("resources.getDiscoverData", () =>
+      getDiscoverData(),
+    );
   } catch (error) {
     if (!isMissingTableError(error)) {
       throw error;
@@ -692,7 +710,11 @@ async function loadOwnedIdsSafe(userId?: string) {
   }
 
   try {
-    return await getOwnedResourceIds(userId);
+    return await traceServerStep(
+      "resources.getOwnedResourceIds",
+      () => getOwnedResourceIds(userId),
+      { personalized: true },
+    );
   } catch (error) {
     if (!isMissingTableError(error)) {
       throw error;
@@ -708,7 +730,11 @@ async function loadLearningProfileSafe(userId?: string) {
   }
 
   try {
-    return await getUserLearningProfile(userId);
+    return await traceServerStep(
+      "resources.getUserLearningProfile",
+      () => getUserLearningProfile(userId),
+      { personalized: true },
+    );
   } catch (error) {
     if (!isMissingTableError(error)) {
       throw error;

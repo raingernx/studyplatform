@@ -20,6 +20,10 @@ import {
 import { Button, Input } from "@/design-system";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { TableToolbar } from "@/components/admin/table";
+import {
+  traceServerStep,
+  withRequestPerformanceTrace,
+} from "@/lib/performance/observability";
 
 export const metadata = {
   title: "Purchase Analytics – Admin",
@@ -249,7 +253,14 @@ export default async function PurchaseAnalyticsPage({
 }: {
   searchParams?: Promise<Record<string, string | undefined>>;
 }) {
-  const session = await getServerSession(authOptions);
+  return withRequestPerformanceTrace(
+    "route:/admin/analytics/purchases",
+    {},
+    async () => {
+  const session = await traceServerStep(
+    "admin_analytics_purchases.getServerSession",
+    () => getServerSession(authOptions),
+  );
   if (!session?.user) redirect("/auth/login?next=/admin/analytics/purchases");
   if (session.user.role !== "ADMIN") redirect("/dashboard");
 
@@ -257,7 +268,15 @@ export default async function PurchaseAnalyticsPage({
   const start = params.start || null;
   const end = params.end || null;
 
-  const report = await getPurchaseAnalytics({ start, end });
+  const report = await traceServerStep(
+    "admin_analytics_purchases.getPurchaseAnalytics",
+    () => getPurchaseAnalytics({ start, end }),
+    {
+      filterMode: start || end ? "explicit" : "default",
+      start: start ?? "",
+      end: end ?? "",
+    },
+  );
 
   const rangeLabel = report.isDefaultRange
     ? `Last 30 days · ${report.filterStart} → ${report.filterEnd}`
@@ -668,5 +687,7 @@ export default async function PurchaseAnalyticsPage({
         Generated at {report.generatedAt}
       </div>
     </div>
+  );
+    },
   );
 }

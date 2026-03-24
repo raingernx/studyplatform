@@ -28,6 +28,7 @@ import {
   type PurchaseDateFilter,
 } from "@/repositories/analytics/purchase-analytics.repository";
 import { CACHE_TTLS } from "@/lib/cache";
+import { recordCacheCall, recordCacheMiss } from "@/lib/performance/observability";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -205,9 +206,21 @@ export async function getPurchaseAnalytics(
   const effectiveEnd = endDate ?? new Date();
   const filterStart = toDateString(effectiveStart);
   const filterEnd = toDateString(effectiveEnd);
+  const cacheMode = isDefaultRange ? "default" : "explicit";
+
+  recordCacheCall("getPurchaseAnalytics", {
+    filterStart,
+    filterEnd,
+    cacheMode,
+  });
 
   return unstable_cache(
     async function _getPurchaseAnalyticsReport() {
+      recordCacheMiss("getPurchaseAnalytics", {
+        filterStart,
+        filterEnd,
+        cacheMode,
+      });
       // All six queries run in parallel — no inter-dependency.
       const [
         funnel,
@@ -340,7 +353,7 @@ export async function getPurchaseAnalytics(
       "admin-purchase-analytics",
       filterStart,
       filterEnd,
-      isDefaultRange ? "default" : "explicit",
+      cacheMode,
     ],
     { revalidate: CACHE_TTLS.publicPage },
   )();

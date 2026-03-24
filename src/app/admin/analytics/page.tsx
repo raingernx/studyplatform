@@ -19,6 +19,10 @@ import {
   SlidersHorizontal,
   ArrowRight,
 } from "lucide-react";
+import {
+  traceServerStep,
+  withRequestPerformanceTrace,
+} from "@/lib/performance/observability";
 
 export const metadata = {
   title: "Analytics – Admin",
@@ -89,7 +93,11 @@ function StatCard({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function AdminAnalyticsPage() {
-  const session = await getServerSession(authOptions);
+  return withRequestPerformanceTrace("route:/admin/analytics", {}, async () => {
+  const session = await traceServerStep(
+    "admin_analytics.getServerSession",
+    () => getServerSession(authOptions),
+  );
 
   if (!session?.user) {
     redirect("/auth/login?next=/admin/analytics");
@@ -99,7 +107,10 @@ export default async function AdminAnalyticsPage() {
     redirect("/dashboard");
   }
 
-  const metrics = await getPlatformMetrics();
+  const metrics = await traceServerStep(
+    "admin_analytics.getPlatformMetrics",
+    () => getPlatformMetrics(),
+  );
 
   return (
     <div className="space-y-5">
@@ -420,4 +431,5 @@ export default async function AdminAnalyticsPage() {
       </section>
     </div>
   );
+  });
 }

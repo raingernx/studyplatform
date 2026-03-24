@@ -17,6 +17,10 @@ import {
   ResourcesDiscoverHero,
   ResourcesPageContent,
 } from "./ResourcesPageContent";
+import {
+  traceServerStep,
+  withRequestPerformanceTrace,
+} from "@/lib/performance/observability";
 
 export const metadata = {
   title: "Discover Study Resources",
@@ -67,99 +71,105 @@ async function getOptionalSessionUserId(
 }
 
 export default async function ResourcesPage({ searchParams }: ResourcesPageProps) {
-  const resolvedParams = searchParams ? await searchParams : {};
+  return withRequestPerformanceTrace("route:/resources", {}, async () => {
+    const resolvedParams = searchParams ? await searchParams : {};
 
-  const {
-    search: rawSearch,
-    category: rawCategory,
-    price: rawPrice,
-    featured: rawFeatured,
-    tag: rawTag,
-    sort: rawSort,
-    page: rawPage,
-  } = resolvedParams;
+    const {
+      search: rawSearch,
+      category: rawCategory,
+      price: rawPrice,
+      featured: rawFeatured,
+      tag: rawTag,
+      sort: rawSort,
+      page: rawPage,
+    } = resolvedParams;
 
-  const search = getSearchParamValue(rawSearch)?.trim();
-  const category = getSearchParamValue(rawCategory)?.trim();
-  const rawPriceValue = getSearchParamValue(rawPrice)?.trim() ?? "";
-  const price = rawPriceValue === "free" || rawPriceValue === "paid" ? rawPriceValue : "";
-  const featured = getSearchParamValue(rawFeatured)?.trim();
-  const tag = getSearchParamValue(rawTag)?.trim();
-  const sort = normaliseSortParam(getSearchParamValue(rawSort));
-  const pageParam = getSearchParamValue(rawPage)?.trim();
-  const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
-  const isDiscoverMode = !category;
+    const search = getSearchParamValue(rawSearch)?.trim();
+    const category = getSearchParamValue(rawCategory)?.trim();
+    const rawPriceValue = getSearchParamValue(rawPrice)?.trim() ?? "";
+    const price = rawPriceValue === "free" || rawPriceValue === "paid" ? rawPriceValue : "";
+    const featured = getSearchParamValue(rawFeatured)?.trim();
+    const tag = getSearchParamValue(rawTag)?.trim();
+    const sort = normaliseSortParam(getSearchParamValue(rawSort));
+    const pageParam = getSearchParamValue(rawPage)?.trim();
+    const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+    const isDiscoverMode = !category;
 
-  let cookieStore: Awaited<ReturnType<typeof cookies>> | null = null;
-  try {
-    cookieStore = await cookies();
-  } catch {
-    cookieStore = null;
-  }
+    let cookieStore: Awaited<ReturnType<typeof cookies>> | null = null;
+    try {
+      cookieStore = await cookies();
+    } catch {
+      cookieStore = null;
+    }
 
-  const userId = await getOptionalSessionUserId(cookieStore);
+    const userId = await traceServerStep(
+      "resources.optional_session_user",
+      () => getOptionalSessionUserId(cookieStore),
+      { isDiscoverMode },
+    );
 
-  let effectiveSort = sort;
-  if (cookieStore) {
-    const rawVariant = cookieStore.get(RANKING_EXPERIMENT_COOKIE)?.value;
-    effectiveSort = variantToSort(isValidRankingVariant(rawVariant) ? rawVariant : null);
-  }
+    let effectiveSort = sort;
+    if (cookieStore) {
+      const rawVariant = cookieStore.get(RANKING_EXPERIMENT_COOKIE)?.value;
+      effectiveSort = variantToSort(isValidRankingVariant(rawVariant) ? rawVariant : null);
+    }
 
-  return (
-    <div className="flex min-h-screen flex-col bg-surface-50">
-      <Suspense fallback={null}>
-        <ResourcesNavigationFeedback />
-      </Suspense>
-      <Navbar />
+    return (
+      <div className="flex min-h-screen flex-col bg-surface-50">
+        <Suspense fallback={null}>
+          <ResourcesNavigationFeedback />
+        </Suspense>
+        <Navbar />
 
-      <main className="flex-1">
-        {isDiscoverMode ? (
-          <section className="relative overflow-hidden border-b border-surface-200/80 bg-[radial-gradient(circle_at_top_left,rgba(224,231,255,0.78),transparent_32%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
-            <Container className="space-y-4 py-4 sm:space-y-5 sm:py-6 lg:space-y-6 lg:py-7">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-text-secondary">
-                <span
-                  className="inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-500"
-                  aria-hidden="true"
+        <main className="flex-1">
+          {isDiscoverMode ? (
+            <section className="relative overflow-hidden border-b border-surface-200/80 bg-[radial-gradient(circle_at_top_left,rgba(224,231,255,0.78),transparent_32%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
+              <Container className="space-y-4 py-4 sm:space-y-5 sm:py-6 lg:space-y-6 lg:py-7">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-text-secondary">
+                  <span
+                    className="inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-500"
+                    aria-hidden="true"
+                  />
+                  <p className="font-medium text-text-primary">
+                    Curated by educators and creators
+                  </p>
+                  <span className="hidden text-text-muted sm:inline">•</span>
+                  <p className="hidden sm:block">
+                    New releases, trending picks, and focused collections in one calmer library.
+                  </p>
+                </div>
+                <ResourcesDiscoverHero
+                  userId={userId}
+                  className="min-h-[440px] rounded-[26px] border-white/70 bg-surface-100 sm:min-h-[500px] lg:min-h-[540px]"
                 />
-                <p className="font-medium text-text-primary">
-                  Curated by educators and creators
-                </p>
-                <span className="hidden text-text-muted sm:inline">•</span>
-                <p className="hidden sm:block">
-                  New releases, trending picks, and focused collections in one calmer library.
-                </p>
-              </div>
-              <ResourcesDiscoverHero
-                userId={userId}
-                className="min-h-[440px] rounded-[26px] border-white/70 bg-surface-100 sm:min-h-[500px] lg:min-h-[540px]"
-              />
-            </Container>
-          </section>
-        ) : null}
+              </Container>
+            </section>
+          ) : null}
 
-        <Container
-          className={
-            isDiscoverMode
-              ? "space-y-10 pb-12 pt-5 sm:space-y-12 sm:pb-14 sm:pt-6 lg:space-y-14 lg:pb-16 lg:pt-8"
-              : "space-y-12 py-12 sm:space-y-14 sm:py-14 lg:space-y-16 lg:py-16"
-          }
-        >
-          <Suspense fallback={<ResourcesContentFallback isDiscoverMode={isDiscoverMode} />}>
-            <ResourcesPageContent
-              isDiscoverMode={isDiscoverMode}
-              search={search}
-              category={category}
-              price={price}
-              featured={featured}
-              tag={tag}
-              sort={sort}
-              effectiveSort={effectiveSort}
-              currentPage={currentPage}
-              userId={userId}
-            />
-          </Suspense>
-        </Container>
-      </main>
-    </div>
-  );
+          <Container
+            className={
+              isDiscoverMode
+                ? "space-y-10 pb-12 pt-5 sm:space-y-12 sm:pb-14 sm:pt-6 lg:space-y-14 lg:pb-16 lg:pt-8"
+                : "space-y-12 py-12 sm:space-y-14 sm:py-14 lg:space-y-16 lg:py-16"
+            }
+          >
+            <Suspense fallback={<ResourcesContentFallback isDiscoverMode={isDiscoverMode} />}>
+              <ResourcesPageContent
+                isDiscoverMode={isDiscoverMode}
+                search={search}
+                category={category}
+                price={price}
+                featured={featured}
+                tag={tag}
+                sort={sort}
+                effectiveSort={effectiveSort}
+                currentPage={currentPage}
+                userId={userId}
+              />
+            </Suspense>
+          </Container>
+        </main>
+      </div>
+    );
+  });
 }

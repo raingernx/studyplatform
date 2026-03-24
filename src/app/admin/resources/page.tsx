@@ -9,6 +9,10 @@ import { ResourceTable, type AdminResourceRow } from "@/components/admin/Resourc
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminResourcesFilters } from "./AdminResourcesFilters";
 import { getAdminResourcesPageData } from "@/services/admin-operations.service";
+import {
+  traceServerStep,
+  withRequestPerformanceTrace,
+} from "@/lib/performance/observability";
 
 export const metadata = {
   title: "Resources – Admin",
@@ -48,7 +52,11 @@ function buildQueryString(base: {
 export default async function AdminResourcesPage({
   searchParams,
 }: AdminResourcesPageProps) {
-  const session = await getServerSession(authOptions);
+  return withRequestPerformanceTrace("route:/admin/resources", {}, async () => {
+  const session = await traceServerStep(
+    "admin_resources.getServerSession",
+    () => getServerSession(authOptions),
+  );
 
   if (!session?.user) {
     redirect("/auth/login?next=/admin/resources");
@@ -73,15 +81,26 @@ export default async function AdminResourcesPage({
     totalPages,
     categories,
     hasFilters,
-  } = await getAdminResourcesPageData({
-    q,
-    statusFilter,
-    categoryIdFilter,
-    freeOnly,
-    minRevenueCents,
-    currentPage,
-    pageSize: PAGE_SIZE,
-  });
+  } = await traceServerStep(
+    "admin_resources.getAdminResourcesPageData",
+    () =>
+      getAdminResourcesPageData({
+        q,
+        statusFilter,
+        categoryIdFilter,
+        freeOnly,
+        minRevenueCents,
+        currentPage,
+        pageSize: PAGE_SIZE,
+      }),
+    {
+      currentPage,
+      freeOnly,
+      hasSearch: Boolean(q),
+      minRevenueCents,
+      statusFilter: statusFilter || "all",
+    },
+  );
 
   return (
     <div className="min-w-0 space-y-7">
@@ -203,4 +222,5 @@ export default async function AdminResourcesPage({
       )}
     </div>
   );
+  });
 }

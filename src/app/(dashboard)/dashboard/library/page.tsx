@@ -5,6 +5,10 @@ import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { formatDate } from "@/lib/format";
 import { getUserLibraryItems } from "@/services/purchase.service";
+import {
+  traceServerStep,
+  withRequestPerformanceTrace,
+} from "@/lib/performance/observability";
 
 export const metadata = {
   title: "My Library",
@@ -24,9 +28,16 @@ export default async function DashboardLibraryPage({
 }: {
   searchParams?: Promise<Record<string, string | undefined>>;
 }) {
-  const { userId } = await requireSession("/dashboard/library");
+  return withRequestPerformanceTrace("route:/dashboard/library", {}, async () => {
+  const { userId } = await traceServerStep(
+    "dashboard_library.requireSession",
+    () => requireSession("/dashboard/library"),
+  );
 
-  const resources = await getUserLibraryItems(userId);
+  const resources = await traceServerStep(
+    "dashboard_library.getUserLibraryItems",
+    () => getUserLibraryItems(userId),
+  );
 
   const params = searchParams ? await searchParams : {};
   const isReturningFromCheckout = params.payment === "success";
@@ -142,4 +153,5 @@ export default async function DashboardLibraryPage({
         </div>
     </div>
   );
+  });
 }

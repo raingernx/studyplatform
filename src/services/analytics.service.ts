@@ -9,6 +9,7 @@
 
 import { unstable_cache } from "next/cache";
 import { CACHE_TTLS } from "@/lib/cache";
+import { recordCacheCall, recordCacheMiss } from "@/lib/performance/observability";
 import {
   findRecentCompletedPurchases,
   findRecentResources,
@@ -88,6 +89,7 @@ export interface AdminDashboardOverview {
 
 const readPlatformMetrics = unstable_cache(
   async function _getPlatformMetrics(): Promise<PlatformMetrics> {
+    recordCacheMiss("getPlatformMetrics");
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const days = lastNDays(30);
 
@@ -194,6 +196,7 @@ const readPlatformMetrics = unstable_cache(
  * individual query.
  */
 export async function getPlatformMetrics(): Promise<PlatformMetrics> {
+  recordCacheCall("getPlatformMetrics");
   return readPlatformMetrics();
 }
 
