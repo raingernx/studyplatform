@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { SORT_OPTIONS, normaliseSortParam } from "@/config/sortOptions";
+import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
 
 export interface FilterCategory {
   id: string;
@@ -84,9 +85,11 @@ export function FilterSidebar({
         params.delete(key);
       }
       params.delete("page");
+      const href = `${pathname}?${params.toString()}`;
       setPendingParam({ key, value });
+      beginResourcesNavigation("listing", href);
       startTransition(() => {
-        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+        router.push(href, { scroll: false });
       });
       // Keep outside startTransition — closes mobile dialog synchronously.
       onNavigate?.();
@@ -99,9 +102,11 @@ export function FilterSidebar({
   const clearAll = useCallback(() => {
     const params = new URLSearchParams();
     params.set("category", "all");
+    const href = `${pathname}?${params.toString()}`;
     setPendingParam({ key: "category", value: "all" });
+    beginResourcesNavigation("listing", href);
     startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      router.push(href, { scroll: false });
     });
     onNavigate?.();
   }, [router, pathname, onNavigate]);

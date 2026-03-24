@@ -17,6 +17,7 @@ import { AccountTrigger } from "@/components/layout/account/AccountTrigger";
 import { Container } from "@/components/layout/container";
 import { NavbarBrand } from "@/components/layout/NavbarBrand";
 import { NavbarItem } from "@/components/layout/navbar/NavbarItem";
+import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
 
 /* ── Config ──────────────────────────────────────────────────────────────── */
 
@@ -39,6 +40,12 @@ export function Navbar() {
     setUserMenuOpen(false);
   }
 
+  function handleHomeNavigation(href: string) {
+    if (href === "/resources") {
+      beginResourcesNavigation("discover", href);
+    }
+  }
+
   /* ── render ─────────────────────────────────────────────────────────── */
 
   return (
@@ -56,6 +63,7 @@ export function Navbar() {
               <NavbarItem
                 key={href}
                 href={href}
+                onClick={() => handleHomeNavigation(href)}
                 variant="default"
               >
                 {label}
@@ -220,7 +228,10 @@ export function Navbar() {
               <NavbarItem
                 key={href}
                 href={href}
-                onClick={closeAll}
+                onClick={() => {
+                  handleHomeNavigation(href);
+                  closeAll();
+                }}
                 variant="default"
                 mobile
               >

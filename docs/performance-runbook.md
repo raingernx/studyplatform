@@ -37,6 +37,7 @@ Rules:
 - `/resources?sort=recommended` with no category is still discover mode.
 - Listing-mode marketplace requests are experiment-controlled by the `ranking_variant` cookie.
 - Direct validation of newest vs recommended listing performance must use explicit cookie state: `ranking_variant=A` for control/newest and `ranking_variant=B` for recommended.
+- In listing mode, cookie-less `category=all` routes can collapse onto the effective `newest` path, so treat the explicit experiment-aware rows as the authoritative runtime cold-vs-warm comparison.
 
 ## 3. Routes to Measure
 
@@ -46,11 +47,11 @@ Rules:
 | `/resources` | Effective public homepage, discover-mode path |
 | `/resources?sort=newest` | Discover-mode variant check, not direct listing-cache validation |
 | `/resources?sort=recommended` | Discover-mode variant check, not direct listing-cache validation |
-| `/resources?category=all` | Direct marketplace listing-mode validation path |
-| `/resources?category=all&sort=newest` | Direct marketplace listing-mode validation path for warmed newest listing |
-| `/resources?category=all&sort=recommended` | Direct marketplace listing-mode validation path for warmed recommended listing |
 | `/resources?category=all&sort=newest` + `ranking_variant=A` | Direct runtime control/newest listing path under the experiment |
 | `/resources?category=all&sort=recommended` + `ranking_variant=B` | Direct runtime recommended listing path under the experiment |
+| `/resources?category=all` | Listing query-shape check; may share effective newest path when no experiment cookie is sent |
+| `/resources?category=all&sort=newest` | Listing query-shape check; may share effective newest path when no experiment cookie is sent |
+| `/resources?category=all&sort=recommended` | Listing query-shape check; cookie-less requests still fall back to newest |
 | `/resources/<HOT_SLUG>` | Head detail route expected to benefit from warming |
 | `/resources/<COLD_SLUG>` | Long-tail control, usually not warmed |
 | `/creators/<HOT_CREATOR>` | Head creator route expected to benefit from warming |
@@ -62,6 +63,7 @@ Selection rules:
 - `COLD_*`: choose long-tail entries unlikely to be warmed.
 - Use `category=all` listing-mode URLs as the direct validation path for marketplace cache performance.
 - Use explicit `ranking_variant` cookies for experiment-aware listing measurements; query-string sort alone does not prove the effective runtime sort.
+- Run the experiment-aware listing rows before the generic cookie-less listing rows if you are collecting a true cold baseline manually.
 
 ## 4. Copy-Paste Commands
 
@@ -136,11 +138,11 @@ measure_redirect "root" "$BASE/"
 measure "resources" "$BASE/resources"
 measure "newest" "$BASE/resources?sort=newest"
 measure "recommended" "$BASE/resources?sort=recommended"
+measure_with_cookie "listing_control_a" "$BASE/resources?category=all&sort=newest" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_CONTROL_VARIANT"
+measure_with_cookie "listing_recommended_b" "$BASE/resources?category=all&sort=recommended" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_RECOMMENDED_VARIANT"
 measure "listing_default" "$BASE/resources?category=all"
 measure "listing_newest" "$BASE/resources?category=all&sort=newest"
 measure "listing_recommended" "$BASE/resources?category=all&sort=recommended"
-measure_with_cookie "listing_control_a" "$BASE/resources?category=all&sort=newest" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_CONTROL_VARIANT"
-measure_with_cookie "listing_recommended_b" "$BASE/resources?category=all&sort=recommended" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_RECOMMENDED_VARIANT"
 measure "detail_hot" "$BASE/resources/$HOT_SLUG"
 measure "detail_cold" "$BASE/resources/$COLD_SLUG"
 measure "creator_hot" "$BASE/creators/$HOT_CREATOR"
@@ -171,11 +173,11 @@ Run each 3 times and use the median TTFB:
 measure3 "resources" "$BASE/resources"
 measure3 "newest" "$BASE/resources?sort=newest"
 measure3 "recommended" "$BASE/resources?sort=recommended"
+measure3_with_cookie "listing_control_a" "$BASE/resources?category=all&sort=newest" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_CONTROL_VARIANT"
+measure3_with_cookie "listing_recommended_b" "$BASE/resources?category=all&sort=recommended" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_RECOMMENDED_VARIANT"
 measure3 "listing_default" "$BASE/resources?category=all"
 measure3 "listing_newest" "$BASE/resources?category=all&sort=newest"
 measure3 "listing_recommended" "$BASE/resources?category=all&sort=recommended"
-measure3_with_cookie "listing_control_a" "$BASE/resources?category=all&sort=newest" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_CONTROL_VARIANT"
-measure3_with_cookie "listing_recommended_b" "$BASE/resources?category=all&sort=recommended" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_RECOMMENDED_VARIANT"
 measure3 "detail_hot" "$BASE/resources/$HOT_SLUG"
 measure3 "detail_cold" "$BASE/resources/$COLD_SLUG"
 measure3 "creator_hot" "$BASE/creators/$HOT_CREATOR"
@@ -244,7 +246,7 @@ rg '$begin:math:display$PERF$end:math:display$ public_cache_warm:full|$begin:mat
 | Log | What it means |
 |---|---|
 | `cache_execute:getDiscoverData` | Discover cache body executed; treat as miss/expiry proxy for `/resources` discover mode |
-| `cache_execute:getMarketplaceResources` | Listing cache body executed; use listing-mode URLs such as `/resources?category=all&sort=*` to validate marketplace cache performance directly |
+| `cache_execute:getMarketplaceResources` | Listing cache body executed; prefer the explicit experiment-aware listing rows when validating control/newest vs recommended runtime performance |
 | `cache_execute:getPublicResourcePageData` | Resource detail cache body executed; best miss proxy for detail pages |
 | `cache_execute:getCreatorPublicProfile` | Creator profile cache body executed; best miss proxy for creator pages |
 | `public_cache_warm_full:start` | Full warm started |
@@ -261,6 +263,7 @@ Limits:
 - There is no dedicated `cache_execute:*` for hero.
 - There is no direct prefetch-to-click attribution.
 - Listing-mode experiment measurements must be interpreted with the ranking cookie in mind; `sort` in the URL is not the final effective sort when `category` is present.
+- Cookie-less listing rows are useful for query-shape checks, but they are not authoritative cold-runtime comparisons for control vs recommended.
 
 ## 7. Thresholds
 
@@ -362,11 +365,11 @@ Formula:
 | `/resources` |  |  |  |  |  |  |  | discover mode |
 | `/resources?sort=newest` |  |  |  |  |  |  |  | still discover mode without category |
 | `/resources?sort=recommended` |  |  |  |  |  |  |  | still discover mode without category |
-| `/resources?category=all` |  |  |  |  |  |  |  | listing mode |
-| `/resources?category=all&sort=newest` |  |  |  |  |  |  |  | listing mode |
-| `/resources?category=all&sort=recommended` |  |  |  |  |  |  |  | listing mode |
 | `/resources?category=all&sort=newest` + `ranking_variant=A` |  |  |  |  |  |  |  | experiment-aware control/newest |
 | `/resources?category=all&sort=recommended` + `ranking_variant=B` |  |  |  |  |  |  |  | experiment-aware recommended |
+| `/resources?category=all` |  |  |  |  |  |  |  | listing mode; query-shape check |
+| `/resources?category=all&sort=newest` |  |  |  |  |  |  |  | listing mode; query-shape check |
+| `/resources?category=all&sort=recommended` |  |  |  |  |  |  |  | listing mode; query-shape check |
 | `/resources/<HOT_SLUG>` |  |  |  |  |  |  |  |  |
 | `/resources/<COLD_SLUG>` |  |  |  |  |  |  |  |  |
 | `/creators/<HOT_CREATOR>` |  |  |  |  |  |  |  |  |

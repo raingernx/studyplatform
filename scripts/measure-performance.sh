@@ -179,11 +179,11 @@ write_markdown_report() {
 | \`/resources\` | ${COLD_RESOURCES_TTFB}s | ${warm_resources_ttfb_1}s | ${warm_resources_ttfb_2}s | ${warm_resources_ttfb_3}s | ${WARM_RESOURCES_MEDIAN}s | ${ROI_RESOURCES} | manual log check required | discover mode |
 | \`/resources?sort=newest\` | ${COLD_NEWEST_TTFB}s | ${warm_newest_ttfb_1}s | ${warm_newest_ttfb_2}s | ${warm_newest_ttfb_3}s | ${WARM_NEWEST_MEDIAN}s | ${ROI_NEWEST} | manual log check required | still discover mode without category |
 | \`/resources?sort=recommended\` | ${COLD_RECOMMENDED_TTFB}s | ${warm_recommended_ttfb_1}s | ${warm_recommended_ttfb_2}s | ${warm_recommended_ttfb_3}s | ${WARM_RECOMMENDED_MEDIAN}s | ${ROI_RECOMMENDED} | manual log check required | still discover mode without category |
-| \`/resources?category=all\` | ${COLD_LISTING_DEFAULT_TTFB}s | ${warm_listing_default_ttfb_1}s | ${warm_listing_default_ttfb_2}s | ${warm_listing_default_ttfb_3}s | ${WARM_LISTING_DEFAULT_MEDIAN}s | ${ROI_LISTING_DEFAULT} | manual log check required | listing mode |
-| \`/resources?category=all&sort=newest\` | ${COLD_LISTING_NEWEST_TTFB}s | ${warm_listing_newest_ttfb_1}s | ${warm_listing_newest_ttfb_2}s | ${warm_listing_newest_ttfb_3}s | ${WARM_LISTING_NEWEST_MEDIAN}s | ${ROI_LISTING_NEWEST} | manual log check required | listing mode |
-| \`/resources?category=all&sort=recommended\` | ${COLD_LISTING_RECOMMENDED_TTFB}s | ${warm_listing_recommended_ttfb_1}s | ${warm_listing_recommended_ttfb_2}s | ${warm_listing_recommended_ttfb_3}s | ${WARM_LISTING_RECOMMENDED_MEDIAN}s | ${ROI_LISTING_RECOMMENDED} | manual log check required | listing mode |
 | \`/resources?category=all&sort=newest\` + \`${RANKING_EXPERIMENT_COOKIE_NAME}=${RANKING_CONTROL_VARIANT}\` | ${COLD_LISTING_CONTROL_A_TTFB}s | ${warm_listing_control_a_ttfb_1}s | ${warm_listing_control_a_ttfb_2}s | ${warm_listing_control_a_ttfb_3}s | ${WARM_LISTING_CONTROL_A_MEDIAN}s | ${ROI_LISTING_CONTROL_A} | manual log check required | listing mode; effective newest via control cookie |
 | \`/resources?category=all&sort=recommended\` + \`${RANKING_EXPERIMENT_COOKIE_NAME}=${RANKING_RECOMMENDED_VARIANT}\` | ${COLD_LISTING_RECOMMENDED_B_TTFB}s | ${warm_listing_recommended_b_ttfb_1}s | ${warm_listing_recommended_b_ttfb_2}s | ${warm_listing_recommended_b_ttfb_3}s | ${WARM_LISTING_RECOMMENDED_B_MEDIAN}s | ${ROI_LISTING_RECOMMENDED_B} | manual log check required | listing mode; effective recommended via treatment cookie |
+| \`/resources?category=all\` | ${COLD_LISTING_DEFAULT_TTFB}s | ${warm_listing_default_ttfb_1}s | ${warm_listing_default_ttfb_2}s | ${warm_listing_default_ttfb_3}s | ${WARM_LISTING_DEFAULT_MEDIAN}s | ${ROI_LISTING_DEFAULT} | manual log check required | listing mode; query-shape check, may share effective newest path |
+| \`/resources?category=all&sort=newest\` | ${COLD_LISTING_NEWEST_TTFB}s | ${warm_listing_newest_ttfb_1}s | ${warm_listing_newest_ttfb_2}s | ${warm_listing_newest_ttfb_3}s | ${WARM_LISTING_NEWEST_MEDIAN}s | ${ROI_LISTING_NEWEST} | manual log check required | listing mode; query-shape check, may share effective newest path |
+| \`/resources?category=all&sort=recommended\` | ${COLD_LISTING_RECOMMENDED_TTFB}s | ${warm_listing_recommended_ttfb_1}s | ${warm_listing_recommended_ttfb_2}s | ${warm_listing_recommended_ttfb_3}s | ${WARM_LISTING_RECOMMENDED_MEDIAN}s | ${ROI_LISTING_RECOMMENDED} | manual log check required | listing mode; query-shape check, cookie-less requests fall back to newest |
 | \`/resources/<HOT_SLUG>\` | ${COLD_DETAIL_HOT_TTFB}s | ${warm_detail_hot_ttfb_1}s | ${warm_detail_hot_ttfb_2}s | ${warm_detail_hot_ttfb_3}s | ${WARM_DETAIL_HOT_MEDIAN}s | ${ROI_DETAIL_HOT} | manual log check required |  |
 | \`/resources/<COLD_SLUG>\` | ${COLD_DETAIL_COLD_TTFB}s | ${warm_detail_cold_ttfb_1}s | ${warm_detail_cold_ttfb_2}s | ${warm_detail_cold_ttfb_3}s | ${WARM_DETAIL_COLD_MEDIAN}s | ${ROI_DETAIL_COLD} | manual log check required | long-tail control |
 | \`/creators/<HOT_CREATOR>\` | ${COLD_CREATOR_HOT_TTFB}s | ${warm_creator_hot_ttfb_1}s | ${warm_creator_hot_ttfb_2}s | ${warm_creator_hot_ttfb_3}s | ${WARM_CREATOR_HOT_MEDIAN}s | ${ROI_CREATOR_HOT} | manual log check required |  |
@@ -289,11 +289,11 @@ cold_root_line="$(measure_redirect "root" "$ROOT_URL")"
 cold_resources_line="$(measure "resources" "$RESOURCES_URL")"
 cold_newest_line="$(measure "newest" "$NEWEST_URL")"
 cold_recommended_line="$(measure "recommended" "$RECOMMENDED_URL")"
+cold_listing_control_a_line="$(measure_with_cookie "listing_control_a" "$LISTING_NEWEST_URL" "$RANKING_CONTROL_COOKIE")"
+cold_listing_recommended_b_line="$(measure_with_cookie "listing_recommended_b" "$LISTING_RECOMMENDED_URL" "$RANKING_RECOMMENDED_COOKIE")"
 cold_listing_default_line="$(measure "listing_default" "$LISTING_DEFAULT_URL")"
 cold_listing_newest_line="$(measure "listing_newest" "$LISTING_NEWEST_URL")"
 cold_listing_recommended_line="$(measure "listing_recommended" "$LISTING_RECOMMENDED_URL")"
-cold_listing_control_a_line="$(measure_with_cookie "listing_control_a" "$LISTING_NEWEST_URL" "$RANKING_CONTROL_COOKIE")"
-cold_listing_recommended_b_line="$(measure_with_cookie "listing_recommended_b" "$LISTING_RECOMMENDED_URL" "$RANKING_RECOMMENDED_COOKIE")"
 cold_detail_hot_line="$(measure "detail_hot" "$DETAIL_HOT_URL")"
 cold_detail_cold_line="$(measure "detail_cold" "$DETAIL_COLD_URL")"
 cold_creator_hot_line="$(measure "creator_hot" "$CREATOR_HOT_URL")"
@@ -303,11 +303,11 @@ printf '%s\n' "$cold_root_line"
 printf '%s\n' "$cold_resources_line"
 printf '%s\n' "$cold_newest_line"
 printf '%s\n' "$cold_recommended_line"
+printf '%s\n' "$cold_listing_control_a_line"
+printf '%s\n' "$cold_listing_recommended_b_line"
 printf '%s\n' "$cold_listing_default_line"
 printf '%s\n' "$cold_listing_newest_line"
 printf '%s\n' "$cold_listing_recommended_line"
-printf '%s\n' "$cold_listing_control_a_line"
-printf '%s\n' "$cold_listing_recommended_b_line"
 printf '%s\n' "$cold_detail_hot_line"
 printf '%s\n' "$cold_detail_cold_line"
 printf '%s\n' "$cold_creator_hot_line"
@@ -348,11 +348,11 @@ print_section "Post-warm repeated measurements"
 warm_resources_runs="$(measure3_capture "resources" "$RESOURCES_URL")"
 warm_newest_runs="$(measure3_capture "newest" "$NEWEST_URL")"
 warm_recommended_runs="$(measure3_capture "recommended" "$RECOMMENDED_URL")"
+warm_listing_control_a_runs="$(measure3_capture_with_cookie "listing_control_a" "$LISTING_NEWEST_URL" "$RANKING_CONTROL_COOKIE")"
+warm_listing_recommended_b_runs="$(measure3_capture_with_cookie "listing_recommended_b" "$LISTING_RECOMMENDED_URL" "$RANKING_RECOMMENDED_COOKIE")"
 warm_listing_default_runs="$(measure3_capture "listing_default" "$LISTING_DEFAULT_URL")"
 warm_listing_newest_runs="$(measure3_capture "listing_newest" "$LISTING_NEWEST_URL")"
 warm_listing_recommended_runs="$(measure3_capture "listing_recommended" "$LISTING_RECOMMENDED_URL")"
-warm_listing_control_a_runs="$(measure3_capture_with_cookie "listing_control_a" "$LISTING_NEWEST_URL" "$RANKING_CONTROL_COOKIE")"
-warm_listing_recommended_b_runs="$(measure3_capture_with_cookie "listing_recommended_b" "$LISTING_RECOMMENDED_URL" "$RANKING_RECOMMENDED_COOKIE")"
 warm_detail_hot_runs="$(measure3_capture "detail_hot" "$DETAIL_HOT_URL")"
 warm_detail_cold_runs="$(measure3_capture "detail_cold" "$DETAIL_COLD_URL")"
 warm_creator_hot_runs="$(measure3_capture "creator_hot" "$CREATOR_HOT_URL")"
@@ -361,11 +361,11 @@ warm_creator_cold_runs="$(measure3_capture "creator_cold" "$CREATOR_COLD_URL")"
 printf '%s\n' "$warm_resources_runs"
 printf '%s\n' "$warm_newest_runs"
 printf '%s\n' "$warm_recommended_runs"
+printf '%s\n' "$warm_listing_control_a_runs"
+printf '%s\n' "$warm_listing_recommended_b_runs"
 printf '%s\n' "$warm_listing_default_runs"
 printf '%s\n' "$warm_listing_newest_runs"
 printf '%s\n' "$warm_listing_recommended_runs"
-printf '%s\n' "$warm_listing_control_a_runs"
-printf '%s\n' "$warm_listing_recommended_b_runs"
 printf '%s\n' "$warm_detail_hot_runs"
 printf '%s\n' "$warm_detail_cold_runs"
 printf '%s\n' "$warm_creator_hot_runs"

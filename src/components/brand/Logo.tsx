@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
+import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
 
 export type LogoVariant = "full" | "icon" | "email";
 
@@ -181,6 +182,9 @@ export function Logo({
   return (
     <Link
       href="/resources"
+      onClick={() => {
+        beginResourcesNavigation("discover", "/resources");
+      }}
       className={cn(
         "inline-flex items-center justify-start gap-2.5 align-bottom transition-opacity hover:opacity-90",
         className,

@@ -24,6 +24,7 @@ import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import { HeroSearch } from "@/components/marketplace/HeroSearch";
 import { HeroBanner } from "@/components/marketplace/HeroBanner";
 import { DiscoverButton, CategoryChips, type ChipCategory } from "@/components/marketplace/CategoryChips";
+import { ResourcesNavigationFeedback } from "@/components/marketplace/ResourcesNavigationFeedback";
 import { ScrollableCategoryNav } from "@/components/marketplace/ScrollableCategoryNav";
 import { FilterBar } from "@/components/marketplace/FilterBar";
 import { FilterSidebar, type FilterCategory } from "@/components/marketplace/FilterSidebar";
@@ -307,6 +308,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-50">
+      <ResourcesNavigationFeedback />
       <Navbar />
 
       <main className="flex-1">

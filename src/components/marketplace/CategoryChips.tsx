@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
 
 export interface ChipCategory {
   id: string;
@@ -32,6 +33,7 @@ export function DiscoverButton() {
   })();
 
   function handleClick() {
+    beginResourcesNavigation("discover", discoverUrl);
     startTransition(() => {
       router.push(discoverUrl, { scroll: false });
     });
@@ -85,6 +87,7 @@ export function CategoryChips({ categories }: CategoryChipsProps) {
 
   function navigate(slug: string) {
     setPendingSlug(slug);
+    beginResourcesNavigation("listing", chipUrl(slug));
     startTransition(() => {
       router.push(chipUrl(slug), { scroll: false });
     });

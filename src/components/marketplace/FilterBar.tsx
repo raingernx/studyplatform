@@ -6,6 +6,7 @@ import { ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
 import { SORT_OPTIONS, normaliseSortParam } from "@/config/sortOptions";
+import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
 
 const PRICE_OPTIONS = [
   { value: "",     label: "Any price" },
@@ -46,8 +47,10 @@ export function FilterBar({ total }: Props) {
       params.set(key, value);
     }
     params.delete("page");
+    const href = `${pathname}?${params.toString()}`;
+    beginResourcesNavigation("listing", href);
     startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      router.push(href, { scroll: false });
     });
   }
 
@@ -56,8 +59,10 @@ export function FilterBar({ total }: Props) {
     params.delete("price");
     params.delete("sort");
     params.delete("page");
+    const href = `${pathname}?${params.toString()}`;
+    beginResourcesNavigation("listing", href);
     startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      router.push(href, { scroll: false });
     });
   }
 
