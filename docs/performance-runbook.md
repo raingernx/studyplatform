@@ -35,6 +35,8 @@ Rules:
 - `/resources` with no category is discover mode.
 - `/resources?sort=newest` with no category is still discover mode.
 - `/resources?sort=recommended` with no category is still discover mode.
+- Listing-mode marketplace requests are experiment-controlled by the `ranking_variant` cookie.
+- Direct validation of newest vs recommended listing performance must use explicit cookie state: `ranking_variant=A` for control/newest and `ranking_variant=B` for recommended.
 
 ## 3. Routes to Measure
 
@@ -47,6 +49,8 @@ Rules:
 | `/resources?category=all` | Direct marketplace listing-mode validation path |
 | `/resources?category=all&sort=newest` | Direct marketplace listing-mode validation path for warmed newest listing |
 | `/resources?category=all&sort=recommended` | Direct marketplace listing-mode validation path for warmed recommended listing |
+| `/resources?category=all&sort=newest` + `ranking_variant=A` | Direct runtime control/newest listing path under the experiment |
+| `/resources?category=all&sort=recommended` + `ranking_variant=B` | Direct runtime recommended listing path under the experiment |
 | `/resources/<HOT_SLUG>` | Head detail route expected to benefit from warming |
 | `/resources/<COLD_SLUG>` | Long-tail control, usually not warmed |
 | `/creators/<HOT_CREATOR>` | Head creator route expected to benefit from warming |
@@ -57,6 +61,7 @@ Selection rules:
 - `HOT_*`: choose from discover output or warm response targets.
 - `COLD_*`: choose long-tail entries unlikely to be warmed.
 - Use `category=all` listing-mode URLs as the direct validation path for marketplace cache performance.
+- Use explicit `ranking_variant` cookies for experiment-aware listing measurements; query-string sort alone does not prove the effective runtime sort.
 
 ## 4. Copy-Paste Commands
 
@@ -71,6 +76,9 @@ export COLD_CREATOR="<cold-creator-slug>"
 
 export WARM_BASE_URL="$BASE"
 export PERFORMANCE_WARM_SECRET="<secret>"
+export RANKING_EXPERIMENT_COOKIE_NAME="ranking_variant"
+export RANKING_CONTROL_VARIANT="A"
+export RANKING_RECOMMENDED_VARIANT="B"
 ```
 
 ### Helpers
@@ -88,9 +96,25 @@ measure() {
     "$2"
 }
 
+measure_with_cookie() {
+  curl -sS -o /dev/null \
+    -b "$3" \
+    -w "$1 code=%{http_code} ttfb=%{time_starttransfer}s total=%{time_total}s\n" \
+    "$2"
+}
+
 measure3() {
   for i in 1 2 3; do
     curl -sS -o /dev/null \
+      -w "$1 run=$i code=%{http_code} ttfb=%{time_starttransfer}s total=%{time_total}s\n" \
+      "$2"
+  done
+}
+
+measure3_with_cookie() {
+  for i in 1 2 3; do
+    curl -sS -o /dev/null \
+      -b "$3" \
       -w "$1 run=$i code=%{http_code} ttfb=%{time_starttransfer}s total=%{time_total}s\n" \
       "$2"
   done
@@ -115,6 +139,8 @@ measure "recommended" "$BASE/resources?sort=recommended"
 measure "listing_default" "$BASE/resources?category=all"
 measure "listing_newest" "$BASE/resources?category=all&sort=newest"
 measure "listing_recommended" "$BASE/resources?category=all&sort=recommended"
+measure_with_cookie "listing_control_a" "$BASE/resources?category=all&sort=newest" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_CONTROL_VARIANT"
+measure_with_cookie "listing_recommended_b" "$BASE/resources?category=all&sort=recommended" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_RECOMMENDED_VARIANT"
 measure "detail_hot" "$BASE/resources/$HOT_SLUG"
 measure "detail_cold" "$BASE/resources/$COLD_SLUG"
 measure "creator_hot" "$BASE/creators/$HOT_CREATOR"
@@ -148,6 +174,8 @@ measure3 "recommended" "$BASE/resources?sort=recommended"
 measure3 "listing_default" "$BASE/resources?category=all"
 measure3 "listing_newest" "$BASE/resources?category=all&sort=newest"
 measure3 "listing_recommended" "$BASE/resources?category=all&sort=recommended"
+measure3_with_cookie "listing_control_a" "$BASE/resources?category=all&sort=newest" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_CONTROL_VARIANT"
+measure3_with_cookie "listing_recommended_b" "$BASE/resources?category=all&sort=recommended" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_RECOMMENDED_VARIANT"
 measure3 "detail_hot" "$BASE/resources/$HOT_SLUG"
 measure3 "detail_cold" "$BASE/resources/$COLD_SLUG"
 measure3 "creator_hot" "$BASE/creators/$HOT_CREATOR"
@@ -163,6 +191,10 @@ echo "recommended median=$(median_ttfb "$BASE/resources?sort=recommended")s"
 echo "listing_default median=$(median_ttfb "$BASE/resources?category=all")s"
 echo "listing_newest median=$(median_ttfb "$BASE/resources?category=all&sort=newest")s"
 echo "listing_recommended median=$(median_ttfb "$BASE/resources?category=all&sort=recommended")s"
+listing_control_a_median="$(measure3_with_cookie "listing_control_a" "$BASE/resources?category=all&sort=newest" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_CONTROL_VARIANT" | sed -n 's/.*ttfb=\([0-9.]*\)s.*/\1/p' | sort -n | sed -n '2p')"
+echo "listing_control_a median=${listing_control_a_median}s"
+listing_recommended_b_median="$(measure3_with_cookie "listing_recommended_b" "$BASE/resources?category=all&sort=recommended" "$RANKING_EXPERIMENT_COOKIE_NAME=$RANKING_RECOMMENDED_VARIANT" | sed -n 's/.*ttfb=\([0-9.]*\)s.*/\1/p' | sort -n | sed -n '2p')"
+echo "listing_recommended_b median=${listing_recommended_b_median}s"
 echo "detail_hot median=$(median_ttfb "$BASE/resources/$HOT_SLUG")s"
 echo "detail_cold median=$(median_ttfb "$BASE/resources/$COLD_SLUG")s"
 echo "creator_hot median=$(median_ttfb "$BASE/creators/$HOT_CREATOR")s"
@@ -200,11 +232,12 @@ rg '$begin:math:display$PERF$end:math:display$ public_cache_warm:full|$begin:mat
 7. Run the full warm.
 8. Confirm warm completed and coverage looks reasonable.
 9. Re-run warmed routes 3 times.
-10. Compute median TTFB.
-11. Confirm no repeated identical `cache_execute:*` logs on warmed head routes inside TTL.
-12. Open `/resources` anonymously and test prefetch.
-13. Record results.
-14. If signed-in measurement is needed, repeat separately.
+10. Re-run the experiment-aware listing checks with explicit `ranking_variant=A` and `ranking_variant=B`.
+11. Compute median TTFB.
+12. Confirm no repeated identical `cache_execute:*` logs on warmed head routes inside TTL.
+13. Open `/resources` anonymously and test prefetch.
+14. Record results.
+15. If signed-in measurement is needed, repeat separately.
 
 ## 6. Log Interpretation
 
@@ -227,6 +260,7 @@ Limits:
 
 - There is no dedicated `cache_execute:*` for hero.
 - There is no direct prefetch-to-click attribution.
+- Listing-mode experiment measurements must be interpreted with the ranking cookie in mind; `sort` in the URL is not the final effective sort when `category` is present.
 
 ## 7. Thresholds
 
@@ -303,6 +337,9 @@ Formula:
 - COLD_CREATOR:
 - PERFORMANCE_DEBUG_LOGS:
 - NEXT_PUBLIC_PERFORMANCE_DEBUG_LOGS:
+- Ranking experiment cookie name:
+- Ranking control variant:
+- Ranking recommended variant:
 
 ### Warm
 
@@ -328,6 +365,8 @@ Formula:
 | `/resources?category=all` |  |  |  |  |  |  |  | listing mode |
 | `/resources?category=all&sort=newest` |  |  |  |  |  |  |  | listing mode |
 | `/resources?category=all&sort=recommended` |  |  |  |  |  |  |  | listing mode |
+| `/resources?category=all&sort=newest` + `ranking_variant=A` |  |  |  |  |  |  |  | experiment-aware control/newest |
+| `/resources?category=all&sort=recommended` + `ranking_variant=B` |  |  |  |  |  |  |  | experiment-aware recommended |
 | `/resources/<HOT_SLUG>` |  |  |  |  |  |  |  |  |
 | `/resources/<COLD_SLUG>` |  |  |  |  |  |  |  |  |
 | `/creators/<HOT_CREATOR>` |  |  |  |  |  |  |  |  |
@@ -363,6 +402,8 @@ Formula:
 - listing default verdict:
 - listing newest verdict:
 - listing recommended verdict:
+- listing control (`A`) verdict:
+- listing recommended (`B`) verdict:
 - detail hot verdict:
 - creator hot verdict:
 - warm cost verdict:

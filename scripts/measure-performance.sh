@@ -22,12 +22,32 @@ measure() {
     "$2"
 }
 
+measure_with_cookie() {
+  curl -sS -o /dev/null \
+    -b "$3" \
+    -w "$1 code=%{http_code} ttfb=%{time_starttransfer}s total=%{time_total}s\n" \
+    "$2"
+}
+
 measure3() {
   local label="$1"
   local url="$2"
 
   for i in 1 2 3; do
     curl -sS -o /dev/null \
+      -w "$label run=$i code=%{http_code} ttfb=%{time_starttransfer}s total=%{time_total}s\n" \
+      "$url"
+  done
+}
+
+measure3_with_cookie() {
+  local label="$1"
+  local url="$2"
+  local cookie="$3"
+
+  for i in 1 2 3; do
+    curl -sS -o /dev/null \
+      -b "$cookie" \
       -w "$label run=$i code=%{http_code} ttfb=%{time_starttransfer}s total=%{time_total}s\n" \
       "$url"
   done
@@ -43,6 +63,19 @@ measure3_capture() {
 
   for i in 1 2 3; do
     curl -sS -o /dev/null \
+      -w "$label run=$i code=%{http_code} ttfb=%{time_starttransfer}s total=%{time_total}s\n" \
+      "$url"
+  done
+}
+
+measure3_capture_with_cookie() {
+  local label="$1"
+  local url="$2"
+  local cookie="$3"
+
+  for i in 1 2 3; do
+    curl -sS -o /dev/null \
+      -b "$cookie" \
       -w "$label run=$i code=%{http_code} ttfb=%{time_starttransfer}s total=%{time_total}s\n" \
       "$url"
   done
@@ -123,6 +156,7 @@ write_markdown_report() {
 - COLD_CREATOR: ${COLD_CREATOR}
 - PERFORMANCE_DEBUG_LOGS: ${PERFORMANCE_DEBUG_LOGS:-}
 - NEXT_PUBLIC_PERFORMANCE_DEBUG_LOGS: ${NEXT_PUBLIC_PERFORMANCE_DEBUG_LOGS:-}
+- Ranking experiment cookie: ${RANKING_EXPERIMENT_COOKIE_NAME} (${RANKING_CONTROL_VARIANT}=control/newest, ${RANKING_RECOMMENDED_VARIANT}=recommended)
 
 ### Warm
 
@@ -148,6 +182,8 @@ write_markdown_report() {
 | \`/resources?category=all\` | ${COLD_LISTING_DEFAULT_TTFB}s | ${warm_listing_default_ttfb_1}s | ${warm_listing_default_ttfb_2}s | ${warm_listing_default_ttfb_3}s | ${WARM_LISTING_DEFAULT_MEDIAN}s | ${ROI_LISTING_DEFAULT} | manual log check required | listing mode |
 | \`/resources?category=all&sort=newest\` | ${COLD_LISTING_NEWEST_TTFB}s | ${warm_listing_newest_ttfb_1}s | ${warm_listing_newest_ttfb_2}s | ${warm_listing_newest_ttfb_3}s | ${WARM_LISTING_NEWEST_MEDIAN}s | ${ROI_LISTING_NEWEST} | manual log check required | listing mode |
 | \`/resources?category=all&sort=recommended\` | ${COLD_LISTING_RECOMMENDED_TTFB}s | ${warm_listing_recommended_ttfb_1}s | ${warm_listing_recommended_ttfb_2}s | ${warm_listing_recommended_ttfb_3}s | ${WARM_LISTING_RECOMMENDED_MEDIAN}s | ${ROI_LISTING_RECOMMENDED} | manual log check required | listing mode |
+| \`/resources?category=all&sort=newest\` + \`${RANKING_EXPERIMENT_COOKIE_NAME}=${RANKING_CONTROL_VARIANT}\` | ${COLD_LISTING_CONTROL_A_TTFB}s | ${warm_listing_control_a_ttfb_1}s | ${warm_listing_control_a_ttfb_2}s | ${warm_listing_control_a_ttfb_3}s | ${WARM_LISTING_CONTROL_A_MEDIAN}s | ${ROI_LISTING_CONTROL_A} | manual log check required | listing mode; effective newest via control cookie |
+| \`/resources?category=all&sort=recommended\` + \`${RANKING_EXPERIMENT_COOKIE_NAME}=${RANKING_RECOMMENDED_VARIANT}\` | ${COLD_LISTING_RECOMMENDED_B_TTFB}s | ${warm_listing_recommended_b_ttfb_1}s | ${warm_listing_recommended_b_ttfb_2}s | ${warm_listing_recommended_b_ttfb_3}s | ${WARM_LISTING_RECOMMENDED_B_MEDIAN}s | ${ROI_LISTING_RECOMMENDED_B} | manual log check required | listing mode; effective recommended via treatment cookie |
 | \`/resources/<HOT_SLUG>\` | ${COLD_DETAIL_HOT_TTFB}s | ${warm_detail_hot_ttfb_1}s | ${warm_detail_hot_ttfb_2}s | ${warm_detail_hot_ttfb_3}s | ${WARM_DETAIL_HOT_MEDIAN}s | ${ROI_DETAIL_HOT} | manual log check required |  |
 | \`/resources/<COLD_SLUG>\` | ${COLD_DETAIL_COLD_TTFB}s | ${warm_detail_cold_ttfb_1}s | ${warm_detail_cold_ttfb_2}s | ${warm_detail_cold_ttfb_3}s | ${WARM_DETAIL_COLD_MEDIAN}s | ${ROI_DETAIL_COLD} | manual log check required | long-tail control |
 | \`/creators/<HOT_CREATOR>\` | ${COLD_CREATOR_HOT_TTFB}s | ${warm_creator_hot_ttfb_1}s | ${warm_creator_hot_ttfb_2}s | ${warm_creator_hot_ttfb_3}s | ${WARM_CREATOR_HOT_MEDIAN}s | ${ROI_CREATOR_HOT} | manual log check required |  |
@@ -161,6 +197,8 @@ write_markdown_report() {
 - listing_default: cold=${COLD_LISTING_DEFAULT_TTFB}s warm=${WARM_LISTING_DEFAULT_MEDIAN}s saved=${ROI_LISTING_DEFAULT_MS}ms roi=${ROI_LISTING_DEFAULT}
 - listing_newest: cold=${COLD_LISTING_NEWEST_TTFB}s warm=${WARM_LISTING_NEWEST_MEDIAN}s saved=${ROI_LISTING_NEWEST_MS}ms roi=${ROI_LISTING_NEWEST}
 - listing_recommended: cold=${COLD_LISTING_RECOMMENDED_TTFB}s warm=${WARM_LISTING_RECOMMENDED_MEDIAN}s saved=${ROI_LISTING_RECOMMENDED_MS}ms roi=${ROI_LISTING_RECOMMENDED}
+- listing_control_variant_${RANKING_CONTROL_VARIANT}: cold=${COLD_LISTING_CONTROL_A_TTFB}s warm=${WARM_LISTING_CONTROL_A_MEDIAN}s saved=${ROI_LISTING_CONTROL_A_MS}ms roi=${ROI_LISTING_CONTROL_A}
+- listing_recommended_variant_${RANKING_RECOMMENDED_VARIANT}: cold=${COLD_LISTING_RECOMMENDED_B_TTFB}s warm=${WARM_LISTING_RECOMMENDED_B_MEDIAN}s saved=${ROI_LISTING_RECOMMENDED_B_MS}ms roi=${ROI_LISTING_RECOMMENDED_B}
 - detail_hot: cold=${COLD_DETAIL_HOT_TTFB}s warm=${WARM_DETAIL_HOT_MEDIAN}s saved=${ROI_DETAIL_HOT_MS}ms roi=${ROI_DETAIL_HOT}
 - detail_cold: cold=${COLD_DETAIL_COLD_TTFB}s warm=${WARM_DETAIL_COLD_MEDIAN}s saved=${ROI_DETAIL_COLD_MS}ms roi=${ROI_DETAIL_COLD}
 - creator_hot: cold=${COLD_CREATOR_HOT_TTFB}s warm=${WARM_CREATOR_HOT_MEDIAN}s saved=${ROI_CREATOR_HOT_MS}ms roi=${ROI_CREATOR_HOT}
@@ -202,6 +240,8 @@ ${WARM_RESPONSE}
 - listing default verdict: manual interpretation against runbook thresholds
 - listing newest verdict: manual interpretation against runbook thresholds
 - listing recommended verdict: manual interpretation against runbook thresholds
+- listing control (${RANKING_CONTROL_VARIANT}) verdict: manual interpretation against runbook thresholds
+- listing recommended (${RANKING_RECOMMENDED_VARIANT}) verdict: manual interpretation against runbook thresholds
 - detail hot verdict: manual interpretation against runbook thresholds
 - creator hot verdict: manual interpretation against runbook thresholds
 - warm cost verdict: manual log check required
@@ -220,6 +260,11 @@ require_env "COLD_CREATOR"
 
 WARM_BASE_URL="${WARM_BASE_URL:-$BASE}"
 require_env "PERFORMANCE_WARM_SECRET"
+RANKING_EXPERIMENT_COOKIE_NAME="${RANKING_EXPERIMENT_COOKIE_NAME:-ranking_variant}"
+RANKING_CONTROL_VARIANT="${RANKING_CONTROL_VARIANT:-A}"
+RANKING_RECOMMENDED_VARIANT="${RANKING_RECOMMENDED_VARIANT:-B}"
+RANKING_CONTROL_COOKIE="${RANKING_EXPERIMENT_COOKIE_NAME}=${RANKING_CONTROL_VARIANT}"
+RANKING_RECOMMENDED_COOKIE="${RANKING_EXPERIMENT_COOKIE_NAME}=${RANKING_RECOMMENDED_VARIANT}"
 
 ROOT_URL="$BASE/"
 RESOURCES_URL="$BASE/resources"
@@ -237,6 +282,9 @@ MEASUREMENT_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 MARKDOWN_OUTPUT_FILE="$(resolve_output_file)"
 
 print_section "Cold baseline"
+printf 'Ranking experiment listing checks use explicit cookies: %s and %s\n' \
+  "$RANKING_CONTROL_COOKIE" \
+  "$RANKING_RECOMMENDED_COOKIE"
 cold_root_line="$(measure_redirect "root" "$ROOT_URL")"
 cold_resources_line="$(measure "resources" "$RESOURCES_URL")"
 cold_newest_line="$(measure "newest" "$NEWEST_URL")"
@@ -244,6 +292,8 @@ cold_recommended_line="$(measure "recommended" "$RECOMMENDED_URL")"
 cold_listing_default_line="$(measure "listing_default" "$LISTING_DEFAULT_URL")"
 cold_listing_newest_line="$(measure "listing_newest" "$LISTING_NEWEST_URL")"
 cold_listing_recommended_line="$(measure "listing_recommended" "$LISTING_RECOMMENDED_URL")"
+cold_listing_control_a_line="$(measure_with_cookie "listing_control_a" "$LISTING_NEWEST_URL" "$RANKING_CONTROL_COOKIE")"
+cold_listing_recommended_b_line="$(measure_with_cookie "listing_recommended_b" "$LISTING_RECOMMENDED_URL" "$RANKING_RECOMMENDED_COOKIE")"
 cold_detail_hot_line="$(measure "detail_hot" "$DETAIL_HOT_URL")"
 cold_detail_cold_line="$(measure "detail_cold" "$DETAIL_COLD_URL")"
 cold_creator_hot_line="$(measure "creator_hot" "$CREATOR_HOT_URL")"
@@ -256,6 +306,8 @@ printf '%s\n' "$cold_recommended_line"
 printf '%s\n' "$cold_listing_default_line"
 printf '%s\n' "$cold_listing_newest_line"
 printf '%s\n' "$cold_listing_recommended_line"
+printf '%s\n' "$cold_listing_control_a_line"
+printf '%s\n' "$cold_listing_recommended_b_line"
 printf '%s\n' "$cold_detail_hot_line"
 printf '%s\n' "$cold_detail_cold_line"
 printf '%s\n' "$cold_creator_hot_line"
@@ -268,6 +320,8 @@ COLD_RECOMMENDED_TTFB="$(extract_ttfb "$cold_recommended_line")"
 COLD_LISTING_DEFAULT_TTFB="$(extract_ttfb "$cold_listing_default_line")"
 COLD_LISTING_NEWEST_TTFB="$(extract_ttfb "$cold_listing_newest_line")"
 COLD_LISTING_RECOMMENDED_TTFB="$(extract_ttfb "$cold_listing_recommended_line")"
+COLD_LISTING_CONTROL_A_TTFB="$(extract_ttfb "$cold_listing_control_a_line")"
+COLD_LISTING_RECOMMENDED_B_TTFB="$(extract_ttfb "$cold_listing_recommended_b_line")"
 COLD_DETAIL_HOT_TTFB="$(extract_ttfb "$cold_detail_hot_line")"
 COLD_DETAIL_COLD_TTFB="$(extract_ttfb "$cold_detail_cold_line")"
 COLD_CREATOR_HOT_TTFB="$(extract_ttfb "$cold_creator_hot_line")"
@@ -297,6 +351,8 @@ warm_recommended_runs="$(measure3_capture "recommended" "$RECOMMENDED_URL")"
 warm_listing_default_runs="$(measure3_capture "listing_default" "$LISTING_DEFAULT_URL")"
 warm_listing_newest_runs="$(measure3_capture "listing_newest" "$LISTING_NEWEST_URL")"
 warm_listing_recommended_runs="$(measure3_capture "listing_recommended" "$LISTING_RECOMMENDED_URL")"
+warm_listing_control_a_runs="$(measure3_capture_with_cookie "listing_control_a" "$LISTING_NEWEST_URL" "$RANKING_CONTROL_COOKIE")"
+warm_listing_recommended_b_runs="$(measure3_capture_with_cookie "listing_recommended_b" "$LISTING_RECOMMENDED_URL" "$RANKING_RECOMMENDED_COOKIE")"
 warm_detail_hot_runs="$(measure3_capture "detail_hot" "$DETAIL_HOT_URL")"
 warm_detail_cold_runs="$(measure3_capture "detail_cold" "$DETAIL_COLD_URL")"
 warm_creator_hot_runs="$(measure3_capture "creator_hot" "$CREATOR_HOT_URL")"
@@ -308,6 +364,8 @@ printf '%s\n' "$warm_recommended_runs"
 printf '%s\n' "$warm_listing_default_runs"
 printf '%s\n' "$warm_listing_newest_runs"
 printf '%s\n' "$warm_listing_recommended_runs"
+printf '%s\n' "$warm_listing_control_a_runs"
+printf '%s\n' "$warm_listing_recommended_b_runs"
 printf '%s\n' "$warm_detail_hot_runs"
 printf '%s\n' "$warm_detail_cold_runs"
 printf '%s\n' "$warm_creator_hot_runs"
@@ -331,6 +389,12 @@ warm_listing_newest_ttfb_3="$(extract_ttfb "$(printf '%s\n' "$warm_listing_newes
 warm_listing_recommended_ttfb_1="$(extract_ttfb "$(printf '%s\n' "$warm_listing_recommended_runs" | sed -n '1p')")"
 warm_listing_recommended_ttfb_2="$(extract_ttfb "$(printf '%s\n' "$warm_listing_recommended_runs" | sed -n '2p')")"
 warm_listing_recommended_ttfb_3="$(extract_ttfb "$(printf '%s\n' "$warm_listing_recommended_runs" | sed -n '3p')")"
+warm_listing_control_a_ttfb_1="$(extract_ttfb "$(printf '%s\n' "$warm_listing_control_a_runs" | sed -n '1p')")"
+warm_listing_control_a_ttfb_2="$(extract_ttfb "$(printf '%s\n' "$warm_listing_control_a_runs" | sed -n '2p')")"
+warm_listing_control_a_ttfb_3="$(extract_ttfb "$(printf '%s\n' "$warm_listing_control_a_runs" | sed -n '3p')")"
+warm_listing_recommended_b_ttfb_1="$(extract_ttfb "$(printf '%s\n' "$warm_listing_recommended_b_runs" | sed -n '1p')")"
+warm_listing_recommended_b_ttfb_2="$(extract_ttfb "$(printf '%s\n' "$warm_listing_recommended_b_runs" | sed -n '2p')")"
+warm_listing_recommended_b_ttfb_3="$(extract_ttfb "$(printf '%s\n' "$warm_listing_recommended_b_runs" | sed -n '3p')")"
 warm_detail_hot_ttfb_1="$(extract_ttfb "$(printf '%s\n' "$warm_detail_hot_runs" | sed -n '1p')")"
 warm_detail_hot_ttfb_2="$(extract_ttfb "$(printf '%s\n' "$warm_detail_hot_runs" | sed -n '2p')")"
 warm_detail_hot_ttfb_3="$(extract_ttfb "$(printf '%s\n' "$warm_detail_hot_runs" | sed -n '3p')")"
@@ -350,6 +414,8 @@ WARM_RECOMMENDED_MEDIAN="$(median_ttfb "$warm_recommended_ttfb_1" "$warm_recomme
 WARM_LISTING_DEFAULT_MEDIAN="$(median_ttfb "$warm_listing_default_ttfb_1" "$warm_listing_default_ttfb_2" "$warm_listing_default_ttfb_3")"
 WARM_LISTING_NEWEST_MEDIAN="$(median_ttfb "$warm_listing_newest_ttfb_1" "$warm_listing_newest_ttfb_2" "$warm_listing_newest_ttfb_3")"
 WARM_LISTING_RECOMMENDED_MEDIAN="$(median_ttfb "$warm_listing_recommended_ttfb_1" "$warm_listing_recommended_ttfb_2" "$warm_listing_recommended_ttfb_3")"
+WARM_LISTING_CONTROL_A_MEDIAN="$(median_ttfb "$warm_listing_control_a_ttfb_1" "$warm_listing_control_a_ttfb_2" "$warm_listing_control_a_ttfb_3")"
+WARM_LISTING_RECOMMENDED_B_MEDIAN="$(median_ttfb "$warm_listing_recommended_b_ttfb_1" "$warm_listing_recommended_b_ttfb_2" "$warm_listing_recommended_b_ttfb_3")"
 WARM_DETAIL_HOT_MEDIAN="$(median_ttfb "$warm_detail_hot_ttfb_1" "$warm_detail_hot_ttfb_2" "$warm_detail_hot_ttfb_3")"
 WARM_DETAIL_COLD_MEDIAN="$(median_ttfb "$warm_detail_cold_ttfb_1" "$warm_detail_cold_ttfb_2" "$warm_detail_cold_ttfb_3")"
 WARM_CREATOR_HOT_MEDIAN="$(median_ttfb "$warm_creator_hot_ttfb_1" "$warm_creator_hot_ttfb_2" "$warm_creator_hot_ttfb_3")"
@@ -360,6 +426,8 @@ ROI_RECOMMENDED_MS="$(to_ms "$(awk -v cold="$COLD_RECOMMENDED_TTFB" -v warm="$WA
 ROI_LISTING_DEFAULT_MS="$(to_ms "$(awk -v cold="$COLD_LISTING_DEFAULT_TTFB" -v warm="$WARM_LISTING_DEFAULT_MEDIAN" 'BEGIN { print cold - warm }')")"
 ROI_LISTING_NEWEST_MS="$(to_ms "$(awk -v cold="$COLD_LISTING_NEWEST_TTFB" -v warm="$WARM_LISTING_NEWEST_MEDIAN" 'BEGIN { print cold - warm }')")"
 ROI_LISTING_RECOMMENDED_MS="$(to_ms "$(awk -v cold="$COLD_LISTING_RECOMMENDED_TTFB" -v warm="$WARM_LISTING_RECOMMENDED_MEDIAN" 'BEGIN { print cold - warm }')")"
+ROI_LISTING_CONTROL_A_MS="$(to_ms "$(awk -v cold="$COLD_LISTING_CONTROL_A_TTFB" -v warm="$WARM_LISTING_CONTROL_A_MEDIAN" 'BEGIN { print cold - warm }')")"
+ROI_LISTING_RECOMMENDED_B_MS="$(to_ms "$(awk -v cold="$COLD_LISTING_RECOMMENDED_B_TTFB" -v warm="$WARM_LISTING_RECOMMENDED_B_MEDIAN" 'BEGIN { print cold - warm }')")"
 ROI_DETAIL_HOT_MS="$(to_ms "$(awk -v cold="$COLD_DETAIL_HOT_TTFB" -v warm="$WARM_DETAIL_HOT_MEDIAN" 'BEGIN { print cold - warm }')")"
 ROI_DETAIL_COLD_MS="$(to_ms "$(awk -v cold="$COLD_DETAIL_COLD_TTFB" -v warm="$WARM_DETAIL_COLD_MEDIAN" 'BEGIN { print cold - warm }')")"
 ROI_CREATOR_HOT_MS="$(to_ms "$(awk -v cold="$COLD_CREATOR_HOT_TTFB" -v warm="$WARM_CREATOR_HOT_MEDIAN" 'BEGIN { print cold - warm }')")"
@@ -370,6 +438,8 @@ ROI_RECOMMENDED="$(roi_percent "$COLD_RECOMMENDED_TTFB" "$WARM_RECOMMENDED_MEDIA
 ROI_LISTING_DEFAULT="$(roi_percent "$COLD_LISTING_DEFAULT_TTFB" "$WARM_LISTING_DEFAULT_MEDIAN")"
 ROI_LISTING_NEWEST="$(roi_percent "$COLD_LISTING_NEWEST_TTFB" "$WARM_LISTING_NEWEST_MEDIAN")"
 ROI_LISTING_RECOMMENDED="$(roi_percent "$COLD_LISTING_RECOMMENDED_TTFB" "$WARM_LISTING_RECOMMENDED_MEDIAN")"
+ROI_LISTING_CONTROL_A="$(roi_percent "$COLD_LISTING_CONTROL_A_TTFB" "$WARM_LISTING_CONTROL_A_MEDIAN")"
+ROI_LISTING_RECOMMENDED_B="$(roi_percent "$COLD_LISTING_RECOMMENDED_B_TTFB" "$WARM_LISTING_RECOMMENDED_B_MEDIAN")"
 ROI_DETAIL_HOT="$(roi_percent "$COLD_DETAIL_HOT_TTFB" "$WARM_DETAIL_HOT_MEDIAN")"
 ROI_DETAIL_COLD="$(roi_percent "$COLD_DETAIL_COLD_TTFB" "$WARM_DETAIL_COLD_MEDIAN")"
 ROI_CREATOR_HOT="$(roi_percent "$COLD_CREATOR_HOT_TTFB" "$WARM_CREATOR_HOT_MEDIAN")"
@@ -382,6 +452,8 @@ printf 'recommended median=%ss\n' "$WARM_RECOMMENDED_MEDIAN"
 printf 'listing_default median=%ss\n' "$WARM_LISTING_DEFAULT_MEDIAN"
 printf 'listing_newest median=%ss\n' "$WARM_LISTING_NEWEST_MEDIAN"
 printf 'listing_recommended median=%ss\n' "$WARM_LISTING_RECOMMENDED_MEDIAN"
+printf 'listing_control_variant_%s median=%ss\n' "$RANKING_CONTROL_VARIANT" "$WARM_LISTING_CONTROL_A_MEDIAN"
+printf 'listing_recommended_variant_%s median=%ss\n' "$RANKING_RECOMMENDED_VARIANT" "$WARM_LISTING_RECOMMENDED_B_MEDIAN"
 printf 'detail_hot median=%ss\n' "$WARM_DETAIL_HOT_MEDIAN"
 printf 'detail_cold median=%ss\n' "$WARM_DETAIL_COLD_MEDIAN"
 printf 'creator_hot median=%ss\n' "$WARM_CREATOR_HOT_MEDIAN"
@@ -418,6 +490,18 @@ printf 'listing_recommended cold=%ss warm=%ss saved=%sms roi=%s\n' \
   "$WARM_LISTING_RECOMMENDED_MEDIAN" \
   "$ROI_LISTING_RECOMMENDED_MS" \
   "$ROI_LISTING_RECOMMENDED"
+printf 'listing_control_variant_%s cold=%ss warm=%ss saved=%sms roi=%s\n' \
+  "$RANKING_CONTROL_VARIANT" \
+  "$COLD_LISTING_CONTROL_A_TTFB" \
+  "$WARM_LISTING_CONTROL_A_MEDIAN" \
+  "$ROI_LISTING_CONTROL_A_MS" \
+  "$ROI_LISTING_CONTROL_A"
+printf 'listing_recommended_variant_%s cold=%ss warm=%ss saved=%sms roi=%s\n' \
+  "$RANKING_RECOMMENDED_VARIANT" \
+  "$COLD_LISTING_RECOMMENDED_B_TTFB" \
+  "$WARM_LISTING_RECOMMENDED_B_MEDIAN" \
+  "$ROI_LISTING_RECOMMENDED_B_MS" \
+  "$ROI_LISTING_RECOMMENDED_B"
 printf 'detail_hot cold=%ss warm=%ss saved=%sms roi=%s\n' \
   "$COLD_DETAIL_HOT_TTFB" \
   "$WARM_DETAIL_HOT_MEDIAN" \
@@ -443,6 +527,11 @@ print_section "Runbook reminders"
 printf '%s\n' 'Check [PERF] cache_execute:* logs for cold misses and repeated identical misses after warm.'
 printf '%s\n' 'Check [PERF] public_cache_warm* and internal_performance_warm_endpoint* logs for warm elapsed and coverage.'
 printf '%s\n' 'Check [PREFETCH] logs in the browser console on /resources, especially resource-card-grid.'
+printf 'Check experiment-aware listing rows with explicit cookies: %s=%s (control/newest) and %s=%s (recommended).\n' \
+  "$RANKING_EXPERIMENT_COOKIE_NAME" \
+  "$RANKING_CONTROL_VARIANT" \
+  "$RANKING_EXPERIMENT_COOKIE_NAME" \
+  "$RANKING_RECOMMENDED_VARIANT"
 printf '%s\n' 'Threshold targets: redirect <100ms good, listing-mode /resources?category=all* >=20% or >=100ms saved, full warm <1s good, detail_hot >=25% or >=150ms saved, prefetch waste <=2:1 good.'
 
 if [ -n "$MARKDOWN_OUTPUT_FILE" ]; then
