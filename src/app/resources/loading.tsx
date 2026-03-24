@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
 import { cookies } from "next/headers";
@@ -45,5 +46,9 @@ export default async function Loading() {
     }
   }
 
-  return <ResourcesLoadingState heroConfig={heroConfig} />;
+  return (
+    <Suspense fallback={null}>
+      <ResourcesLoadingState heroConfig={heroConfig} />
+    </Suspense>
+  );
 }

@@ -99,7 +99,9 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-50">
-      <ResourcesNavigationFeedback />
+      <Suspense fallback={null}>
+        <ResourcesNavigationFeedback />
+      </Suspense>
       <Navbar />
 
       <main className="flex-1">
