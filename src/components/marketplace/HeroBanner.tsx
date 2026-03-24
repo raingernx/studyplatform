@@ -2,6 +2,7 @@ import { HeroImpressionTracker } from "@/components/marketplace/HeroImpressionTr
 import { HeroTrackedLink } from "@/components/marketplace/HeroTrackedLink";
 import {
   HeroSurface,
+  HeroSurfaceSkeleton,
   type HeroSurfaceConfig,
 } from "@/components/marketplace/HeroSurface";
 
@@ -50,4 +51,8 @@ export function HeroBanner({ config }: { config?: HomepageHeroConfig }) {
       />
     </>
   );
+}
+
+export function HeroBannerSkeleton({ config }: { config?: HomepageHeroConfig }) {
+  return <HeroSurfaceSkeleton config={config} />;
 }

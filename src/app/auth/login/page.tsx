@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/design-system";
 import { Logo } from "@/components/brand/Logo";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 // Google icon — inline so we don't need an extra dep
 function GoogleIcon() {
@@ -36,6 +36,7 @@ function LoginForm() {
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading]   = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError]       = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -59,6 +60,22 @@ function LoginForm() {
     }
   }
 
+  async function handleGoogleSignIn() {
+    if (loading || googleLoading) {
+      return;
+    }
+
+    setError("");
+    setGoogleLoading(true);
+
+    try {
+      await signIn("google", { callbackUrl: next });
+    } catch {
+      setGoogleLoading(false);
+      setError("Could not start Google sign-in. Please try again.");
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-12">
       <div className="w-full max-w-sm">
@@ -75,13 +92,15 @@ function LoginForm() {
           {/* Google OAuth */}
           <button
             type="button"
-            onClick={() => signIn("google", { callbackUrl: next })}
+            disabled={loading || googleLoading}
+            onClick={() => void handleGoogleSignIn()}
             className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-200
                        bg-white px-4 py-2.5 text-[13px] font-medium text-zinc-700 shadow-card
-                       transition-all hover:border-zinc-300 hover:shadow-card-md active:scale-[0.99]"
+                       transition-all hover:border-zinc-300 hover:shadow-card-md active:scale-[0.99]
+                       disabled:cursor-not-allowed disabled:opacity-70"
           >
-            <GoogleIcon />
-            Continue with Google
+            {googleLoading ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <GoogleIcon />}
+            {googleLoading ? "Redirecting to Google…" : "Continue with Google"}
           </button>
 
           {/* Divider */}
@@ -147,7 +166,7 @@ function LoginForm() {
               />
             </div>
 
-            <Button type="submit" loading={loading} fullWidth size="lg">
+            <Button type="submit" loading={loading} disabled={googleLoading} fullWidth size="lg">
               Sign in
             </Button>
           </form>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { Sun, Coins, Clock4 } from "lucide-react";
 import { Button, FormSection, Select } from "@/design-system";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
@@ -37,7 +37,11 @@ export function PreferenceSettings({
   timezone: initialTimezone,
 }: PreferenceSettingsProps) {
   const platform = usePlatformConfig();
-  const [isSaving, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<{
+    tone: "saved" | "error";
+    message: string;
+  } | null>(null);
 
   const [initialPreferences, setInitialPreferences] = useState<PreferenceSettingsProps>(() => ({
     theme: initialTheme ?? "system",
@@ -67,24 +71,33 @@ export function PreferenceSettings({
     pendingPreferences.timezone !== initialPreferences.timezone;
 
   function handleThemeChange(value: ThemeValue) {
+    if (saveFeedback !== null) {
+      setSaveFeedback(null);
+    }
     setPendingPreferences((prev) =>
       prev.theme === value ? prev : { ...prev, theme: value },
     );
   }
 
   function handleCurrencyChange(value: CurrencyValue) {
+    if (saveFeedback !== null) {
+      setSaveFeedback(null);
+    }
     setPendingPreferences((prev) =>
       prev.currency === value ? prev : { ...prev, currency: value },
     );
   }
 
   function handleTimezoneChange(value: TimezoneValue) {
+    if (saveFeedback !== null) {
+      setSaveFeedback(null);
+    }
     setPendingPreferences((prev) =>
       prev.timezone === value ? prev : { ...prev, timezone: value },
     );
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!hasChanges) return;
 
     const updates: Partial<PreferenceSettingsProps> = {};
@@ -98,36 +111,52 @@ export function PreferenceSettings({
       updates.timezone = pendingPreferences.timezone;
     }
 
-    startTransition(() => {
-      fetch("/api/user/preferences", {
+    setIsSaving(true);
+    setSaveFeedback(null);
+
+    try {
+      const response = await fetch("/api/user/preferences", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
-      }).catch(() => {
-        // Ignore network errors for now; UI will remain on pending values.
       });
-    });
 
-    if (updates.theme && typeof window !== "undefined" && typeof document !== "undefined") {
-      window.localStorage.setItem("user_theme", updates.theme);
-      const applied =
-        updates.theme === "system"
-          ? window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? "dark"
-            : "light"
-          : updates.theme;
-      document.documentElement.dataset.theme = applied;
+      if (!response.ok) {
+        throw new Error("Could not save your preferences. Try again.");
+      }
+
+      if (updates.theme && typeof window !== "undefined" && typeof document !== "undefined") {
+        window.localStorage.setItem("user_theme", updates.theme);
+        const applied =
+          updates.theme === "system"
+            ? window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : updates.theme;
+        document.documentElement.dataset.theme = applied;
+      }
+
+      if (updates.currency && typeof window !== "undefined") {
+        window.localStorage.setItem("user_currency", updates.currency);
+      }
+
+      if (updates.timezone && typeof window !== "undefined") {
+        window.localStorage.setItem("user_timezone", updates.timezone);
+      }
+
+      setInitialPreferences(pendingPreferences);
+      setSaveFeedback({
+        tone: "saved",
+        message: "Preferences saved.",
+      });
+    } catch {
+      setSaveFeedback({
+        tone: "error",
+        message: "Could not save your preferences. Try again.",
+      });
+    } finally {
+      setIsSaving(false);
     }
-
-    if (updates.currency && typeof window !== "undefined") {
-      window.localStorage.setItem("user_currency", updates.currency);
-    }
-
-    if (updates.timezone && typeof window !== "undefined") {
-      window.localStorage.setItem("user_timezone", updates.timezone);
-    }
-
-    setInitialPreferences(pendingPreferences);
   }
 
   return (
@@ -135,15 +164,27 @@ export function PreferenceSettings({
       title="Preferences"
       description={`Customize how ${platform.platformShortName} looks and behaves for you.`}
       footer={
-        <Button
-          type="button"
-          size="sm"
-          disabled={!hasChanges || isSaving}
-          loading={isSaving}
-          onClick={handleSave}
-        >
-          Save changes
-        </Button>
+        <div className="flex w-full items-center justify-between gap-3">
+          <span
+            className="min-h-[16px] text-[11px]"
+            aria-live="polite"
+          >
+            {saveFeedback ? (
+              <span className={saveFeedback.tone === "error" ? "text-red-600" : "text-emerald-600"}>
+                {saveFeedback.message}
+              </span>
+            ) : null}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            disabled={!hasChanges || isSaving}
+            loading={isSaving}
+            onClick={() => void handleSave()}
+          >
+            Save changes
+          </Button>
+        </div>
       }
     >
         {/* Theme */}

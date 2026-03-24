@@ -317,6 +317,7 @@ export async function PurchaseCard({
             (session?.user ? (
               <BuyButton
                 resourceId={resource.id}
+                resourceHref={`/resources/${resource.slug}`}
                 price={0}
                 isFree={true}
                 owned={false}
@@ -335,6 +336,7 @@ export async function PurchaseCard({
             (session?.user ? (
               <BuyButton
                 resourceId={resource.id}
+                resourceHref={`/resources/${resource.slug}`}
                 price={resource.price / 100}
                 isFree={false}
                 owned={false}

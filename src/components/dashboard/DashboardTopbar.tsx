@@ -18,6 +18,8 @@ import { routes } from "@/lib/routes";
 import { AccountTrigger } from "@/components/layout/account/AccountTrigger";
 import type { DashboardUser } from "./DashboardLayout";
 import { DashboardTopbar as SharedDashboardTopbar } from "@/components/layout/dashboard/DashboardTopbar";
+import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
+import { beginDashboardNavigation } from "@/components/layout/dashboard/dashboardNavigationState";
 
 interface DashboardTopbarProps {
   user: DashboardUser;
@@ -35,6 +37,7 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
   const [query, setQuery] = useState("");
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -51,12 +54,37 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
     return () => document.removeEventListener("mousedown", onOutsideClick);
   }, []);
 
+  function handleDashboardNavigation(href: string) {
+    beginDashboardNavigation(href);
+  }
+
+  function handleMarketplaceNavigation(href: string) {
+    beginResourcesNavigation("discover", href);
+  }
+
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     const q = query.trim();
     if (q) {
-      router.push(`${routes.marketplace}?q=${encodeURIComponent(q)}`);
+      const href = `${routes.marketplace}?search=${encodeURIComponent(q)}`;
+      handleMarketplaceNavigation(href);
+      router.push(href);
       searchRef.current?.blur();
+    }
+  }
+
+  async function handleSignOut() {
+    if (isSigningOut) {
+      return;
+    }
+
+    setIsSigningOut(true);
+    setAvatarOpen(false);
+
+    try {
+      await signOut({ callbackUrl: "/" });
+    } catch {
+      setIsSigningOut(false);
     }
   }
 
@@ -101,6 +129,7 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
         <>
           <Link
             href={routes.marketplace}
+            onClick={() => handleMarketplaceNavigation(routes.marketplace)}
             className="hidden items-center rounded-md bg-neutral-900 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:bg-neutral-700 sm:flex"
           >
             Browse
@@ -154,7 +183,10 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
                       <Link
                         key={item.href}
                         href={item.href}
-                        onClick={() => setAvatarOpen(false)}
+                        onClick={() => {
+                          handleDashboardNavigation(item.href);
+                          setAvatarOpen(false);
+                        }}
                         className="flex items-center gap-3 rounded-md px-3 py-2 text-[13px] text-neutral-700 transition hover:bg-neutral-50"
                       >
                         <Icon className="h-3.5 w-3.5 text-neutral-400" />
@@ -166,11 +198,12 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
                   <div className="mt-1 border-t border-neutral-100 pt-1">
                     <button
                       type="button"
-                      onClick={() => signOut({ callbackUrl: "/" })}
-                      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-[13px] text-red-500 transition hover:bg-red-50"
+                      disabled={isSigningOut}
+                      onClick={() => void handleSignOut()}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-[13px] text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       <LogOut className="h-3.5 w-3.5" />
-                      Sign out
+                      {isSigningOut ? "Signing out…" : "Sign out"}
                     </button>
                   </div>
                 </div>

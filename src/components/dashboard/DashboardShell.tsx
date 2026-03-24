@@ -10,6 +10,7 @@ import { getDashboardNav } from "@/lib/dashboard/getDashboardNav";
 import { getDashboardShellVariant } from "@/lib/dashboard/dashboard-permissions";
 import { DashboardShell as SharedDashboardShell } from "@/components/layout/dashboard/DashboardShell";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
+import { beginDashboardNavigation } from "@/components/layout/dashboard/dashboardNavigationState";
 
 interface DashboardShellProps {
   user: DashboardUser;
@@ -33,6 +34,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
   ) : (
     <Link
       href={routes.subscription}
+      onClick={() => beginDashboardNavigation(routes.subscription)}
       className="group flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2 ring-1 ring-amber-200/80 transition-all hover:bg-amber-100 hover:ring-amber-300"
     >
       <div className="flex items-center gap-2">

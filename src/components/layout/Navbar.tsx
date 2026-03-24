@@ -34,6 +34,7 @@ export function Navbar() {
 
   const [mobileOpen,   setMobileOpen]   = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   function closeAll() {
     setMobileOpen(false);
@@ -43,6 +44,21 @@ export function Navbar() {
   function handleHomeNavigation(href: string) {
     if (href === "/resources") {
       beginResourcesNavigation("discover", href);
+    }
+  }
+
+  async function handleSignOut() {
+    if (isSigningOut) {
+      return;
+    }
+
+    setIsSigningOut(true);
+    closeAll();
+
+    try {
+      await signOut({ callbackUrl: "/" });
+    } catch {
+      setIsSigningOut(false);
     }
   }
 
@@ -178,14 +194,12 @@ export function Navbar() {
                         </Link>
                         <button
                           type="button"
-                          onClick={() => {
-                            closeAll();
-                            signOut({ callbackUrl: "/" });
-                          }}
-                          className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-red-600 transition-colors hover:bg-red-50"
+                          disabled={isSigningOut}
+                          onClick={() => void handleSignOut()}
+                          className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
                         >
                           <LogOut className="h-3.5 w-3.5" aria-hidden />
-                          Sign out
+                          {isSigningOut ? "Signing out…" : "Sign out"}
                         </button>
                       </div>
                     </div>
@@ -286,10 +300,11 @@ export function Navbar() {
 
                 <button
                   type="button"
-                  onClick={() => { closeAll(); signOut({ callbackUrl: "/" }); }}
-                  className="flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                  disabled={isSigningOut}
+                  onClick={() => void handleSignOut()}
+                  className="flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  <LogOut className="h-4 w-4" aria-hidden /> Sign out
+                  <LogOut className="h-4 w-4" aria-hidden /> {isSigningOut ? "Signing out…" : "Sign out"}
                 </button>
               </>
             ) : (

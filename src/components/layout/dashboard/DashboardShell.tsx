@@ -8,6 +8,7 @@ import type {
   DashboardNavSection,
   DashboardShellVariant,
 } from "./dashboard-nav.types";
+import { DashboardNavigationFeedback } from "./DashboardNavigationFeedback";
 import { DashboardSidebar } from "./DashboardSidebar";
 
 interface DashboardShellProfile {
@@ -52,6 +53,7 @@ export function DashboardShell({
 
   return (
     <div className="flex min-h-screen bg-surface-50">
+      <DashboardNavigationFeedback />
       <DashboardSidebar
         variant={variant}
         sections={sections}

@@ -11,6 +11,7 @@ import { PriceBadge } from "@/components/ui/PriceBadge";
 import { formatPrice } from "@/lib/format";
 import { formatNumber } from "@/lib/format";
 import { isPreviewSupported } from "@/lib/preview/previewPolicy";
+import { cn } from "@/lib/utils";
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 
@@ -167,6 +168,7 @@ function CardBody({
   description,
   tags: _tags,
   isOwned,
+  isNavigating = false,
 }: {
   resource: ResourceCardResource;
   variant: ResourceCardVariant;
@@ -175,6 +177,7 @@ function CardBody({
   description: string;
   tags: NonNullable<ResourceCardResource["tags"]>;
   isOwned: boolean;
+  isNavigating?: boolean;
 }) {
   const isFree = resource.isFree ?? (resource.price === 0 || !resource.price);
   const isHero = variant === "hero";
@@ -206,12 +209,14 @@ function CardBody({
       ? "relative aspect-[16/9] max-h-[420px] w-full overflow-hidden rounded-t-2xl rounded-b-none bg-gradient-to-br from-surface-100 via-surface-50 to-surface-100"
       : "relative aspect-[4/3] w-full overflow-hidden rounded-t-2xl rounded-b-none bg-gradient-to-br from-surface-100 via-surface-50 to-surface-100";
 
-  const articleClass =
+  const articleClass = cn(
     isMarketplace
       ? "flex h-full w-full flex-col overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-card transition-all duration-200 sm:hover:-translate-y-1 sm:hover:border-surface-300 sm:hover:shadow-card-lg"
       : isHero
-        ? "flex h-full w-full flex-col overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-card"
-        : "flex h-full w-full flex-col overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-card";
+        ? "flex h-full w-full flex-col overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-card transition-all duration-200"
+        : "flex h-full w-full flex-col overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-card transition-all duration-200",
+    isNavigating && "scale-[0.99] border-brand-200 opacity-80 ring-2 ring-brand-200/70 ring-offset-2",
+  );
 
   const categoryName = resource.category?.name;
   const showPrice = variant !== "library";
@@ -434,6 +439,22 @@ export function ResourceCard({
   const { authorName, description, tags, isFree } = normalizeResource(resource);
   const effectiveVariant = variant === "preview" ? "compact" : variant ?? "marketplace";
   const isOwned = effectiveVariant === "library" || owned;
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  function handleNavigationStart(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    setIsNavigating(true);
+  }
 
   const bodyProps = {
     resource,
@@ -443,6 +464,7 @@ export function ResourceCard({
     description,
     tags,
     isOwned,
+    isNavigating,
   };
 
   // Library and previewMode cards are not wrapped in a Link (they have their own CTA buttons or are static previews)
@@ -460,6 +482,8 @@ export function ResourceCard({
       <IntentPrefetchLink
         href={`/resources/${resource.slug}`}
         className="group block h-full w-full cursor-pointer rounded-2xl"
+        aria-busy={isNavigating}
+        onClick={handleNavigationStart}
         prefetchScope="resource-card-grid"
         prefetchLimit={8}
       >

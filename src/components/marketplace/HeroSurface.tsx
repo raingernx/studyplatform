@@ -369,7 +369,7 @@ export function HeroSurface({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden rounded-[32px] border border-surface-200/70 bg-surface-200 shadow-card-lg",
+        "relative w-full overflow-hidden rounded-[32px] border border-surface-200/70 bg-surface-200",
         HERO_HEIGHT_CLASS[style.heroHeight],
         className,
       )}
@@ -378,6 +378,9 @@ export function HeroSurface({
         <img
           src={bgSrc}
           alt=""
+          fetchPriority="high"
+          loading="eager"
+          decoding="async"
           className="absolute inset-0 h-full w-full object-cover"
           aria-hidden
         />
@@ -387,6 +390,7 @@ export function HeroSurface({
           alt=""
           fill
           priority
+          sizes="100vw"
           className="h-full w-full object-cover"
           aria-hidden
         />
@@ -478,6 +482,63 @@ export function HeroSurface({
                 kind="secondary"
               />
             ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function HeroSurfaceSkeleton({
+  config,
+  className,
+}: {
+  config?: HeroSurfaceConfig | null;
+  className?: string;
+}) {
+  const style = normalizeHeroStyle(config ?? DEFAULT_HERO);
+  const alignment = HERO_ALIGNMENT_CLASS[style.textAlign];
+
+  return (
+    <div
+      className={cn(
+        "relative w-full overflow-hidden rounded-[32px] border border-surface-200/70 bg-surface-200",
+        HERO_HEIGHT_CLASS[style.heroHeight],
+        className,
+      )}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-surface-100 via-surface-50 to-surface-100" />
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-20 top-10 h-56 w-56 rounded-full bg-white/35 blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-64 w-64 translate-x-16 translate-y-10 rounded-full bg-brand-500/10 blur-3xl" />
+      </div>
+
+      <div className="absolute inset-0 flex flex-col justify-center px-6 py-14 sm:px-8 sm:py-16 lg:px-10 lg:py-18">
+        <div
+          className={cn(
+            "relative z-10 mx-auto flex w-full flex-col text-balance",
+            HERO_CONTENT_WIDTH_CLASS[style.contentWidth],
+            HERO_STACK_GAP_CLASS[style.spacingPreset],
+            alignment.outer,
+          )}
+        >
+          <div className="h-7 w-52 animate-pulse rounded-full border border-surface-200/80 bg-white/75" />
+          <div className="space-y-3">
+            <div className="h-12 w-full max-w-[720px] animate-pulse rounded-2xl bg-white/80 sm:h-16" />
+            <div className="h-12 w-4/5 max-w-[620px] animate-pulse rounded-2xl bg-white/70 sm:h-16" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-5 w-full max-w-[680px] animate-pulse rounded bg-white/70" />
+            <div className="h-5 w-3/4 max-w-[540px] animate-pulse rounded bg-white/60" />
+          </div>
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-3 pt-2 sm:pt-3",
+              alignment.actions,
+            )}
+          >
+            <div className="h-12 w-40 animate-pulse rounded-lg bg-white/90" />
+            <div className="h-12 w-36 animate-pulse rounded-lg border border-white/60 bg-white/35" />
           </div>
         </div>
       </div>

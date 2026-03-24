@@ -7,7 +7,7 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/design-system";
 import { Logo } from "@/components/brand/Logo";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
-import { Check, AlertCircle } from "lucide-react";
+import { Check, AlertCircle, Loader2 } from "lucide-react";
 
 const PERKS = [
   "Access free resources instantly",
@@ -34,6 +34,7 @@ export default function RegisterPage() {
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading]   = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError]       = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -55,6 +56,22 @@ export default function RegisterPage() {
       await signIn("credentials", { email, password, callbackUrl: "/dashboard" });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    if (loading || googleLoading) {
+      return;
+    }
+
+    setError("");
+    setGoogleLoading(true);
+
+    try {
+      await signIn("google", { callbackUrl: "/dashboard" });
+    } catch {
+      setGoogleLoading(false);
+      setError("Could not start Google sign-in. Please try again.");
     }
   }
 
@@ -111,13 +128,15 @@ export default function RegisterPage() {
             {/* Google OAuth */}
             <button
               type="button"
-              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+              disabled={loading || googleLoading}
+              onClick={() => void handleGoogleSignIn()}
               className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-200
                          bg-white px-4 py-2.5 text-[13px] font-medium text-zinc-700 shadow-card
-                         transition-all hover:border-zinc-300 hover:shadow-card-md active:scale-[0.99]"
+                         transition-all hover:border-zinc-300 hover:shadow-card-md active:scale-[0.99]
+                         disabled:cursor-not-allowed disabled:opacity-70"
             >
-              <GoogleIcon />
-              Continue with Google
+              {googleLoading ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <GoogleIcon />}
+              {googleLoading ? "Redirecting to Google…" : "Continue with Google"}
             </button>
 
             {/* Divider */}
@@ -196,7 +215,7 @@ export default function RegisterPage() {
                 />
               </div>
 
-              <Button type="submit" loading={loading} fullWidth size="lg">
+              <Button type="submit" loading={loading} disabled={googleLoading} fullWidth size="lg">
                 Create account
               </Button>
             </form>

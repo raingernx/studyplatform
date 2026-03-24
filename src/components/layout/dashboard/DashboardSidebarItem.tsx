@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { DashboardNavItem } from "./dashboard-nav.types";
 import { cn } from "@/lib/utils";
 import { SidebarBadge } from "@/components/ui/sidebar";
+import { beginDashboardNavigation } from "./dashboardNavigationState";
 
 interface DashboardSidebarItemProps {
   item: DashboardNavItem;
@@ -21,7 +22,10 @@ export function DashboardSidebarItem({
   return (
     <Link
       href={item.href}
-      onClick={onNavigate}
+      onClick={() => {
+        beginDashboardNavigation(item.href);
+        onNavigate?.();
+      }}
       className={cn(
         "group flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13px] font-medium leading-5 transition-colors",
         active

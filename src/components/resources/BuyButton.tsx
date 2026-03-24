@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 interface BuyButtonProps {
   resourceId: string;
+  resourceHref: string;
   price: number;
   isFree: boolean;
   owned: boolean;
@@ -38,6 +39,7 @@ function InlineError({ message }: { message: string }) {
 
 export function BuyButton({
   resourceId,
+  resourceHref,
   price,
   isFree,
   owned,
@@ -62,6 +64,9 @@ export function BuyButton({
   const [loadingLibrary, setLoadingLibrary] = useState(false);
   const [libraryError, setLibraryError] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [authRedirectProvider, setAuthRedirectProvider] = useState<"free" | "stripe" | "xendit" | null>(
+    null,
+  );
   // Flips to true just before browser navigation so button copy updates.
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -72,6 +77,11 @@ export function BuyButton({
 
   const { data: session } = useSession();
   const router = useRouter();
+
+  function redirectToLogin(provider: "free" | "stripe" | "xendit") {
+    setAuthRedirectProvider(provider);
+    router.push(`/auth/login?next=${encodeURIComponent(resourceHref)}`);
+  }
 
   // ── Owned state (either from server or after optimistic free claim) ───────
   if (localOwned) {
@@ -121,12 +131,15 @@ export function BuyButton({
 
   // ── Free resource — not yet in library ───────────────────────────────────
   if (isFree) {
+    const isRedirectingToLogin = authRedirectProvider === "free";
+
     const handleAddToLibrary = async () => {
       if (!session?.user) {
-        router.push(`/auth/login?next=/resources/id/${resourceId}`);
+        redirectToLogin("free");
         return;
       }
       setLoadingLibrary(true);
+      setAuthRedirectProvider(null);
       setLibraryError(null);
       try {
         const res = await fetch("/api/checkout/free", {
@@ -157,14 +170,15 @@ export function BuyButton({
       <div className="space-y-3">
         <Button
           onClick={handleAddToLibrary}
-          loading={loadingLibrary}
+          loading={loadingLibrary || isRedirectingToLogin}
           variant="primary"
           size="lg"
           fullWidth
+          disabled={isRedirectingToLogin}
           className="gap-2"
         >
           <Download className="h-4 w-4" />
-          Get for free
+          {isRedirectingToLogin ? "Redirecting to login…" : "Get for free"}
         </Button>
 
         {libraryError && <InlineError message={libraryError} />}
@@ -179,10 +193,11 @@ export function BuyButton({
   // ── Paid resource — show Stripe / Xendit checkout buttons ────────────────
   const handleStripe = async () => {
     if (!session?.user) {
-      router.push(`/auth/login?next=/resources/id/${resourceId}`);
+      redirectToLogin("stripe");
       return;
     }
     setLoadingStripe(true);
+    setAuthRedirectProvider(null);
     setCheckoutError(null);
     try {
       const res = await fetch("/api/checkout/session", {
@@ -220,10 +235,11 @@ export function BuyButton({
 
   const handleXendit = async () => {
     if (!session?.user) {
-      router.push(`/auth/login?next=/resources/id/${resourceId}`);
+      redirectToLogin("xendit");
       return;
     }
     setLoadingXendit(true);
+    setAuthRedirectProvider(null);
     setCheckoutError(null);
     try {
       const res = await fetch("/api/checkout/session", {
@@ -258,13 +274,17 @@ export function BuyButton({
     }
   };
 
-  const isAnyLoading = loadingStripe || loadingXendit;
+  const isStripeRedirectingToLogin = authRedirectProvider === "stripe";
+  const isXenditRedirectingToLogin = authRedirectProvider === "xendit";
+  const isStripeBusy = loadingStripe || isStripeRedirectingToLogin;
+  const isXenditBusy = loadingXendit || isXenditRedirectingToLogin;
+  const isAnyLoading = isStripeBusy || isXenditBusy;
 
   return (
     <div className="space-y-3">
       <Button
         onClick={handleStripe}
-        loading={loadingStripe}
+        loading={isStripeBusy}
         disabled={isAnyLoading}
         variant="primary"
         size="lg"
@@ -272,13 +292,15 @@ export function BuyButton({
         className={cn("gap-2 shadow-md", buyButtonToneClassName.accent)}
       >
         <CreditCard className="h-4 w-4" />
-        {isRedirecting
+        {isStripeRedirectingToLogin
+          ? "Redirecting to login…"
+          : isRedirecting
           ? "Taking you to checkout…"
           : `Get instant access — ${formatPrice(price)}`}
       </Button>
       <Button
         onClick={handleXendit}
-        loading={loadingXendit}
+        loading={isXenditBusy}
         disabled={isAnyLoading}
         variant="outline"
         size="lg"
@@ -286,7 +308,11 @@ export function BuyButton({
         className="gap-2"
       >
         <QrCode className="h-4 w-4" />
-        {isRedirecting ? "Redirecting…" : `Pay via QR / Bank · ${formatPrice(price)}`}
+        {isXenditRedirectingToLogin
+          ? "Redirecting to login…"
+          : isRedirecting
+            ? "Redirecting…"
+            : `Pay via QR / Bank · ${formatPrice(price)}`}
       </Button>
 
       {checkoutError && <InlineError message={checkoutError} />}
