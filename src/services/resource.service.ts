@@ -361,9 +361,12 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
 
 // ── Single resource detail ────────────────────────────────────────────────────
 
+const RESOURCE_DETAIL_REVALIDATE_SECONDS = CACHE_TTLS.homepageList;
+
 /** Returns a fully-hydrated Resource row by slug, or null if not found. */
 export async function getResourceBySlug(slug: string) {
   recordCacheCall("getResourceBySlug", { slug });
+  const singleFlightKey = `resource-detail:${slug}`;
 
   return unstable_cache(
     async function _getResourceBySlug() {
@@ -371,11 +374,13 @@ export async function getResourceBySlug(slug: string) {
       logPerformanceEvent("cache_execute:getResourceBySlug", {
         slug,
       });
-      return findPublicResourceDetailBySlug(slug);
+      return runSingleFlight(singleFlightKey, () =>
+        findPublicResourceDetailBySlug(slug),
+      );
     },
     ["public-resource-detail", slug],
     {
-      revalidate: CACHE_TTLS.publicPage,
+      revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
       tags: [getResourceCacheTag(slug)],
     },
   )();

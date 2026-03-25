@@ -16,7 +16,7 @@ import {
 } from "@/repositories/purchases/purchase.repository";
 import { findAdminActor, findResourceById } from "@/repositories/resources/resource.repository";
 import { hasPurchased } from "@/services/purchase.service";
-import { CACHE_TAGS, CACHE_TTLS } from "@/lib/cache";
+import { CACHE_TAGS, CACHE_TTLS, runSingleFlight } from "@/lib/cache";
 
 export class ReviewServiceError extends Error {
   status: number;
@@ -28,6 +28,8 @@ export class ReviewServiceError extends Error {
     this.payload = payload;
   }
 }
+
+const RESOURCE_DETAIL_REVALIDATE_SECONDS = CACHE_TTLS.homepageList;
 
 function normalizeAverageRating(value: number | null | undefined) {
   if (typeof value !== "number" || Number.isNaN(value)) {
@@ -111,10 +113,15 @@ export async function createReview(
  */
 export const getResourceReviews = unstable_cache(
   async function _getResourceReviews(resourceId: string, take: number) {
-    return findResourceReviews(resourceId, take);
+    return runSingleFlight(`resource-reviews:${resourceId}:${take}`, () =>
+      findResourceReviews(resourceId, take),
+    );
   },
   ["resource-reviews"],
-  { revalidate: CACHE_TTLS.publicPage, tags: [CACHE_TAGS.discover] },
+  {
+    revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+    tags: [CACHE_TAGS.discover],
+  },
 );
 
 export async function getUserResourceReview(userId: string, resourceId: string) {
@@ -123,10 +130,15 @@ export async function getUserResourceReview(userId: string, resourceId: string) 
 
 const getCachedResourceRatingSummary = unstable_cache(
   async function _getCachedResourceRatingSummary(resourceId: string) {
-    return getResourceRatingSummary(resourceId);
+    return runSingleFlight(`resource-rating-summary:${resourceId}`, () =>
+      getResourceRatingSummary(resourceId),
+    );
   },
   ["resource-rating-summary"],
-  { revalidate: CACHE_TTLS.publicPage, tags: [CACHE_TAGS.discover] },
+  {
+    revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+    tags: [CACHE_TAGS.discover],
+  },
 );
 
 export async function getResourceReviewDetailState(
@@ -248,10 +260,14 @@ export async function unhideReview(adminUserId: string, reviewId: string) {
  */
 export const getResourceTrustSummary = unstable_cache(
   async function _getResourceTrustSummary(resourceId: string) {
-    const [ratingSummary, totalSales] = await Promise.all([
-      getResourceRatingSummary(resourceId),
-      findCompletedSalesCountByResource(resourceId),
-    ]);
+    const [ratingSummary, totalSales] = await runSingleFlight(
+      `resource-trust-summary:${resourceId}`,
+      () =>
+        Promise.all([
+          getResourceRatingSummary(resourceId),
+          findCompletedSalesCountByResource(resourceId),
+        ]),
+    );
 
     return {
       averageRating: normalizeAverageRating(ratingSummary._avg.rating),
@@ -260,7 +276,10 @@ export const getResourceTrustSummary = unstable_cache(
     };
   },
   ["resource-trust-summary"],
-  { revalidate: CACHE_TTLS.publicPage, tags: [CACHE_TAGS.discover] },
+  {
+    revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+    tags: [CACHE_TAGS.discover],
+  },
 );
 
 export async function attachResourceTrustSignals<T extends { id: string }>(resources: T[]) {
