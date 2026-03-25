@@ -13,7 +13,12 @@
 
 import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
-import { CACHE_TAGS, CACHE_TTLS, getResourceCacheTag } from "@/lib/cache";
+import {
+  CACHE_TAGS,
+  CACHE_TTLS,
+  getResourceCacheTag,
+  runSingleFlight,
+} from "@/lib/cache";
 import {
   logPerformanceEvent,
   recordCacheCall,
@@ -308,6 +313,7 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
 export async function getMarketplaceResources(filters: MarketplaceFilters) {
   const normalizedFilters = normalizeMarketplaceFilters(filters);
   const cacheKey = getMarketplaceCacheKey(normalizedFilters);
+  const singleFlightKey = `marketplace:${normalizedFilters.sort}:${cacheKey}`;
 
   recordCacheCall("getMarketplaceResources", {
     cacheKey,
@@ -330,6 +336,12 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
         pageSize: normalizedFilters.pageSize,
         sort: normalizedFilters.sort,
       });
+      if (normalizedFilters.sort === "newest") {
+        return runSingleFlight(singleFlightKey, () =>
+          loadMarketplaceResources(normalizedFilters),
+        );
+      }
+
       return loadMarketplaceResources(normalizedFilters);
     },
     ["marketplace-resources", cacheKey],
