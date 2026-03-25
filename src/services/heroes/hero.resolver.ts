@@ -1,4 +1,5 @@
 import { cookies, headers } from "next/headers";
+import { Prisma } from "@prisma/client";
 import { cache } from "react";
 import {
   getCachedEligibleHomepageHeroes,
@@ -56,6 +57,30 @@ type HeroCandidate = Awaited<ReturnType<typeof getCachedEligibleHomepageHeroes>>
 
 const HERO_AB_COOKIE_NAME = "hero_ab_seed";
 const HERO_EXPERIMENT_COOKIE_PREFIX = "hero_exp_";
+
+function isHomepageHeroPoolPressureError(error: unknown) {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2024"
+  ) {
+    return true;
+  }
+
+  if (
+    error instanceof Prisma.PrismaClientInitializationError ||
+    error instanceof Prisma.PrismaClientUnknownRequestError
+  ) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("Timed out fetching a new connection from the connection pool") ||
+    message.includes("Can't reach database server") ||
+    message.includes("Error in PostgreSQL connection") ||
+    message.includes("kind: Closed")
+  );
+}
 
 function normalizeOptionalString(value: string | null | undefined) {
   const trimmed = value?.trim();
@@ -326,7 +351,9 @@ const resolveHomepageHeroCached = cache(
       const legacyFallbackHero = await getCachedLegacyHomepageHero();
       return toResolvedConfig(legacyFallbackHero, "fallback");
     } catch (error) {
-      if (!isMissingTableError(error)) throw error;
+      if (!isMissingTableError(error) && !isHomepageHeroPoolPressureError(error)) {
+        throw error;
+      }
       // Hero table missing (local dev schema drift) — render page without a hero.
       return null;
     }

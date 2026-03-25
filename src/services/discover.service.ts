@@ -10,6 +10,7 @@
  */
 
 import { unstable_cache } from "next/cache";
+import { Prisma } from "@prisma/client";
 import { calculateTrendingScore } from "@/analytics/aggregation.service";
 import {
   CACHE_KEYS,
@@ -44,6 +45,68 @@ const DAY_MS = 86_400_000;
 const TRENDING_WINDOW_DAYS = 30;
 const DISCOVER_DATA_SINGLE_FLIGHT_KEY = "discover-data:refresh";
 
+function isDiscoverPoolPressureError(error: unknown) {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2024"
+  ) {
+    return true;
+  }
+
+  if (
+    error instanceof Prisma.PrismaClientInitializationError ||
+    error instanceof Prisma.PrismaClientUnknownRequestError
+  ) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("Timed out fetching a new connection from the connection pool") ||
+    message.includes("Can't reach database server") ||
+    message.includes("Error in PostgreSQL connection") ||
+    message.includes("kind: Closed")
+  );
+}
+
+async function resolveDiscoverFallbackIds(
+  existingIds: string[],
+  limit: number,
+  orderBy: Prisma.ResourceFindManyArgs["orderBy"],
+  where?: Prisma.ResourceFindManyArgs["where"],
+) {
+  if (existingIds.length > 0) {
+    return existingIds;
+  }
+
+  try {
+    return await findDiscoverFallbackResourceIds(limit, orderBy, where);
+  } catch (error) {
+    if (!isDiscoverPoolPressureError(error)) {
+      throw error;
+    }
+
+    return [];
+  }
+}
+
+async function getTopCreatorForDiscover() {
+  try {
+    return await rememberJson(
+      CACHE_KEYS.topCreator,
+      CACHE_TTLS.homepageList,
+      () => findTopCreatorThisWeek(),
+      { metricName: "discover.topCreator" },
+    );
+  } catch (error) {
+    if (!isDiscoverPoolPressureError(error)) {
+      throw error;
+    }
+
+    return null;
+  }
+}
+
 // ── Preview normaliser ────────────────────────────────────────────────────────
 
 /**
@@ -73,18 +136,34 @@ async function getTrendingResourceIds(limit = 8) {
         "discover.getTrendingResourceIds",
         async () => {
           const since = new Date(Date.now() - DAY_MS * TRENDING_WINDOW_DAYS);
-          const candidates = await traceServerStep(
-            "discover.findTrendingResourceSignals",
-            () => findTrendingResourceSignals(since, Math.max(limit * 4, 24)),
-            { candidateLimit: Math.max(limit * 4, 24) },
-          );
+          let candidates: Awaited<ReturnType<typeof findTrendingResourceSignals>> = [];
+
+          try {
+            candidates = await traceServerStep(
+              "discover.findTrendingResourceSignals",
+              () => findTrendingResourceSignals(since, Math.max(limit * 4, 24)),
+              { candidateLimit: Math.max(limit * 4, 24) },
+            );
+          } catch (error) {
+            if (!isDiscoverPoolPressureError(error)) {
+              throw error;
+            }
+          }
 
           if (candidates.length === 0) {
-            return traceServerStep(
-              "discover.findTopTrendingResourceIdsFallback",
-              () => findTopTrendingResourceIds(limit),
-              { limit },
-            );
+            try {
+              return await traceServerStep(
+                "discover.findTopTrendingResourceIdsFallback",
+                () => findTopTrendingResourceIds(limit),
+                { limit },
+              );
+            } catch (error) {
+              if (!isDiscoverPoolPressureError(error)) {
+                throw error;
+              }
+
+              return [];
+            }
           }
 
           return candidates
@@ -181,12 +260,7 @@ const readDiscoverData = unstable_cache(
               () => findFreeResourceIds(8),
               { metricName: "discover.freeResources" },
             ),
-            rememberJson(
-              CACHE_KEYS.topCreator,
-              CACHE_TTLS.homepageList,
-              () => findTopCreatorThisWeek(),
-              { metricName: "discover.topCreator" },
-            ),
+            getTopCreatorForDiscover(),
           ]),
         { sectionLimit: 8 },
       );
@@ -195,29 +269,23 @@ const readDiscoverData = unstable_cache(
         "discover.resolveFallbackSectionIds",
         () =>
           Promise.all([
-            popularIdsFromStats.length > 0
-              ? Promise.resolve(popularIdsFromStats)
-              : findDiscoverFallbackResourceIds(8, [
-                  { downloadCount: "desc" },
-                  { createdAt: "desc" },
-                ]),
-            newestIdsFromStats.length > 0
-              ? Promise.resolve(newestIdsFromStats)
-              : findDiscoverFallbackResourceIds(8, { createdAt: "desc" }),
-            featuredIdsFromStats.length > 0
-              ? Promise.resolve(featuredIdsFromStats)
-              : findDiscoverFallbackResourceIds(
-                  8,
-                  [{ downloadCount: "desc" }, { createdAt: "desc" }],
-                  { featured: true },
-                ),
-            freeIdsFromStats.length > 0
-              ? Promise.resolve(freeIdsFromStats)
-              : findDiscoverFallbackResourceIds(
-                  8,
-                  [{ downloadCount: "desc" }, { createdAt: "desc" }],
-                  { isFree: true },
-                ),
+            resolveDiscoverFallbackIds(popularIdsFromStats, 8, [
+              { downloadCount: "desc" },
+              { createdAt: "desc" },
+            ]),
+            resolveDiscoverFallbackIds(newestIdsFromStats, 8, { createdAt: "desc" }),
+            resolveDiscoverFallbackIds(
+              featuredIdsFromStats,
+              8,
+              [{ downloadCount: "desc" }, { createdAt: "desc" }],
+              { featured: true },
+            ),
+            resolveDiscoverFallbackIds(
+              freeIdsFromStats,
+              8,
+              [{ downloadCount: "desc" }, { createdAt: "desc" }],
+              { isFree: true },
+            ),
           ]),
       );
 
