@@ -39,7 +39,7 @@ type RouteSpec = {
 
 type K6MetricValues = Record<string, number>;
 
-type K6SummaryMetric = {
+type K6SummaryMetric = K6MetricValues & {
   values?: K6MetricValues;
 };
 
@@ -124,8 +124,17 @@ function readMetricValue(
   valueKey: string,
 ): number | null {
   const metric = summary.metrics?.[metricName];
-  const value = metric?.values?.[valueKey];
-  return typeof value === "number" ? value : null;
+  if (!metric) {
+    return null;
+  }
+
+  const nestedValue = metric.values?.[valueKey];
+  if (typeof nestedValue === "number") {
+    return nestedValue;
+  }
+
+  const directValue = metric[valueKey];
+  return typeof directValue === "number" ? directValue : null;
 }
 
 function logMissingMetric(
@@ -157,7 +166,9 @@ function extractRouteMetrics(
 
   const avgMs = readMetricValue(summary, "http_req_duration", "avg");
   const p95Ms = readMetricValue(summary, "http_req_duration", "p(95)");
-  const failRate = readMetricValue(summary, "http_req_failed", "rate");
+  const failRate =
+    readMetricValue(summary, "http_req_failed", "rate") ??
+    readMetricValue(summary, "http_req_failed", "value");
 
   if (avgMs === null) {
     logMissingMetric(routeName, "http_req_duration", "avg", summaryPathForLog);
@@ -168,7 +179,9 @@ function extractRouteMetrics(
   }
 
   if (failRate === null) {
-    logMissingMetric(routeName, "http_req_failed", "rate", summaryPathForLog);
+    console.error(
+      `[post-deploy-perf] Missing k6 metric "http_req_failed.rate" or "http_req_failed.value" for ${routeName} in ${summaryPathForLog}`,
+    );
   }
 
   if (process.env.CI && !hasLoggedCiMetricDebug) {
