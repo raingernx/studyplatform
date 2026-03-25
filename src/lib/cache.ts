@@ -38,6 +38,10 @@ export function getResourceCacheTag(slug: string) {
   return `resource:${slug}`;
 }
 
+export function getResourceDetailDataTag(resourceId: string) {
+  return `resource-detail:${resourceId}`;
+}
+
 export function getCreatorPublicCacheTag(identifier: string) {
   return `creator:${identifier}`;
 }

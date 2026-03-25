@@ -3,7 +3,7 @@ import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
-import { CACHE_TAGS } from "@/lib/cache";
+import { CACHE_TAGS, getResourceDetailDataTag } from "@/lib/cache";
 import {
   hideReview,
   ReviewServiceError,
@@ -49,6 +49,7 @@ export async function PATCH(req: Request, { params }: Params) {
       : await hideReview(session.user.id, id);
 
     revalidateTag(CACHE_TAGS.discover, "max");
+    revalidateTag(getResourceDetailDataTag(review.resourceId), "max");
 
     return NextResponse.json({ data: review });
   } catch (error) {

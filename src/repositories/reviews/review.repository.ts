@@ -33,6 +33,7 @@ export async function findReviewById(reviewId: string) {
     select: {
       id: true,
       isVisible: true,
+      resourceId: true,
     },
   });
 }
@@ -129,6 +130,7 @@ export async function setReviewVisibility(reviewId: string, isVisible: boolean) 
     select: {
       id: true,
       isVisible: true,
+      resourceId: true,
       updatedAt: true,
     },
   });

@@ -16,7 +16,11 @@ import {
 } from "@/repositories/purchases/purchase.repository";
 import { findAdminActor, findResourceById } from "@/repositories/resources/resource.repository";
 import { hasPurchased } from "@/services/purchase.service";
-import { CACHE_TAGS, CACHE_TTLS, runSingleFlight } from "@/lib/cache";
+import {
+  CACHE_TTLS,
+  getResourceDetailDataTag,
+  runSingleFlight,
+} from "@/lib/cache";
 
 export class ReviewServiceError extends Error {
   status: number;
@@ -103,56 +107,57 @@ export async function createReview(
 /**
  * Returns up to `take` visible reviews for a resource.
  *
- * Cached via Next.js Data Cache (unstable_cache) for CACHE_TTLS.publicPage
- * seconds.  The "discover" cache tag is used so this entry is invalidated
- * whenever a review is submitted, updated, or hidden by an admin — those
- * mutation routes all call `revalidateTag(CACHE_TAGS.discover)`.
- *
- * User-specific data (viewerReview, ownership) is handled separately and
- * is never cached.
+ * Cached per resource so unrelated discover invalidations do not evict the
+ * hot detail-path review cache for every slug.
  */
-export const getResourceReviews = unstable_cache(
-  async function _getResourceReviews(resourceId: string, take: number) {
-    return runSingleFlight(`resource-reviews:${resourceId}:${take}`, () =>
-      findResourceReviews(resourceId, take),
-    );
-  },
-  ["resource-reviews"],
-  {
-    revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
-    tags: [CACHE_TAGS.discover],
-  },
-);
+export async function getResourceReviews(resourceId: string, take: number) {
+  return unstable_cache(
+    async function _getResourceReviews() {
+      return runSingleFlight(`resource-reviews:${resourceId}:${take}`, () =>
+        findResourceReviews(resourceId, take),
+      );
+    },
+    ["resource-reviews", resourceId, String(take)],
+    {
+      revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+      tags: [getResourceDetailDataTag(resourceId)],
+    },
+  )();
+}
 
 export async function getUserResourceReview(userId: string, resourceId: string) {
   return findReviewByUserAndResource(userId, resourceId);
 }
 
-const getCachedResourceRatingSummary = unstable_cache(
-  async function _getCachedResourceRatingSummary(resourceId: string) {
-    return runSingleFlight(`resource-rating-summary:${resourceId}`, () =>
-      getResourceRatingSummary(resourceId),
-    );
-  },
-  ["resource-rating-summary"],
-  {
-    revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
-    tags: [CACHE_TAGS.discover],
-  },
-);
+async function getCachedResourceRatingSummary(resourceId: string) {
+  return unstable_cache(
+    async function _getCachedResourceRatingSummary() {
+      return runSingleFlight(`resource-rating-summary:${resourceId}`, () =>
+        getResourceRatingSummary(resourceId),
+      );
+    },
+    ["resource-rating-summary", resourceId],
+    {
+      revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+      tags: [getResourceDetailDataTag(resourceId)],
+    },
+  )();
+}
 
-const getCachedCompletedSalesCount = unstable_cache(
-  async function _getCachedCompletedSalesCount(resourceId: string) {
-    return runSingleFlight(`resource-sales-count:${resourceId}`, () =>
-      findCompletedSalesCountByResource(resourceId),
-    );
-  },
-  ["resource-sales-count"],
-  {
-    revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
-    tags: [CACHE_TAGS.discover],
-  },
-);
+async function getCachedCompletedSalesCount(resourceId: string) {
+  return unstable_cache(
+    async function _getCachedCompletedSalesCount() {
+      return runSingleFlight(`resource-sales-count:${resourceId}`, () =>
+        findCompletedSalesCountByResource(resourceId),
+      );
+    },
+    ["resource-sales-count", resourceId],
+    {
+      revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+      tags: [getResourceDetailDataTag(resourceId)],
+    },
+  )();
+}
 
 export async function getResourceReviewDetailState(
   resourceId: string,
@@ -264,36 +269,34 @@ export async function unhideReview(adminUserId: string, reviewId: string) {
  * Returns aggregated trust signals (average rating, review count, total sales)
  * for a single resource.
  *
- * Cached via Next.js Data Cache (unstable_cache) for CACHE_TTLS.publicPage
- * seconds.  The "discover" tag ensures the entry is invalidated when reviews
- * are submitted or when admin modifies the resource — those mutation routes
- * call `revalidateTag(CACHE_TAGS.discover)`.  A new completed purchase does
- * not currently invalidate this cache; totalSales may lag by up to
- * CACHE_TTLS.publicPage seconds, which is acceptable for a public trust signal.
+ * Cached per resource so unrelated discover invalidations do not evict the
+ * strict detail-path trust cache for every slug.
  */
-export const getResourceTrustSummary = unstable_cache(
-  async function _getResourceTrustSummary(resourceId: string) {
-    const [ratingSummary, totalSales] = await runSingleFlight(
-      `resource-trust-summary:${resourceId}`,
-      () =>
-        Promise.all([
-          getCachedResourceRatingSummary(resourceId),
-          getCachedCompletedSalesCount(resourceId),
-        ]),
-    );
+export async function getResourceTrustSummary(resourceId: string) {
+  return unstable_cache(
+    async function _getResourceTrustSummary() {
+      const [ratingSummary, totalSales] = await runSingleFlight(
+        `resource-trust-summary:${resourceId}`,
+        () =>
+          Promise.all([
+            getCachedResourceRatingSummary(resourceId),
+            getCachedCompletedSalesCount(resourceId),
+          ]),
+      );
 
-    return {
-      averageRating: normalizeAverageRating(ratingSummary._avg.rating),
-      totalReviews: ratingSummary._count._all,
-      totalSales,
-    };
-  },
-  ["resource-trust-summary"],
-  {
-    revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
-    tags: [CACHE_TAGS.discover],
-  },
-);
+      return {
+        averageRating: normalizeAverageRating(ratingSummary._avg.rating),
+        totalReviews: ratingSummary._count._all,
+        totalSales,
+      };
+    },
+    ["resource-trust-summary", resourceId],
+    {
+      revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+      tags: [getResourceDetailDataTag(resourceId)],
+    },
+  )();
+}
 
 export async function attachResourceTrustSignals<T extends { id: string }>(resources: T[]) {
   if (resources.length === 0) {
