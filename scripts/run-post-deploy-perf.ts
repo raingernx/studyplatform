@@ -37,8 +37,10 @@ type RouteSpec = {
   hotSlug?: string;
 };
 
+type K6MetricValues = Record<string, number>;
+
 type K6SummaryMetric = {
-  values?: Record<string, number>;
+  values?: K6MetricValues;
 };
 
 type K6Summary = {
@@ -56,6 +58,8 @@ type PerfRouteResult = {
   exitCode: number;
   summaryPath: string;
 };
+
+let hasLoggedCiMetricDebug = false;
 
 const routeSpecsBySuite: Record<PerfSuite, RouteSpec[]> = {
   smoke: [
@@ -124,6 +128,63 @@ function readMetricValue(
   return typeof value === "number" ? value : null;
 }
 
+function logMissingMetric(
+  routeName: string,
+  metricName: string,
+  valueKey: string,
+  summaryPathForLog: string,
+) {
+  console.error(
+    `[post-deploy-perf] Missing k6 metric "${metricName}.${valueKey}" for ${routeName} in ${summaryPathForLog}`,
+  );
+}
+
+function extractRouteMetrics(
+  summary: K6Summary | null,
+  routeName: string,
+  summaryPathForLog: string,
+) {
+  if (!summary) {
+    console.error(
+      `[post-deploy-perf] Unable to parse k6 summary JSON for ${routeName} in ${summaryPathForLog}`,
+    );
+    return {
+      avgMs: null,
+      p95Ms: null,
+      failRate: null,
+    };
+  }
+
+  const avgMs = readMetricValue(summary, "http_req_duration", "avg");
+  const p95Ms = readMetricValue(summary, "http_req_duration", "p(95)");
+  const failRate = readMetricValue(summary, "http_req_failed", "rate");
+
+  if (avgMs === null) {
+    logMissingMetric(routeName, "http_req_duration", "avg", summaryPathForLog);
+  }
+
+  if (p95Ms === null) {
+    logMissingMetric(routeName, "http_req_duration", "p(95)", summaryPathForLog);
+  }
+
+  if (failRate === null) {
+    logMissingMetric(routeName, "http_req_failed", "rate", summaryPathForLog);
+  }
+
+  if (process.env.CI && !hasLoggedCiMetricDebug) {
+    console.log(
+      `[post-deploy-perf] CI metric debug ${routeName} avg=${formatMs(avgMs)} p95=${formatMs(p95Ms)} failRate=${formatRate(failRate)}`,
+    );
+    hasLoggedCiMetricDebug = true;
+  }
+
+  return {
+    avgMs,
+    p95Ms,
+    failRate,
+  };
+}
+
 async function runK6Route(
   route: RouteSpec,
   outputFile: string,
@@ -164,9 +225,11 @@ async function parseRouteResult(
     summary = null;
   }
 
-  const avgMs = summary ? readMetricValue(summary, "http_req_duration", "avg") : null;
-  const p95Ms = summary ? readMetricValue(summary, "http_req_duration", "p(95)") : null;
-  const failRate = summary ? readMetricValue(summary, "http_req_failed", "rate") : null;
+  const { avgMs, p95Ms, failRate } = extractRouteMetrics(
+    summary,
+    route.name,
+    outputFile,
+  );
 
   const thresholdPassed =
     exitCode === 0 &&
