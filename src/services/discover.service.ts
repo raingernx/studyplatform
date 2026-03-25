@@ -46,11 +46,8 @@ const TRENDING_WINDOW_DAYS = 30;
 const DISCOVER_DATA_SINGLE_FLIGHT_KEY = "discover-data:refresh";
 
 function isDiscoverPoolPressureError(error: unknown) {
-  if (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2024"
-  ) {
-    return true;
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code === "P2024" || error.code === "P1017";
   }
 
   if (
@@ -63,10 +60,24 @@ function isDiscoverPoolPressureError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   return (
     message.includes("Timed out fetching a new connection from the connection pool") ||
+    message.includes("Server has closed the connection") ||
     message.includes("Can't reach database server") ||
+    message.includes("connection closed") ||
     message.includes("Error in PostgreSQL connection") ||
     message.includes("kind: Closed")
   );
+}
+
+function getEmptyDiscoverData() {
+  return {
+    trending: [],
+    newReleases: [],
+    featured: [],
+    freeResources: [],
+    mostDownloaded: [],
+    recommended: [],
+    topCreator: null,
+  };
 }
 
 async function resolveDiscoverFallbackIds(
@@ -262,20 +273,20 @@ const readDiscoverData = unstable_cache(
   async function _getDiscoverData() {
     recordCacheMiss("getDiscoverData");
     logPerformanceEvent("cache_execute:getDiscoverData");
-    return runSingleFlight(DISCOVER_DATA_SINGLE_FLIGHT_KEY, async () => {
-      const [
-        trendingIds,
-        popularIds,
-        newestIds,
-        featuredIds,
-        freeIds,
-        topCreator,
-      ] = await traceServerStep(
-        "discover.loadSectionSources",
-        () =>
-          Promise.all([
-            getTrendingResourceIds(8),
-            getDiscoverSectionIds({
+    try {
+      return await runSingleFlight(DISCOVER_DATA_SINGLE_FLIGHT_KEY, async () => {
+        const {
+          trendingIds,
+          popularIds,
+          newestIds,
+          featuredIds,
+          freeIds,
+          topCreator,
+        } = await traceServerStep(
+          "discover.loadSectionSources",
+          async () => {
+            const trendingIds = await getTrendingResourceIds(8);
+            const popularIds = await getDiscoverSectionIds({
               cacheKey: CACHE_KEYS.popularResources,
               limit: 8,
               metricName: "discover.popularResources",
@@ -284,15 +295,15 @@ const readDiscoverData = unstable_cache(
                 { downloadCount: "desc" },
                 { createdAt: "desc" },
               ],
-            }),
-            getDiscoverSectionIds({
+            });
+            const newestIds = await getDiscoverSectionIds({
               cacheKey: CACHE_KEYS.newestResources,
               limit: 8,
               metricName: "discover.newestResources",
               primaryLoader: () => findNewestResourceIds(8),
               fallbackOrderBy: { createdAt: "desc" },
-            }),
-            getDiscoverSectionIds({
+            });
+            const featuredIds = await getDiscoverSectionIds({
               cacheKey: CACHE_KEYS.featuredResources,
               limit: 8,
               metricName: "discover.featuredResources",
@@ -302,8 +313,8 @@ const readDiscoverData = unstable_cache(
                 { createdAt: "desc" },
               ],
               fallbackWhere: { featured: true },
-            }),
-            getDiscoverSectionIds({
+            });
+            const freeIds = await getDiscoverSectionIds({
               cacheKey: CACHE_KEYS.freeResources,
               limit: 8,
               metricName: "discover.freeResources",
@@ -313,54 +324,71 @@ const readDiscoverData = unstable_cache(
                 { createdAt: "desc" },
               ],
               fallbackWhere: { isFree: true },
-            }),
-            getTopCreatorForDiscover(),
+            });
+            const topCreator = await getTopCreatorForDiscover();
+
+            return {
+              trendingIds,
+              popularIds,
+              newestIds,
+              featuredIds,
+              freeIds,
+              topCreator,
+            };
+          },
+          { sectionLimit: 8 },
+        );
+
+        const resourceIds = Array.from(
+          new Set([
+            ...trendingIds,
+            ...popularIds,
+            ...newestIds,
+            ...featuredIds,
+            ...freeIds,
           ]),
-        { sectionLimit: 8 },
-      );
+        );
 
-      const resourceIds = Array.from(
-        new Set([
-          ...trendingIds,
-          ...popularIds,
-          ...newestIds,
-          ...featuredIds,
-          ...freeIds,
-        ]),
-      );
+        const pool = await traceServerStep(
+          "discover.loadSectionResourcePool",
+          () => loadDiscoverResourcesByIds(resourceIds),
+          { resourceCount: resourceIds.length },
+        );
 
-      const pool = await traceServerStep(
-        "discover.loadSectionResourcePool",
-        () => loadDiscoverResourcesByIds(resourceIds),
-        { resourceCount: resourceIds.length },
-      );
+        const mapSection = (ids: string[]) =>
+          ids
+            .map((id) => pool.get(id))
+            .filter((resource): resource is NonNullable<typeof resource> =>
+              Boolean(resource),
+            )
+            .map(withPreview);
 
-      const mapSection = (ids: string[]) =>
-        ids
-          .map((id) => pool.get(id))
-          .filter((resource): resource is NonNullable<typeof resource> =>
-            Boolean(resource),
-          )
-          .map(withPreview);
+        const trendingResources = mapSection(trendingIds);
+        const trending = trendingResources.slice(0, 5);
+        const newReleases = mapSection(newestIds).slice(0, 5);
+        const featured = mapSection(featuredIds).slice(0, 5);
+        const freeResources = mapSection(freeIds).slice(0, 5);
+        const mostDownloaded = mapSection(popularIds).slice(0, 5);
+        const recommended = trendingResources.slice(0, 8);
 
-      const trendingResources = mapSection(trendingIds);
-      const trending = trendingResources.slice(0, 5);
-      const newReleases = mapSection(newestIds).slice(0, 5);
-      const featured = mapSection(featuredIds).slice(0, 5);
-      const freeResources = mapSection(freeIds).slice(0, 5);
-      const mostDownloaded = mapSection(popularIds).slice(0, 5);
-      const recommended = trendingResources.slice(0, 8);
+        return {
+          trending,
+          newReleases,
+          featured,
+          freeResources,
+          mostDownloaded,
+          recommended,
+          topCreator,
+        };
+      });
+    } catch (error) {
+      if (!isDiscoverPoolPressureError(error)) {
+        throw error;
+      }
 
-      return {
-        trending,
-        newReleases,
-        featured,
-        freeResources,
-        mostDownloaded,
-        recommended,
-        topCreator,
-      };
-    });
+      console.warn("[DISCOVER_DATA_BEST_EFFORT]", error);
+      return getEmptyDiscoverData();
+    }
   },
   ["discover-data"],
   { revalidate: CACHE_TTLS.homepageList, tags: ["discover"] }

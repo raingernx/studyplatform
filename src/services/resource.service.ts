@@ -398,9 +398,18 @@ export async function getResourceMetadataBySlug(slug: string) {
       logPerformanceEvent("cache_execute:getResourceMetadataBySlug", {
         slug,
       });
-      return runSingleFlight(singleFlightKey, () =>
-        findPublicResourceMetadataBySlug(slug),
-      );
+      try {
+        return await runSingleFlight(singleFlightKey, () =>
+          findPublicResourceMetadataBySlug(slug),
+        );
+      } catch (error) {
+        if (!isResourceMetadataTransientDbError(error)) {
+          throw error;
+        }
+
+        console.warn("[RESOURCE_METADATA_BEST_EFFORT]", error);
+        return null;
+      }
     },
     ["public-resource-metadata", slug],
     {
@@ -408,6 +417,29 @@ export async function getResourceMetadataBySlug(slug: string) {
       tags: [getResourceCacheTag(slug)],
     },
   )();
+}
+
+function isResourceMetadataTransientDbError(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code === "P2024" || error.code === "P1017";
+  }
+
+  if (
+    error instanceof Prisma.PrismaClientInitializationError ||
+    error instanceof Prisma.PrismaClientUnknownRequestError
+  ) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("Timed out fetching a new connection from the connection pool") ||
+    message.includes("Server has closed the connection") ||
+    message.includes("Can't reach database server") ||
+    message.includes("connection closed") ||
+    message.includes("Error in PostgreSQL connection") ||
+    message.includes("kind: Closed")
+  );
 }
 
 export async function getResourceDetailDeferredContent(slug: string) {
