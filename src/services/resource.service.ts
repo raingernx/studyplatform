@@ -13,7 +13,6 @@
 
 import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
-import { runBestEffortAsync } from "@/lib/async";
 import {
   CACHE_TAGS,
   CACHE_TTLS,
@@ -83,6 +82,13 @@ function toActivationRankedCardShape(row: FindActivationRankedResourcesRow) {
     previews: row.previewImageUrl ? [{ imageUrl: row.previewImageUrl }] : [],
   };
 }
+
+type RelatedResourceCard = Awaited<ReturnType<typeof findRelatedListedResources>>[number] & {
+  previewUrl: string | null;
+  rating?: number | null;
+  reviewCount?: number;
+  salesCount?: number;
+};
 
 // ── Filtered marketplace listing ──────────────────────────────────────────────
 
@@ -482,7 +488,11 @@ export async function getResourceDetailDeferredContent(slug: string) {
 }
 
 /** Returns related resources in the same category (excludes the current resource). */
-export async function getRelatedResources(categoryId: string, excludeId: string, take = 4) {
+export async function getRelatedResources(
+  categoryId: string,
+  excludeId: string,
+  take = 4,
+): Promise<RelatedResourceCard[]> {
   recordCacheCall("getRelatedResources", {
     categoryId,
     excludeId,
@@ -508,20 +518,8 @@ export async function getRelatedResources(categoryId: string, excludeId: string,
           excludeId,
           take,
         )).map(withPreview);
-        const fallbackResources = baseResources.map((resource) => ({
-          ...resource,
-          rating: null,
-          reviewCount: 0,
-          salesCount: 0,
-        }));
 
-        return runBestEffortAsync(
-          () => attachResourceTrustSignals(baseResources),
-          {
-            fallback: fallbackResources,
-            warningLabel: "[RELATED_TRUST_ENRICHMENT_BEST_EFFORT]",
-          },
-        );
+        return baseResources;
       });
     },
     ["resource-related", categoryId, excludeId, String(take)],
