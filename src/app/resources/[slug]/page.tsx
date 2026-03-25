@@ -21,7 +21,7 @@ import { ResourceReviews } from "@/components/resource/ResourceReviews";
 import { ResourceReviewForm } from "@/components/resource/ResourceReviewForm";
 import { PendingPurchasePoller } from "@/components/checkout/PendingPurchasePoller";
 import { AutoScrollOnSuccess } from "@/components/resource/AutoScrollOnSuccess";
-import { getPublicResourcePageData } from "@/services/resource.service";
+import { getPublicResourcePageData, getResourceBySlug } from "@/services/resource.service";
 import { getResourceDetailExtras } from "@/services/resources/resource.service";
 import {
   traceServerStep,
@@ -200,7 +200,7 @@ function buildIncludedFiles(resource: {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const { resource } = await getPublicResourcePageData(slug);
+  const resource = await getResourceBySlug(slug);
 
   return {
     title: resource ? resource.title : "Resource",

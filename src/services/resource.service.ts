@@ -11,7 +11,7 @@
  * RESOURCE_CARD_SELECT projection for maximum query efficiency.
  */
 
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 import { CACHE_TAGS, CACHE_TTLS, getResourceCacheTag } from "@/lib/cache";
 import {
@@ -354,6 +354,39 @@ export async function getRelatedResources(categoryId: string, excludeId: string,
   return attachResourceTrustSignals(raw.map(withPreview));
 }
 
+function isResourceDetailPoolPressureError(error: unknown) {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2024"
+  ) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("Timed out fetching a new connection from the connection pool");
+}
+
+function getResourceDetailErrorSummary(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return {
+      code: error.code,
+      message: error.message,
+      name: error.name,
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      name: error.name,
+    };
+  }
+
+  return {
+    message: String(error),
+  };
+}
+
 export async function getPublicResourcePageData(slug: string) {
   recordCacheCall("getPublicResourcePageData", { slug });
 
@@ -372,9 +405,23 @@ export async function getPublicResourcePageData(slug: string) {
         };
       }
 
-      const relatedResources = resource.categoryId
-        ? await getRelatedResources(resource.categoryId, resource.id, 4)
-        : [];
+      let relatedResources: Awaited<ReturnType<typeof getRelatedResources>> = [];
+
+      if (resource.categoryId) {
+        try {
+          relatedResources = await getRelatedResources(resource.categoryId, resource.id, 4);
+        } catch (error) {
+          if (!isResourceDetailPoolPressureError(error)) {
+            throw error;
+          }
+
+          console.warn("[RESOURCE_DETAIL_RELATED_FALLBACK]", {
+            slug,
+            resourceId: resource.id,
+            ...getResourceDetailErrorSummary(error),
+          });
+        }
+      }
 
       return {
         resource,
@@ -384,7 +431,7 @@ export async function getPublicResourcePageData(slug: string) {
     ["public-resource-page", slug],
     {
       revalidate: CACHE_TTLS.publicPage,
-      tags: [CACHE_TAGS.discover, getResourceCacheTag(slug)],
+      tags: [getResourceCacheTag(slug)],
     },
   )();
 }
