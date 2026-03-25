@@ -27,11 +27,18 @@ function sanitizeNext(next: string | null): string {
   return next;
 }
 
+function getGoogleCallbackUrl(next: string) {
+  // Keep explicit protected-route redirects intact, but avoid sending the
+  // default OAuth completion path through the heavier dashboard overview.
+  return next === "/dashboard" ? "/dashboard/library" : next;
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Honour ?next= so protected pages can redirect back after sign-in
   const next = sanitizeNext(searchParams.get("next"));
+  const googleCallbackUrl = getGoogleCallbackUrl(next);
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -69,7 +76,7 @@ function LoginForm() {
     setGoogleLoading(true);
 
     try {
-      await signIn("google", { callbackUrl: next });
+      await signIn("google", { callbackUrl: googleCallbackUrl });
     } catch {
       setGoogleLoading(false);
       setError("Could not start Google sign-in. Please try again.");

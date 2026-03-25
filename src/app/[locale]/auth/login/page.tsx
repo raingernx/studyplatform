@@ -27,11 +27,16 @@ function sanitizeNext(next: string | null): string {
   return next;
 }
 
+function getGoogleCallbackUrl(next: string) {
+  return next === "/dashboard" ? "/dashboard/library" : next;
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Honour ?next= so protected pages can redirect back after sign-in
   const next = sanitizeNext(searchParams.get("next"));
+  const googleCallbackUrl = getGoogleCallbackUrl(next);
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -75,7 +80,7 @@ function LoginForm() {
           {/* Google OAuth */}
           <button
             type="button"
-            onClick={() => signIn("google", { callbackUrl: next })}
+            onClick={() => signIn("google", { callbackUrl: googleCallbackUrl })}
             className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-200
                        bg-white px-4 py-2.5 text-[13px] font-medium text-zinc-700 shadow-card
                        transition-all hover:border-zinc-300 hover:shadow-card-md active:scale-[0.99]"

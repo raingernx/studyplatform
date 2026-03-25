@@ -15,6 +15,8 @@ const PERKS = [
   "Cancel subscription any time",
 ];
 
+const GOOGLE_SIGN_IN_CALLBACK_URL = "/dashboard/library";
+
 function GoogleIcon() {
   return (
     <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
@@ -109,13 +111,13 @@ export default function RegisterPage() {
 
           <div className="mt-7 rounded-2xl border border-zinc-200 bg-white p-8 shadow-card">
             {/* Google OAuth */}
-            <button
-              type="button"
-              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-200
+          <button
+            type="button"
+            onClick={() => signIn("google", { callbackUrl: GOOGLE_SIGN_IN_CALLBACK_URL })}
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-200
                          bg-white px-4 py-2.5 text-[13px] font-medium text-zinc-700 shadow-card
                          transition-all hover:border-zinc-300 hover:shadow-card-md active:scale-[0.99]"
-            >
+          >
               <GoogleIcon />
               Continue with Google
             </button>

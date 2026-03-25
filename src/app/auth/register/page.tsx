@@ -15,6 +15,8 @@ const PERKS = [
   "Cancel subscription any time",
 ];
 
+const GOOGLE_SIGN_IN_CALLBACK_URL = "/dashboard/library";
+
 function GoogleIcon() {
   return (
     <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
@@ -68,7 +70,7 @@ export default function RegisterPage() {
     setGoogleLoading(true);
 
     try {
-      await signIn("google", { callbackUrl: "/dashboard" });
+      await signIn("google", { callbackUrl: GOOGLE_SIGN_IN_CALLBACK_URL });
     } catch {
       setGoogleLoading(false);
       setError("Could not start Google sign-in. Please try again.");
