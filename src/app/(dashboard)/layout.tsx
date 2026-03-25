@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCachedServerSession } from "@/lib/auth";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { getCreatorAccessState } from "@/services/creator.service";
 import { traceServerStep } from "@/lib/performance/observability";
@@ -27,7 +26,7 @@ export default async function DashboardGroupLayout({
 }: DashboardGroupLayoutProps) {
   const session = await traceServerStep(
     "dashboard_layout.getServerSession",
-    () => getServerSession(authOptions),
+    () => getCachedServerSession(),
   );
 
   // Resolve creator access only after confirming a valid userId exists.

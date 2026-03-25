@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCachedServerSession } from "@/lib/auth";
 
 /**
  * Asserts that the current request has a valid authenticated session with a
@@ -21,7 +20,7 @@ import { authOptions } from "@/lib/auth";
  * const firstName = session.user.name?.split(" ")[0];
  */
 export async function requireSession(nextPath: string) {
-  const session = await getServerSession(authOptions);
+  const session = await getCachedServerSession();
   if (!session?.user?.id) {
     redirect(`/auth/login?next=${nextPath}`);
   }
