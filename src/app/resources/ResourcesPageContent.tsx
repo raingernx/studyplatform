@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -50,7 +50,10 @@ import {
 import { RecommendationSection } from "@/components/recommendations/RecommendationSection";
 import { ResourcesIntroSectionSkeleton } from "@/components/skeletons/ResourcesIntroSectionSkeleton";
 import { recordAnalyticsEvents } from "@/analytics/event.service";
-import { traceServerStep } from "@/lib/performance/observability";
+import {
+  trackRequestWork,
+  traceServerStep,
+} from "@/lib/performance/observability";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -104,7 +107,7 @@ export async function ResourcesPageContent({
   userId,
 }: ResourcesPageContentProps) {
   if (isDiscoverMode) {
-    return <ResourcesDiscoverContent userId={userId} />;
+    return ResourcesDiscoverContent({ userId });
   }
 
   let categories: { id: string; name: string; slug: string }[] = [];
@@ -329,11 +332,19 @@ export async function ResourcesPageContent({
 
 type DiscoverCategoriesWithCount = Awaited<ReturnType<typeof getDiscoverCategories>>;
 
+async function AwaitResolvedNode({
+  promise,
+}: {
+  promise: Promise<ReactNode>;
+}) {
+  return <>{await promise}</>;
+}
+
 async function ResourcesDiscoverContent({ userId }: { userId?: string }) {
-  const discoverCategoriesPromise = loadDiscoverCategoriesSafe();
-  const discoverDataPromise = loadDiscoverDataSafe();
-  const ownedIdsPromise = loadOwnedIdsSafe(userId);
-  const learningProfilePromise = loadLearningProfileSafe(userId);
+  const discoverCategoriesPromise = trackRequestWork(loadDiscoverCategoriesSafe());
+  const discoverDataPromise = trackRequestWork(loadDiscoverDataSafe());
+  const ownedIdsPromise = trackRequestWork(loadOwnedIdsSafe(userId));
+  const learningProfilePromise = trackRequestWork(loadLearningProfileSafe(userId));
 
   const discoverCategoriesWithCount = await discoverCategoriesPromise;
   const categories = discoverCategoriesWithCount.map((item) => ({
@@ -446,6 +457,22 @@ async function ResourcesDiscoverDeferredSections({
     (resource) => !ownedIds.has(resource.id),
   );
   const recommendationVariant = userId ? assignRecommendationVariant(userId) : null;
+  const personalisedContentPromise =
+    userId && learningProfile?.hasHistory
+      ? trackRequestWork(
+          DiscoverPersonalisedContent({
+            userId,
+            topCategoryIds,
+            personalizedLevelIds,
+            recentCategoryId,
+            recentStudyTitle: learningProfile.recentStudyTitle ?? null,
+            recentCategoryName: learningProfile.recentCategoryName ?? null,
+            ownedIds,
+            globalFiltered,
+            recommendationVariant,
+          }),
+        )
+      : null;
 
   return (
     <div className="space-y-16 lg:space-y-20">
@@ -554,19 +581,9 @@ async function ResourcesDiscoverDeferredSections({
         </section>
       ) : null}
 
-      {userId && learningProfile?.hasHistory ? (
+      {personalisedContentPromise ? (
         <Suspense fallback={<PersonalisationFallback />}>
-          <DiscoverPersonalisedContent
-            userId={userId}
-            topCategoryIds={topCategoryIds}
-            personalizedLevelIds={personalizedLevelIds}
-            recentCategoryId={recentCategoryId}
-            recentStudyTitle={learningProfile.recentStudyTitle ?? null}
-            recentCategoryName={learningProfile.recentCategoryName ?? null}
-            ownedIds={ownedIds}
-            globalFiltered={globalFiltered}
-            recommendationVariant={recommendationVariant}
-          />
+          <AwaitResolvedNode promise={personalisedContentPromise} />
         </Suspense>
       ) : globalFiltered.slice(0, 5).length > 0 ? (
         <section className="space-y-5">

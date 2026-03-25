@@ -1,7 +1,10 @@
 import { cookies, headers } from "next/headers";
 import { cache } from "react";
-import { getCachedEligibleHomepageHeroes } from "@/lib/cache/heroCache";
-import { findFallbackHero, findLegacyHomepageHero } from "@/repositories/heroes/hero.repository";
+import {
+  getCachedEligibleHomepageHeroes,
+  getCachedFallbackHero,
+  getCachedLegacyHomepageHero,
+} from "@/lib/cache/heroCache";
 import { isMissingTableError } from "@/lib/prismaErrors";
 import type {
   HeroBadgeBgColor,
@@ -315,12 +318,12 @@ const resolveHomepageHeroCached = cache(
         return toResolvedConfig(selectedHero, "cms");
       }
 
-      const fallbackHero = await findFallbackHero();
+      const fallbackHero = await getCachedFallbackHero();
       if (fallbackHero) {
         return toResolvedConfig(fallbackHero, "fallback");
       }
 
-      const legacyFallbackHero = await findLegacyHomepageHero();
+      const legacyFallbackHero = await getCachedLegacyHomepageHero();
       return toResolvedConfig(legacyFallbackHero, "fallback");
     } catch (error) {
       if (!isMissingTableError(error)) throw error;

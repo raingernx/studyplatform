@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { getServerSession } from "next-auth";
 import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
@@ -18,6 +18,7 @@ import {
   ResourcesPageContent,
 } from "./ResourcesPageContent";
 import {
+  trackRequestWork,
   traceServerStep,
   updateRequestPerformanceDetails,
   withRequestPerformanceTrace,
@@ -69,6 +70,14 @@ async function getOptionalSessionUserId(
 
     return undefined;
   }
+}
+
+async function AwaitResolvedNode({
+  promise,
+}: {
+  promise: Promise<ReactNode>;
+}) {
+  return <>{await promise}</>;
 }
 
 export default async function ResourcesPage({ searchParams }: ResourcesPageProps) {
@@ -126,6 +135,30 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
         effectiveSort = variantToSort(isValidRankingVariant(rawVariant) ? rawVariant : null);
       }
 
+      const heroPromise = isDiscoverMode
+        ? trackRequestWork(
+            ResourcesDiscoverHero({
+              userId,
+              className:
+                "min-h-[440px] rounded-[26px] border-white/70 bg-surface-100 sm:min-h-[500px] lg:min-h-[540px]",
+            }),
+          )
+        : null;
+      const contentPromise = trackRequestWork(
+        ResourcesPageContent({
+          isDiscoverMode,
+          search,
+          category,
+          price,
+          featured,
+          tag,
+          sort,
+          effectiveSort,
+          currentPage,
+          userId,
+        }),
+      );
+
       return (
         <div className="flex min-h-screen flex-col bg-surface-50">
           <Suspense fallback={null}>
@@ -150,10 +183,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
                       New releases, trending picks, and focused collections in one calmer library.
                     </p>
                   </div>
-                  <ResourcesDiscoverHero
-                    userId={userId}
-                    className="min-h-[440px] rounded-[26px] border-white/70 bg-surface-100 sm:min-h-[500px] lg:min-h-[540px]"
-                  />
+                  {heroPromise ? <AwaitResolvedNode promise={heroPromise} /> : null}
                 </Container>
               </section>
             ) : null}
@@ -166,18 +196,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
               }
             >
               <Suspense fallback={<ResourcesContentFallback isDiscoverMode={isDiscoverMode} />}>
-                <ResourcesPageContent
-                  isDiscoverMode={isDiscoverMode}
-                  search={search}
-                  category={category}
-                  price={price}
-                  featured={featured}
-                  tag={tag}
-                  sort={sort}
-                  effectiveSort={effectiveSort}
-                  currentPage={currentPage}
-                  userId={userId}
-                />
+                <AwaitResolvedNode promise={contentPromise} />
               </Suspense>
             </Container>
           </main>

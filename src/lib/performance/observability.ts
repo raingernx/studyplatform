@@ -36,6 +36,7 @@ type RequestTraceState = {
   serviceAggregates: Map<string, Aggregate>;
   cacheAggregates: Map<string, CacheAggregate>;
   slowQueries: SlowQueryRecord[];
+  pendingWork: Set<Promise<unknown>>;
 };
 
 const requestTraceStorage = new AsyncLocalStorage<RequestTraceState>();
@@ -175,6 +176,31 @@ export function updateRequestPerformanceDetails(details: PerformanceDetails) {
   Object.assign(state.details, details);
 }
 
+export function trackRequestWork<T>(work: Promise<T>): Promise<T> {
+  if (!PERFORMANCE_MONITORING_ENABLED) {
+    return work;
+  }
+
+  const state = requestTraceStorage.getStore();
+  if (!state) {
+    return work;
+  }
+
+  let trackedWork: Promise<T>;
+  trackedWork = work.finally(() => {
+    state.pendingWork.delete(trackedWork);
+  });
+
+  state.pendingWork.add(trackedWork);
+  return trackedWork;
+}
+
+async function waitForTrackedRequestWork(state: RequestTraceState) {
+  while (state.pendingWork.size > 0) {
+    await Promise.all(Array.from(state.pendingWork));
+  }
+}
+
 export function recordPrismaQuery(details: {
   model?: string;
   action: string;
@@ -275,6 +301,7 @@ export async function withRequestPerformanceTrace<T>(
     serviceAggregates: new Map(),
     cacheAggregates: new Map(),
     slowQueries: [],
+    pendingWork: new Set(),
   };
 
   return requestTraceStorage.run(state, async () => {
@@ -286,6 +313,7 @@ export async function withRequestPerformanceTrace<T>(
 
     try {
       const result = await work();
+      await waitForTrackedRequestWork(state);
       const elapsedMs = Date.now() - state.startedAt;
 
       logPerformanceEvent("request_summary", {
@@ -305,6 +333,11 @@ export async function withRequestPerformanceTrace<T>(
 
       return result;
     } catch (error) {
+      try {
+        await waitForTrackedRequestWork(state);
+      } catch {
+        // Preserve the original failure below.
+      }
       const elapsedMs = Date.now() - state.startedAt;
 
       logPerformanceEvent("request_fail", {
