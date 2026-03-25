@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { cookies, headers } from "next/headers";
+import { Suspense } from "react";
 import { authOptions } from "@/lib/auth";
 import { isMissingTableError } from "@/lib/prismaErrors";
 import { logActivity } from "@/lib/activity";
@@ -8,7 +9,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Container } from "@/components/layout/container";
 import { AlertCircle, BookOpen, CheckCircle, Download } from "lucide-react";
 import Link from "next/link";
-import { formatPrice, formatFileSize, formatNumber } from "@/lib/format";
+import { formatFileSize, formatNumber } from "@/lib/format";
 import { ResourceHeader } from "@/components/resource/ResourceHeader";
 import { ResourceGallery } from "@/components/resource/ResourceGallery";
 import { PurchaseCard } from "@/components/resource/PurchaseCard";
@@ -21,8 +22,13 @@ import { ResourceReviews } from "@/components/resource/ResourceReviews";
 import { ResourceReviewForm } from "@/components/resource/ResourceReviewForm";
 import { PendingPurchasePoller } from "@/components/checkout/PendingPurchasePoller";
 import { AutoScrollOnSuccess } from "@/components/resource/AutoScrollOnSuccess";
-import { getPublicResourcePageData, getResourceBySlug } from "@/services/resource.service";
-import { getResourceDetailExtras } from "@/services/resources/resource.service";
+import { getResourceBySlug } from "@/services/resource.service";
+import {
+  getResourceDetailExtras,
+  getResourceDetailRelatedSection,
+  getResourceDetailReviewSection,
+  getResourceDetailTrustSummary,
+} from "@/services/resources/resource.service";
 import {
   traceServerStep,
   updateRequestPerformanceDetails,
@@ -147,33 +153,6 @@ function buildOutcomeHint(resource: {
     : "Built for structured note-taking";
 }
 
-function buildComparisonAnchor(
-  resource: { isFree: boolean; price: number; category: { name: string } | null },
-  relatedResources: Array<{ price: number; isFree: boolean }>,
-) {
-  if (resource.isFree || resource.price === 0 || !resource.category) {
-    return null;
-  }
-
-  const paidPeerPrices = relatedResources
-    .filter((item) => !item.isFree && item.price > 0)
-    .map((item) => item.price);
-
-  if (paidPeerPrices.length === 0) {
-    return null;
-  }
-
-  const minPrice = Math.min(...paidPeerPrices);
-  const maxPrice = Math.max(...paidPeerPrices);
-
-  return {
-    label:
-      minPrice === maxPrice
-        ? `Similar ${resource.category.name.toLowerCase()} resources are typically priced around ${formatPrice(minPrice / 100)}.`
-        : `Similar ${resource.category.name.toLowerCase()} resources are usually priced between ${formatPrice(minPrice / 100)} and ${formatPrice(maxPrice / 100)}.`,
-  };
-}
-
 function buildIncludedFiles(resource: {
   fileName: string | null;
   fileSize: number | null;
@@ -225,11 +204,11 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
       slug,
     },
     async () => {
-      let resourcePageData;
+      let resource;
       try {
-        resourcePageData = await traceServerStep(
-          "resource_detail.getPublicResourcePageData",
-          () => getPublicResourcePageData(slug),
+        resource = await traceServerStep(
+          "resource_detail.getResourceBySlug",
+          () => getResourceBySlug(slug),
           { slug },
         );
       } catch (error) {
@@ -237,11 +216,22 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
         // Resource table missing (local dev schema drift) — render 404.
         notFound();
       }
-      const { resource, relatedResources } = resourcePageData ?? { resource: null, relatedResources: [] };
 
       if (!resource || resource.status !== "PUBLISHED") {
         notFound();
       }
+
+      const trustSummaryPromise = traceServerStep(
+        "resource_detail.getResourceDetailTrustSummary",
+        () =>
+          getResourceDetailTrustSummary({
+            resourceId: resource.id,
+            resourceSalesCount: resource.resourceStat?.purchases ?? null,
+          }),
+        {
+          slug,
+        },
+      );
 
       const session = await traceServerStep(
         "resource_detail.optional_session",
@@ -257,26 +247,19 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
 
       const {
         isOwned,
-        ownedRelatedIds,
-        trustSummary,
-        reviews,
-        viewerReview,
       } = await traceServerStep(
-        "resource_detail.getResourceDetailExtras",
+        "resource_detail.getResourceDetailOwnership",
         () =>
           getResourceDetailExtras({
             resourceId: resource.id,
-            relatedResourceIds: relatedResources.map((related) => related.id),
-            resourceSalesCount: resource.resourceStat?.purchases ?? null,
             userId,
-            reviewTake: 5,
           }),
         {
           personalized: Boolean(userId),
-          relatedCount: relatedResources.length,
           slug,
         },
       );
+      const trustSummary = await trustSummaryPromise;
   const hasFile = Boolean(resource.fileUrl ?? resource.fileKey);
   // True when the user has just returned from a payment provider but the
   // webhook has not yet flipped their Purchase row to COMPLETED.
@@ -290,7 +273,6 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
   const outcomePoints = buildOutcomePoints(resource);
   const levelLabel = formatLevel(resource.level);
   const outcomeHint = buildOutcomeHint(resource);
-  const comparisonAnchor = buildComparisonAnchor(resource, relatedResources);
 
   logActivity({
     userId,
@@ -326,31 +308,7 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
     recentSales: resource.resourceStat?.last30dPurchases ?? 0,
     levelLabel,
     outcomeHint,
-    comparisonAnchor,
   };
-
-  const currentIsFree = resource.isFree || resource.price === 0;
-  const currentPrice = resource.price ?? 0;
-  const currentRating = trustSummary.averageRating ?? 0;
-  const currentSales = trustSummary.totalSales ?? 0;
-  const currentDownloads = resource.resourceStat?.downloads ?? resource.downloadCount ?? 0;
-
-  const relatedResourcesWithBadges = relatedResources.map((r) => {
-    const relatedIsFree = r.isFree || (r.price ?? 0) === 0;
-    let badge: string | null = null;
-    if (relatedIsFree && !currentIsFree) {
-      badge = "Free alternative";
-    } else if (!relatedIsFree && !currentIsFree && (r.price ?? 0) < currentPrice) {
-      badge = "Cheaper";
-    } else if ((r.rating ?? 0) > currentRating && currentRating > 0) {
-      badge = "Higher rated";
-    } else if ((r.salesCount ?? 0) > currentSales && currentSales > 0) {
-      badge = "More popular";
-    } else if ((r.downloadCount ?? 0) > currentDownloads && currentDownloads > 0) {
-      badge = "More downloads";
-    }
-    return badge ? { ...r, highlightBadge: badge } : r;
-  });
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -517,16 +475,14 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                 <ResourceFiles files={includedFiles} />
 
                 {/* 6. Reviews */}
-                <ResourceReviews reviews={reviews} resourceTitle={resource.title} />
-
-                {/* 7. Review form — owners only, after reviews */}
-                {userId && isOwned ? (
-                  <ResourceReviewForm
+                <Suspense fallback={null}>
+                  <ResourceDetailReviewSection
+                    isOwned={isOwned}
                     resourceId={resource.id}
                     resourceTitle={resource.title}
-                    existingReview={viewerReview}
+                    userId={userId}
                   />
-                ) : null}
+                </Suspense>
 
                 {/* 8. Tags */}
                 <TagList tags={resource.tags.map((rt) => rt.tag)} />
@@ -560,7 +516,18 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
             </div>
 
             {/* ── Related resources — outside the two-column grid ─────────── */}
-            <RelatedResources resources={relatedResourcesWithBadges} ownedIds={ownedRelatedIds} />
+            <Suspense fallback={null}>
+              <ResourceDetailRelatedSection
+                currentDownloads={resource.resourceStat?.downloads ?? resource.downloadCount ?? 0}
+                currentIsFree={resource.isFree || resource.price === 0}
+                currentPrice={resource.price ?? 0}
+                currentRating={trustSummary.averageRating ?? 0}
+                currentSales={trustSummary.totalSales ?? 0}
+                categoryId={resource.categoryId}
+                resourceId={resource.id}
+                userId={userId}
+              />
+            </Suspense>
 
             {/* Back link */}
             <div className="border-t border-surface-200 pt-6">
@@ -579,5 +546,108 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
     </div>
   );
     },
+  );
+}
+
+async function ResourceDetailReviewSection({
+  resourceId,
+  resourceTitle,
+  userId,
+  isOwned,
+}: {
+  resourceId: string;
+  resourceTitle: string;
+  userId?: string;
+  isOwned: boolean;
+}) {
+  const { reviews, viewerReview } = await traceServerStep(
+    "resource_detail.getResourceDetailReviewSection",
+    () =>
+      getResourceDetailReviewSection({
+        resourceId,
+        userId,
+        isOwned,
+        reviewTake: 5,
+      }),
+    {
+      isOwned,
+      personalized: Boolean(userId),
+      resourceId,
+    },
+  );
+
+  return (
+    <>
+      <ResourceReviews reviews={reviews} resourceTitle={resourceTitle} />
+      {userId && isOwned ? (
+        <ResourceReviewForm
+          resourceId={resourceId}
+          resourceTitle={resourceTitle}
+          existingReview={viewerReview}
+        />
+      ) : null}
+    </>
+  );
+}
+
+async function ResourceDetailRelatedSection({
+  resourceId,
+  categoryId,
+  userId,
+  currentIsFree,
+  currentPrice,
+  currentRating,
+  currentSales,
+  currentDownloads,
+}: {
+  resourceId: string;
+  categoryId?: string | null;
+  userId?: string;
+  currentIsFree: boolean;
+  currentPrice: number;
+  currentRating: number;
+  currentSales: number;
+  currentDownloads: number;
+}) {
+  const { relatedResources, ownedRelatedIds } = await traceServerStep(
+    "resource_detail.getResourceDetailRelatedSection",
+    () =>
+      getResourceDetailRelatedSection({
+        resourceId,
+        categoryId,
+        userId,
+        take: 4,
+      }),
+    {
+      categoryId: categoryId ?? null,
+      personalized: Boolean(userId),
+      resourceId,
+    },
+  );
+
+  const relatedResourcesWithBadges = relatedResources.map((resource) => {
+    const relatedIsFree = resource.isFree || (resource.price ?? 0) === 0;
+    let badge: string | null = null;
+
+    if (relatedIsFree && !currentIsFree) {
+      badge = "Free alternative";
+    } else if (!relatedIsFree && !currentIsFree && (resource.price ?? 0) < currentPrice) {
+      badge = "Cheaper";
+    } else if ((resource.rating ?? 0) > currentRating && currentRating > 0) {
+      badge = "Higher rated";
+    } else if ((resource.salesCount ?? 0) > currentSales && currentSales > 0) {
+      badge = "More popular";
+    } else if ((resource.downloadCount ?? 0) > currentDownloads && currentDownloads > 0) {
+      badge = "More downloads";
+    }
+
+    return badge ? { ...resource, highlightBadge: badge } : resource;
+  });
+
+  return (
+    <RelatedResources
+      resources={relatedResourcesWithBadges}
+      ownedIds={ownedRelatedIds}
+    />
   );
 }

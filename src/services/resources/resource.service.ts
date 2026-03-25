@@ -1,10 +1,12 @@
+import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity";
 import { logAdminAction } from "@/lib/auditLogger";
 import { slugify } from "@/lib/utils";
 import { CACHE_TAGS, CACHE_TTLS } from "@/lib/cache";
-import { getOwnedDetailState } from "@/services/purchase.service";
+import { getOwnedDetailState, getOwnedIdsFromSet } from "@/services/purchase.service";
+import { getRelatedResources } from "@/services/resource.service";
 import {
   getResourceReviews,
   getResourceTrustSummary,
@@ -303,42 +305,120 @@ export async function getDashboardOverviewRecommendations(input: {
 
 export async function getResourceDetailExtras(input: {
   resourceId: string;
-  relatedResourceIds: string[];
   userId?: string;
-  reviewTake?: number;
+}) {
+  const {
+    resourceId,
+    userId,
+  } = input;
+
+  const ownership = await getOwnedDetailState(userId, resourceId, []);
+
+  return {
+    isOwned: ownership.isOwned,
+  };
+}
+
+export async function getResourceDetailTrustSummary(input: {
+  resourceId: string;
   resourceSalesCount?: number | null;
 }) {
   const {
     resourceId,
-    relatedResourceIds,
-    userId,
-    reviewTake = 5,
     resourceSalesCount,
   } = input;
 
-  const ownershipPromise = getOwnedDetailState(userId, resourceId, relatedResourceIds);
-  const trustSummaryPromise =
-    typeof resourceSalesCount === "number"
-      ? getResourceTrustSummaryWithPrefetchedSales(resourceId, resourceSalesCount)
-      : getResourceTrustSummary(resourceId);
-  const reviewsPromise = getResourceReviews(resourceId, reviewTake);
+  return typeof resourceSalesCount === "number"
+    ? getResourceTrustSummaryWithPrefetchedSales(resourceId, resourceSalesCount)
+    : getResourceTrustSummary(resourceId);
+}
 
-  const ownership = await ownershipPromise;
+function isResourceDetailRelatedPoolPressureError(error: unknown) {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2024"
+  ) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("Timed out fetching a new connection from the connection pool");
+}
+
+export async function getResourceDetailRelatedSection(input: {
+  resourceId: string;
+  categoryId?: string | null;
+  userId?: string;
+  take?: number;
+}) {
+  const {
+    resourceId,
+    categoryId,
+    userId,
+    take = 4,
+  } = input;
+
+  if (!categoryId) {
+    return {
+      ownedRelatedIds: [] as string[],
+      relatedResources: [],
+    };
+  }
+
+  let relatedResources: Awaited<ReturnType<typeof getRelatedResources>> = [];
+
+  try {
+    relatedResources = await getRelatedResources(categoryId, resourceId, take);
+  } catch (error) {
+    if (!isResourceDetailRelatedPoolPressureError(error)) {
+      throw error;
+    }
+
+    return {
+      ownedRelatedIds: [] as string[],
+      relatedResources: [],
+    };
+  }
+
+  const ownedRelatedIds =
+    userId && relatedResources.length > 0
+      ? await getOwnedIdsFromSet(
+          userId,
+          relatedResources.map((resource) => resource.id),
+        )
+      : [];
+
+  return {
+    ownedRelatedIds,
+    relatedResources,
+  };
+}
+
+export async function getResourceDetailReviewSection(input: {
+  resourceId: string;
+  userId?: string;
+  isOwned: boolean;
+  reviewTake?: number;
+}) {
+  const {
+    resourceId,
+    userId,
+    isOwned,
+    reviewTake = 5,
+  } = input;
+
+  const reviewsPromise = getResourceReviews(resourceId, reviewTake);
   const viewerReviewPromise =
-    userId && ownership.isOwned
+    userId && isOwned
       ? getUserResourceReview(userId, resourceId)
       : Promise.resolve(null);
 
-  const [trustSummary, reviews, viewerReview] = await Promise.all([
-    trustSummaryPromise,
+  const [reviews, viewerReview] = await Promise.all([
     reviewsPromise,
     viewerReviewPromise,
   ]);
 
   return {
-    isOwned: ownership.isOwned,
-    ownedRelatedIds: ownership.ownedRelatedIds,
-    trustSummary,
     reviews,
     viewerReview,
   };
