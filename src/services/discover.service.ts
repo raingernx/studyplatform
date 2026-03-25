@@ -135,7 +135,21 @@ async function getTopCreatorForDiscover() {
   return rememberJson(
     CACHE_KEYS.topCreator,
     CACHE_TTLS.homepageList,
-    () => findTopCreatorThisWeek(),
+    async () => {
+      try {
+        return await findTopCreatorThisWeek();
+      } catch (error) {
+        if (!isDiscoverPoolPressureError(error)) {
+          throw error;
+        }
+
+        console.warn("[DISCOVER_TOP_CREATOR_BEST_EFFORT]", {
+          cache: CACHE_KEYS.topCreator,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return null;
+      }
+    },
     { metricName: "discover.topCreator" },
   );
 }
