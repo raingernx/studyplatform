@@ -1,8 +1,8 @@
 "use client";
 
 import type { MouseEvent, ReactNode } from "react";
-import Link from "next/link";
 import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
+import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 
 interface CategoryBrowseCardLinkProps {
   href: string;
@@ -31,8 +31,15 @@ export function CategoryBrowseCardLink({
   }
 
   return (
-    <Link href={href} onClick={handleClick} className={className}>
+    <IntentPrefetchLink
+      href={href}
+      onClick={handleClick}
+      className={className}
+      prefetchMode="viewport"
+      prefetchScope="category-browse-card"
+      prefetchLimit={4}
+    >
       {children}
-    </Link>
+    </IntentPrefetchLink>
   );
 }

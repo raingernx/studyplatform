@@ -446,8 +446,9 @@ function ResourceCardInner({
         className="group block h-full w-full cursor-pointer rounded-xl"
         aria-busy={isNavigating}
         onClick={handleNavigationStart}
+        prefetchMode="viewport"
         prefetchScope="resource-card-grid"
-        prefetchLimit={8}
+        prefetchLimit={6}
       >
         <CardBody {...bodyProps} />
       </IntentPrefetchLink>

@@ -1,5 +1,4 @@
 import { Suspense, type ReactNode } from "react";
-import Link from "next/link";
 import {
   ArrowRight,
   BookOpen,
@@ -279,13 +278,16 @@ export async function ResourcesPageContent({
                       you scan the rest of the collection.
                     </p>
                   </div>
-                  <Link
+                  <IntentPrefetchLink
                     href={`/resources/${spotlightResource.slug}`}
+                    prefetchMode="viewport"
+                    prefetchScope="spotlight-resource"
+                    prefetchLimit={1}
                     className="inline-flex items-center gap-1 text-small font-medium text-primary-700 transition hover:text-primary-800"
                   >
                     View resource
                     <ArrowRight className="h-4 w-4" />
-                  </Link>
+                  </IntentPrefetchLink>
                 </div>
                 <ResourceCard
                   resource={{
@@ -865,15 +867,18 @@ function SectionHeader({
           <p className="max-w-2xl text-sm leading-6 text-text-secondary">{description}</p>
         ) : null}
       </div>
-      <Link
+      <IntentPrefetchLink
         href={viewAllHref}
+        prefetchMode="viewport"
+        prefetchScope="resources-section-view-all"
+        prefetchLimit={3}
         className="group inline-flex items-center gap-1 self-start rounded-full px-2.5 py-1 text-small font-medium text-primary-700 transition-colors hover:bg-primary-50 hover:text-primary-800 sm:self-auto"
       >
         <span className="inline-flex items-center gap-1">
           <span>View all</span>
           <ArrowRight className="h-3.5 w-3.5" />
         </span>
-      </Link>
+      </IntentPrefetchLink>
     </div>
   );
 }

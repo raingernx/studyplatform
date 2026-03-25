@@ -42,6 +42,9 @@ const SYNTHETIC_ACTIVITY_USER_AGENTS = [
   /^KruCraft-Warmup\/1\.0/i,
   /^k6\//i,
 ] as const;
+const ANONYMOUS_RESOURCE_VIEW_LOG_COOLDOWN_MS = 60_000;
+
+let anonymousResourceViewLogCooldownUntil = 0;
 
 function toActivityMetadata(
   value: Record<string, unknown> | null | undefined,
@@ -59,6 +62,14 @@ export function isSyntheticActivityUserAgent(userAgent?: string | null) {
   }
 
   return SYNTHETIC_ACTIVITY_USER_AGENTS.some((pattern) => pattern.test(userAgent));
+}
+
+function isAnonymousResourceViewActivity(
+  userId: string | null | undefined,
+  action: string,
+  entity: string | null | undefined,
+) {
+  return !userId && action === "RESOURCE_VIEW" && entity === "Resource";
 }
 
 function isActivityLogDatabaseError(error: unknown) {
@@ -123,8 +134,20 @@ export async function logActivity({
   // Normalise: prefer the canonical name, fall back to the legacy alias
   const resolvedEntity = entity ?? entityType ?? undefined;
   const resolvedMetadata = toActivityMetadata(metadata ?? meta ?? undefined);
+  const isAnonymousResourceView = isAnonymousResourceViewActivity(
+    userId,
+    action,
+    resolvedEntity,
+  );
 
   if (isSyntheticActivityUserAgent(userAgent)) {
+    return;
+  }
+
+  if (
+    isAnonymousResourceView &&
+    anonymousResourceViewLogCooldownUntil > Date.now()
+  ) {
     return;
   }
 
@@ -177,6 +200,17 @@ export async function logActivity({
     };
 
     if (isActivityLogDatabaseError(err)) {
+      if (isAnonymousResourceView) {
+        anonymousResourceViewLogCooldownUntil =
+          Date.now() + ANONYMOUS_RESOURCE_VIEW_LOG_COOLDOWN_MS;
+        console.info("[ACTIVITY_LOG_INFO]", {
+          ...errorSummary,
+          cooldownMs: ANONYMOUS_RESOURCE_VIEW_LOG_COOLDOWN_MS,
+          suppressedAnonymousResourceView: true,
+        });
+        return;
+      }
+
       console.warn("[ACTIVITY_LOG_WARN]", errorSummary);
       return;
     }

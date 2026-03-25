@@ -1,9 +1,30 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { startTransition, useState, useTransition } from "react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
+
+const CATEGORY_CHIP_PREFETCH_LIMIT = 6;
+const prefetchedCategoryChipHrefs = new Set<string>();
+
+function prefetchCategoryChipHref(
+  router: ReturnType<typeof useRouter>,
+  href: string,
+) {
+  if (prefetchedCategoryChipHrefs.has(href)) {
+    return;
+  }
+
+  if (prefetchedCategoryChipHrefs.size >= CATEGORY_CHIP_PREFETCH_LIMIT) {
+    return;
+  }
+
+  prefetchedCategoryChipHrefs.add(href);
+  startTransition(() => {
+    router.prefetch(href);
+  });
+}
 
 export interface ChipCategory {
   id: string;
@@ -43,6 +64,8 @@ export function DiscoverButton() {
     <button
       type="button"
       onClick={handleClick}
+      onMouseEnter={() => prefetchCategoryChipHref(router, discoverUrl)}
+      onFocus={() => prefetchCategoryChipHref(router, discoverUrl)}
       disabled={isPending}
       aria-label="Discover resources"
       aria-busy={isPending}
@@ -105,6 +128,7 @@ export function CategoryChips({ categories }: CategoryChipsProps) {
         pending={pendingSlug === "all" && isPending}
         anyPending={isPending}
         onClick={() => navigate("all")}
+        onPointerIntent={() => prefetchCategoryChipHref(router, chipUrl("all"))}
       />
       {categories.map((cat) => (
         <Chip
@@ -114,6 +138,7 @@ export function CategoryChips({ categories }: CategoryChipsProps) {
           pending={pendingSlug === cat.slug && isPending}
           anyPending={isPending}
           onClick={() => navigate(cat.slug)}
+          onPointerIntent={() => prefetchCategoryChipHref(router, chipUrl(cat.slug))}
         />
       ))}
     </div>
@@ -128,6 +153,7 @@ function Chip({
   pending,
   anyPending,
   onClick,
+  onPointerIntent,
 }: {
   label: string;
   active: boolean;
@@ -136,11 +162,14 @@ function Chip({
   /** Any chip navigation is in-flight. */
   anyPending: boolean;
   onClick: () => void;
+  onPointerIntent: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      onMouseEnter={onPointerIntent}
+      onFocus={onPointerIntent}
       disabled={anyPending}
       aria-pressed={active}
       aria-busy={pending}

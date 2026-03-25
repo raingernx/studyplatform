@@ -53,6 +53,7 @@ export function IntentPrefetchLink({
   href,
   onMouseEnter,
   onFocus,
+  onTouchStart,
   prefetchScope = "default",
   prefetchLimit,
   ...props
@@ -153,6 +154,12 @@ export function IntentPrefetchLink({
       }}
       onFocus={(event) => {
         onFocus?.(event);
+        if (prefetchMode !== "none") {
+          prefetch();
+        }
+      }}
+      onTouchStart={(event) => {
+        onTouchStart?.(event);
         if (prefetchMode !== "none") {
           prefetch();
         }
