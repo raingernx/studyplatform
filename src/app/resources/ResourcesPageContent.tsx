@@ -1,4 +1,5 @@
 import { Suspense, type ReactNode } from "react";
+import { Prisma } from "@prisma/client";
 import {
   ArrowRight,
   BookOpen,
@@ -463,36 +464,28 @@ async function ResourcesDiscoverDeferredSections({
   learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null>;
   userId?: string;
 }) {
-  const [discoverData, ownedIds, learningProfile] = await Promise.all([
+  const [discoverData, ownedIds] = await Promise.all([
     discoverDataPromise,
     ownedIdsPromise,
-    learningProfilePromise,
   ]);
 
   if (!discoverData) {
     return null;
   }
 
-  const recentCategoryId = learningProfile?.recentCategoryId ?? null;
-  const personalizedLevelIds = learningProfile?.preferredLevels ?? [];
-  const topCategoryIds = learningProfile?.topCategories.map((item) => item.id) ?? [];
   const globalFiltered = (discoverData.recommended as ResourceCardData[]).filter(
     (resource) => !ownedIds.has(resource.id),
   );
   const recommendationVariant = userId ? assignRecommendationVariant(userId) : null;
   const personalisedContentPromise =
-    userId && learningProfile?.hasHistory
+    userId
       ? trackRequestWork(
-          DiscoverPersonalisedContent({
-            userId,
-            topCategoryIds,
-            personalizedLevelIds,
-            recentCategoryId,
-            recentStudyTitle: learningProfile.recentStudyTitle ?? null,
-            recentCategoryName: learningProfile.recentCategoryName ?? null,
+          ResourcesDiscoverPersonalisedSection({
+            learningProfilePromise,
+            recommendationVariant,
             ownedIds,
             globalFiltered,
-            recommendationVariant,
+            userId,
           }),
         )
       : null;
@@ -672,6 +665,38 @@ async function ResourcesDiscoverDeferredSections({
   );
 }
 
+async function ResourcesDiscoverPersonalisedSection({
+  learningProfilePromise,
+  recommendationVariant,
+  ownedIds,
+  globalFiltered,
+  userId,
+}: {
+  learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null>;
+  recommendationVariant: RecommendationVariant | null;
+  ownedIds: Set<string>;
+  globalFiltered: ResourceCardData[];
+  userId: string;
+}) {
+  const learningProfile = await learningProfilePromise;
+
+  if (!learningProfile?.hasHistory) {
+    return null;
+  }
+
+  return DiscoverPersonalisedContent({
+    userId,
+    topCategoryIds: learningProfile.topCategories.map((item) => item.id),
+    personalizedLevelIds: learningProfile.preferredLevels,
+    recentCategoryId: learningProfile.recentCategoryId ?? null,
+    recentStudyTitle: learningProfile.recentStudyTitle ?? null,
+    recentCategoryName: learningProfile.recentCategoryName ?? null,
+    ownedIds,
+    globalFiltered,
+    recommendationVariant,
+  });
+}
+
 async function DiscoverCategoryBrowseSection({
   discoverCategoriesPromise,
 }: {
@@ -768,7 +793,10 @@ async function loadOwnedIdsSafe(userId?: string) {
       { personalized: true },
     );
   } catch (error) {
-    if (!isMissingTableError(error)) {
+    if (
+      !isMissingTableError(error) &&
+      !isDiscoverPersonalizationTransientError(error)
+    ) {
       throw error;
     }
 
@@ -788,12 +816,39 @@ async function loadLearningProfileSafe(userId?: string) {
       { personalized: true },
     );
   } catch (error) {
-    if (!isMissingTableError(error)) {
+    if (
+      !isMissingTableError(error) &&
+      !isDiscoverPersonalizationTransientError(error)
+    ) {
       throw error;
     }
 
     return null;
   }
+}
+
+function isDiscoverPersonalizationTransientError(error: unknown) {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2024"
+  ) {
+    return true;
+  }
+
+  if (
+    error instanceof Prisma.PrismaClientInitializationError ||
+    error instanceof Prisma.PrismaClientUnknownRequestError
+  ) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("Timed out fetching a new connection from the connection pool") ||
+    message.includes("Can't reach database server") ||
+    message.includes("Error in PostgreSQL connection") ||
+    message.includes("kind: Closed")
+  );
 }
 
 function buildResultsContext(

@@ -82,11 +82,7 @@ async function resolveDiscoverFallbackIds(
   try {
     return await findDiscoverFallbackResourceIds(limit, orderBy, where);
   } catch (error) {
-    if (!isDiscoverPoolPressureError(error)) {
-      throw error;
-    }
-
-    return [];
+    throw error;
   }
 }
 
@@ -136,20 +132,12 @@ async function getDiscoverSectionIds(options: {
 }
 
 async function getTopCreatorForDiscover() {
-  try {
-    return await rememberJson(
-      CACHE_KEYS.topCreator,
-      CACHE_TTLS.homepageList,
-      () => findTopCreatorThisWeek(),
-      { metricName: "discover.topCreator" },
-    );
-  } catch (error) {
-    if (!isDiscoverPoolPressureError(error)) {
-      throw error;
-    }
-
-    return null;
-  }
+  return rememberJson(
+    CACHE_KEYS.topCreator,
+    CACHE_TTLS.homepageList,
+    () => findTopCreatorThisWeek(),
+    { metricName: "discover.topCreator" },
+  );
 }
 
 // ── Preview normaliser ────────────────────────────────────────────────────────
@@ -196,19 +184,11 @@ async function getTrendingResourceIds(limit = 8) {
           }
 
           if (candidates.length === 0) {
-            try {
-              return await traceServerStep(
-                "discover.findTopTrendingResourceIdsFallback",
-                () => findTopTrendingResourceIds(limit),
-                { limit },
-              );
-            } catch (error) {
-              if (!isDiscoverPoolPressureError(error)) {
-                throw error;
-              }
-
-              return [];
-            }
+            return traceServerStep(
+              "discover.findTopTrendingResourceIdsFallback",
+              () => findTopTrendingResourceIds(limit),
+              { limit },
+            );
           }
 
           return candidates
