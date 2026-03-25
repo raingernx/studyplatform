@@ -90,6 +90,51 @@ async function resolveDiscoverFallbackIds(
   }
 }
 
+async function getDiscoverSectionIds(options: {
+  cacheKey: string;
+  limit: number;
+  metricName: string;
+  primaryLoader: () => Promise<string[]>;
+  fallbackOrderBy: Prisma.ResourceFindManyArgs["orderBy"];
+  fallbackWhere?: Prisma.ResourceFindManyArgs["where"];
+}) {
+  const {
+    cacheKey,
+    limit,
+    metricName,
+    primaryLoader,
+    fallbackOrderBy,
+    fallbackWhere,
+  } = options;
+
+  return rememberJson<string[]>(
+    `${cacheKey}:${limit}`,
+    CACHE_TTLS.homepageList,
+    async () => {
+      let ids: string[] = [];
+
+      try {
+        ids = await primaryLoader();
+      } catch (error) {
+        if (!isDiscoverPoolPressureError(error)) {
+          throw error;
+        }
+      }
+
+      return resolveDiscoverFallbackIds(
+        ids,
+        limit,
+        fallbackOrderBy,
+        fallbackWhere,
+      );
+    },
+    {
+      metricName,
+      details: { limit },
+    },
+  );
+}
+
 async function getTopCreatorForDiscover() {
   try {
     return await rememberJson(
@@ -226,67 +271,58 @@ const readDiscoverData = unstable_cache(
     return runSingleFlight(DISCOVER_DATA_SINGLE_FLIGHT_KEY, async () => {
       const [
         trendingIds,
-        popularIdsFromStats,
-        newestIdsFromStats,
-        featuredIdsFromStats,
-        freeIdsFromStats,
+        popularIds,
+        newestIds,
+        featuredIds,
+        freeIds,
         topCreator,
       ] = await traceServerStep(
         "discover.loadSectionSources",
         () =>
           Promise.all([
             getTrendingResourceIds(8),
-            rememberJson(
-              CACHE_KEYS.popularResources,
-              CACHE_TTLS.homepageList,
-              () => findTopDownloadedResourceIds(8),
-              { metricName: "discover.popularResources" },
-            ),
-            rememberJson(
-              CACHE_KEYS.newestResources,
-              CACHE_TTLS.homepageList,
-              () => findNewestResourceIds(8),
-              { metricName: "discover.newestResources" },
-            ),
-            rememberJson(
-              CACHE_KEYS.featuredResources,
-              CACHE_TTLS.homepageList,
-              () => findFeaturedResourceIds(8),
-              { metricName: "discover.featuredResources" },
-            ),
-            rememberJson(
-              CACHE_KEYS.freeResources,
-              CACHE_TTLS.homepageList,
-              () => findFreeResourceIds(8),
-              { metricName: "discover.freeResources" },
-            ),
+            getDiscoverSectionIds({
+              cacheKey: CACHE_KEYS.popularResources,
+              limit: 8,
+              metricName: "discover.popularResources",
+              primaryLoader: () => findTopDownloadedResourceIds(8),
+              fallbackOrderBy: [
+                { downloadCount: "desc" },
+                { createdAt: "desc" },
+              ],
+            }),
+            getDiscoverSectionIds({
+              cacheKey: CACHE_KEYS.newestResources,
+              limit: 8,
+              metricName: "discover.newestResources",
+              primaryLoader: () => findNewestResourceIds(8),
+              fallbackOrderBy: { createdAt: "desc" },
+            }),
+            getDiscoverSectionIds({
+              cacheKey: CACHE_KEYS.featuredResources,
+              limit: 8,
+              metricName: "discover.featuredResources",
+              primaryLoader: () => findFeaturedResourceIds(8),
+              fallbackOrderBy: [
+                { downloadCount: "desc" },
+                { createdAt: "desc" },
+              ],
+              fallbackWhere: { featured: true },
+            }),
+            getDiscoverSectionIds({
+              cacheKey: CACHE_KEYS.freeResources,
+              limit: 8,
+              metricName: "discover.freeResources",
+              primaryLoader: () => findFreeResourceIds(8),
+              fallbackOrderBy: [
+                { downloadCount: "desc" },
+                { createdAt: "desc" },
+              ],
+              fallbackWhere: { isFree: true },
+            }),
             getTopCreatorForDiscover(),
           ]),
         { sectionLimit: 8 },
-      );
-
-      const [popularIds, newestIds, featuredIds, freeIds] = await traceServerStep(
-        "discover.resolveFallbackSectionIds",
-        () =>
-          Promise.all([
-            resolveDiscoverFallbackIds(popularIdsFromStats, 8, [
-              { downloadCount: "desc" },
-              { createdAt: "desc" },
-            ]),
-            resolveDiscoverFallbackIds(newestIdsFromStats, 8, { createdAt: "desc" }),
-            resolveDiscoverFallbackIds(
-              featuredIdsFromStats,
-              8,
-              [{ downloadCount: "desc" }, { createdAt: "desc" }],
-              { featured: true },
-            ),
-            resolveDiscoverFallbackIds(
-              freeIdsFromStats,
-              8,
-              [{ downloadCount: "desc" }, { createdAt: "desc" }],
-              { isFree: true },
-            ),
-          ]),
       );
 
       const resourceIds = Array.from(

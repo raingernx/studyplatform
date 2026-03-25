@@ -22,7 +22,10 @@ import { ResourceReviews } from "@/components/resource/ResourceReviews";
 import { ResourceReviewForm } from "@/components/resource/ResourceReviewForm";
 import { PendingPurchasePoller } from "@/components/checkout/PendingPurchasePoller";
 import { AutoScrollOnSuccess } from "@/components/resource/AutoScrollOnSuccess";
-import { getResourceBySlug } from "@/services/resource.service";
+import {
+  getResourceBySlug,
+  getResourceDetailDeferredContent,
+} from "@/services/resource.service";
 import {
   getResourceDetailExtras,
   getResourceDetailRelatedSection,
@@ -232,35 +235,41 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
           slug,
         },
       );
+      const requestHeadersPromise = headers();
 
       const session = await traceServerStep(
         "resource_detail.optional_session",
         () => getOptionalSession(),
         { slug },
       );
-      const requestHeaders = await headers();
-      const userAgent = requestHeaders.get("user-agent");
       const userId = session?.user?.id;
       updateRequestPerformanceDetails({
         hasSession: Boolean(userId),
       });
 
-      const {
-        isOwned,
-      } = await traceServerStep(
-        "resource_detail.getResourceDetailOwnership",
-        () =>
-          getResourceDetailExtras({
-            resourceId: resource.id,
-            userId,
-          }),
-        {
-          personalized: Boolean(userId),
-          slug,
-        },
-      );
-      const trustSummary = await trustSummaryPromise;
-  const hasFile = Boolean(resource.fileUrl ?? resource.fileKey);
+      const ownershipPromise = userId
+        ? traceServerStep(
+            "resource_detail.getResourceDetailOwnership",
+            () =>
+              getResourceDetailExtras({
+                resourceId: resource.id,
+                userId,
+              }),
+            {
+              personalized: true,
+              slug,
+            },
+          )
+        : Promise.resolve({ isOwned: false });
+
+      const [{ isOwned }, trustSummary] = await Promise.all([
+        ownershipPromise,
+        trustSummaryPromise,
+      ]);
+
+      const requestHeaders = await requestHeadersPromise;
+      const userAgent = requestHeaders.get("user-agent");
+      const hasFile = Boolean(resource.fileUrl ?? resource.fileKey);
   // True when the user has just returned from a payment provider but the
   // webhook has not yet flipped their Purchase row to COMPLETED.
   // Guard: requires an authenticated session — anonymous users can never own.
@@ -484,11 +493,10 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                   />
                 </Suspense>
 
-                {/* 8. Tags */}
-                <TagList tags={resource.tags.map((rt) => rt.tag)} />
-
-                {/* 9. Creator */}
-                <CreatorCard creator={{ id: resource.author.id, name: resource.author.name, image: resource.author.image, creatorSlug: resource.author.creatorSlug }} />
+                {/* 8. Tags + 9. Creator */}
+                <Suspense fallback={null}>
+                  <ResourceDetailFooterSection slug={resource.slug} />
+                </Suspense>
 
               </div>
 
@@ -649,5 +657,28 @@ async function ResourceDetailRelatedSection({
       resources={relatedResourcesWithBadges}
       ownedIds={ownedRelatedIds}
     />
+  );
+}
+
+async function ResourceDetailFooterSection({
+  slug,
+}: {
+  slug: string;
+}) {
+  const content = await traceServerStep(
+    "resource_detail.getResourceDetailDeferredContent",
+    () => getResourceDetailDeferredContent(slug),
+    { slug },
+  );
+
+  if (!content) {
+    return null;
+  }
+
+  return (
+    <>
+      <TagList tags={content.tags.map((resourceTag) => resourceTag.tag)} />
+      <CreatorCard creator={content.author} />
+    </>
   );
 }

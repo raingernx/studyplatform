@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import {
   countEligibleHomepageHeroes,
   createHeroClick,
@@ -990,43 +991,53 @@ export async function getHeroAnalytics(id: string) {
 }
 
 export async function recordHeroImpressionEvent(input: HeroAnalyticsEventInput) {
-  const hero = await findHeroById(input.heroId);
-
-  if (!hero) {
-    throw new HeroServiceError(404, {
-      error: "Hero not found.",
-    });
-  }
-
   const experiment = validateExperimentFields(input.experimentId, input.variant);
 
-  await Promise.all([
-    incrementHeroImpression(input.heroId),
-    createHeroImpression({
-      heroId: input.heroId,
-      experimentId: experiment.experimentId,
-      variant: experiment.variant,
-    }),
-  ]);
+  try {
+    await Promise.all([
+      incrementHeroImpression(input.heroId),
+      createHeroImpression({
+        heroId: input.heroId,
+        experimentId: experiment.experimentId,
+        variant: experiment.variant,
+      }),
+    ]);
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2025" || error.code === "P2003")
+    ) {
+      throw new HeroServiceError(404, {
+        error: "Hero not found.",
+      });
+    }
+
+    throw error;
+  }
 }
 
 export async function recordHeroClickEvent(input: HeroAnalyticsEventInput) {
-  const hero = await findHeroById(input.heroId);
-
-  if (!hero) {
-    throw new HeroServiceError(404, {
-      error: "Hero not found.",
-    });
-  }
-
   const experiment = validateExperimentFields(input.experimentId, input.variant);
 
-  await Promise.all([
-    incrementHeroClick(input.heroId),
-    createHeroClick({
-      heroId: input.heroId,
-      experimentId: experiment.experimentId,
-      variant: experiment.variant,
-    }),
-  ]);
+  try {
+    await Promise.all([
+      incrementHeroClick(input.heroId),
+      createHeroClick({
+        heroId: input.heroId,
+        experimentId: experiment.experimentId,
+        variant: experiment.variant,
+      }),
+    ]);
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2025" || error.code === "P2003")
+    ) {
+      throw new HeroServiceError(404, {
+        error: "Hero not found.",
+      });
+    }
+
+    throw error;
+  }
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { checkRateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 import {
@@ -12,9 +13,41 @@ const TrackHeroImpressionSchema = z.object({
   variant: z.string().nullable().optional(),
 });
 
+function isHeroImpressionTransientDbError(error: unknown) {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2024"
+  ) {
+    return true;
+  }
+
+  if (
+    error instanceof Prisma.PrismaClientInitializationError ||
+    error instanceof Prisma.PrismaClientUnknownRequestError
+  ) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("Timed out fetching a new connection from the connection pool") ||
+    message.includes("Can't reach database server") ||
+    message.includes("Error in PostgreSQL connection") ||
+    message.includes("kind: Closed")
+  );
+}
+
 function handleError(error: unknown) {
   if (error instanceof HeroServiceError) {
     return NextResponse.json(error.payload, { status: error.status });
+  }
+
+  if (isHeroImpressionTransientDbError(error)) {
+    console.warn("[HERO_IMPRESSION_BEST_EFFORT]", {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : undefined,
+    });
+    return NextResponse.json({ success: true });
   }
 
   console.error("[HERO_IMPRESSION_POST]", error);

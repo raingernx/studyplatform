@@ -125,7 +125,6 @@ const RESOURCE_DETAIL_SELECT = {
     select: {
       id: true,
       name: true,
-      image: true,
       creatorSlug: true,
     },
   },
@@ -144,6 +143,26 @@ const RESOURCE_DETAIL_SELECT = {
       order: true,
     },
   },
+  resourceStat: {
+    select: {
+      downloads: true,
+      purchases: true,
+      last30dDownloads: true,
+      last30dPurchases: true,
+      trendingScore: true,
+    },
+  },
+} as const;
+
+const RESOURCE_DETAIL_DEFERRED_CONTENT_SELECT = {
+  author: {
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      creatorSlug: true,
+    },
+  },
   tags: {
     select: {
       tag: {
@@ -153,15 +172,6 @@ const RESOURCE_DETAIL_SELECT = {
           slug: true,
         },
       },
-    },
-  },
-  resourceStat: {
-    select: {
-      downloads: true,
-      purchases: true,
-      last30dDownloads: true,
-      last30dPurchases: true,
-      trendingScore: true,
     },
   },
 } as const;
@@ -713,6 +723,13 @@ export async function findPublicResourceDetailBySlug(slug: string) {
   return prisma.resource.findUnique({
     where: { slug },
     select: RESOURCE_DETAIL_SELECT,
+  });
+}
+
+export async function findPublicResourceDetailDeferredContentBySlug(slug: string) {
+  return prisma.resource.findUnique({
+    where: { slug },
+    select: RESOURCE_DETAIL_DEFERRED_CONTENT_SELECT,
   });
 }
 
