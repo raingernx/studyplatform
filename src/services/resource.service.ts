@@ -314,6 +314,10 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
   const normalizedFilters = normalizeMarketplaceFilters(filters);
   const cacheKey = getMarketplaceCacheKey(normalizedFilters);
   const singleFlightKey = `marketplace:${normalizedFilters.sort}:${cacheKey}`;
+  const revalidateSeconds =
+    normalizedFilters.sort === "recommended"
+      ? CACHE_TTLS.homepageList
+      : CACHE_TTLS.publicPage;
 
   recordCacheCall("getMarketplaceResources", {
     cacheKey,
@@ -336,7 +340,10 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
         pageSize: normalizedFilters.pageSize,
         sort: normalizedFilters.sort,
       });
-      if (normalizedFilters.sort === "newest") {
+      if (
+        normalizedFilters.sort === "newest" ||
+        normalizedFilters.sort === "recommended"
+      ) {
         return runSingleFlight(singleFlightKey, () =>
           loadMarketplaceResources(normalizedFilters),
         );
@@ -346,7 +353,7 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
     },
     ["marketplace-resources", cacheKey],
     {
-      revalidate: CACHE_TTLS.publicPage,
+      revalidate: revalidateSeconds,
       tags: [CACHE_TAGS.discover],
     },
   )();
