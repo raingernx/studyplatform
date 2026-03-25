@@ -141,6 +141,19 @@ const getCachedResourceRatingSummary = unstable_cache(
   },
 );
 
+const getCachedCompletedSalesCount = unstable_cache(
+  async function _getCachedCompletedSalesCount(resourceId: string) {
+    return runSingleFlight(`resource-sales-count:${resourceId}`, () =>
+      findCompletedSalesCountByResource(resourceId),
+    );
+  },
+  ["resource-sales-count"],
+  {
+    revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+    tags: [CACHE_TAGS.discover],
+  },
+);
+
 export async function getResourceReviewDetailState(
   resourceId: string,
   userId?: string,
@@ -264,8 +277,8 @@ export const getResourceTrustSummary = unstable_cache(
       `resource-trust-summary:${resourceId}`,
       () =>
         Promise.all([
-          getResourceRatingSummary(resourceId),
-          findCompletedSalesCountByResource(resourceId),
+          getCachedResourceRatingSummary(resourceId),
+          getCachedCompletedSalesCount(resourceId),
         ]),
     );
 
