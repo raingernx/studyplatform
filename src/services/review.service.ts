@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
+import { runWithConcurrencyLimit } from "@/lib/async";
 import {
   createReviewRecord,
   findAdminReviews,
@@ -335,21 +336,46 @@ export async function getResourceTrustSummary(resourceId: string) {
   )();
 }
 
-export async function attachResourceTrustSignals<T extends { id: string }>(resources: T[]) {
+export async function attachResourceTrustSignals<T extends { id: string }>(
+  resources: T[],
+  options?: { queryConcurrency?: number },
+) {
   if (resources.length === 0) {
     return [] as Array<T & { rating: number | null; reviewCount: number; salesCount: number }>;
   }
 
   const resourceIds = Array.from(new Set(resources.map((resource) => resource.id)));
+  const queryConcurrency = Math.max(1, options?.queryConcurrency ?? 2);
+  type TrustQueryResult =
+    | Awaited<ReturnType<typeof getResourceRatingSummaries>>
+    | Awaited<ReturnType<typeof findCompletedSalesCountsByResourceIds>>;
 
   let ratingSummaries;
   let salesCounts;
 
   try {
-    [ratingSummaries, salesCounts] = await Promise.all([
-      getResourceRatingSummaries(resourceIds),
-      findCompletedSalesCountsByResourceIds(resourceIds),
-    ]);
+    if (queryConcurrency >= 2) {
+      [ratingSummaries, salesCounts] = await Promise.all([
+        getResourceRatingSummaries(resourceIds),
+        findCompletedSalesCountsByResourceIds(resourceIds),
+      ]);
+    } else {
+      const [ratingSummaryResult, salesCountResult] = await runWithConcurrencyLimit(
+        [
+          () => getResourceRatingSummaries(resourceIds),
+          () => findCompletedSalesCountsByResourceIds(resourceIds),
+        ] as const,
+        queryConcurrency,
+        async (load) => load() as Promise<TrustQueryResult>,
+      );
+
+      ratingSummaries = ratingSummaryResult as Awaited<
+        ReturnType<typeof getResourceRatingSummaries>
+      >;
+      salesCounts = salesCountResult as Awaited<
+        ReturnType<typeof findCompletedSalesCountsByResourceIds>
+      >;
+    }
   } catch (error) {
     if (!isTransientTrustEnrichmentError(error)) {
       throw error;

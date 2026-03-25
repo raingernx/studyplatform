@@ -1235,6 +1235,7 @@ export interface FindActivationRankedResourcesRow {
   categoryName: string | null;
   categorySlug: string | null;
   previewImageUrl: string | null;
+  totalCount: number;
 }
 
 export interface FindActivationRankedResourcesParams {
@@ -1297,8 +1298,7 @@ export async function findActivationRankedResources(
   const extraWhere =
     conditions.length > 0 ? Prisma.join(conditions, "\n        ") : Prisma.empty;
 
-  const [rows, countRows] = await Promise.all([
-    prisma.$queryRaw<FindActivationRankedResourcesRow[]>(Prisma.sql`
+  const rows = await prisma.$queryRaw<FindActivationRankedResourcesRow[]>(Prisma.sql`
       WITH base_resources AS (
         SELECT
           r."id",
@@ -1328,9 +1328,22 @@ export async function findActivationRankedResources(
           AND al."entity" = 'Resource'
         GROUP BY al."entityId"
       ),
+      totals AS (
+        SELECT COUNT(*)::int AS "totalCount"
+        FROM base_resources
+      ),
       ranked AS (
         SELECT
           br."id",
+          br."title",
+          br."slug",
+          br."price",
+          br."isFree",
+          br."featured",
+          br."downloadCount",
+          br."createdAt",
+          br."authorId",
+          br."categoryId",
           (
             LN(COALESCE(rs."purchases", 0) + 1) * 0.6
             + ((COALESCE(fpd."fpd_count", 0)::float + 3.0) / (COALESCE(rs."purchases", 0)::float + 6.0)) * 0.3
@@ -1351,44 +1364,48 @@ export async function findActivationRankedResources(
         OFFSET ${skip}
       )
       SELECT
-        br."id",
-        br."title",
-        br."slug",
-        br."price",
-        br."isFree",
-        br."featured",
-        br."downloadCount",
-        br."createdAt",
+        rnk."id",
+        rnk."title",
+        rnk."slug",
+        rnk."price",
+        rnk."isFree",
+        rnk."featured",
+        rnk."downloadCount",
+        rnk."createdAt",
         u."name"     AS "authorName",
         c."id"       AS "categoryId",
         c."name"     AS "categoryName",
         c."slug"     AS "categorySlug",
-        p."imageUrl" AS "previewImageUrl"
+        p."imageUrl" AS "previewImageUrl",
+        totals."totalCount"
       FROM ranked rnk
-      INNER JOIN base_resources br ON br."id" = rnk."id"
-      LEFT JOIN "User" u ON u."id" = br."authorId"
-      LEFT JOIN "Category" c ON c."id" = br."categoryId"
+      CROSS JOIN totals
+      LEFT JOIN "User" u ON u."id" = rnk."authorId"
+      LEFT JOIN "Category" c ON c."id" = rnk."categoryId"
       LEFT JOIN LATERAL (
         SELECT "imageUrl"
         FROM   "ResourcePreview"
-        WHERE  "resourceId" = br."id"
+        WHERE  "resourceId" = rnk."id"
         ORDER BY "order" ASC
         LIMIT  1
       ) p ON TRUE
       ORDER BY rnk."score" DESC NULLS LAST
-    `),
+    `);
 
-    prisma.$queryRaw<[{ count: number }]>(Prisma.sql`
+  let total = rows[0]?.totalCount ?? 0;
+
+  if (rows.length === 0 && skip > 0) {
+    const countRows = await prisma.$queryRaw<[{ count: number }]>(Prisma.sql`
       SELECT COUNT(*)::int AS count
       FROM "Resource" r
       WHERE r."status"    = 'PUBLISHED'
         AND r."deletedAt" IS NULL
         AND (r."visibility" IS NULL OR r."visibility" = 'PUBLIC')
         ${extraWhere}
-    `),
-  ]);
+    `);
 
-  const total = countRows[0]?.count ?? 0;
+    total = countRows[0]?.count ?? 0;
+  }
 
   return { rows, total };
 }

@@ -12,6 +12,7 @@
 import { unstable_cache } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { calculateTrendingScore } from "@/analytics/aggregation.service";
+import { runBestEffortAsync, runWithConcurrencyLimit } from "@/lib/async";
 import {
   CACHE_KEYS,
   CACHE_TTLS,
@@ -146,21 +147,11 @@ async function getTopCreatorForDiscover() {
   return rememberJson(
     CACHE_KEYS.topCreator,
     CACHE_TTLS.homepageList,
-    async () => {
-      try {
-        return await findTopCreatorThisWeek();
-      } catch (error) {
-        if (!isDiscoverPoolPressureError(error)) {
-          throw error;
-        }
-
-        console.warn("[DISCOVER_TOP_CREATOR_BEST_EFFORT]", {
-          cache: CACHE_KEYS.topCreator,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        return null;
-      }
-    },
+    () =>
+      runBestEffortAsync(() => findTopCreatorThisWeek(), {
+        fallback: null,
+        warningLabel: "[DISCOVER_TOP_CREATOR_BEST_EFFORT]",
+      }),
     { metricName: "discover.topCreator" },
   );
 }
@@ -257,10 +248,19 @@ export async function getTrendingResources(limit = 8) {
 
 // ── Discover sections ─────────────────────────────────────────────────────────
 
+type DiscoverSectionSources = {
+  trendingIds: string[];
+  popularIds: string[];
+  newestIds: string[];
+  featuredIds: string[];
+  freeIds: string[];
+  topCreator: Awaited<ReturnType<typeof getTopCreatorForDiscover>>;
+};
+
 /**
  * Fetches and returns the six curated sections shown on the Discover home.
  *
- * Wrapped with `unstable_cache` so the six parallel Prisma queries only hit
+ * Wrapped with `unstable_cache` so the discover source queries only hit
  * the database once every CACHE_TTLS.homepageList seconds across all
  * concurrent requests.
  * Immediately invalidated via `revalidateTag("discover")` whenever an admin
@@ -285,56 +285,82 @@ const readDiscoverData = unstable_cache(
         } = await traceServerStep(
           "discover.loadSectionSources",
           async () => {
-            const trendingIds = await getTrendingResourceIds(8);
-            const popularIds = await getDiscoverSectionIds({
-              cacheKey: CACHE_KEYS.popularResources,
-              limit: 8,
-              metricName: "discover.popularResources",
-              primaryLoader: () => findTopDownloadedResourceIds(8),
-              fallbackOrderBy: [
-                { downloadCount: "desc" },
-                { createdAt: "desc" },
+            const sectionSourceEntries = await runWithConcurrencyLimit(
+              [
+                {
+                  key: "trendingIds" as const,
+                  load: () => getTrendingResourceIds(8),
+                },
+                {
+                  key: "popularIds" as const,
+                  load: () =>
+                    getDiscoverSectionIds({
+                      cacheKey: CACHE_KEYS.popularResources,
+                      limit: 8,
+                      metricName: "discover.popularResources",
+                      primaryLoader: () => findTopDownloadedResourceIds(8),
+                      fallbackOrderBy: [
+                        { downloadCount: "desc" },
+                        { createdAt: "desc" },
+                      ],
+                    }),
+                },
+                {
+                  key: "newestIds" as const,
+                  load: () =>
+                    getDiscoverSectionIds({
+                      cacheKey: CACHE_KEYS.newestResources,
+                      limit: 8,
+                      metricName: "discover.newestResources",
+                      primaryLoader: () => findNewestResourceIds(8),
+                      fallbackOrderBy: { createdAt: "desc" },
+                    }),
+                },
+                {
+                  key: "featuredIds" as const,
+                  load: () =>
+                    getDiscoverSectionIds({
+                      cacheKey: CACHE_KEYS.featuredResources,
+                      limit: 8,
+                      metricName: "discover.featuredResources",
+                      primaryLoader: () => findFeaturedResourceIds(8),
+                      fallbackOrderBy: [
+                        { downloadCount: "desc" },
+                        { createdAt: "desc" },
+                      ],
+                      fallbackWhere: { featured: true },
+                    }),
+                },
+                {
+                  key: "freeIds" as const,
+                  load: () =>
+                    getDiscoverSectionIds({
+                      cacheKey: CACHE_KEYS.freeResources,
+                      limit: 8,
+                      metricName: "discover.freeResources",
+                      primaryLoader: () => findFreeResourceIds(8),
+                      fallbackOrderBy: [
+                        { downloadCount: "desc" },
+                        { createdAt: "desc" },
+                      ],
+                      fallbackWhere: { isFree: true },
+                    }),
+                },
+                {
+                  key: "topCreator" as const,
+                  load: () => getTopCreatorForDiscover(),
+                },
               ],
-            });
-            const newestIds = await getDiscoverSectionIds({
-              cacheKey: CACHE_KEYS.newestResources,
-              limit: 8,
-              metricName: "discover.newestResources",
-              primaryLoader: () => findNewestResourceIds(8),
-              fallbackOrderBy: { createdAt: "desc" },
-            });
-            const featuredIds = await getDiscoverSectionIds({
-              cacheKey: CACHE_KEYS.featuredResources,
-              limit: 8,
-              metricName: "discover.featuredResources",
-              primaryLoader: () => findFeaturedResourceIds(8),
-              fallbackOrderBy: [
-                { downloadCount: "desc" },
-                { createdAt: "desc" },
-              ],
-              fallbackWhere: { featured: true },
-            });
-            const freeIds = await getDiscoverSectionIds({
-              cacheKey: CACHE_KEYS.freeResources,
-              limit: 8,
-              metricName: "discover.freeResources",
-              primaryLoader: () => findFreeResourceIds(8),
-              fallbackOrderBy: [
-                { downloadCount: "desc" },
-                { createdAt: "desc" },
-              ],
-              fallbackWhere: { isFree: true },
-            });
-            const topCreator = await getTopCreatorForDiscover();
+              1,
+              async (entry) => ({
+                key: entry.key,
+                value: await entry.load(),
+              }),
+            );
 
-            return {
-              trendingIds,
-              popularIds,
-              newestIds,
-              featuredIds,
-              freeIds,
-              topCreator,
-            };
+            return Object.fromEntries(
+              sectionSourceEntries.map(({ key, value }) => [key, value]),
+            ) as DiscoverSectionSources;
           },
           { sectionLimit: 8 },
         );
@@ -408,7 +434,7 @@ async function loadDiscoverResourcesByIds(resourceIds: string[]) {
 
   const resources = await traceServerStep(
     "discover.attachResourceTrustSignals",
-    () => attachResourceTrustSignals(rows),
+    () => attachResourceTrustSignals(rows, { queryConcurrency: 1 }),
     { resourceCount: rows.length },
   );
 

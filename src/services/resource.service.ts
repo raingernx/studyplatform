@@ -13,6 +13,7 @@
 
 import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
+import { runBestEffortAsync } from "@/lib/async";
 import {
   CACHE_TAGS,
   CACHE_TTLS,
@@ -153,6 +154,22 @@ export function getMarketplaceCacheKey(filters: NormalizedMarketplaceFilters) {
   return JSON.stringify(filters);
 }
 
+async function getCachedMarketplaceCategories() {
+  recordCacheCall("getMarketplaceCategories");
+
+  return unstable_cache(
+    async function _getMarketplaceCategories() {
+      recordCacheMiss("getMarketplaceCategories");
+      return findCategoriesOrderedByName();
+    },
+    ["marketplace-categories"],
+    {
+      revalidate: CACHE_TTLS.publicPage,
+      tags: [CACHE_TAGS.discover],
+    },
+  )();
+}
+
 /** Builds a Prisma `orderBy` clause from a sort key string.
  *
  * Canonical values (from SORT_OPTIONS in src/config/sortOptions.ts):
@@ -226,7 +243,7 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
       : undefined;
 
   if (category && !categoryId) {
-    const categories = await findCategoriesOrderedByName();
+    const categories = await getCachedMarketplaceCategories();
 
     return {
       resources: [],
@@ -251,7 +268,7 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
         page,
         pageSize,
       }),
-      findCategoriesOrderedByName(),
+      getCachedMarketplaceCategories(),
     ]);
 
     // Recommended listing cards can render without trust metadata, so avoid
@@ -299,7 +316,7 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
       take: pageSize,
     }),
     countMarketplaceResources(where),
-    findCategoriesOrderedByName(),
+    getCachedMarketplaceCategories(),
   ]);
 
   const resources = await attachResourceTrustSignals(rawItems.map(withPreview));
@@ -486,8 +503,25 @@ export async function getRelatedResources(categoryId: string, excludeId: string,
         take,
       });
       return runSingleFlight(singleFlightKey, async () => {
-        const raw = await findRelatedListedResources(categoryId, excludeId, take);
-        return attachResourceTrustSignals(raw.map(withPreview));
+        const baseResources = (await findRelatedListedResources(
+          categoryId,
+          excludeId,
+          take,
+        )).map(withPreview);
+        const fallbackResources = baseResources.map((resource) => ({
+          ...resource,
+          rating: null,
+          reviewCount: 0,
+          salesCount: 0,
+        }));
+
+        return runBestEffortAsync(
+          () => attachResourceTrustSignals(baseResources),
+          {
+            fallback: fallbackResources,
+            warningLabel: "[RELATED_TRUST_ENRICHMENT_BEST_EFFORT]",
+          },
+        );
       });
     },
     ["resource-related", categoryId, excludeId, String(take)],
