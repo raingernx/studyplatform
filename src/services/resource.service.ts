@@ -24,6 +24,7 @@ import {
   logPerformanceEvent,
   recordCacheCall,
   recordCacheMiss,
+  traceServerStep,
 } from "@/lib/performance/observability";
 import { DEFAULT_SORT, normaliseSortParam } from "@/config/sortOptions";
 import {
@@ -282,15 +283,19 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
     ].join(":");
 
     const loadRankedRows = () =>
-      findActivationRankedResources({
-        categoryId,
-        tagSlug:  tag ?? undefined,
-        search:   search ?? undefined,
-        isFree:   isFreeFilter,
-        featured: featured || undefined,
-        page,
-        pageSize,
-      });
+      traceServerStep(
+        "marketplace.findActivationRankedResources",
+        () => findActivationRankedResources({
+          categoryId,
+          tagSlug:  tag ?? undefined,
+          search:   search ?? undefined,
+          isFree:   isFreeFilter,
+          featured: featured || undefined,
+          page,
+          pageSize,
+        }),
+        { page, pageSize, categoryId: categoryId ?? "all" },
+      );
 
     // Cache in shared Redis (cross-instance) when no search term is present.
     // The outer unstable_cache layer handles same-instance warm hits; this
