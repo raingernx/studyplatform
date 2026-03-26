@@ -351,6 +351,26 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
     sort: normalizedFilters.sort,
   });
 
+  // Search queries produce unique, one-off cache keys that are never reused.
+  // Caching them via unstable_cache would grow the in-process cache without
+  // bound. Bypass caching for search — the pg_trgm index makes the DB query
+  // fast enough that caching provides no meaningful benefit here.
+  if (normalizedFilters.search !== null) {
+    recordCacheMiss("getMarketplaceResources", {
+      cacheKey,
+      category: normalizedFilters.category ?? "all",
+      page: normalizedFilters.page,
+      sort: normalizedFilters.sort,
+    });
+    logPerformanceEvent("cache_bypass:getMarketplaceResources", {
+      category: normalizedFilters.category ?? "all",
+      page: normalizedFilters.page,
+      pageSize: normalizedFilters.pageSize,
+      sort: normalizedFilters.sort,
+    });
+    return loadMarketplaceResources(normalizedFilters);
+  }
+
   return unstable_cache(
     async function _getMarketplaceResourcesByKey() {
       recordCacheMiss("getMarketplaceResources", {
