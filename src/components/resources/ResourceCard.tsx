@@ -6,6 +6,7 @@ import Image from "next/image";
 import { FileText, Download, Eye, ExternalLink, Star } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/design-system";
+import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
 import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import { formatPrice } from "@/lib/format";
 import { formatNumber } from "@/lib/format";
@@ -415,6 +416,9 @@ function ResourceCardInner({
       return;
     }
 
+    if (resource.slug) {
+      beginResourcesNavigation("detail", `/resources/${resource.slug}`);
+    }
     setIsNavigating(true);
   }
 

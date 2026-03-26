@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { Navbar } from "@/components/layout/Navbar";
 import { Container } from "@/components/layout/container";
-import { ResourcesNavigationFeedback } from "@/components/marketplace/ResourcesNavigationFeedback";
 import { HeroBannerSkeleton } from "@/components/marketplace/HeroBanner";
 import { isMissingTableError } from "@/lib/prismaErrors";
 import { normaliseSortParam } from "@/config/sortOptions";
@@ -162,9 +161,6 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
 
       return (
         <div className="flex min-h-screen flex-col bg-surface-50">
-          <Suspense fallback={null}>
-            <ResourcesNavigationFeedback />
-          </Suspense>
           <Navbar />
 
           <main className="flex-1">

@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-export type ResourcesNavigationMode = "discover" | "listing";
+export type ResourcesNavigationMode = "discover" | "listing" | "detail";
 
 export interface ResourcesNavigationState {
   id: number;
