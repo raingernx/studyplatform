@@ -4,15 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { getCreatorMetrics } from "@/services/creator.service";
 
 /**
- * GET /api/creator/metrics
- *
- * Returns the creator metrics for the currently authenticated user.
- * Any signed-in user can access their own creator metrics.
- *
- * Responses:
- *   200  CreatorMetrics object
- *   401  Not authenticated
- *   500  Unexpected server error
+ * Deprecated creator metrics route kept temporarily because generated App
+ * Router types in this repo still reference this file. There are no current
+ * repo-local callers; creator dashboards read metrics server-side.
  */
 export async function GET(_req: Request) {
   try {

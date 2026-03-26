@@ -1,10 +1,5 @@
-import { Suspense } from "react";
-import { ResourcesLoadingState } from "./ResourcesLoadingState";
+import { ResourcesLoadingState } from "@/app/resources/ResourcesLoadingState";
 
 export default function Loading() {
-  return (
-    <Suspense fallback={null}>
-      <ResourcesLoadingState heroConfig={undefined} />
-    </Suspense>
-  );
+  return <ResourcesLoadingState />;
 }

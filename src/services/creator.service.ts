@@ -158,6 +158,12 @@ export interface CreatorAccessState {
   applicationStatus: CreatorApplicationStatus;
 }
 
+export function canAccessCreatorWorkspace(
+  access: Pick<CreatorAccessState, "eligible" | "role"> | null | undefined,
+) {
+  return Boolean(access && (access.eligible || access.role === "ADMIN"));
+}
+
 export interface CreatorMetrics {
   totalDownloads: number;
   totalSales: number;
@@ -543,7 +549,7 @@ async function generateUniqueResourceSlug(base: string, userId: string, excludeI
 async function requireCreatorAccess(userId: string) {
   const access = await getCreatorAccessState(userId);
 
-  if (!access.eligible) {
+  if (!canAccessCreatorWorkspace(access)) {
     throw new CreatorServiceError(403, {
       error: "Creator access is not enabled for this account.",
     });
@@ -1063,7 +1069,7 @@ export async function submitCreatorApplication(userId: string, input: unknown) {
   if (state.applicationStatus === "PENDING") {
     throw new CreatorServiceError(409, { error: "Your application is already under review." });
   }
-  if (state.applicationStatus === "APPROVED" || state.eligible) {
+  if (state.applicationStatus === "APPROVED" || canAccessCreatorWorkspace(state)) {
     throw new CreatorServiceError(409, { error: "You already have creator access." });
   }
 

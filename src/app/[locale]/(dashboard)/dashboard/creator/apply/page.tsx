@@ -11,7 +11,7 @@ import { requireSession } from "@/lib/auth/require-session";
 import { BecomeCreatorButton } from "@/components/creator/BecomeCreatorButton";
 import { PageContent } from "@/design-system";
 import { routes } from "@/lib/routes";
-import { getCreatorAccessState } from "@/services/creator.service";
+import { canAccessCreatorWorkspace, getCreatorAccessState } from "@/services/creator.service";
 
 export const metadata = {
   title: "Become a Creator",
@@ -23,7 +23,7 @@ export default async function CreatorApplyPage() {
   const { userId } = await requireSession("/dashboard/creator/apply");
 
   const access = await getCreatorAccessState(userId);
-  if (access.eligible) {
+  if (canAccessCreatorWorkspace(access)) {
     redirect(routes.creatorDashboard);
   }
 

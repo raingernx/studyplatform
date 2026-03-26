@@ -60,3 +60,14 @@ export const CREATOR_APPLY_NAV_SECTION: DashboardNavSection = {
   ],
 };
 
+export const ADMIN_CREATOR_ENTRYPOINT_SECTION: DashboardNavSection = {
+  id: "creator-workspace",
+  label: "Creator",
+  items: [
+    {
+      href: routes.creatorDashboard,
+      label: "Creator Workspace",
+      icon: Sparkles,
+    },
+  ],
+};

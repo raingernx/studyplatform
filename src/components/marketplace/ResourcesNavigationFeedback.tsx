@@ -1,43 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
-import {
-  canonicalizeResourcesHref,
-  clearResourcesNavigation,
-  useResourcesNavigationState,
-} from "@/components/marketplace/resourcesNavigationState";
-
-const MIN_PENDING_MS = 160;
+import { useResourcesNavigationState } from "@/components/marketplace/resourcesNavigationState";
 
 export function ResourcesNavigationFeedback() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const navigationState = useResourcesNavigationState();
-  const currentSearch = searchParams.toString();
-  const currentHref = canonicalizeResourcesHref(
-    currentSearch ? `${pathname}?${currentSearch}` : pathname,
-  );
-
-  useEffect(() => {
-    if (!navigationState.mode || !navigationState.href) {
-      return;
-    }
-
-    const reachedTarget = currentHref === navigationState.href;
-
-    if (!reachedTarget) {
-      return;
-    }
-
-    const elapsed = Date.now() - navigationState.startedAt;
-    const remaining = Math.max(0, MIN_PENDING_MS - elapsed);
-    const timeoutId = window.setTimeout(() => {
-      clearResourcesNavigation(navigationState.id);
-    }, remaining);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [navigationState, currentHref]);
 
   if (!navigationState.mode) {
     return null;
@@ -46,10 +12,11 @@ export function ResourcesNavigationFeedback() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-1"
+      className="pointer-events-none fixed inset-x-0 top-0 z-[80]"
     >
-      <div className="relative h-full overflow-hidden bg-brand-100/60">
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-500 via-brand-600 to-brand-500" />
+      <div className="relative h-1.5 overflow-hidden border-b border-brand-200/60 bg-brand-100/70 shadow-[0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-sm">
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-brand-400 via-brand-600 to-brand-400" />
+        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-80" />
       </div>
     </div>
   );

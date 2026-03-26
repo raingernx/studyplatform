@@ -12,7 +12,7 @@ import { authOptions } from "@/lib/auth";
 import { requireSession } from "@/lib/auth/require-session";
 import { PageContent } from "@/design-system";
 import { routes } from "@/lib/routes";
-import { getCreatorAccessState } from "@/services/creator.service";
+import { canAccessCreatorWorkspace, getCreatorAccessState } from "@/services/creator.service";
 import { CreatorApplicationForm } from "@/components/creator/CreatorApplicationForm";
 import { findCreatorApplicationRecord } from "@/repositories/creators/creator.repository";
 
@@ -51,7 +51,7 @@ export default async function CreatorApplyPage() {
   const access = await getCreatorAccessState(userId);
 
   // Already approved — send them to creator dashboard
-  if (access.eligible || access.applicationStatus === "APPROVED") {
+  if (canAccessCreatorWorkspace(access) || access.applicationStatus === "APPROVED") {
     redirect(routes.creatorDashboard);
   }
 

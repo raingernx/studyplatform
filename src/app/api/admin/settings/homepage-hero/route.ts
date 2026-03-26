@@ -8,6 +8,7 @@ import {
   upsertFallbackHero,
 } from "@/services/heroes/hero.service";
 
+// Deprecated compatibility route kept because generated App Router types still reference it.
 const UpdateHeroSchema = z.object({
   title: z.string().min(1, "Title is required"),
   subtitle: z.string().min(1, "Subtitle is required"),
@@ -26,18 +27,20 @@ export type HomepageHeroPayload = z.infer<typeof UpdateHeroSchema>;
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return { ok: false as const, res: NextResponse.json({ error: "Unauthorized." }, { status: 401 }) };
+    return {
+      ok: false as const,
+      res: NextResponse.json({ error: "Unauthorized." }, { status: 401 }),
+    };
   }
   if (session.user.role !== "ADMIN") {
-    return { ok: false as const, res: NextResponse.json({ error: "Forbidden." }, { status: 403 }) };
+    return {
+      ok: false as const,
+      res: NextResponse.json({ error: "Forbidden." }, { status: 403 }),
+    };
   }
   return { ok: true as const };
 }
 
-/**
- * GET /api/admin/settings/homepage-hero
- * Returns the protected fallback hero record. Admin only.
- */
 export async function GET() {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.res;
@@ -51,10 +54,6 @@ export async function GET() {
   }
 }
 
-/**
- * PATCH /api/admin/settings/homepage-hero
- * Create or update the protected fallback hero config. Admin only.
- */
 export async function PATCH(req: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.res;

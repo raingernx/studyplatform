@@ -56,6 +56,7 @@ import {
 } from "@/lib/performance/observability";
 
 const ITEMS_PER_PAGE = 12;
+const BLOG_SECTION_ENABLED = false;
 
 type ResourcesPageContentProps = {
   isDiscoverMode: boolean;
@@ -365,15 +366,15 @@ async function ResourcesDiscoverContent({ userId }: { userId?: string }) {
 
   return (
     <>
-      <Suspense fallback={<ResourcesIntroSectionSkeleton isDiscoverMode />}>
+      <Suspense fallback={null}>
         <AwaitResolvedNode promise={introPromise} />
       </Suspense>
 
-      <Suspense fallback={<CategoryBrowseSectionFallback />}>
+      <Suspense fallback={null}>
         <AwaitResolvedNode promise={browsePromise} />
       </Suspense>
 
-      <Suspense fallback={<DiscoverSectionsFallback />}>
+      <Suspense fallback={null}>
         <AwaitResolvedNode promise={sectionsPromise} />
       </Suspense>
     </>
@@ -554,7 +555,7 @@ async function ResourcesDiscoverDeferredSections({
       ) : null}
 
       {personalisedContentPromise ? (
-        <Suspense fallback={<PersonalisationFallback />}>
+        <Suspense fallback={null}>
           <AwaitResolvedNode promise={personalisedContentPromise} />
         </Suspense>
       ) : globalFiltered.slice(0, 5).length > 0 ? (
@@ -659,7 +660,7 @@ async function ResourcesDiscoverDeferredSections({
       ) : null}
 
       <CreatorCTA />
-      <BlogSection />
+      {BLOG_SECTION_ENABLED ? <BlogSection /> : null}
       <EmailSignup />
     </div>
   );
@@ -939,24 +940,43 @@ function SectionHeader({
 }
 
 function DiscoverFallback() {
-  return <div className="h-9 w-24 animate-pulse rounded-full bg-surface-100" />;
+  return (
+    <div className="inline-flex h-9 items-center gap-2 rounded-full border border-surface-200 bg-white px-3 text-sm font-medium text-text-secondary shadow-sm">
+      <span className="h-2 w-2 animate-pulse rounded-full bg-primary-500" aria-hidden />
+      <span>Loading</span>
+    </div>
+  );
 }
 
 function SearchFallback() {
   return (
-    <div className="h-11 w-full animate-pulse rounded-full border border-border-subtle bg-white" />
+    <div className="flex h-11 w-full items-center gap-3 rounded-full border border-border-subtle bg-white px-4 text-sm text-text-muted shadow-sm">
+      <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-primary-500" aria-hidden />
+      <span>Loading search…</span>
+    </div>
   );
 }
 
 function ChipsFallback() {
   return (
     <div className="flex gap-2 overflow-hidden">
-      {[48, 64, 72, 56, 80, 60].map((width, index) => (
+      {[
+        "Loading",
+        "Categories",
+        "Popular",
+        "Recent",
+      ].map((label, index) => (
         <div
-          key={index}
-          className="h-8 shrink-0 animate-pulse rounded-full bg-surface-100"
-          style={{ width }}
-        />
+          key={label}
+          className={`inline-flex h-8 shrink-0 items-center rounded-full border border-surface-200 bg-surface-50 px-3 text-sm text-text-muted ${
+            index === 0 ? "gap-2 pr-4" : ""
+          }`}
+        >
+          {index === 0 ? (
+            <span className="h-2 w-2 animate-pulse rounded-full bg-primary-500" aria-hidden />
+          ) : null}
+          <span>{label}</span>
+        </div>
       ))}
     </div>
   );
@@ -965,10 +985,13 @@ function ChipsFallback() {
 function FilterBarFallback() {
   return (
     <div className="flex flex-col gap-3 border-b border-surface-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="h-4 w-24 animate-pulse rounded bg-surface-100" />
+      <div className="inline-flex items-center gap-2 text-sm text-text-secondary">
+        <span className="h-2 w-2 animate-pulse rounded-full bg-primary-500" aria-hidden />
+        <span>Preparing filters</span>
+      </div>
       <div className="flex gap-2">
-        <div className="h-10 w-28 animate-pulse rounded-full bg-surface-100" />
-        <div className="h-10 w-32 animate-pulse rounded-full bg-surface-100" />
+        <div className="h-10 w-28 rounded-full border border-surface-200 bg-surface-50" />
+        <div className="h-10 w-32 rounded-full border border-surface-200 bg-surface-50" />
       </div>
     </div>
   );
@@ -977,10 +1000,14 @@ function FilterBarFallback() {
 function SidebarFallback() {
   return (
     <div className="w-[252px] flex-shrink-0 space-y-5">
-      {[80, 120, 80, 60].map((height, index) => (
+      <div className="inline-flex items-center gap-2 text-sm text-text-secondary">
+        <span className="h-2 w-2 animate-pulse rounded-full bg-primary-500" aria-hidden />
+        <span>Loading filters</span>
+      </div>
+      {[80, 120, 80].map((height, index) => (
         <div
           key={index}
-          className="animate-pulse border-b border-surface-200/80 bg-transparent"
+          className="rounded-2xl border border-surface-200 bg-surface-50/70"
           style={{ height }}
         />
       ))}

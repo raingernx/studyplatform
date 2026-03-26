@@ -2,6 +2,7 @@ import type {
   DashboardNavSection,
 } from "@/components/layout/dashboard/dashboard-nav.types";
 import {
+  ADMIN_CREATOR_ENTRYPOINT_SECTION,
   CREATOR_APPLY_NAV_SECTION,
   CREATOR_DASHBOARD_NAV_SECTION,
 } from "@/config/dashboard-nav/creator-nav";
@@ -28,6 +29,14 @@ export function getDashboardNav({
   }
 
   const baseSections = [...USER_DASHBOARD_NAV_SECTIONS];
+
+  if (role === "ADMIN") {
+    return [
+      baseSections[0],
+      ADMIN_CREATOR_ENTRYPOINT_SECTION,
+      ...baseSections.slice(1),
+    ];
+  }
 
   if (creatorNavMode === "hidden") {
     return baseSections;

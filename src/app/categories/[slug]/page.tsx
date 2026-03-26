@@ -135,15 +135,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                   {total} resource{total !== 1 ? "s" : ""}
                 </p>
               </div>
-              <Suspense
-                fallback={
-                  <div className={RESOURCE_GRID_CLASSES}>
-                    {Array.from({ length: 8 }).map((_, i) => (
-                      <ResourceCardSkeleton key={i} />
-                    ))}
-                  </div>
-                }
-              >
+              <Suspense fallback={null}>
                 <ResourceGrid
                   resources={items}
                   total={total}

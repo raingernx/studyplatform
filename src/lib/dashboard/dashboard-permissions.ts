@@ -27,17 +27,17 @@ export function resolveDashboardNavState({
     };
   }
 
-  if (isCreator) {
-    return {
-      shellVariant: "creator",
-      creatorNavMode: "full",
-    };
-  }
-
   if (role === "ADMIN") {
     return {
       shellVariant: "user",
       creatorNavMode: "hidden",
+    };
+  }
+
+  if (isCreator) {
+    return {
+      shellVariant: "creator",
+      creatorNavMode: "full",
     };
   }
 

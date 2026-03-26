@@ -1,5 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { ResourcesNavigationFeedback } from "@/components/marketplace/ResourcesNavigationFeedback";
+import { ResourcesTransitionShell } from "@/components/marketplace/ResourcesTransitionShell";
 
 export default function ResourcesLayout({
   children,
@@ -11,7 +12,7 @@ export default function ResourcesLayout({
       <Suspense fallback={null}>
         <ResourcesNavigationFeedback />
       </Suspense>
-      {children}
+      <ResourcesTransitionShell>{children}</ResourcesTransitionShell>
     </>
   );
 }

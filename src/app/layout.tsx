@@ -13,7 +13,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 // all dashboard/admin pages).
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { PlatformConfigProvider } from "@/components/providers/PlatformConfigProvider";
-import { PublicSiteFooter } from "@/components/layout/PublicSiteFooter";
+import { PublicFooterGate } from "@/components/layout/PublicFooterGate";
 import { Footer } from "@/components/layout/Footer";
 import { fontVariables } from "@/lib/fonts";
 import { resolveTypographyTheme } from "@/lib/typography/resolve-typography-theme";
@@ -64,10 +64,12 @@ export default async function RootLayout({
         <PlatformConfigProvider initialConfig={platform}>
           <ThemeProvider>
             <Providers>
-              {children}
-              <PublicSiteFooter>
-                <Footer platformName={platform.platformShortName} />
-              </PublicSiteFooter>
+              <div className="flex min-h-screen flex-col">
+                <div className="flex-1 min-h-0">{children}</div>
+                <PublicFooterGate>
+                  <Footer platformName={platform.platformShortName} />
+                </PublicFooterGate>
+              </div>
             </Providers>
           </ThemeProvider>
         </PlatformConfigProvider>

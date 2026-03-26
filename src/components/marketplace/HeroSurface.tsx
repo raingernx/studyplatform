@@ -390,6 +390,7 @@ export function HeroSurface({
           alt=""
           fill
           priority
+          fetchPriority="high"
           sizes="100vw"
           className="h-full w-full object-cover"
           aria-hidden

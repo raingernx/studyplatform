@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { Navbar } from "@/components/layout/Navbar";
 import { Container } from "@/components/layout/container";
-import { HeroBannerSkeleton } from "@/components/marketplace/HeroBanner";
 import { isMissingTableError } from "@/lib/prismaErrors";
 import { normaliseSortParam } from "@/config/sortOptions";
 import {
@@ -13,7 +12,6 @@ import {
   variantToSort,
 } from "@/lib/ranking-experiment";
 import {
-  ResourcesContentFallback,
   ResourcesDiscoverHero,
   ResourcesPageContent,
 } from "./ResourcesPageContent";
@@ -181,13 +179,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
                     </p>
                   </div>
                   {heroPromise ? (
-                    <Suspense
-                      fallback={
-                        <HeroBannerSkeleton
-                          className="min-h-[440px] rounded-[26px] border-white/70 bg-surface-100 sm:min-h-[500px] lg:min-h-[540px]"
-                        />
-                      }
-                    >
+                    <Suspense fallback={null}>
                       <AwaitResolvedNode promise={heroPromise} />
                     </Suspense>
                   ) : null}
@@ -202,7 +194,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
                   : "space-y-12 py-12 sm:space-y-14 sm:py-14 lg:space-y-16 lg:py-16"
               }
             >
-              <Suspense fallback={<ResourcesContentFallback isDiscoverMode={isDiscoverMode} />}>
+              <Suspense fallback={null}>
                 <AwaitResolvedNode promise={contentPromise} />
               </Suspense>
             </Container>

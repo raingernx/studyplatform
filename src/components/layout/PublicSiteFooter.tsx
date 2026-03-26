@@ -13,7 +13,10 @@ type Props = { children: ReactNode };
 export function PublicSiteFooter({ children }: Props) {
   const pathname = usePathname();
 
-  if (pathname?.includes("/admin") || pathname?.includes("/dashboard")) {
+  if (
+    pathname?.includes("/admin") ||
+    pathname?.includes("/dashboard")
+  ) {
     return null;
   }
 
