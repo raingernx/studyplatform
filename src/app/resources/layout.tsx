@@ -12,7 +12,9 @@ export default function ResourcesLayout({
       <Suspense fallback={null}>
         <ResourcesNavigationFeedback />
       </Suspense>
-      <ResourcesTransitionShell>{children}</ResourcesTransitionShell>
+      <Suspense fallback={children}>
+        <ResourcesTransitionShell>{children}</ResourcesTransitionShell>
+      </Suspense>
     </>
   );
 }
