@@ -1,0 +1,21 @@
+-- Add composite index on ActivityLog(action, entity).
+--
+-- The first_paid_downloads CTE inside findActivationRankedResources filters:
+--   WHERE action = 'FIRST_PAID_DOWNLOAD' AND entity = 'Resource'
+--
+-- The existing separate single-column indexes on (action) and (entity) force
+-- Postgres to perform a bitmap-AND of two index scans and heap-fetch the
+-- results.  A single composite index resolves both equality predicates in one
+-- pass, eliminating the bitmap merge and reducing CTE scan cost on a large
+-- ActivityLog table.
+--
+-- Column order: (action, entity) — action first because it is the more
+-- selective predicate ('FIRST_PAID_DOWNLOAD' vs the broader entity set) and
+-- because future queries may filter on action alone and still benefit from
+-- this index.
+--
+-- LOCKING NOTE: Standard CREATE INDEX acquires ShareUpdateExclusiveLock.
+-- Reads are never blocked; writes are briefly blocked during the build.
+-- Acceptable during a planned deployment window.
+CREATE INDEX "ActivityLog_action_entity_idx"
+  ON "ActivityLog" ("action", "entity");

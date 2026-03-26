@@ -17,6 +17,7 @@ import {
   CACHE_TAGS,
   CACHE_TTLS,
   getResourceCacheTag,
+  rememberJson,
   runSingleFlight,
 } from "@/lib/cache";
 import {
@@ -267,15 +268,45 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
     const isFreeFilter =
       price === "free" ? true : price === "paid" ? false : undefined;
 
-    const { rows, total } = await findActivationRankedResources({
-      categoryId,
-      tagSlug:  tag ?? undefined,
-      search:   search ?? undefined,
-      isFree:   isFreeFilter,
-      featured: featured || undefined,
+    // Build a deterministic Redis cache key from all parameters that affect
+    // the multi-CTE SQL.  Search queries bypass this so the key space stays
+    // bounded (matching the outer unstable_cache search bypass above).
+    const recommendedCacheKey = [
+      "marketplace:recommended",
+      categoryId ?? "all",
+      tag ?? "none",
+      isFreeFilter ?? "any",
+      featured ? "1" : "0",
       page,
       pageSize,
-    });
+    ].join(":");
+
+    const loadRankedRows = () =>
+      findActivationRankedResources({
+        categoryId,
+        tagSlug:  tag ?? undefined,
+        search:   search ?? undefined,
+        isFree:   isFreeFilter,
+        featured: featured || undefined,
+        page,
+        pageSize,
+      });
+
+    // Cache in shared Redis (cross-instance) when no search term is present.
+    // The outer unstable_cache layer handles same-instance warm hits; this
+    // Redis layer prevents cold Vercel instances from each re-running the
+    // expensive multi-CTE activation-ranking SQL.
+    const { rows, total } = search
+      ? await loadRankedRows()
+      : await rememberJson(
+          recommendedCacheKey,
+          CACHE_TTLS.homepageList,
+          loadRankedRows,
+          {
+            metricName: "marketplace.recommendedResources",
+            details: { page, pageSize, categoryId: categoryId ?? "all" },
+          },
+        );
 
     // Recommended listing cards can render without trust metadata, so avoid
     // blocking the strict first render on batched review/sales enrichment.

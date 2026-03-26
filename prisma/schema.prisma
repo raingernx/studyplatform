@@ -550,6 +550,7 @@ model ActivityLog {
   @@index([userId])
   @@index([action])
   @@index([entity])
+  @@index([action, entity])
 }
 
 // ─── Admin Audit Trail ─────────────────────────────────────────────────────────
