@@ -198,6 +198,7 @@ export function ResourceGallery({
           fill
           sizes="(max-width: 768px) 100vw, 640px"
           className="h-full w-full object-contain"
+          priority
         />
 
         {/* Enlarge badge — visual hint only, top-right, visible on hover */}

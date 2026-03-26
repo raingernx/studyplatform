@@ -1210,7 +1210,7 @@ async function DiscoverPersonalisedContent({
         </section>
       ) : null}
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<PersonalisationFallback />}>
         <AwaitResolvedNode promise={recommendedForYouSectionPromise} />
       </Suspense>
     </>

@@ -179,7 +179,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
                     </p>
                   </div>
                   {heroPromise ? (
-                    <Suspense fallback={null}>
+                    <Suspense fallback={<div className="min-h-[440px] sm:min-h-[500px] lg:min-h-[540px]" />}>
                       <AwaitResolvedNode promise={heroPromise} />
                     </Suspense>
                   ) : null}
