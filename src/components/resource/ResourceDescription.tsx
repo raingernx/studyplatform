@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+
+// line-clamp-4 at text-body (1rem) + leading-7 (1.75rem line-height) clamps at
+// roughly 250–350 chars depending on container width. 300 is a safe crossover:
+// descriptions shorter than this never overflow 4 lines; longer ones almost
+// always do on at least one viewport width. This avoids a post-paint DOM
+// measurement (scrollHeight read + setState) that was causing layout shift.
+const CLAMP_THRESHOLD = 300;
 
 interface ResourceDescriptionProps {
   /** Section heading */
@@ -13,15 +20,7 @@ export function ResourceDescription({
   description,
 }: ResourceDescriptionProps) {
   const [expanded, setExpanded] = useState(false);
-  const [needsToggle, setNeedsToggle] = useState(false);
-  const ref = useRef<HTMLParagraphElement>(null);
-
-  useEffect(() => {
-    if (expanded) return;
-    const el = ref.current;
-    if (!el) return;
-    setNeedsToggle(el.scrollHeight > el.clientHeight);
-  }, [description, expanded]);
+  const needsToggle = description.length > CLAMP_THRESHOLD;
 
   return (
     <section id="description" className="space-y-3 border-t border-surface-200 pt-6">
@@ -31,10 +30,7 @@ export function ResourceDescription({
           Review the scope, study value, and what this resource is designed to help you do.
         </p>
       </div>
-      <p
-        ref={ref}
-        className={`text-body leading-7 text-zinc-600 ${!expanded ? "line-clamp-4" : ""}`}
-      >
+      <p className={`text-body leading-7 text-zinc-600 ${!expanded ? "line-clamp-4" : ""}`}>
         {description}
       </p>
       {needsToggle && (
