@@ -555,7 +555,7 @@ async function ResourcesDiscoverDeferredSections({
       ) : null}
 
       {personalisedContentPromise ? (
-        <Suspense fallback={<DiscoverSectionsFallback />}>
+        <Suspense fallback={<RecommendedForYouFallbackSection resources={globalFiltered.slice(0, 5)} ownedIds={ownedIds} />}>
           <AwaitResolvedNode promise={personalisedContentPromise} />
         </Suspense>
       ) : globalFiltered.slice(0, 5).length > 0 ? (
@@ -1210,7 +1210,7 @@ async function DiscoverPersonalisedContent({
         </section>
       ) : null}
 
-      <Suspense fallback={<PersonalisationFallback />}>
+      <Suspense fallback={<RecommendedForYouFallbackSection resources={globalFiltered.slice(0, 5)} ownedIds={ownedIds} />}>
         <AwaitResolvedNode promise={recommendedForYouSectionPromise} />
       </Suspense>
     </>
@@ -1291,6 +1291,35 @@ function PersonalisationFallback() {
       <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
         {Array.from({ length: 4 }).map((_, index) => (
           <ResourceCardSkeleton key={index} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RecommendedForYouFallbackSection({
+  resources,
+  ownedIds,
+}: {
+  resources: ResourceCardData[];
+  ownedIds: Set<string>;
+}) {
+  if (resources.length === 0) return null;
+  return (
+    <section className="space-y-5">
+      <SectionHeader
+        title="Recommended for you"
+        description="A focused set of picks to help you keep momentum without sorting through the whole library."
+        viewAllHref="/resources?sort=trending&category=all"
+      />
+      <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+        {resources.map((resource) => (
+          <ResourceCard
+            key={resource.id}
+            resource={resource}
+            variant="marketplace"
+            owned={ownedIds.has(resource.id)}
+          />
         ))}
       </div>
     </section>
