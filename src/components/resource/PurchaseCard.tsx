@@ -366,7 +366,7 @@ async function PurchaseCardMiddle({
               <a
                 href={`/api/download/${resource.id}`}
                 className={[
-                  "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-primary-700 ring-1 ring-primary-600/20 ring-offset-1",
+                  "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 ring-1 ring-primary-600/20 ring-offset-1",
                   isReturningFromCheckout
                     ? "ring-2 ring-emerald-400/60 ring-offset-2"
                     : "",
@@ -380,7 +380,7 @@ async function PurchaseCardMiddle({
                   href={`/api/preview/${resource.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-surface-200 bg-white px-5 py-2.5 text-[13px] font-medium text-zinc-700 transition hover:bg-surface-50"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-surface-200 bg-white px-5 py-2.5 text-[13px] font-medium text-zinc-700 transition hover:bg-surface-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
                 >
                   <Eye className="h-3.5 w-3.5" />
                   Preview
@@ -409,7 +409,7 @@ async function PurchaseCardMiddle({
           ) : (
             <Link
               href={`/auth/login?next=/resources/${resource.slug}`}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-primary-700"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
             >
               Sign in to Download
             </Link>
@@ -429,7 +429,7 @@ async function PurchaseCardMiddle({
             <div className="space-y-3">
               <Link
                 href={`/auth/login?next=/resources/${resource.slug}`}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-primary-700"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
               >
                 Sign in to Buy
               </Link>
@@ -474,7 +474,7 @@ async function PurchaseCardMembershipSection({
           </p>
           <Link
             href="/membership"
-            className="inline-flex items-center gap-2 text-small font-medium text-primary-700 transition hover:text-primary-800"
+            className="inline-flex items-center gap-2 text-small font-medium text-primary-700 transition hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
           >
             <Sparkles className="h-4 w-4" />
             Explore membership

@@ -791,7 +791,7 @@ async function ResourceDetailSuccessShell({
         {hasFile && (
           <a
             href={`/api/download/${resourceId}`}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-emerald-700"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
           >
             <Download className="h-3.5 w-3.5" />
             Download instantly
