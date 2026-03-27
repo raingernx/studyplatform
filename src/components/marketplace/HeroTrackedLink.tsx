@@ -45,6 +45,7 @@ export function HeroTrackedLink({
       prefetchMode="viewport"
       prefetchScope="hero-cta"
       prefetchLimit={2}
+      resourcesNavigationMode="auto"
     >
       {children}
     </IntentPrefetchLink>

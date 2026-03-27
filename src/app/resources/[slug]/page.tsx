@@ -21,6 +21,7 @@ import { RelatedResources } from "@/components/resource/RelatedResources";
 import { ResourceReviews } from "@/components/resource/ResourceReviews";
 import { ResourceReviewForm } from "@/components/resource/ResourceReviewForm";
 import { AutoScrollOnSuccess } from "@/components/resource/AutoScrollOnSuccess";
+import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import {
   getResourceBySlug,
@@ -494,13 +495,14 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
 
             {/* Back link */}
             <div className="border-t border-surface-200 pt-6">
-              <Link
+              <IntentPrefetchLink
                 href="/resources"
+                resourcesNavigationMode="discover"
                 className="inline-flex items-center gap-1.5 text-small font-medium text-zinc-500 transition hover:text-zinc-800"
               >
                 <BookOpen className="h-3.5 w-3.5" />
                 Discover more resources
-              </Link>
+              </IntentPrefetchLink>
             </div>
 
           </div>

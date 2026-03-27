@@ -53,6 +53,24 @@ export function canonicalizeResourcesHref(href: string) {
   return search ? `${url.pathname}?${search}` : url.pathname;
 }
 
+export function inferResourcesNavigationMode(href: string): ResourcesNavigationMode | null {
+  const canonicalHref = canonicalizeResourcesHref(href);
+
+  if (canonicalHref === "/resources") {
+    return "discover";
+  }
+
+  if (canonicalHref.startsWith("/resources?")) {
+    return "listing";
+  }
+
+  if (canonicalHref.startsWith("/resources/")) {
+    return "detail";
+  }
+
+  return null;
+}
+
 export function beginResourcesNavigation(mode: ResourcesNavigationMode, href: string) {
   state = {
     id: nextNavigationId++,

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useSearchParams, usePathname } from "next/navigation";
 import { BookOpen, Search } from "lucide-react";
 import { Button } from "@/design-system";
+import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { ResourceCard, ResourceCardSkeleton, type ResourceCardData } from "./ResourceCard";
 
@@ -93,12 +93,13 @@ export function ResourceGrid({
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
             Try a broader keyword or clear a few filters to reopen the full library.
           </p>
-          <Link
+          <IntentPrefetchLink
             href={clearFiltersHref}
+            resourcesNavigationMode="auto"
             className="mt-5 inline-flex items-center rounded-full border border-border-subtle bg-white px-4 py-2 text-sm font-medium text-text-primary transition hover:border-surface-300 hover:bg-surface-50"
           >
             Clear filters
-          </Link>
+          </IntentPrefetchLink>
         </div>
       );
     }
@@ -114,12 +115,13 @@ export function ResourceGrid({
         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
           This collection is still growing. Explore the full library or check back soon for new releases.
         </p>
-        <Link
+        <IntentPrefetchLink
           href="/resources"
+          resourcesNavigationMode="discover"
           className="mt-5 inline-flex items-center rounded-full border border-border-subtle bg-white px-4 py-2 text-sm font-medium text-text-primary transition hover:border-surface-300 hover:bg-surface-50"
         >
           Explore all resources
-        </Link>
+        </IntentPrefetchLink>
       </div>
     );
   }

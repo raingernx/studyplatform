@@ -8,6 +8,11 @@ import {
 } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import {
+  beginResourcesNavigation,
+  inferResourcesNavigationMode,
+  type ResourcesNavigationMode,
+} from "@/components/marketplace/resourcesNavigationState";
 
 const VIEWPORT_ROOT_MARGIN = "220px";
 const DEFAULT_INTENT_PREFETCH_LIMIT = 8;
@@ -27,6 +32,7 @@ type IntentPrefetchLinkProps = Omit<ComponentProps<typeof Link>, "prefetch"> & {
   prefetchMode?: "intent" | "viewport" | "none";
   prefetchScope?: string;
   prefetchLimit?: number;
+  resourcesNavigationMode?: ResourcesNavigationMode | "auto";
 };
 
 function getScopeState(scopeKey: string) {
@@ -56,6 +62,7 @@ export function IntentPrefetchLink({
   onTouchStart,
   prefetchScope = "default",
   prefetchLimit,
+  resourcesNavigationMode,
   ...props
 }: IntentPrefetchLinkProps) {
   const router = useRouter();
@@ -68,6 +75,30 @@ export function IntentPrefetchLink({
       ? DEFAULT_VIEWPORT_PREFETCH_LIMIT
       : DEFAULT_INTENT_PREFETCH_LIMIT);
   const scopeKey = `${pathname ?? "unknown"}:${prefetchScope}`;
+
+  function handleResourcesNavigation(event: Parameters<NonNullable<ComponentProps<typeof Link>["onClick"]>>[0]) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey ||
+      props.target === "_blank" ||
+      props.download != null
+    ) {
+      return;
+    }
+
+    const mode =
+      resourcesNavigationMode === "auto"
+        ? inferResourcesNavigationMode(href)
+        : resourcesNavigationMode ?? null;
+
+    if (mode) {
+      beginResourcesNavigation(mode, href);
+    }
+  }
 
   function prefetch() {
     if (prefetchedRef.current) {
@@ -151,6 +182,10 @@ export function IntentPrefetchLink({
         if (prefetchMode !== "none") {
           prefetch();
         }
+      }}
+      onClick={(event) => {
+        props.onClick?.(event);
+        handleResourcesNavigation(event);
       }}
       onFocus={(event) => {
         onFocus?.(event);
