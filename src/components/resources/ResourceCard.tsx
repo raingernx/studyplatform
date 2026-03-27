@@ -165,6 +165,70 @@ function ResourceBadge({
   return null;
 }
 
+function LibraryCardActions({
+  resource,
+}: {
+  resource: ResourceCardResource;
+}) {
+  const [downloadClicked, setDownloadClicked] = useState(false);
+
+  return (
+    <div className="mt-auto pt-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button asChild size="sm" className="h-9 flex-1 gap-1.5">
+          <a
+            href={`/api/download/${resource.id}`}
+            onClick={() => setDownloadClicked(true)}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Download className="h-3.5 w-3.5" />
+              <span>Download</span>
+            </span>
+          </a>
+        </Button>
+        {isPreviewSupported(resource.mimeType) && (
+          <Button asChild variant="outline" size="sm" className="h-9 flex-1 gap-1.5">
+            <a
+              href={`/api/preview/${resource.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Eye className="h-3.5 w-3.5" />
+                <span>Preview</span>
+              </span>
+            </a>
+          </Button>
+        )}
+        <Button asChild variant="outline" size="sm" className="h-9 flex-1 gap-1.5">
+          <IntentPrefetchLink
+            href={`/resources/${resource.slug}`}
+            prefetchScope="resource-card-library"
+            prefetchLimit={4}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span>Open</span>
+            </span>
+          </IntentPrefetchLink>
+        </Button>
+      </div>
+      {downloadClicked && (
+        <p className="mt-2.5 flex items-center gap-1.5 text-caption text-emerald-700">
+          <span className="font-medium">Downloaded ✓</span>
+          <span className="text-zinc-300" aria-hidden>•</span>
+          <Link
+            href={resource.category?.slug ? `/categories/${resource.category.slug}` : "/resources"}
+            className="text-zinc-500 underline underline-offset-2 hover:text-zinc-700"
+          >
+            Want more like this?
+          </Link>
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ── Card Body ───────────────────────────────────────────────────────────── */
 
 function CardBody({
@@ -188,7 +252,6 @@ function CardBody({
   const isHero = variant === "hero";
   const isMarketplace = variant === "marketplace";
   const [imageError, setImageError] = useState(false);
-  const [downloadClicked, setDownloadClicked] = useState(false);
   const isNew =
     isNewResource(resource.createdAt) ||
     (variant === "library" && isRecentlyPurchased(resource.downloadedAt));
@@ -315,59 +378,7 @@ function CardBody({
 
         {/* Library CTAs — pinned to bottom via mt-auto; pt-4 gives consistent gap above buttons */}
         {variant === "library" && resource.id && resource.slug && (
-          <div className="mt-auto pt-4">
-            <div className="flex flex-wrap items-center gap-2">
-            <Button asChild size="sm" className="h-9 flex-1 gap-1.5">
-              <a
-                href={`/api/download/${resource.id}`}
-                onClick={() => setDownloadClicked(true)}
-              >
-                <span className="inline-flex items-center gap-1.5">
-                  <Download className="h-3.5 w-3.5" />
-                  <span>Download</span>
-                </span>
-              </a>
-            </Button>
-            {isPreviewSupported(resource.mimeType) && (
-              <Button asChild variant="outline" size="sm" className="h-9 flex-1 gap-1.5">
-                <a
-                  href={`/api/preview/${resource.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    <Eye className="h-3.5 w-3.5" />
-                    <span>Preview</span>
-                  </span>
-                </a>
-              </Button>
-            )}
-            <Button asChild variant="outline" size="sm" className="h-9 flex-1 gap-1.5">
-              <IntentPrefetchLink
-                href={`/resources/${resource.slug}`}
-                prefetchScope="resource-card-library"
-                prefetchLimit={4}
-              >
-                <span className="inline-flex items-center gap-1.5">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  <span>Open</span>
-                </span>
-              </IntentPrefetchLink>
-            </Button>
-            </div>
-            {downloadClicked && (
-              <p className="mt-2.5 flex items-center gap-1.5 text-caption text-emerald-700">
-                <span className="font-medium">Downloaded ✓</span>
-                <span className="text-zinc-300" aria-hidden>•</span>
-                <Link
-                  href={resource.category?.slug ? `/categories/${resource.category.slug}` : "/resources"}
-                  className="text-zinc-500 underline underline-offset-2 hover:text-zinc-700"
-                >
-                  Want more like this?
-                </Link>
-              </p>
-            )}
-          </div>
+          <LibraryCardActions resource={resource} />
         )}
       </div>
     </article>

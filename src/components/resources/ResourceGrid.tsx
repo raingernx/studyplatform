@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
 import { BookOpen, Search } from "lucide-react";
 import { Button } from "@/design-system";
@@ -150,6 +150,7 @@ function ResourceGridBody({
   const appendedResources = isSameQuery ? loadState.appendedResources : [];
   const nextPage = isSameQuery ? loadState.nextPage : page + 1;
   const isLoadingMore = isSameQuery ? loadState.isLoadingMore : false;
+  const ownedIdSet = useMemo(() => new Set(ownedIds), [ownedIds]);
   const displayedResources = progressiveLoad
     ? [...resources, ...appendedResources]
     : resources;
@@ -230,7 +231,7 @@ function ResourceGridBody({
             key={resource.id}
             resource={resource}
             variant="marketplace"
-            owned={ownedIds.includes(resource.id)}
+            owned={ownedIdSet.has(resource.id)}
             priority={index < 2}
             linkPrefetchScope={cardPrefetchScope}
           />
