@@ -19,7 +19,17 @@ export default function Loading() {
 
             <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-10">
               <div className="order-1 lg:col-start-1 lg:row-start-1">
-                <LoadingSkeleton className="aspect-[4/3] w-full rounded-[28px] border border-surface-200 bg-white/80 shadow-sm" />
+                <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[80px_minmax(0,1fr)]">
+                  <div className="hidden lg:flex lg:w-20 lg:flex-col lg:gap-3">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <LoadingSkeleton
+                        key={index}
+                        className="aspect-square w-20 rounded-lg border border-surface-200 bg-white/80"
+                      />
+                    ))}
+                  </div>
+                  <LoadingSkeleton className="aspect-[4/3] min-h-[420px] w-full rounded-xl border border-surface-200 bg-white/80 shadow-sm" />
+                </div>
               </div>
 
               <div className="order-3 space-y-6 lg:col-start-1 lg:row-start-2">
