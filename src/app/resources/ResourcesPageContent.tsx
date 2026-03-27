@@ -1137,12 +1137,14 @@ async function ResourcesDiscoverRFYFinalSection({
           viewAllHref="/resources?sort=trending&category=all"
         />
         <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-          {fallbackCards.map((resource) => (
+          {fallbackCards.map((resource, index) => (
             <ResourceCard
               key={resource.id}
               resource={resource}
               variant="marketplace"
               owned={ownedIds.has(resource.id)}
+              priority={index < 2}
+              linkPrefetchMode="intent"
             />
           ))}
         </div>
@@ -1191,12 +1193,14 @@ async function ResourcesDiscoverRFYFinalSection({
         section="recommended_for_you"
       >
         <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-          {finalCards.map((resource) => (
+          {finalCards.map((resource, index) => (
             <div key={resource.id} data-resource-id={resource.id}>
               <ResourceCard
                 resource={resource}
                 variant="marketplace"
                 owned={ownedIds.has(resource.id)}
+                priority={index < 2}
+                linkPrefetchMode="intent"
               />
             </div>
           ))}
@@ -1341,12 +1345,14 @@ function RecommendedForYouFallbackSection({
         viewAllHref="/resources?sort=trending&category=all"
       />
       <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-        {resources.map((resource) => (
+        {resources.map((resource, index) => (
           <ResourceCard
             key={resource.id}
             resource={resource}
             variant="marketplace"
             owned={ownedIds.has(resource.id)}
+            priority={index < 2}
+            linkPrefetchMode="intent"
           />
         ))}
       </div>

@@ -85,6 +85,13 @@ interface ResourceCardProps {
   previewMode?: boolean;
   /** When true, tells Next.js to preload this image (use only for above-the-fold LCP cards). */
   priority?: boolean;
+  /**
+   * Controls the prefetch strategy for the card's link wrapper.
+   * Defaults to "viewport" (fires on scroll-into-view).
+   * Pass "intent" to defer until hover/focus — reduces prefetch contention
+   * when images in this row need bandwidth priority.
+   */
+  linkPrefetchMode?: "intent" | "viewport" | "none";
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -387,6 +394,7 @@ function ResourceCardInner({
   owned = false,
   previewMode = false,
   priority = false,
+  linkPrefetchMode = "viewport",
 }: ResourceCardProps) {
   const { authorName } = normalizeResource(resource);
   const effectiveVariant = variant === "preview" ? "compact" : variant ?? "marketplace";
@@ -441,7 +449,7 @@ function ResourceCardInner({
         )}
         aria-busy={isNavigating}
         onClick={handleNavigationStart}
-        prefetchMode="viewport"
+        prefetchMode={linkPrefetchMode}
         prefetchScope="resource-card-grid"
         prefetchLimit={6}
       >
