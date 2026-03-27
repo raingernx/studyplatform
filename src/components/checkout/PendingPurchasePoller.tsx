@@ -101,7 +101,6 @@ export function PendingPurchasePoller({
       }
     };
     // Run once on mount. router is stable; maxAttempts is a static prop.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Exhausted state ────────────────────────────────────────────────────────

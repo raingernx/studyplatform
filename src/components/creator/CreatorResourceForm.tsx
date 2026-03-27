@@ -139,7 +139,6 @@ export function CreatorResourceForm({
       if (timer !== undefined) clearTimeout(timer);
     };
     // scrollToField uses only stable refs and state setters — safe with empty deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusField]);
 
   const previewUrls = useMemo(() => fromPreviewTextarea(previewInput), [previewInput]);

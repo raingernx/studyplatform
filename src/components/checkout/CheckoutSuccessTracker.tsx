@@ -26,7 +26,6 @@ export function CheckoutSuccessTracker({ slug }: CheckoutSuccessTrackerProps) {
       }),
       keepalive: true,
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return null;
