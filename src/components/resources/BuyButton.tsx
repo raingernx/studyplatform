@@ -139,7 +139,7 @@ export function BuyButton({
   // ── Free claim micro-reward ───────────────────────────────────────────────
   if (justClaimed) {
     return (
-      <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 px-5 py-3 text-[14px] font-semibold text-emerald-700 animate-fade-in">
+      <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 px-5 py-3 text-[14px] font-semibold text-emerald-700">
         <CheckCircle className="h-4 w-4 text-emerald-500" />
         Saved to your library
       </div>

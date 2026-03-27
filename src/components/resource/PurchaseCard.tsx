@@ -368,7 +368,7 @@ async function PurchaseCardMiddle({
                 className={[
                   "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-primary-700 ring-1 ring-primary-600/20 ring-offset-1",
                   isReturningFromCheckout
-                    ? "ring-2 ring-emerald-400/60 ring-offset-2 animate-fade-in"
+                    ? "ring-2 ring-emerald-400/60 ring-offset-2"
                     : "",
                 ].join(" ")}
               >

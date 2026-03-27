@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Container } from "@/components/layout/container";
+import { PurchaseCardSkeleton } from "@/components/resource/PurchaseCard";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 
 export default function Loading() {
@@ -31,7 +32,7 @@ export default function Loading() {
               </div>
 
               <aside className="order-2 self-start lg:col-start-2 lg:row-start-1 lg:row-span-2">
-                <LoadingSkeleton className="h-[440px] rounded-[28px] border border-surface-200 bg-white/85 shadow-sm" />
+                <PurchaseCardSkeleton />
               </aside>
             </div>
           </div>
