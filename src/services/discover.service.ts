@@ -273,8 +273,14 @@ const readDiscoverData = unstable_cache(
   async function _getDiscoverData() {
     recordCacheMiss("getDiscoverData");
     logPerformanceEvent("cache_execute:getDiscoverData");
-    try {
-      return await runSingleFlight(DISCOVER_DATA_SINGLE_FLIGHT_KEY, async () => {
+    // No try/catch here. On pool pressure we throw so unstable_cache does NOT
+    // store empty data. rememberJson serves the last-good result from Redis on
+    // cold lambda instances. getDiscoverData() catches errors and returns an
+    // uncached empty fallback for the current request only.
+    return rememberJson(
+      CACHE_KEYS.discoverData,
+      CACHE_TTLS.homepageList,
+      () => runSingleFlight(DISCOVER_DATA_SINGLE_FLIGHT_KEY, async () => {
         const {
           trendingIds,
           popularIds,
@@ -412,15 +418,9 @@ const readDiscoverData = unstable_cache(
           recommended,
           topCreator,
         };
-      });
-    } catch (error) {
-      if (!isDiscoverPoolPressureError(error)) {
-        throw error;
-      }
-
-      console.warn("[DISCOVER_DATA_BEST_EFFORT]", error);
-      return getEmptyDiscoverData();
-    }
+      }),
+      { metricName: "discover.discoverData" },
+    );
   },
   ["discover-data"],
   { revalidate: CACHE_TTLS.homepageList, tags: ["discover"] }
@@ -428,7 +428,13 @@ const readDiscoverData = unstable_cache(
 
 export async function getDiscoverData() {
   recordCacheCall("getDiscoverData");
-  return readDiscoverData();
+  try {
+    return await readDiscoverData();
+  } catch (error) {
+    if (!isDiscoverPoolPressureError(error)) throw error;
+    console.warn("[DISCOVER_DATA_BEST_EFFORT]", error);
+    return getEmptyDiscoverData();
+  }
 }
 
 async function loadDiscoverResourcesByIds(resourceIds: string[]) {
@@ -468,7 +474,12 @@ export type DiscoverData = Awaited<ReturnType<typeof getDiscoverData>>;
 const readDiscoverCategories = unstable_cache(
   async function _getDiscoverCategories() {
     recordCacheMiss("getDiscoverCategories");
-    return findDiscoverCategoriesWithCounts();
+    return rememberJson(
+      CACHE_KEYS.discoverCategories,
+      CACHE_TTLS.homepageList,
+      () => findDiscoverCategoriesWithCounts(),
+      { metricName: "discover.discoverCategories" },
+    );
   },
   ["discover-categories"],
   { revalidate: CACHE_TTLS.homepageList, tags: ["discover"] }
