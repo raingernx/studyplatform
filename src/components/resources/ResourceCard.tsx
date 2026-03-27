@@ -230,10 +230,10 @@ function CardBody({
     <article className={articleClass}>
       {isNavigating ? (
         <>
-          <div className="pointer-events-none absolute inset-0 z-10 bg-white/50 backdrop-blur-[1px]" />
+          <div className="pointer-events-none absolute inset-0 z-10 bg-white/60" />
           <div className="pointer-events-none absolute inset-x-4 top-4 z-20 flex">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white/95 px-3 py-1.5 text-caption font-medium text-primary-700 shadow-sm">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-primary-500" aria-hidden />
+              <span className="h-2 w-2 rounded-full bg-primary-500" aria-hidden />
               <span>Opening resource…</span>
             </div>
           </div>
