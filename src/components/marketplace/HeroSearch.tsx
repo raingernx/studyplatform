@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { SearchInput } from "@/design-system";
 import { cn } from "@/lib/utils";
+import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
 
 type HeroSearchVariant = "hero" | "listing";
 
@@ -36,6 +37,10 @@ export function HeroSearch({
     setValue(searchParams.get("search") ?? "");
   }, [searchParams]);
 
+  function getNavigationMode(params: URLSearchParams) {
+    return params.get("category") || params.get("search") ? "listing" : "discover";
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (isPending) return;
@@ -46,8 +51,10 @@ export function HeroSearch({
       params.delete("search");
     }
     params.delete("page");
+    const href = `${pathname}?${params.toString()}`;
+    beginResourcesNavigation(getNavigationMode(params), href);
     startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`);
+      router.push(href);
     });
   }
 
@@ -57,8 +64,10 @@ export function HeroSearch({
     const params = new URLSearchParams(searchParams.toString());
     params.delete("search");
     params.delete("page");
+    const href = `${pathname}?${params.toString()}`;
+    beginResourcesNavigation(getNavigationMode(params), href);
     startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`);
+      router.push(href);
     });
   }
 

@@ -1338,25 +1338,6 @@ async function ResourcesDiscoverPersonalisedExtras({
   );
 }
 
-function PersonalisationFallback() {
-  return (
-    <section className="space-y-5">
-      <div className="flex flex-col gap-3 border-b border-surface-200/80 pb-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1.5">
-          <div className="h-6 w-48 animate-pulse rounded-lg bg-surface-100" />
-          <div className="h-4 w-64 animate-pulse rounded bg-surface-100" />
-        </div>
-        <div className="h-6 w-16 animate-pulse rounded-full bg-surface-100" />
-      </div>
-      <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <ResourceCardSkeleton key={index} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function RecommendedForYouFallbackSection() {
   return (
     <section className="space-y-5">

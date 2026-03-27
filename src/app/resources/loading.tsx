@@ -1,5 +1,5 @@
-import { ResourcesLoadingState } from "@/app/resources/ResourcesLoadingState";
+import { ResourcesRouteSkeleton } from "@/components/skeletons/ResourcesRouteSkeleton";
 
 export default function Loading() {
-  return <ResourcesLoadingState />;
+  return <ResourcesRouteSkeleton />;
 }

@@ -6,8 +6,8 @@ import { ResourceCardSkeleton } from "@/components/resources/ResourceCardSkeleto
 import { ResourcesIntroSectionSkeleton } from "@/components/skeletons/ResourcesIntroSectionSkeleton";
 
 /**
- * Neutral route-level skeleton for /resources — used by the loading.tsx that
- * fires on ALL client-side navigations to this route, regardless of mode.
+ * Neutral route-level skeleton for /resources — used by loading.tsx for all
+ * client-side navigations to this route, regardless of mode.
  *
  * The problem: loading.tsx receives no search params, so it cannot know
  * whether the page will render in discover mode (no category/search) or
@@ -25,8 +25,9 @@ import { ResourcesIntroSectionSkeleton } from "@/components/skeletons/ResourcesI
  * - FilterBar toolbar (browse-only)
  * - Named section headers / "Browse by category" grid (discover-only)
  *
- * ResourcesPageSkeleton  — kept for discover-mode storybook / preview use
- * BrowseResultsPageSkeleton — kept for browse-mode storybook / preview use
+ * This is the authoritative route-level shell. More specific discover/listing
+ * skeleton variants were retired to avoid mode switching before the page's own
+ * streamed fallbacks take over.
  */
 export function ResourcesRouteSkeleton() {
   return (
