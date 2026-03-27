@@ -478,18 +478,31 @@ async function ResourcesDiscoverDeferredSections({
     (resource) => !ownedIds.has(resource.id),
   );
   const recommendationVariant = userId ? assignRecommendationVariant(userId) : null;
-  const personalisedContentPromise =
-    userId
-      ? trackRequestWork(
-          ResourcesDiscoverPersonalisedSection({
-            learningProfilePromise,
-            recommendationVariant,
-            ownedIds,
-            globalFiltered,
-            userId,
-          }),
-        )
-      : null;
+  // Two independent Suspense paths instead of one deeply nested chain:
+  //   A) RFY section — single Suspense, always resolves to exactly 5 cards
+  //   B) Extras (becauseYouStudied, recommendedForLevel) — separate Suspense,
+  //      placed after main sections so it extends below the fold rather than
+  //      expanding the middle of the page
+  const recommendedForYouFinalPromise = userId
+    ? trackRequestWork(
+        ResourcesDiscoverRFYFinalSection({
+          learningProfilePromise,
+          recommendationVariant,
+          ownedIds,
+          globalFiltered,
+          userId,
+        }),
+      )
+    : null;
+  const personalisedExtrasPromise = userId
+    ? trackRequestWork(
+        ResourcesDiscoverPersonalisedExtras({
+          learningProfilePromise,
+          ownedIds,
+          globalFiltered,
+        }),
+      )
+    : null;
 
   return (
     <div className="space-y-16 lg:space-y-20">
@@ -554,9 +567,9 @@ async function ResourcesDiscoverDeferredSections({
         </section>
       ) : null}
 
-      {personalisedContentPromise ? (
+      {recommendedForYouFinalPromise ? (
         <Suspense fallback={<RecommendedForYouFallbackSection resources={globalFiltered.slice(0, 5)} ownedIds={ownedIds} />}>
-          <AwaitResolvedNode promise={personalisedContentPromise} />
+          <AwaitResolvedNode promise={recommendedForYouFinalPromise} />
         </Suspense>
       ) : globalFiltered.slice(0, 5).length > 0 ? (
         <section className="space-y-5">
@@ -659,6 +672,14 @@ async function ResourcesDiscoverDeferredSections({
         </section>
       ) : null}
 
+      {/* Extra personalised sections (becauseYouStudied, recommendedForLevel) appear
+          below the fold — they extend the page rather than disrupting the main layout */}
+      {personalisedExtrasPromise ? (
+        <Suspense fallback={null}>
+          <AwaitResolvedNode promise={personalisedExtrasPromise} />
+        </Suspense>
+      ) : null}
+
       <CreatorCTA />
       {BLOG_SECTION_ENABLED ? <BlogSection /> : null}
       <EmailSignup />
@@ -666,37 +687,8 @@ async function ResourcesDiscoverDeferredSections({
   );
 }
 
-async function ResourcesDiscoverPersonalisedSection({
-  learningProfilePromise,
-  recommendationVariant,
-  ownedIds,
-  globalFiltered,
-  userId,
-}: {
-  learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null>;
-  recommendationVariant: RecommendationVariant | null;
-  ownedIds: Set<string>;
-  globalFiltered: ResourceCardData[];
-  userId: string;
-}) {
-  const learningProfile = await learningProfilePromise;
-
-  if (!learningProfile?.hasHistory) {
-    return null;
-  }
-
-  return DiscoverPersonalisedContent({
-    userId,
-    topCategoryIds: learningProfile.topCategories.map((item) => item.id),
-    personalizedLevelIds: learningProfile.preferredLevels,
-    recentCategoryId: learningProfile.recentCategoryId ?? null,
-    recentStudyTitle: learningProfile.recentStudyTitle ?? null,
-    recentCategoryName: learningProfile.recentCategoryName ?? null,
-    ownedIds,
-    globalFiltered,
-    recommendationVariant,
-  });
-}
+// ResourcesDiscoverPersonalisedSection removed — replaced by
+// ResourcesDiscoverRFYFinalSection + ResourcesDiscoverPersonalisedExtras below.
 
 async function DiscoverCategoryBrowseSection({
   discoverCategoriesPromise,
@@ -1107,60 +1099,161 @@ export function ResourcesContentFallback({ isDiscoverMode }: { isDiscoverMode: b
   );
 }
 
-async function DiscoverPersonalisedContent({
-  userId,
-  topCategoryIds,
-  personalizedLevelIds,
-  recentCategoryId,
-  recentStudyTitle,
-  recentCategoryName,
+// ── Recommended for you — single-Suspense path ────────────────────────────────
+//
+// Resolves to EXACTLY 5 cards in all cases:
+//   • No history → returns the same 5 globalFiltered cards as the fallback
+//     (swap is invisible — same data, same structure)
+//   • Has history + recs found → returns 5 personalized cards
+//   • Has history + no recs → falls back to 5 globalFiltered cards
+//
+// This eliminates the double-swap: the old chain resolved to extra sections +
+// an inner Suspense, causing two visible DOM replacements and layout growth.
+
+async function ResourcesDiscoverRFYFinalSection({
+  learningProfilePromise,
+  recommendationVariant,
   ownedIds,
   globalFiltered,
-  recommendationVariant,
+  userId,
 }: {
-  userId: string;
-  topCategoryIds: string[];
-  personalizedLevelIds: Array<"BEGINNER" | "INTERMEDIATE" | "ADVANCED">;
-  recentCategoryId: string | null;
-  recentStudyTitle: string | null;
-  recentCategoryName: string | null;
+  learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null>;
+  recommendationVariant: RecommendationVariant | null;
   ownedIds: Set<string>;
   globalFiltered: ResourceCardData[];
-  recommendationVariant: RecommendationVariant | null;
+  userId: string;
 }) {
-  const becauseYouStudiedPromise = recentCategoryId
-      ? getCachedNewResourcesInCategories([recentCategoryId], 8).then((resources) =>
-          resources.filter((resource) => !ownedIds.has(resource.id)).slice(0, 5),
-        )
-      : Promise.resolve([] as ResourceCardData[]);
-  const recommendedForLevelPromise = personalizedLevelIds.length > 0
-      ? getCachedRecommendedResourcesByLevels(personalizedLevelIds, 6).then((resources) =>
-          resources.filter((resource) => !ownedIds.has(resource.id)).slice(0, 4),
-        )
-      : Promise.resolve([] as ResourceCardData[]);
-  const recommendedForYouPromise: Promise<ResourceCardData[]> =
-    (recommendationVariant === "phase1"
+  const fallbackCards = globalFiltered.slice(0, 5);
+  const learningProfile = await learningProfilePromise;
+
+  // No purchase history — resolve to same 5 cards as fallback (invisible swap)
+  if (!learningProfile?.hasHistory) {
+    if (fallbackCards.length === 0) return null;
+    return (
+      <section className="space-y-5">
+        <SectionHeader
+          title="Recommended for you"
+          description="A focused set of picks to help you keep momentum without sorting through the whole library."
+          viewAllHref="/resources?sort=trending&category=all"
+        />
+        <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+          {fallbackCards.map((resource) => (
+            <ResourceCard
+              key={resource.id}
+              resource={resource}
+              variant="marketplace"
+              owned={ownedIds.has(resource.id)}
+            />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  const topCategoryIds = learningProfile.topCategories.map((item) => item.id);
+  const recommendedForYou = (await (
+    recommendationVariant === "phase1"
       ? getPhase1Recommendations(topCategoryIds, ownedIds, globalFiltered, 5)
-      : getBehaviorBasedRecommendations(
-          userId,
-          ownedIds,
-          topCategoryIds,
-          globalFiltered,
-          5,
-        )) as Promise<ResourceCardData[]>;
+      : getBehaviorBasedRecommendations(userId, ownedIds, topCategoryIds, globalFiltered, 5)
+  )) as ResourceCardData[];
+
+  // Fire analytics impression events (non-blocking)
+  if (recommendationVariant && recommendedForYou.length > 0) {
+    void recordAnalyticsEvents(
+      recommendedForYou.map((resource, position) => ({
+        eventType: "RESOURCE_VIEW" as const,
+        userId,
+        resourceId: resource.id,
+        metadata: {
+          source: "recommendation_impression",
+          experiment: RECOMMENDATION_EXPERIMENT_ID,
+          variant: recommendationVariant,
+          section: "recommended_for_you",
+          position,
+        },
+      })),
+    ).catch(() => undefined);
+  }
+
+  // Personalized if available, fallback otherwise — always exactly 5 cards
+  const finalCards = (recommendedForYou.length > 0 ? recommendedForYou : globalFiltered).slice(0, 5);
+  if (finalCards.length === 0) return null;
+
+  return (
+    <section className="space-y-5">
+      <SectionHeader
+        title="Recommended for you"
+        description="A focused set of picks to help you keep momentum without sorting through the whole library."
+        viewAllHref="/resources?sort=trending&category=all"
+      />
+      <RecommendationSection
+        variant={recommendationVariant}
+        section="recommended_for_you"
+      >
+        <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+          {finalCards.map((resource) => (
+            <div key={resource.id} data-resource-id={resource.id}>
+              <ResourceCard
+                resource={resource}
+                variant="marketplace"
+                owned={ownedIds.has(resource.id)}
+              />
+            </div>
+          ))}
+        </div>
+      </RecommendationSection>
+    </section>
+  );
+}
+
+// ── Personalised extras — separate Suspense, placed after main sections ────────
+//
+// Because you studied + Recommended for your level.
+// Rendered below the fold (after mostDownloaded), so their late arrival
+// extends the page downward rather than shifting content in the visible area.
+
+async function ResourcesDiscoverPersonalisedExtras({
+  learningProfilePromise,
+  ownedIds,
+  globalFiltered,
+}: {
+  learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null>;
+  ownedIds: Set<string>;
+  globalFiltered: ResourceCardData[];
+}) {
+  const learningProfile = await learningProfilePromise;
+
+  if (!learningProfile?.hasHistory) {
+    return null;
+  }
+
+  const recentCategoryId = learningProfile.recentCategoryId ?? null;
+  const personalizedLevelIds = learningProfile.preferredLevels;
+  const recentStudyTitle = learningProfile.recentStudyTitle ?? null;
+  const recentCategoryName = learningProfile.recentCategoryName ?? null;
+
+  const becauseYouStudiedPromise = recentCategoryId
+    ? getCachedNewResourcesInCategories([recentCategoryId], 8).then((resources) =>
+        resources.filter((resource) => !ownedIds.has(resource.id)).slice(0, 5),
+      )
+    : Promise.resolve([] as ResourceCardData[]);
+  const recommendedForLevelPromise = personalizedLevelIds.length > 0
+    ? getCachedRecommendedResourcesByLevels(personalizedLevelIds, 6).then((resources) =>
+        resources.filter((resource) => !ownedIds.has(resource.id)).slice(0, 4),
+      )
+    : Promise.resolve([] as ResourceCardData[]);
+
   const [becauseYouStudied, recommendedForLevel] = await Promise.all([
     becauseYouStudiedPromise,
     recommendedForLevelPromise,
   ]);
 
-  const recommendedForYouSectionPromise = trackRequestWork(
-    RecommendedForYouSection({
-      ownedIds,
-      recommendationVariant,
-      recommendedForYouPromise,
-      userId,
-    }),
-  );
+  if (
+    !((becauseYouStudied as ResourceCardData[]).length > 0 && recentStudyTitle && recentCategoryName) &&
+    !((recommendedForLevel as ResourceCardData[]).length > 0 && personalizedLevelIds.length > 0)
+  ) {
+    return null;
+  }
 
   return (
     <>
@@ -1209,72 +1302,7 @@ async function DiscoverPersonalisedContent({
           </div>
         </section>
       ) : null}
-
-      <Suspense fallback={<RecommendedForYouFallbackSection resources={globalFiltered.slice(0, 5)} ownedIds={ownedIds} />}>
-        <AwaitResolvedNode promise={recommendedForYouSectionPromise} />
-      </Suspense>
     </>
-  );
-}
-
-async function RecommendedForYouSection({
-  ownedIds,
-  recommendationVariant,
-  recommendedForYouPromise,
-  userId,
-}: {
-  ownedIds: Set<string>;
-  recommendationVariant: RecommendationVariant | null;
-  recommendedForYouPromise: Promise<ResourceCardData[]>;
-  userId: string;
-}) {
-  const recommendedForYou = await recommendedForYouPromise;
-
-  if (recommendationVariant && recommendedForYou.length > 0) {
-    void recordAnalyticsEvents(
-      recommendedForYou.map((resource, position) => ({
-        eventType: "RESOURCE_VIEW" as const,
-        userId,
-        resourceId: resource.id,
-        metadata: {
-          source: "recommendation_impression",
-          experiment: RECOMMENDATION_EXPERIMENT_ID,
-          variant: recommendationVariant,
-          section: "recommended_for_you",
-          position,
-        },
-      })),
-    ).catch(() => undefined);
-  }
-
-  if (recommendedForYou.length === 0) {
-    return null;
-  }
-
-  return (
-    <section className="space-y-5">
-      <SectionHeader
-        title="Recommended for you"
-        description="A focused set of picks to help you keep momentum without sorting through the whole library."
-        viewAllHref="/resources?sort=trending&category=all"
-      />
-      <RecommendationSection
-        variant={recommendationVariant}
-        section="recommended_for_you"
-      >
-        <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-          {recommendedForYou.map((resource) => (
-            <div key={resource.id} data-resource-id={resource.id}>
-              <ResourceCard
-                resource={resource}
-                variant="marketplace"
-                owned={ownedIds.has(resource.id)}
-              />
-            </div>
-          ))}
-        </div>
-      </RecommendationSection>
-    </section>
   );
 }
 
