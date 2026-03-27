@@ -555,7 +555,7 @@ async function ResourcesDiscoverDeferredSections({
       ) : null}
 
       {personalisedContentPromise ? (
-        <Suspense fallback={null}>
+        <Suspense fallback={<DiscoverSectionsFallback />}>
           <AwaitResolvedNode promise={personalisedContentPromise} />
         </Suspense>
       ) : globalFiltered.slice(0, 5).length > 0 ? (

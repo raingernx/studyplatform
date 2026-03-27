@@ -166,12 +166,13 @@ export function ResourceGrid({
     <div ref={gridContainerRef} className="space-y-8">
       {/* ── Grid: consistent height, no vertical stretch; 16:10 thumb prevents layout shift ── */}
       <div className={RESOURCE_GRID_CLASSES}>
-        {displayedResources.map((resource) => (
+        {displayedResources.map((resource, index) => (
           <ResourceCard
             key={resource.id}
             resource={resource}
             variant="marketplace"
             owned={ownedIds.includes(resource.id)}
+            priority={index < 2}
           />
         ))}
       </div>

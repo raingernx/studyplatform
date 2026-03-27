@@ -83,6 +83,8 @@ interface ResourceCardProps {
   owned?: boolean;
   /** When true, renders as a static, non-clickable preview (no marketplace link wrapping). */
   previewMode?: boolean;
+  /** When true, tells Next.js to preload this image (use only for above-the-fold LCP cards). */
+  priority?: boolean;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -164,6 +166,7 @@ function CardBody({
   authorName,
   isOwned,
   isNavigating = false,
+  priority = false,
 }: {
   resource: ResourceCardResource;
   variant: ResourceCardVariant;
@@ -171,6 +174,7 @@ function CardBody({
   authorName: string | null;
   isOwned: boolean;
   isNavigating?: boolean;
+  priority?: boolean;
 }) {
   const isFree = resource.isFree ?? (resource.price === 0 || !resource.price);
   const isHero = variant === "hero";
@@ -240,6 +244,7 @@ function CardBody({
             onError={() => {
               setImageError(true);
             }}
+            priority={priority}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
@@ -381,6 +386,7 @@ function ResourceCardInner({
   size = "md",
   owned = false,
   previewMode = false,
+  priority = false,
 }: ResourceCardProps) {
   const { authorName } = normalizeResource(resource);
   const effectiveVariant = variant === "preview" ? "compact" : variant ?? "marketplace";
@@ -412,6 +418,7 @@ function ResourceCardInner({
     authorName,
     isOwned,
     isNavigating,
+    priority,
   };
 
   // Library and previewMode cards are not wrapped in a Link (they have their own CTA buttons or are static previews)

@@ -9,7 +9,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Container } from "@/components/layout/container";
 import { AlertCircle, BookOpen, CheckCircle, Download } from "lucide-react";
 import Link from "next/link";
-import { formatFileSize, formatNumber } from "@/lib/format";
+import { formatFileSize } from "@/lib/format";
 import { ResourceHeader } from "@/components/resource/ResourceHeader";
 import { ResourceGallery } from "@/components/resource/ResourceGallery";
 import { PurchaseCard } from "@/components/resource/PurchaseCard";
@@ -265,19 +265,10 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
           )
         : Promise.resolve({ isOwned: false });
 
-      const [{ isOwned }, trustSummary] = await Promise.all([
-        ownershipPromise,
-        trustSummaryPromise,
-      ]);
-
       const requestHeaders = await requestHeadersPromise;
       const userAgent = requestHeaders.get("user-agent");
       const hasFile = Boolean(resource.fileUrl ?? resource.fileKey);
-  // True when the user has just returned from a payment provider but the
-  // webhook has not yet flipped their Purchase row to COMPLETED.
-  // Guard: requires an authenticated session — anonymous users can never own.
-  const isReturningFromCheckout = paymentStatus === "success";
-  const isPendingPurchase = isReturningFromCheckout && !isOwned && !!userId;
+      const isReturningFromCheckout = paymentStatus === "success";
 
   const fallbackPreviewUrl = resource.previewUrl ?? resource.previews[0]?.imageUrl ?? null;
   const includedFiles = buildIncludedFiles(resource);
@@ -300,28 +291,6 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
     },
   }).catch(() => {});
 
-  const purchaseCardResource = {
-    id: resource.id,
-    title: resource.title,
-    slug: resource.slug,
-    price: resource.price,
-    isFree: resource.isFree || resource.price === 0,
-    type: resource.type,
-    downloadCount: resource.resourceStat?.downloads ?? resource.downloadCount,
-    author: resource.author,
-    category: resource.category,
-    mimeType: resource.mimeType ?? null,
-    fileSize: resource.fileSize ?? undefined,
-    updatedAt: resource.updatedAt ?? undefined,
-    averageRating: trustSummary.averageRating,
-    reviewCount: trustSummary.totalReviews,
-    salesCount: trustSummary.totalSales,
-    recentDownloads: resource.resourceStat?.last30dDownloads ?? 0,
-    recentSales: resource.resourceStat?.last30dPurchases ?? 0,
-    levelLabel,
-    outcomeHint,
-  };
-
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
@@ -342,9 +311,6 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
               creatorName={resource.author.name}
               creatorHref={resource.author.creatorSlug ? `/creators/${resource.author.creatorSlug}` : null}
               featured={resource.featured}
-              averageRating={trustSummary.averageRating}
-              reviewCount={trustSummary.totalReviews}
-              salesCount={trustSummary.totalSales}
               downloadCount={resource.resourceStat?.downloads ?? resource.downloadCount}
             />
 
@@ -354,29 +320,14 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
               Show a brief reassurance notice. The PurchaseCard below already
               displays the Download button in owned state.
             */}
-            {isReturningFromCheckout && isOwned && (
-              <div className="flex items-center justify-between gap-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-5 py-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
-                  <div>
-                    <p className="text-[14px] font-semibold text-emerald-800">
-                      Payment confirmed — your file is ready.
-                    </p>
-                    <p className="mt-0.5 text-[13px] text-emerald-700">
-                      Added to your library.
-                    </p>
-                  </div>
-                </div>
-                {hasFile && (
-                  <a
-                    href={`/api/download/${resource.id}`}
-                    className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-emerald-700"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    Download instantly
-                  </a>
-                )}
-              </div>
+            {isReturningFromCheckout && (
+              <Suspense fallback={null}>
+                <ResourceDetailSuccessShell
+                  ownershipPromise={ownershipPromise}
+                  hasFile={hasFile}
+                  resourceId={resource.id}
+                />
+              </Suspense>
             )}
 
             {paymentStatus === "cancelled" && (
@@ -387,8 +338,6 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                 </p>
               </div>
             )}
-
-            <AutoScrollOnSuccess enabled={isReturningFromCheckout && isOwned} />
 
             {/* ── Main two-column grid ────────────────────────────────────── */}
             {/*
@@ -413,21 +362,21 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
               <div className="order-3 space-y-7 lg:col-start-1 lg:row-start-2">
 
                 <section className="space-y-4 border-t border-surface-200 pt-5">
-                  {((purchaseCardResource.fileSize != null && purchaseCardResource.fileSize > 0) ||
-                    purchaseCardResource.type ||
+                  {((resource.fileSize != null && resource.fileSize > 0) ||
+                    resource.type ||
                     hasFile) && (
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-small text-zinc-500">
                       <span className="font-medium text-zinc-700">Included</span>
-                      {purchaseCardResource.type && (
+                      {resource.type && (
                         <span>
-                          {purchaseCardResource.type === "PDF"
+                          {resource.type === "PDF"
                             ? "PDF document"
-                            : purchaseCardResource.type}
+                            : resource.type}
                         </span>
                       )}
-                      {purchaseCardResource.fileSize != null &&
-                        purchaseCardResource.fileSize > 0 && (
-                          <span>{formatFileSize(purchaseCardResource.fileSize)}</span>
+                      {resource.fileSize != null &&
+                        resource.fileSize > 0 && (
+                          <span>{formatFileSize(resource.fileSize)}</span>
                         )}
                       {hasFile && <span className="text-emerald-600">Ready to download</span>}
                     </div>
@@ -481,7 +430,16 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                 </section>
 
                 {/* 4. About + 5. Included files */}
-                <Suspense fallback={null}>
+                <Suspense fallback={
+                  <div className="space-y-3 py-2">
+                    <div className="h-5 w-24 animate-pulse rounded-lg bg-surface-100" />
+                    <div className="space-y-2">
+                      <div className="h-4 w-full animate-pulse rounded bg-surface-100" />
+                      <div className="h-4 w-5/6 animate-pulse rounded bg-surface-100" />
+                      <div className="h-4 w-4/6 animate-pulse rounded bg-surface-100" />
+                    </div>
+                  </div>
+                }>
                   <ResourceDetailBodySection
                     includedFiles={includedFiles}
                     slug={resource.slug}
@@ -491,7 +449,7 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                 {/* 6. Reviews */}
                 <Suspense fallback={null}>
                   <ResourceDetailReviewSection
-                    isOwned={isOwned}
+                    ownershipPromise={ownershipPromise}
                     resourceId={resource.id}
                     resourceTitle={resource.title}
                     userId={userId}
@@ -507,24 +465,18 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
 
               {/* PURCHASE CARD — order-2 mobile, col-2 rows 1–2 desktop */}
               <aside id="purchase-card" className="order-2 self-start lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-24">
-                {/*
-                  isPendingPurchase: user just paid but webhook hasn't
-                  processed yet. Show the polling confirmation card instead
-                  of PurchaseCard to prevent a 403 on an early download
-                  attempt. Once router.refresh() sees isOwned=true the
-                  Server Component re-renders this slot with PurchaseCard.
-                */}
-                {isPendingPurchase ? (
-                  <PendingPurchasePoller resourceTitle={resource.title} />
-                ) : (
-                  <PurchaseCard
-                    resource={purchaseCardResource}
-                    isOwned={isOwned}
-                    hasFile={hasFile}
+                <Suspense fallback={<div className="h-[440px] rounded-[28px] border border-surface-200 bg-white/85 shadow-sm" />}>
+                  <ResourceDetailPurchaseCard
+                    resource={resource}
                     session={session}
-                    isReturningFromCheckout={isReturningFromCheckout && isOwned}
+                    ownershipPromise={ownershipPromise}
+                    trustSummaryPromise={trustSummaryPromise}
+                    isReturningFromCheckout={isReturningFromCheckout}
+                    hasFile={hasFile}
+                    levelLabel={levelLabel}
+                    outcomeHint={outcomeHint}
                   />
-                )}
+                </Suspense>
               </aside>
             </div>
 
@@ -534,8 +486,8 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                 currentDownloads={resource.resourceStat?.downloads ?? resource.downloadCount ?? 0}
                 currentIsFree={resource.isFree || resource.price === 0}
                 currentPrice={resource.price ?? 0}
-                currentRating={trustSummary.averageRating ?? 0}
-                currentSales={trustSummary.totalSales ?? 0}
+                currentRating={resource.averageRating ?? 0}
+                currentSales={resource.resourceStat?.purchases ?? 0}
                 categoryId={resource.categoryId}
                 resourceId={resource.id}
                 userId={userId}
@@ -566,13 +518,14 @@ async function ResourceDetailReviewSection({
   resourceId,
   resourceTitle,
   userId,
-  isOwned,
+  ownershipPromise,
 }: {
   resourceId: string;
   resourceTitle: string;
   userId?: string;
-  isOwned: boolean;
+  ownershipPromise: Promise<{ isOwned: boolean }>;
 }) {
+  const { isOwned } = await ownershipPromise;
   const { reviews, viewerReview } = await traceServerStep(
     "resource_detail.getResourceDetailReviewSection",
     () =>
@@ -710,5 +663,111 @@ async function ResourceDetailFooterSection({
       <TagList tags={content.tags.map((resourceTag) => resourceTag.tag)} />
       <CreatorCard creator={content.author} />
     </>
+  );
+}
+
+// ── Deferred components that share the ownership/trust promises ────────────────
+
+async function ResourceDetailSuccessShell({
+  ownershipPromise,
+  hasFile,
+  resourceId,
+}: {
+  ownershipPromise: Promise<{ isOwned: boolean }>;
+  hasFile: boolean;
+  resourceId: string;
+}) {
+  const { isOwned } = await ownershipPromise;
+  if (!isOwned) return null;
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-5 py-4">
+        <div className="flex items-start gap-3">
+          <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
+          <div>
+            <p className="text-[14px] font-semibold text-emerald-800">
+              Payment confirmed — your file is ready.
+            </p>
+            <p className="mt-0.5 text-[13px] text-emerald-700">
+              Added to your library.
+            </p>
+          </div>
+        </div>
+        {hasFile && (
+          <a
+            href={`/api/download/${resourceId}`}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-emerald-700"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download instantly
+          </a>
+        )}
+      </div>
+      <AutoScrollOnSuccess enabled />
+    </>
+  );
+}
+
+async function ResourceDetailPurchaseCard({
+  resource,
+  session,
+  ownershipPromise,
+  trustSummaryPromise,
+  isReturningFromCheckout,
+  hasFile,
+  levelLabel,
+  outcomeHint,
+}: {
+  resource: NonNullable<Awaited<ReturnType<typeof getResourceBySlug>>>;
+  session: Awaited<ReturnType<typeof getOptionalSession>>;
+  ownershipPromise: Promise<{ isOwned: boolean }>;
+  trustSummaryPromise: Promise<{ averageRating: number | null; totalReviews: number; totalSales: number }>;
+  isReturningFromCheckout: boolean;
+  hasFile: boolean;
+  levelLabel: string | null;
+  outcomeHint: string;
+}) {
+  const [{ isOwned }, trustSummary] = await Promise.all([
+    ownershipPromise,
+    trustSummaryPromise,
+  ]);
+  const userId = session?.user?.id;
+  const isPendingPurchase = isReturningFromCheckout && !isOwned && !!userId;
+
+  const purchaseCardResource = {
+    id: resource.id,
+    title: resource.title,
+    slug: resource.slug,
+    price: resource.price,
+    isFree: resource.isFree || resource.price === 0,
+    type: resource.type,
+    downloadCount: resource.resourceStat?.downloads ?? resource.downloadCount,
+    author: resource.author,
+    category: resource.category,
+    mimeType: resource.mimeType ?? null,
+    fileSize: resource.fileSize ?? undefined,
+    updatedAt: resource.updatedAt ?? undefined,
+    averageRating: trustSummary.averageRating,
+    reviewCount: trustSummary.totalReviews,
+    salesCount: trustSummary.totalSales,
+    recentDownloads: resource.resourceStat?.last30dDownloads ?? 0,
+    recentSales: resource.resourceStat?.last30dPurchases ?? 0,
+    levelLabel,
+    outcomeHint,
+  };
+
+  if (isPendingPurchase) {
+    return <PendingPurchasePoller resourceTitle={resource.title} />;
+  }
+
+  return (
+    <PurchaseCard
+      resource={purchaseCardResource}
+      isOwned={isOwned}
+      hasFile={hasFile}
+      session={session}
+      isReturningFromCheckout={isReturningFromCheckout && isOwned}
+    />
   );
 }
