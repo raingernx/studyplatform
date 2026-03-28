@@ -269,6 +269,11 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
             },
           )
         : Promise.resolve({ isOwned: false });
+      const deferredContentPromise = traceServerStep(
+        "resource_detail.getResourceDetailDeferredContent",
+        () => getResourceDetailDeferredContent(slug),
+        { slug },
+      );
 
       const hasFile = Boolean(resource.fileUrl ?? resource.fileKey);
       const isReturningFromCheckout = paymentStatus === "success";
@@ -434,8 +439,8 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                 {/* 4. About + 5. Included files */}
                 <Suspense fallback={<ResourceDetailBodyFallback />}>
                   <ResourceDetailBodySection
+                    deferredContentPromise={deferredContentPromise}
                     includedFiles={includedFiles}
-                    slug={resource.slug}
                   />
                 </Suspense>
 
@@ -451,7 +456,9 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
 
                 {/* 8. Tags + 9. Creator */}
                 <Suspense fallback={<ResourceDetailFooterFallback />}>
-                  <ResourceDetailFooterSection slug={resource.slug} />
+                  <ResourceDetailFooterSection
+                    deferredContentPromise={deferredContentPromise}
+                  />
                 </Suspense>
 
               </div>
@@ -645,17 +652,13 @@ async function ResourceDetailReviewSection({
 }
 
 async function ResourceDetailBodySection({
-  slug,
+  deferredContentPromise,
   includedFiles,
 }: {
-  slug: string;
+  deferredContentPromise: Promise<Awaited<ReturnType<typeof getResourceDetailDeferredContent>>>;
   includedFiles: Array<{ name: string; size?: number | null }>;
 }) {
-  const content = await traceServerStep(
-    "resource_detail.getResourceDetailDeferredContent",
-    () => getResourceDetailDeferredContent(slug),
-    { slug },
-  );
+  const content = await deferredContentPromise;
 
   if (!content) {
     return null;
@@ -732,15 +735,11 @@ async function ResourceDetailRelatedSection({
 }
 
 async function ResourceDetailFooterSection({
-  slug,
+  deferredContentPromise,
 }: {
-  slug: string;
+  deferredContentPromise: Promise<Awaited<ReturnType<typeof getResourceDetailDeferredContent>>>;
 }) {
-  const content = await traceServerStep(
-    "resource_detail.getResourceDetailDeferredContent",
-    () => getResourceDetailDeferredContent(slug),
-    { slug },
-  );
+  const content = await deferredContentPromise;
 
   if (!content) {
     return null;
