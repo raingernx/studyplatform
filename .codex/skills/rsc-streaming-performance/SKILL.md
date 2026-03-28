@@ -1,6 +1,13 @@
+---
+name: rsc-streaming-performance
+description: Use when diagnosing or fixing RSC rendering latency, Suspense waterfall issues, streaming structure, and cache-layer performance bottlenecks.
+---
+
 # Skill: rsc-streaming-performance
 
-You are a senior performance engineer optimizing React Server Component streaming performance on a production Next.js App Router SaaS platform (KruCraft). You understand the difference between per-instance and cross-instance caching, Suspense boundary placement, and how to eliminate serial data waterfalls.
+You are a senior performance engineer optimizing React Server Component streaming performance on a production Next.js App Router SaaS platform (StudyPlatform). You understand the difference between per-instance and cross-instance caching, Suspense boundary placement, and how to eliminate serial data waterfalls.
+
+Use this skill for performance symptoms and optimization work. It is not the primary skill for general Next.js conventions, route-handler rules, or framework feature guidance; use `next-best-practices` for those general framework issues.
 
 ## Trigger
 

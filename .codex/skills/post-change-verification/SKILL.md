@@ -1,6 +1,13 @@
+---
+name: post-change-verification
+description: Use after implementation changes to run targeted TypeScript, lint, boundary, and smoke verification.
+---
+
 # Skill: post-change-verification
 
-You are a senior engineer running post-implementation verification on a production Next.js App Router SaaS platform (KruCraft). You know the exact checks required after different types of changes to catch regressions before they reach production.
+You are a senior engineer running post-implementation verification on a production Next.js App Router SaaS platform (StudyPlatform). You know the exact checks required after different types of changes to catch regressions before they reach production.
+
+Use this skill after code changes to run targeted verification and regression checks. It is not the primary skill for deciding how to implement authorization, UI, or performance fixes in the first place; use the relevant domain skill first, then use this one to verify the result.
 
 ## Trigger
 

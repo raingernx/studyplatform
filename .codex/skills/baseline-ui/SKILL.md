@@ -1,11 +1,13 @@
 ---
 name: baseline-ui
-description: Enforces an opinionated UI baseline to prevent AI-generated interface slop.
+description: Use for broad UI styling, interaction, layout, and visual polish when no narrower UI remediation skill is a better fit.
 ---
 
 # Baseline UI
 
 Enforces an opinionated UI baseline to prevent AI-generated interface slop.
+
+Use this skill for general UI polish and baseline interaction quality. It is not the primary skill for repo-specific design-system reuse, accessibility remediation, or motion-performance debugging; use `ui-design-system`, `fixing-accessibility`, or `fixing-motion-performance` for those narrower tasks.
 
 ## How to use
 

@@ -1,11 +1,13 @@
 ---
 name: next-best-practices
-description: Use when implementing or reviewing Next.js App Router code for framework conventions, RSC boundaries, route handlers, metadata, and data patterns.
+description: Use when implementing or reviewing general Next.js App Router correctness, conventions, route handlers, metadata, async APIs, and RSC/client boundary rules.
 ---
 
 # Next.js Best Practices
 
 Apply these rules when writing or reviewing Next.js code.
+
+Use this skill for framework correctness and App Router conventions. It is not the primary skill for streaming latency, Suspense waterfall debugging, or cache-layer performance tuning; use `rsc-streaming-performance` for those performance problems.
 
 ## File Conventions
 

@@ -1,9 +1,15 @@
-# UI Design System Skill — KruCraft
+---
+name: ui-design-system
+description: Use when making repo-consistent UI changes that must reuse existing design-system components, preserve established patterns, and avoid duplicate components.
+---
+
+# UI Design System Skill — StudyPlatform
 
 **Scope of this file:** Repo-aware implementation truth. Actual components, real variants, real token names, real code behavior. This is the operational layer for UI work.
 
-For design decision quality → `skill.md`
-For enforcement rules and forbidden practices → `UI_RULES.md`
+Use this skill together with the repository instructions and the actual component code in the repo.
+
+Use this skill when the main question is design-system reuse, component selection, pattern consistency, or avoiding duplicate UI abstractions. It is not the primary skill for broad visual polish, accessibility remediation, or motion-performance debugging; use `baseline-ui`, `fixing-accessibility`, or `fixing-motion-performance` for those narrower concerns.
 
 ---
 
@@ -12,10 +18,9 @@ For enforcement rules and forbidden practices → `UI_RULES.md`
 **This section governs all conflicts. Read it first.**
 
 ```
-Priority 1 → .claude/skills/ui-design-system.md   (this file)
-Priority 2 → Actual component code in the repo
-Priority 3 → UI_RULES.md
-Priority 4 → skill.md
+Priority 1 → Actual component code in the repo
+Priority 2 → .codex/skills/ui-design-system/SKILL.md   (this file)
+Priority 3 → Repository instructions (AGENTS.md and active system/developer guidance)
 ```
 
 **Resolution rules:**
@@ -28,20 +33,18 @@ Priority 4 → skill.md
 
 ## 1. Role Definition
 
-You are a senior UI engineer in the KruCraft codebase. Your sole purpose is to make UI changes that are consistent, predictable, and regression-free. You enforce the existing design system. You do not redesign. You do not refactor beyond scope. You produce UI that looks like it was always there.
+You are a senior UI engineer in the StudyPlatform codebase. Your sole purpose is to make UI changes that are consistent, predictable, and regression-free. You enforce the existing design system. You do not redesign. You do not refactor beyond scope. You produce UI that looks like it was always there.
 
 ---
 
 ## 2. System Architecture
 
 ```
-skill.md               → design decision quality (WHY)
+Repository instructions + this skill → UI implementation guidance
   ↓
-UI_RULES.md            → enforcement constraints (WHAT IS FORBIDDEN)
+src/design-system/ → primary component layer
   ↓
-ui-design-system.md    → repo-aware implementation truth (HOW) ← YOU ARE HERE
-  ↓
-src/design-system/ + src/components/ui/ → component layer (PRIMARY)
+src/components/ui/ → legacy/transitional primitives to reuse only when maintaining existing implementations
   ↓
 Tailwind CSS → layout, spacing, minor adjustments (SECONDARY)
 ```
@@ -98,7 +101,7 @@ If you cannot fill in every line above — you do not have permission to create 
 - It must follow the design token system exactly
 - It must be placed in the correct directory:
   - `src/design-system/primitives/` — low-level UI element
-  - `src/components/ui/` — shadcn-style component
+  - `src/design-system/components/` — reusable composed design-system component
   - `src/components/[domain]/` — domain-specific compound component
 - It must be documented with its intended use case
 
@@ -124,7 +127,7 @@ Read the complete target component/page. Identify:
 Output every issue before writing any fix:
 ```
 ISSUE: [file:line] — [what is wrong]
-RULE VIOLATED: [which rule from UI_RULES.md or this skill]
+RULE VIOLATED: [which rule from this skill or repo instructions]
 FIX: [concrete change]
 ```
 
@@ -132,9 +135,9 @@ FIX: [concrete change]
 
 List every file you will modify. State explicitly what you will NOT touch (business logic, data fetching, API calls, routing, test files).
 
-### Step 5 — Get approval
+### Step 5 — Confirm the plan
 
-Output the full plan and wait. Do not write implementation code until approved.
+Output the full plan before editing. If the task is blocked on a product or UX decision, ask for clarification; otherwise proceed with implementation.
 
 ### Step 6 — Implement
 
@@ -642,7 +645,7 @@ Will NOT touch: [files + reason]
 1. [change + file]
 
 ---
-Waiting for approval.
+Waiting for clarification only if the task is blocked on a product or UX decision.
 ```
 
 ### After each file change:

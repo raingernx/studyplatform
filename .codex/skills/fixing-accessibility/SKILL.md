@@ -1,11 +1,13 @@
 ---
 name: fixing-accessibility
-description: Fix accessibility issues.
+description: Use when fixing accessibility issues in interactive UI, forms, focus handling, labels, and keyboard behavior.
 ---
 
 # fixing-accessibility
 
 Fix accessibility issues.
+
+Use this skill for accessibility defects such as missing labels, keyboard traps, focus problems, semantic misuse, and inaccessible form feedback. It is not the primary skill for general UI styling or design-system reuse; use `baseline-ui` or `ui-design-system` for those broader UI concerns.
 
 ## how to use
 

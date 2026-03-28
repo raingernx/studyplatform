@@ -1,11 +1,13 @@
 ---
 name: fixing-motion-performance
-description: Fix animation performance issues.
+description: Use when fixing janky or expensive UI motion, including layout, scroll-linked, filter, and animation performance issues.
 ---
 
 # fixing-motion-performance
 
 Fix animation performance issues.
+
+Use this skill for janky, expensive, or unstable UI motion, especially layout animation, scroll-linked effects, filter animation, and measurement-heavy interactions. It is not the primary skill for general UI styling or React Server Component streaming bottlenecks; use `baseline-ui` or `rsc-streaming-performance` for those.
 
 ## how to use
 

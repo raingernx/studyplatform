@@ -1,6 +1,13 @@
+---
+name: protected-file-delivery
+description: Use when implementing or auditing authenticated private file downloads backed by R2 presigned URLs and purchase checks.
+---
+
 # Skill: protected-file-delivery
 
-You are a senior security engineer implementing or auditing private file delivery on a production Next.js SaaS platform (KruCraft). Files are stored in a private Cloudflare R2 bucket and must never be exposed directly. The only valid download path is through an authenticated API route that verifies purchase status.
+You are a senior security engineer implementing or auditing private file delivery on a production Next.js SaaS platform (StudyPlatform). Files are stored in a private Cloudflare R2 bucket and must never be exposed directly. The only valid download path is through an authenticated API route that verifies purchase status.
+
+Use this skill for authenticated download routes, presigned URL handling, file-key exposure risks, and purchase-gated file access. It is not the primary skill for payment webhook correctness or post-payment entitlement updates; use `secure-payment-webhook-access` for those payment-confirmation flows.
 
 ## Trigger
 
@@ -15,7 +22,7 @@ Use this skill when:
 
 ### Phase 1 — Audit the existing download flow
 
-Read `src/app/api/download/route.ts` and its called service. Verify this exact sequence:
+Read `src/app/api/download/[resourceId]/route.ts` and its called service. Verify this exact sequence:
 
 ```
 1. Session check → 401 if missing
@@ -100,7 +107,7 @@ File keys must be generated server-side using a deterministic function of `resou
 Follow this template:
 
 ```typescript
-// src/app/api/download/route.ts
+// src/app/api/download/[resourceId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -133,7 +140,7 @@ export async function GET(request: NextRequest) {
 ```
 
 ```typescript
-// src/services/download.service.ts
+// src/services/purchases/download.service.ts
 async function generateDownloadUrl(userId: string, resourceId: string): Promise<string> {
   // 1. Look up resource — get fileKey from DB, never from client
   const resource = await findResourceById(resourceId);
@@ -175,8 +182,8 @@ Security checklist:
 
 ## Key files
 
-- `src/app/api/download/route.ts` — download gate
-- `src/services/download.service.ts` (or equivalent) — access verification + presign
-- `src/lib/storage.ts` (or `src/lib/r2.ts`) — `generatePresignedR2Url`, `generateR2Key`
-- `src/repositories/purchase.repository.ts` — `findCompletedPurchase`
+- `src/app/api/download/[resourceId]/route.ts` — download gate
+- `src/services/purchases/download.service.ts` — access verification + file delivery
+- `src/lib/storage/storage.ts` and `src/lib/storage/r2Provider.ts` — storage and presign helpers
+- `src/repositories/purchases/purchase.repository.ts` — completed purchase queries
 - `prisma/schema.prisma` — `Purchase` model, `status` enum

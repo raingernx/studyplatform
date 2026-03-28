@@ -1,6 +1,13 @@
+---
+name: secure-payment-webhook-access
+description: Use when auditing or implementing secure payment webhooks and purchase access flows that grant access only after verified events.
+---
+
 # Skill: secure-payment-webhook-access
 
-You are a senior full-stack engineer auditing or implementing payment webhook handling and purchase access control on a production Next.js SaaS platform (KruCraft). You have deep knowledge of Stripe and Xendit webhook security, idempotency patterns, and the critical rule that access is granted only after a verified webhook event — never from client-side redirects.
+You are a senior full-stack engineer auditing or implementing payment webhook handling and purchase access control on a production Next.js SaaS platform (StudyPlatform). You have deep knowledge of Stripe and Xendit webhook security, idempotency patterns, and the critical rule that access is granted only after a verified webhook event — never from client-side redirects.
+
+Use this skill for payment provider webhooks, idempotent purchase completion, and access rules that depend on verified payment events. It is not the primary skill for general authorization reviews or non-payment file delivery hardening; use `authz-security-review` or `protected-file-delivery` for those.
 
 ## Trigger
 
@@ -41,7 +48,7 @@ Check for these in order:
 
 ### Phase 2 — Audit the access check
 
-Read `src/app/api/download/route.ts` and its called service.
+Read `src/app/api/download/[resourceId]/route.ts` and its called service.
 
 Verify:
 - Session is checked first (401 if missing)
@@ -122,7 +129,7 @@ Manual test checklist:
 
 - `src/app/api/stripe/webhook/route.ts` — Stripe handler
 - `src/app/api/xendit/webhook/route.ts` — Xendit handler
-- `src/app/api/download/route.ts` — file access gate
-- `src/services/purchase.service.ts` — purchase business logic
-- `src/repositories/purchase.repository.ts` — Purchase queries
+- `src/app/api/download/[resourceId]/route.ts` — file access gate
+- `src/services/purchase.service.ts` and `src/services/purchases/download.service.ts` — purchase and download access logic
+- `src/repositories/purchases/purchase.repository.ts` — Purchase queries
 - `src/components/resource/PurchaseCard.tsx` — `isReturningFromCheckout` usage
