@@ -73,6 +73,107 @@ type ResourcesPageContentProps = {
   userId?: string;
 };
 
+function isNewCardBadge(createdAt?: Date | string) {
+  if (!createdAt) return false;
+  const date = new Date(createdAt);
+  return (Date.now() - date.getTime()) / 86_400_000 < 14;
+}
+
+function DefaultCardBadge({
+  createdAt,
+  featured,
+}: {
+  createdAt?: Date | string;
+  featured?: boolean;
+}) {
+  const base =
+    "absolute left-3 top-3 rounded-full border px-2.5 py-1 text-caption font-medium backdrop-blur-sm";
+
+  if (featured) {
+    return <span className={`${base} border-amber-100 bg-amber-50/95 text-amber-700`}>Featured</span>;
+  }
+
+  if (isNewCardBadge(createdAt)) {
+    return <span className={`${base} border-info-100 bg-info-50/95 text-info-700`}>New</span>;
+  }
+
+  return null;
+}
+
+async function ResolvedOwnedCardBadge({
+  ownedIdsPromise,
+  resourceId,
+  createdAt,
+  featured,
+}: {
+  ownedIdsPromise: Promise<Set<string>>;
+  resourceId: string;
+  createdAt?: Date | string;
+  featured?: boolean;
+}) {
+  const ownedIds = await ownedIdsPromise;
+
+  if (ownedIds.has(resourceId)) {
+    return (
+      <span className="absolute left-3 top-3 rounded-full border border-primary-100 bg-primary-50/95 px-2.5 py-1 text-caption font-medium text-primary-700 backdrop-blur-sm">
+        Owned
+      </span>
+    );
+  }
+
+  return <DefaultCardBadge createdAt={createdAt} featured={featured} />;
+}
+
+function DeferredOwnedCardBadge({
+  ownedIdsPromise,
+  resource,
+}: {
+  ownedIdsPromise: Promise<Set<string>>;
+  resource: Pick<ResourceCardData, "id" | "createdAt" | "featured">;
+}) {
+  return (
+    <Suspense
+      fallback={<DefaultCardBadge createdAt={resource.createdAt} featured={resource.featured} />}
+    >
+      <ResolvedOwnedCardBadge
+        ownedIdsPromise={ownedIdsPromise}
+        resourceId={resource.id}
+        createdAt={resource.createdAt}
+        featured={resource.featured}
+      />
+    </Suspense>
+  );
+}
+
+function ResourceCardWithDeferredOwnedBadge({
+  resource,
+  ownedIdsPromise,
+  variant = "marketplace",
+  priority = false,
+  linkPrefetchMode = "intent",
+}: {
+  resource: ResourceCardData;
+  ownedIdsPromise: Promise<Set<string>> | null;
+  variant?: "marketplace" | "hero";
+  priority?: boolean;
+  linkPrefetchMode?: "intent" | "viewport" | "none";
+}) {
+  return (
+    <ResourceCard
+      resource={resource}
+      variant={variant}
+      owned={false}
+      priority={priority}
+      linkPrefetchMode={linkPrefetchMode}
+      badge={
+        ownedIdsPromise ? (
+          <DeferredOwnedCardBadge ownedIdsPromise={ownedIdsPromise} resource={resource} />
+        ) : undefined
+      }
+    />
+  );
+}
+
 export async function ResourcesDiscoverHero({
   userId,
   className,
@@ -113,6 +214,10 @@ export async function ResourcesPageContent({
     return ResourcesDiscoverContent({ userId });
   }
 
+  const ownedIdsPromise = userId
+    ? trackRequestWork(loadOwnedIdsSafe(userId))
+    : null;
+
   let categories: { id: string; name: string; slug: string }[] = [];
   let resources: ResourceCardData[] = [];
   let total = 0;
@@ -150,7 +255,6 @@ export async function ResourcesPageContent({
     }
   }
 
-  const ownedIds = await loadOwnedIdsSafe(userId);
   const activeCategoryName =
     category === "all"
       ? "All categories"
@@ -224,6 +328,15 @@ export async function ResourcesPageContent({
               : resource.socialProofLabel ?? null,
       }))
     : resources;
+  const resourceGridBadgeNodes = ownedIdsPromise
+    ? rankedResources.map((resource) => (
+        <DeferredOwnedCardBadge
+          key={`owned-grid:${resource.id}`}
+          ownedIdsPromise={ownedIdsPromise}
+          resource={resource}
+        />
+      ))
+    : undefined;
 
   return (
     <>
@@ -328,8 +441,16 @@ export async function ResourcesPageContent({
                     highlightBadge: spotlightLabel,
                   }}
                   variant="hero"
-                  owned={ownedIds.has(spotlightResource.id)}
+                  owned={false}
                   linkPrefetchMode="intent"
+                  badge={
+                    ownedIdsPromise ? (
+                      <DeferredOwnedCardBadge
+                        ownedIdsPromise={ownedIdsPromise}
+                        resource={spotlightResource}
+                      />
+                    ) : undefined
+                  }
                 />
               </div>
             ) : null}
@@ -352,13 +473,14 @@ export async function ResourcesPageContent({
 
             <ResourceGrid
               resources={rankedResources}
-              ownedIds={Array.from(ownedIds)}
+              ownedIds={[]}
               total={total}
               page={safePage}
               totalPages={totalPages}
               hasActiveFilters={hasActiveFilters}
               progressiveLoad
               cardPrefetchMode="intent"
+              badgeNodes={resourceGridBadgeNodes}
               routeContext={{
                 queryKey: resourceGridQueryKey,
                 clearFiltersHref,
@@ -386,7 +508,9 @@ async function AwaitResolvedNode({
 async function ResourcesDiscoverContent({ userId }: { userId?: string }) {
   const discoverCategoriesPromise = trackRequestWork(loadDiscoverCategoriesSafe());
   const discoverDataPromise = trackRequestWork(loadDiscoverDataSafe());
-  const ownedIdsPromise = trackRequestWork(loadOwnedIdsSafe(userId));
+  const ownedIdsPromise = userId
+    ? trackRequestWork(loadOwnedIdsSafe(userId))
+    : null;
   const learningProfilePromise = trackRequestWork(loadLearningProfileSafe(userId));
   const introPromise = trackRequestWork(
     DiscoverIntroDeferred({ discoverCategoriesPromise }),
@@ -503,14 +627,12 @@ async function ResourcesDiscoverDeferredSections({
   userId,
 }: {
   discoverDataPromise: Promise<DiscoverData | null>;
-  ownedIdsPromise: Promise<Set<string>>;
+  ownedIdsPromise: Promise<Set<string>> | null;
   learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null>;
   userId?: string;
 }) {
-  const [discoverData, ownedIds] = await Promise.all([
-    discoverDataPromise,
-    ownedIdsPromise,
-  ]);
+  const discoverData = await discoverDataPromise;
+  const ownedIds = new Set<string>();
 
   if (!discoverData) {
     return null;
@@ -531,6 +653,7 @@ async function ResourcesDiscoverDeferredSections({
           learningProfilePromise,
           recommendationVariant,
           ownedIds,
+          ownedIdsPromise,
           globalFiltered,
           userId,
         }),
@@ -541,6 +664,7 @@ async function ResourcesDiscoverDeferredSections({
         ResourcesDiscoverPersonalisedExtras({
           learningProfilePromise,
           ownedIds,
+          ownedIdsPromise,
           globalFiltered,
         }),
       )
@@ -557,7 +681,7 @@ async function ResourcesDiscoverDeferredSections({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {(discoverData.trending as ResourceCardData[]).map((resource, index) => (
-              <ResourceCard
+              <ResourceCardWithDeferredOwnedBadge
                 key={resource.id}
                 resource={{
                   ...resource,
@@ -565,7 +689,7 @@ async function ResourcesDiscoverDeferredSections({
                   socialProofLabel: index < 2 ? "Trending fast this week" : null,
                 }}
                 variant="marketplace"
-                owned={ownedIds.has(resource.id)}
+                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="intent"
               />
             ))}
@@ -623,11 +747,11 @@ async function ResourcesDiscoverDeferredSections({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {globalFiltered.slice(0, 5).map((resource) => (
-              <ResourceCard
+              <ResourceCardWithDeferredOwnedBadge
                 key={resource.id}
                 resource={resource}
                 variant="marketplace"
-                owned={ownedIds.has(resource.id)}
+                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="intent"
               />
             ))}
@@ -644,11 +768,11 @@ async function ResourcesDiscoverDeferredSections({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {(discoverData.newReleases as ResourceCardData[]).map((resource) => (
-              <ResourceCard
+              <ResourceCardWithDeferredOwnedBadge
                 key={resource.id}
                 resource={resource}
                 variant="marketplace"
-                owned={ownedIds.has(resource.id)}
+                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="intent"
               />
             ))}
@@ -664,11 +788,11 @@ async function ResourcesDiscoverDeferredSections({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {(discoverData.featured as ResourceCardData[]).map((resource) => (
-              <ResourceCard
+              <ResourceCardWithDeferredOwnedBadge
                 key={resource.id}
                 resource={resource}
                 variant="marketplace"
-                owned={ownedIds.has(resource.id)}
+                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="intent"
               />
             ))}
@@ -684,11 +808,11 @@ async function ResourcesDiscoverDeferredSections({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {(discoverData.freeResources as ResourceCardData[]).map((resource) => (
-              <ResourceCard
+              <ResourceCardWithDeferredOwnedBadge
                 key={resource.id}
                 resource={resource}
                 variant="marketplace"
-                owned={ownedIds.has(resource.id)}
+                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="intent"
               />
             ))}
@@ -704,7 +828,7 @@ async function ResourcesDiscoverDeferredSections({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {(discoverData.mostDownloaded as ResourceCardData[]).map((resource, index) => (
-              <ResourceCard
+              <ResourceCardWithDeferredOwnedBadge
                 key={resource.id}
                 resource={{
                   ...resource,
@@ -712,7 +836,7 @@ async function ResourcesDiscoverDeferredSections({
                   socialProofLabel: index < 2 ? "High demand right now" : null,
                 }}
                 variant="marketplace"
-                owned={ownedIds.has(resource.id)}
+                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="intent"
               />
             ))}
@@ -1126,12 +1250,14 @@ async function ResourcesDiscoverRFYFinalSection({
   learningProfilePromise,
   recommendationVariant,
   ownedIds,
+  ownedIdsPromise,
   globalFiltered,
   userId,
 }: {
   learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null>;
   recommendationVariant: RecommendationVariant | null;
   ownedIds: Set<string>;
+  ownedIdsPromise: Promise<Set<string>> | null;
   globalFiltered: ResourceCardData[];
   userId: string;
 }) {
@@ -1150,11 +1276,11 @@ async function ResourcesDiscoverRFYFinalSection({
         />
         <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
           {fallbackCards.map((resource, index) => (
-            <ResourceCard
+            <ResourceCardWithDeferredOwnedBadge
               key={resource.id}
               resource={resource}
               variant="marketplace"
-              owned={ownedIds.has(resource.id)}
+              ownedIdsPromise={ownedIdsPromise}
               priority={index < 2}
               linkPrefetchMode="intent"
             />
@@ -1207,10 +1333,10 @@ async function ResourcesDiscoverRFYFinalSection({
         <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
           {finalCards.map((resource, index) => (
             <div key={resource.id} data-resource-id={resource.id}>
-              <ResourceCard
+              <ResourceCardWithDeferredOwnedBadge
                 resource={resource}
                 variant="marketplace"
-                owned={ownedIds.has(resource.id)}
+                ownedIdsPromise={ownedIdsPromise}
                 priority={index < 2}
                 linkPrefetchMode="intent"
               />
@@ -1231,10 +1357,12 @@ async function ResourcesDiscoverRFYFinalSection({
 async function ResourcesDiscoverPersonalisedExtras({
   learningProfilePromise,
   ownedIds,
+  ownedIdsPromise,
   globalFiltered,
 }: {
   learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null>;
   ownedIds: Set<string>;
+  ownedIdsPromise: Promise<Set<string>> | null;
   globalFiltered: ResourceCardData[];
 }) {
   const learningProfile = await learningProfilePromise;
@@ -1282,14 +1410,14 @@ async function ResourcesDiscoverPersonalisedExtras({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {(becauseYouStudied as ResourceCardData[]).map((resource) => (
-              <ResourceCard
+              <ResourceCardWithDeferredOwnedBadge
                 key={resource.id}
                 resource={{
                   ...resource,
                   socialProofLabel: `More in ${recentCategoryName}`,
                 }}
                 variant="marketplace"
-                owned={ownedIds.has(resource.id)}
+                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="intent"
               />
             ))}
@@ -1306,14 +1434,14 @@ async function ResourcesDiscoverPersonalisedExtras({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
             {(recommendedForLevel as ResourceCardData[]).map((resource) => (
-              <ResourceCard
+              <ResourceCardWithDeferredOwnedBadge
                 key={resource.id}
                 resource={{
                   ...resource,
                   socialProofLabel: "Recommended for your current pace",
                 }}
                 variant="marketplace"
-                owned={ownedIds.has(resource.id)}
+                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="intent"
               />
             ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { memo, useState } from "react";
+import { memo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { FileText } from "lucide-react";
 import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
@@ -90,6 +90,7 @@ interface ResourceCardProps {
    */
   linkPrefetchMode?: "intent" | "viewport" | "none";
   linkPrefetchScope?: string;
+  badge?: ReactNode;
 }
 
 const ResourceCardLibraryFooter = dynamic(() =>
@@ -171,6 +172,7 @@ function CardBody({
   isOwned,
   isNavigating = false,
   priority = false,
+  badge,
 }: {
   resource: ResourceCardResource;
   variant: ResourceCardVariant;
@@ -179,6 +181,7 @@ function CardBody({
   isOwned: boolean;
   isNavigating?: boolean;
   priority?: boolean;
+  badge?: ReactNode;
 }) {
   const isFree = resource.isFree ?? (resource.price === 0 || !resource.price);
   const isHero = variant === "hero";
@@ -255,11 +258,15 @@ function CardBody({
           </div>
         )}
 
-        <ResourceBadge
-          featured={resource.featured}
-          isNew={isNew}
-          isOwned={isOwned}
-        />
+        {badge !== undefined ? (
+          badge
+        ) : (
+          <ResourceBadge
+            featured={resource.featured}
+            isNew={isNew}
+            isOwned={isOwned}
+          />
+        )}
 
         {soldLabel ? (
           <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
@@ -332,6 +339,7 @@ function ResourceCardInner({
   priority = false,
   linkPrefetchMode = "viewport",
   linkPrefetchScope = "resource-card-grid",
+  badge,
 }: ResourceCardProps) {
   const { authorName } = normalizeResource(resource);
   const effectiveVariant = variant === "preview" ? "compact" : variant ?? "marketplace";
@@ -364,6 +372,7 @@ function ResourceCardInner({
     isOwned,
     isNavigating,
     priority,
+    badge,
   };
 
   // Library and previewMode cards are not wrapped in a Link (they have their own CTA buttons or are static previews)

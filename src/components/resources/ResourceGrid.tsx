@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
 import { BookOpen, Search } from "lucide-react";
 import { Button } from "@/design-system";
@@ -31,6 +31,7 @@ interface ResourceGridProps {
   hasActiveFilters?: boolean;
   progressiveLoad?: boolean;
   cardPrefetchMode?: "intent" | "viewport" | "none";
+  badgeNodes?: Array<ReactNode | null>;
   routeContext?: {
     queryKey: string;
     clearFiltersHref: string;
@@ -73,6 +74,7 @@ function ResourceGridBody({
   hasActiveFilters = false,
   progressiveLoad = false,
   cardPrefetchMode = "viewport",
+  badgeNodes,
   routeContext,
 }: ResourceGridProps) {
   const {
@@ -237,6 +239,7 @@ function ResourceGridBody({
             priority={index < 2}
             linkPrefetchMode={cardPrefetchMode}
             linkPrefetchScope={cardPrefetchScope}
+            badge={badgeNodes?.[index]}
           />
         ))}
       </div>
