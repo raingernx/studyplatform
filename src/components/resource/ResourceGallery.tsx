@@ -61,16 +61,13 @@ export function ResourceGallery({
 
   const activeIndex = Math.min(active, resolvedPreviews.length - 1);
   const current = resolvedPreviews[activeIndex];
-  const hasRail = resolvedPreviews.length > 0;
   const hasThumbnailNavigation = resolvedPreviews.length > 1;
   const maxStart = Math.max(0, resolvedPreviews.length - VISIBLE_THUMBNAILS);
   const clampedStartIndex = Math.min(startIndex, maxStart);
-  const visible = hasRail
-    ? resolvedPreviews.slice(
-        clampedStartIndex,
-        clampedStartIndex + VISIBLE_THUMBNAILS,
-      )
-    : [];
+  const visible = resolvedPreviews.slice(
+    clampedStartIndex,
+    clampedStartIndex + VISIBLE_THUMBNAILS,
+  );
   const canGoUp = hasThumbnailNavigation && activeIndex > 0;
   const canGoDown =
     hasThumbnailNavigation && activeIndex < resolvedPreviews.length - 1;
@@ -125,74 +122,76 @@ export function ResourceGallery({
       {/* Mobile/tablet: horizontal strip (flex-row, full-width, scrollable)  */}
       {/* Desktop lg+:  vertical rail on the left (flex-col, 80px wide)       */}
       <div className="order-2 flex w-full shrink-0 flex-row items-center lg:order-1 lg:h-full lg:min-h-0 lg:w-20 lg:flex-col lg:justify-between">
-        {hasRail ? (
-          <div className="flex w-full flex-row items-center gap-3 overflow-x-auto pb-1 lg:w-auto lg:flex-col lg:gap-6 lg:overflow-x-visible lg:pb-0">
-            <button
-              type="button"
-              onClick={() => {
-                const newActive = Math.max(0, activeIndex - 1);
-                setActive(newActive);
-                setStartIndex((prev) => Math.min(prev, newActive));
-              }}
-              disabled={!canGoUp}
-              aria-label="Previous image"
-              className="mb-3 hidden shrink-0 text-zinc-500 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 lg:block"
-            >
-              <ChevronUp className="h-5 w-5" />
-            </button>
+        <div className="flex w-full flex-row items-center gap-2 overflow-x-auto pb-1 lg:h-full lg:min-h-0 lg:w-auto lg:flex-col lg:gap-3 lg:overflow-hidden lg:overflow-x-visible lg:pb-0">
+          <button
+            type="button"
+            onClick={() => {
+              const newActive = Math.max(0, activeIndex - 1);
+              setActive(newActive);
+              setStartIndex((prev) => Math.min(prev, newActive));
+            }}
+            disabled={!canGoUp}
+            aria-label="Previous image"
+            aria-disabled={!canGoUp}
+            className="mb-3 hidden shrink-0 text-zinc-500 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 lg:block"
+          >
+            <ChevronUp className="h-5 w-5" />
+          </button>
 
-            <div
-              className={[
-                "gap-3 lg:flex lg:flex-col lg:items-center lg:justify-center",
-                hasThumbnailNavigation ? "flex flex-row" : "hidden lg:flex",
-              ].join(" ")}
-            >
-              {visible.map((p, idx) => {
-                const globalIndex = clampedStartIndex + idx;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setActive(globalIndex)}
-                    aria-label={`View preview ${globalIndex + 1}`}
-                    className={[
-                      "relative aspect-square w-16 shrink-0 overflow-hidden rounded-lg border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 lg:w-20",
-                      globalIndex === activeIndex
-                        ? "border-primary-500 ring-1 ring-primary-500/20"
-                        : "border-surface-200 opacity-70 hover:border-zinc-300 hover:opacity-100",
-                    ].join(" ")}
-                  >
-                    <Image
-                      src={p.imageUrl}
-                      alt={`Thumbnail ${globalIndex + 1}`}
-                      fill
-                      sizes="80px"
-                      className="object-cover"
-                    />
-                  </button>
-                );
-              })}
-            </div>
+          <div className="flex flex-row gap-2 lg:min-h-0 lg:flex-1 lg:flex-col lg:items-center lg:justify-center lg:gap-3 lg:overflow-y-auto">
+            {visible.map((p, idx) => {
+              const globalIndex = clampedStartIndex + idx;
+              const isActive = globalIndex === activeIndex;
 
-            <button
-              type="button"
-              onClick={() => {
-                const newActive = Math.min(resolvedPreviews.length - 1, activeIndex + 1);
-                setActive(newActive);
-                setStartIndex((prev) =>
-                  Math.min(maxStart, Math.max(prev, newActive - VISIBLE_THUMBNAILS + 1))
-                );
-              }}
-              disabled={!canGoDown}
-              aria-label="Next image"
-              className="mt-3 hidden shrink-0 text-zinc-500 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 lg:block"
-            >
-              <ChevronDown className="h-5 w-5" />
-            </button>
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setActive(globalIndex)}
+                  aria-label={`View preview ${globalIndex + 1}`}
+                  aria-current={isActive ? "true" : undefined}
+                  className={[
+                    "relative aspect-square w-16 shrink-0 overflow-hidden rounded-lg border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 lg:w-20",
+                    isActive
+                      ? "border-primary-500 ring-1 ring-primary-500/20"
+                      : "border-surface-200 opacity-70 hover:border-zinc-300 hover:opacity-100",
+                  ].join(" ")}
+                >
+                  <Image
+                    src={p.imageUrl}
+                    alt={`Thumbnail ${globalIndex + 1}`}
+                    fill
+                    sizes="(max-width: 1023px) 64px, 80px"
+                    className="object-cover"
+                  />
+                </button>
+              );
+            })}
           </div>
-        ) : (
-          <div className="hidden lg:block lg:w-20 lg:shrink-0" aria-hidden />
-        )}
+
+          <button
+            type="button"
+            onClick={() => {
+              const newActive = Math.min(
+                resolvedPreviews.length - 1,
+                activeIndex + 1,
+              );
+              setActive(newActive);
+              setStartIndex((prev) =>
+                Math.min(
+                  maxStart,
+                  Math.max(prev, newActive - VISIBLE_THUMBNAILS + 1),
+                ),
+              );
+            }}
+            disabled={!canGoDown}
+            aria-label="Next image"
+            aria-disabled={!canGoDown}
+            className="mt-3 hidden shrink-0 text-zinc-500 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 lg:block"
+          >
+            <ChevronDown className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
       {/* ── Main preview ──────────────────────────────────────────────────── */}
