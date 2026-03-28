@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import {
+  ChevronRight,
   CheckCircle,
   Download,
   Eye,
@@ -36,6 +37,16 @@ const CTA_COPY = {
     proof: "Your download is ready whenever you need it.",
   },
 } as const;
+
+const CARD_SHELL_CLASS =
+  "flex h-full min-h-0 flex-col rounded-xl border border-surface-200 bg-white p-5 sm:p-6";
+const SECTION_STACK_CLASS = "space-y-5";
+const DIVIDED_SECTION_CLASS = "space-y-5 border-t border-surface-200 pt-5";
+const PRIMARY_LINK_CLASS =
+  "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
+const SECONDARY_LINK_CLASS =
+  "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-surface-200 bg-white px-5 py-2.5 text-[13px] font-medium text-zinc-700 transition hover:bg-surface-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
+const HELPER_TEXT_CLASS = "text-center text-caption leading-5 text-zinc-400";
 
 function formatUpdated(date: Date | string): string {
   const d = new Date(date);
@@ -117,25 +128,28 @@ interface PurchaseCardProps {
 /** Full-card skeleton for the outer Suspense in page.tsx. */
 export function PurchaseCardSkeleton() {
   return (
-    <div className="flex h-full min-h-0 flex-col justify-between rounded-xl border border-surface-200 bg-white p-5 sm:p-6">
-      <div className="space-y-5">
-        {/* author/category */}
-        <LoadingSkeleton className="h-3.5 w-2/3" />
-        {/* price */}
-        <LoadingSkeleton className="h-9 w-20" />
-        {/* middle skeleton */}
-        <PurchaseCardMiddleSkeleton />
-      </div>
-      <div className="mt-4 space-y-4 border-t border-surface-200 pt-4">
-        <div className="space-y-2.5">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="flex justify-between gap-3">
-              <LoadingSkeleton className="h-3.5 w-16" />
-              <LoadingSkeleton className="h-3.5 w-20" />
-            </div>
-          ))}
+    <div className={CARD_SHELL_CLASS}>
+      <div className="flex h-full min-h-0 flex-col">
+        <div className={SECTION_STACK_CLASS}>
+          {/* author/category */}
+          <LoadingSkeleton className="h-3.5 w-2/3" />
+          {/* price */}
+          <LoadingSkeleton className="h-10 w-24" />
+          {/* middle skeleton */}
+          <PurchaseCardMiddleSkeleton />
         </div>
-        <PurchaseCardMembershipSkeleton />
+
+        <div className={DIVIDED_SECTION_CLASS}>
+          <div className="space-y-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex items-start justify-between gap-4">
+                <LoadingSkeleton className="h-3.5 w-16" />
+                <LoadingSkeleton className="h-3.5 w-20" />
+              </div>
+            ))}
+          </div>
+          <PurchaseCardMembershipSkeleton />
+        </div>
       </div>
     </div>
   );
@@ -143,18 +157,18 @@ export function PurchaseCardSkeleton() {
 
 function PurchaseCardMiddleSkeleton() {
   return (
-    <div className="space-y-5">
+    <div className={SECTION_STACK_CLASS}>
       {/* kicker pill + proof text */}
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         <LoadingSkeleton className="h-6 w-32 rounded-full" />
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <LoadingSkeleton className="h-4 w-full" />
           <LoadingSkeleton className="h-4 w-4/5" />
         </div>
         <LoadingSkeleton className="h-3.5 w-1/2" />
       </div>
       {/* trust grid */}
-      <div className="grid grid-cols-3 gap-4 border-y border-surface-200 py-4">
+      <div className="grid grid-cols-1 gap-4 border-y border-surface-200 py-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
         {[0, 1, 2].map((i) => (
           <div key={i} className="space-y-1.5">
             <LoadingSkeleton className="h-3 w-14" />
@@ -164,14 +178,15 @@ function PurchaseCardMiddleSkeleton() {
         ))}
       </div>
       {/* benefit items */}
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-2.5">
         {[88, 72, 108].map((w) => (
-          <LoadingSkeleton key={w} className="h-3.5" style={{ width: w }} />
+          <LoadingSkeleton key={w} className="h-6 rounded-full" style={{ width: w }} />
         ))}
       </div>
       {/* CTA button */}
-      <div className="space-y-3 border-t border-surface-200 pt-4">
+      <div className="space-y-3 border-t border-surface-200 pt-5">
         <LoadingSkeleton className="h-12 w-full rounded-xl" />
+        <LoadingSkeleton className="h-4 w-32 self-center" />
       </div>
     </div>
   );
@@ -179,11 +194,26 @@ function PurchaseCardMiddleSkeleton() {
 
 function PurchaseCardMembershipSkeleton() {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       <LoadingSkeleton className="h-4 w-40" />
       <LoadingSkeleton className="h-3.5 w-full" />
       <LoadingSkeleton className="h-3.5 w-3/4" />
-      <LoadingSkeleton className="h-4 w-24" />
+      <LoadingSkeleton className="h-11 w-full rounded-xl" />
+    </div>
+  );
+}
+
+function PurchaseMetaRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <dt className="text-zinc-500">{label}</dt>
+      <dd className="text-right font-medium leading-5 text-zinc-900">{children}</dd>
     </div>
   );
 }
@@ -281,25 +311,23 @@ async function PurchaseCardMiddle({
       : ["Instant access", "One-time purchase", "Re-download any time"];
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-2.5">
+    <div className={SECTION_STACK_CLASS}>
+      <div className="space-y-3">
         <span className="inline-flex items-center rounded-full border border-surface-200 bg-surface-50 px-2.5 py-1 text-caption font-semibold text-zinc-600">
           {ctaCopy.kicker}
         </span>
-        <div className="space-y-1.5">
-          <p className="max-w-sm text-small leading-6 text-zinc-600">
-            {ctaCopy.proof}
-          </p>
-        </div>
+        <p className="max-w-sm text-small leading-6 text-zinc-600">
+          {ctaCopy.proof}
+        </p>
         {summaryParts.length > 0 && (
-          <p className="text-caption font-medium text-zinc-600">
+          <p className="max-w-sm text-caption font-medium leading-5 text-zinc-600">
             {summaryParts.join(" · ")}
           </p>
         )}
       </div>
 
       {trustItems.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 border-y border-surface-200 py-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 border-y border-surface-200 py-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
           {trustItems.map((item) => (
             <div key={item.label} className="space-y-1.5">
               <div className="flex items-center gap-2 text-caption font-medium text-zinc-500">
@@ -316,16 +344,14 @@ async function PurchaseCardMiddle({
       )}
 
       {benefitItems.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-zinc-600">
-          {benefitItems.map((item, index) => (
-            <span key={item} className="inline-flex items-center gap-1.5">
+        <div className="flex flex-wrap gap-2.5 text-caption text-zinc-600">
+          {benefitItems.map((item) => (
+            <span
+              key={item}
+              className="inline-flex items-center gap-1.5 rounded-full bg-surface-50 px-2.5 py-1"
+            >
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               <span>{item}</span>
-              {index < benefitItems.length - 1 ? (
-                <span aria-hidden className="ml-1 text-zinc-300">
-                  ·
-                </span>
-              ) : null}
             </span>
           ))}
         </div>
@@ -342,7 +368,7 @@ async function PurchaseCardMiddle({
       )}
 
       {recentActivityLabel && !isOwned && (
-        <div className="rounded-xl border border-primary-100 bg-primary-50/60 px-4 py-3">
+        <div className="rounded-xl border border-primary-100 bg-primary-50/60 px-4 py-3.5">
           <p className="text-caption font-semibold text-primary-700/90">
             {recentActivityHeading}
           </p>
@@ -350,11 +376,11 @@ async function PurchaseCardMiddle({
         </div>
       )}
 
-      <div className="space-y-3 border-t border-surface-200 pt-4">
+      <div className="space-y-3 border-t border-surface-200 pt-5">
         {isOwned && (
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3">
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
             <CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" />
-            <p className="text-small font-medium text-emerald-700">
+            <p className="text-small font-medium leading-5 text-emerald-700">
               Added to your library
             </p>
           </div>
@@ -366,7 +392,7 @@ async function PurchaseCardMiddle({
               <a
                 href={`/api/download/${resource.id}`}
                 className={[
-                  "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 ring-1 ring-primary-600/20 ring-offset-1",
+                  `${PRIMARY_LINK_CLASS} ring-1 ring-primary-600/20 ring-offset-1`,
                   isReturningFromCheckout
                     ? "ring-2 ring-emerald-400/60 ring-offset-2"
                     : "",
@@ -380,20 +406,22 @@ async function PurchaseCardMiddle({
                   href={`/api/preview/${resource.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-surface-200 bg-white px-5 py-2.5 text-[13px] font-medium text-zinc-700 transition hover:bg-surface-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
+                  className={SECONDARY_LINK_CLASS}
                 >
                   <Eye className="h-3.5 w-3.5" />
                   Preview
                 </a>
               )}
-              <p className="text-center text-caption text-zinc-400">
+              <p className={HELPER_TEXT_CLASS}>
                 Secure, authenticated download
               </p>
             </div>
           ) : (
-            <p className="text-center text-caption text-zinc-400">
-              File not yet available — check back soon.
-            </p>
+            <div className="rounded-xl border border-surface-200 bg-surface-50 px-4 py-3">
+              <p className={HELPER_TEXT_CLASS}>
+                File not yet available — check back soon.
+              </p>
+            </div>
           ))}
 
         {!isOwned && isFree &&
@@ -409,7 +437,7 @@ async function PurchaseCardMiddle({
           ) : (
             <Link
               href={`/auth/login?next=/resources/${resource.slug}`}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
+              className={PRIMARY_LINK_CLASS}
             >
               Sign in to Download
             </Link>
@@ -429,11 +457,11 @@ async function PurchaseCardMiddle({
             <div className="space-y-3">
               <Link
                 href={`/auth/login?next=/resources/${resource.slug}`}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
+                className={PRIMARY_LINK_CLASS}
               >
                 Sign in to Buy
               </Link>
-              <p className="text-center text-caption text-zinc-400">
+              <p className={HELPER_TEXT_CLASS}>
                 Create a free account to purchase.
               </p>
             </div>
@@ -458,7 +486,7 @@ async function PurchaseCardMembershipSection({
     session?.user?.subscriptionStatus === "TRIALING";
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {isMember ? (
         <p className="text-small font-medium text-emerald-700">
           Member pricing is already active on your account
@@ -474,10 +502,13 @@ async function PurchaseCardMembershipSection({
           </p>
           <Link
             href="/membership"
-            className="inline-flex items-center gap-2 text-small font-medium text-primary-700 transition hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
+            className="inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-surface-200 bg-primary-50 px-4 py-2.5 text-small font-semibold text-primary-800 transition hover:border-primary-200 hover:bg-primary-100 active:bg-primary-100/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
           >
-            <Sparkles className="h-4 w-4" />
-            Explore membership
+            <span className="inline-flex items-center gap-2">
+              <Sparkles className="h-4 w-4 shrink-0" />
+              <span>Explore membership</span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0" />
           </Link>
         </>
       )}
@@ -503,95 +534,79 @@ export function PurchaseCard({
   const isFree = resource.isFree || resource.price === 0;
 
   return (
-    <div className="flex h-full min-h-0 flex-col justify-between rounded-xl border border-surface-200 bg-white p-5 sm:p-6">
-      <div className="space-y-5">
-        {/* Author / category — always sync */}
-        {(resource.author.name || resource.category) && (
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-zinc-500">
-            {resource.author.name ? `by ${resource.author.name}` : null}
-            {resource.author.name && resource.category ? (
-              <span aria-hidden className="text-zinc-300">·</span>
-            ) : null}
-            {resource.category ? (
-              <span className="font-medium text-primary-700">
-                {resource.category.name}
-              </span>
-            ) : null}
+    <div className={CARD_SHELL_CLASS}>
+      <div className="flex h-full min-h-0 flex-col">
+        <div className={SECTION_STACK_CLASS}>
+          {/* Author / category — always sync */}
+          {(resource.author.name || resource.category) && (
+            <p className="flex max-w-sm flex-wrap items-center gap-x-2 gap-y-1 text-caption leading-5 text-zinc-500">
+              {resource.author.name ? `by ${resource.author.name}` : null}
+              {resource.author.name && resource.category ? (
+                <span aria-hidden className="text-zinc-300">·</span>
+              ) : null}
+              {resource.category ? (
+                <span className="font-medium text-primary-700">
+                  {resource.category.name}
+                </span>
+              ) : null}
+            </p>
+          )}
+
+          {/* Price — always sync, appears on first paint */}
+          <p className="text-3xl font-bold tracking-tight text-zinc-900">
+            <PriceLabel price={resource.price} isFree={isFree} />
           </p>
-        )}
 
-        {/* Price — always sync, appears on first paint */}
-        <p className="text-3xl font-bold tracking-tight text-zinc-900">
-          <PriceLabel price={resource.price} isFree={isFree} />
-        </p>
+          {/* Middle section: kicker, trust, CTA — streams in */}
+          <Suspense fallback={<PurchaseCardMiddleSkeleton />}>
+            <PurchaseCardMiddle
+              ownershipPromise={ownershipPromise}
+              trustSummaryPromise={trustSummaryPromise}
+              resource={resource}
+              session={session}
+              hasFile={hasFile}
+              isReturningFromCheckout={isReturningFromCheckout}
+              isFree={isFree}
+            />
+          </Suspense>
+        </div>
 
-        {/* Middle section: kicker, trust, CTA — streams in */}
-        <Suspense fallback={<PurchaseCardMiddleSkeleton />}>
-          <PurchaseCardMiddle
-            ownershipPromise={ownershipPromise}
-            trustSummaryPromise={trustSummaryPromise}
-            resource={resource}
-            session={session}
-            hasFile={hasFile}
-            isReturningFromCheckout={isReturningFromCheckout}
-            isFree={isFree}
-          />
-        </Suspense>
-      </div>
-
-      {/* Bottom section: static file meta + streaming membership upsell */}
-      <div className="space-y-4 border-t border-surface-200 pt-4">
-        <dl className="space-y-2.5 text-small">
-          <div className="flex justify-between gap-3">
-            <dt className="text-zinc-500">Format</dt>
-            <dd className="font-medium text-zinc-900">
+        {/* Bottom section: static file meta + streaming membership upsell */}
+        <div className={DIVIDED_SECTION_CLASS}>
+          <dl className="space-y-3 text-small">
+            <PurchaseMetaRow label="Format">
               {TYPE_LABELS[resource.type] ?? resource.type}
-            </dd>
-          </div>
-          {resource.pageCount != null && (
-            <div className="flex justify-between gap-3">
-              <dt className="text-zinc-500">Pages</dt>
-              <dd className="font-medium text-zinc-900">
+            </PurchaseMetaRow>
+            {resource.pageCount != null && (
+              <PurchaseMetaRow label="Pages">
                 {formatNumber(resource.pageCount)}
-              </dd>
-            </div>
-          )}
-          {resource.fileSize != null && resource.fileSize > 0 && (
-            <div className="flex justify-between gap-3">
-              <dt className="text-zinc-500">File size</dt>
-              <dd className="font-medium text-zinc-900">
+              </PurchaseMetaRow>
+            )}
+            {resource.fileSize != null && resource.fileSize > 0 && (
+              <PurchaseMetaRow label="File size">
                 {formatFileSize(resource.fileSize)}
-              </dd>
-            </div>
-          )}
-          {resource.category && (
-            <div className="flex justify-between gap-3">
-              <dt className="text-zinc-500">Category</dt>
-              <dd className="font-medium text-zinc-900">
+              </PurchaseMetaRow>
+            )}
+            {resource.category && (
+              <PurchaseMetaRow label="Category">
                 {resource.category.name}
-              </dd>
-            </div>
-          )}
-          <div className="flex justify-between gap-3">
-            <dt className="text-zinc-500">Downloads</dt>
-            <dd className="font-medium text-zinc-900">
+              </PurchaseMetaRow>
+            )}
+            <PurchaseMetaRow label="Downloads">
               {formatNumber(resource.downloadCount)}
-            </dd>
-          </div>
-          {resource.updatedAt != null && (
-            <div className="flex justify-between gap-3">
-              <dt className="text-zinc-500">Updated</dt>
-              <dd className="font-medium text-zinc-900">
+            </PurchaseMetaRow>
+            {resource.updatedAt != null && (
+              <PurchaseMetaRow label="Updated">
                 {formatUpdated(resource.updatedAt)}
-              </dd>
-            </div>
-          )}
-        </dl>
+              </PurchaseMetaRow>
+            )}
+          </dl>
 
-        {/* Membership upsell — streams in independently */}
-        <Suspense fallback={<PurchaseCardMembershipSkeleton />}>
-          <PurchaseCardMembershipSection session={session} />
-        </Suspense>
+          {/* Membership upsell — streams in independently */}
+          <Suspense fallback={<PurchaseCardMembershipSkeleton />}>
+            <PurchaseCardMembershipSection session={session} />
+          </Suspense>
+        </div>
       </div>
     </div>
   );
