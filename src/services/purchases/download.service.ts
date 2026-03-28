@@ -1,15 +1,10 @@
 import { existsSync, createReadStream } from "fs";
 import { stat } from "fs/promises";
 import { getServerSession } from "next-auth";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { recordAnalyticsEvent } from "@/analytics/event.service";
 import { logActivity } from "@/lib/activity";
 import { authOptions } from "@/lib/auth";
-import {
-  RANKING_EXPERIMENT_COOKIE,
-  isValidRankingVariant,
-} from "@/lib/ranking-experiment";
 import { checkRateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 import { storage } from "@/lib/storage";
 import {
@@ -109,24 +104,11 @@ export async function handleResourceDownload(
     // response.  Must run after the purchase gate passes (completedPurchaseId
     // non-null) so free resources are never included in this metric.
     if (completedPurchaseId !== null) {
-      // Read ranking experiment variant to attach to the FIRST_PAID_DOWNLOAD
-      // event. Failures are silently swallowed — analytics must never block
-      // the download response.
-      let rankingVariant: string | null = null;
-      try {
-        const cookieStore = await cookies();
-        const raw = cookieStore.get(RANKING_EXPERIMENT_COOKIE)?.value;
-        rankingVariant = isValidRankingVariant(raw) ? raw : null;
-      } catch {
-        // Variant unknown — event will be stored with rankingVariant: null.
-      }
-
       recordFirstPaidDownloadIfApplicable(
         resourceId,
         userId,
         resource.authorId,
         completedPurchaseId,
-        rankingVariant,
       );
     }
 
@@ -210,7 +192,6 @@ function recordFirstPaidDownloadIfApplicable(
   userId: string,
   creatorId: string,
   purchaseId: string,
-  rankingVariant: string | null,
 ) {
   countDownloadEventsByUserAndResource(userId, resourceId)
     .then((priorCount) => {
@@ -220,7 +201,7 @@ function recordFirstPaidDownloadIfApplicable(
         action: "FIRST_PAID_DOWNLOAD",
         entity: "Resource",
         entityId: resourceId,
-        metadata: { resourceId, userId, purchaseId, creatorId, rankingVariant },
+        metadata: { resourceId, userId, purchaseId, creatorId },
       });
     })
     .catch(() => {
