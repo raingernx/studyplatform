@@ -753,7 +753,7 @@ async function ResourcesDiscoverDeferredSections({
               <IntentPrefetchLink
               href={`/creators/${discoverData.topCreator.creator.creatorSlug}`}
               className="inline-flex items-center gap-2 self-start rounded-full border border-border-subtle bg-white px-4 py-2 text-sm font-semibold text-primary-700 transition hover:border-surface-300 hover:bg-white lg:self-auto"
-              prefetchMode="viewport"
+              prefetchMode="intent"
               prefetchScope="top-creator-cta"
               prefetchLimit={1}
             >
