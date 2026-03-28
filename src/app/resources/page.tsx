@@ -54,13 +54,7 @@ function hasSessionTokenCookie(
   );
 }
 
-async function getOptionalSessionUserId(
-  cookieStore: Awaited<ReturnType<typeof cookies>> | null,
-) {
-  if (!cookieStore || !hasSessionTokenCookie(cookieStore)) {
-    return undefined;
-  }
-
+async function getOptionalSessionUserId() {
   try {
     return (await getServerSession(authOptions))?.user?.id;
   } catch (error) {
@@ -133,7 +127,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
       const userId = hasSessionCookie
         ? await traceServerStep(
             "resources.optional_session_user",
-            () => getOptionalSessionUserId(cookieStore),
+            () => getOptionalSessionUserId(),
             { isDiscoverMode },
           )
         : undefined;
