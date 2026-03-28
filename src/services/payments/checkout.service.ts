@@ -10,7 +10,6 @@
  * library service for free resources. No Prisma calls here.
  */
 
-import { cookies } from "next/headers";
 import { z } from "zod";
 import {
   addFreeResourceToLibrary,
@@ -20,28 +19,6 @@ import { PaymentServiceError } from "@/services/payments/payment.service";
 import { createStripeCheckout } from "@/services/payments/stripe-payment.service";
 import { createXenditCheckout } from "@/services/payments/xendit-payment.service";
 import { logActivity } from "@/lib/activity";
-import {
-  RANKING_EXPERIMENT_COOKIE,
-  isValidRankingVariant,
-} from "@/lib/ranking-experiment";
-
-/**
- * Reads the ranking experiment variant from the request cookie store.
- * Returns null if the cookie is absent or invalid — callers must treat null
- * as "variant unknown" and still include it in metadata so the absence is
- * queryable.
- *
- * Never throws — analytics metadata must never break the checkout flow.
- */
-async function readRankingVariant(): Promise<string | null> {
-  try {
-    const cookieStore = await cookies();
-    const raw = cookieStore.get(RANKING_EXPERIMENT_COOKIE)?.value;
-    return isValidRankingVariant(raw) ? raw : null;
-  } catch {
-    return null;
-  }
-}
 
 // ── Input schemas ─────────────────────────────────────────────────────────────
 
@@ -122,9 +99,6 @@ export async function createCheckoutSession(body: unknown, userId: string) {
 
   const { provider, resourceId } = parsed.data;
 
-  // Read variant once — shared by both provider paths below.
-  const rankingVariant = await readRankingVariant();
-
   if (provider === "stripe") {
     const result = await createStripeCheckout({ mode: "payment", resourceId }, userId);
     void logActivity({
@@ -132,7 +106,7 @@ export async function createCheckoutSession(body: unknown, userId: string) {
       action: "CHECKOUT_STARTED",
       entity: "purchase",
       entityId: resourceId,
-      metadata: { provider: "stripe", resourceId, rankingVariant },
+      metadata: { provider: "stripe", resourceId },
     });
     return result;
   }
@@ -143,7 +117,7 @@ export async function createCheckoutSession(body: unknown, userId: string) {
     action: "CHECKOUT_STARTED",
     entity: "purchase",
     entityId: resourceId,
-    metadata: { provider: "xendit", resourceId, rankingVariant },
+    metadata: { provider: "xendit", resourceId },
   });
   return result;
 }
