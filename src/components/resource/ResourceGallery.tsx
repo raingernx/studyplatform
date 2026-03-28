@@ -105,7 +105,6 @@ export function ResourceGallery({
               width={1400}
               height={1050}
               className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain"
-              priority
             />
           </div>
 
