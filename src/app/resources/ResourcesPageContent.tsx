@@ -8,12 +8,8 @@ import { ResourceCard, type ResourceCardData } from "@/components/resources/Reso
 import { ResourceCardSkeleton } from "@/components/resources/ResourceCardSkeleton";
 import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import { HeroBanner } from "@/components/marketplace/HeroBanner";
-import { HeroSearch } from "@/components/marketplace/HeroSearch";
-import { DiscoverButton, CategoryChips, type ChipCategory } from "@/components/marketplace/CategoryChips";
-import { ScrollableCategoryNav } from "@/components/marketplace/ScrollableCategoryNav";
 import { FilterBar } from "@/components/marketplace/FilterBar";
 import { FilterSidebar, type FilterCategory } from "@/components/marketplace/FilterSidebar";
-import { MobileFilterDialog } from "@/components/marketplace/MobileFilterDialog";
 import { CreatorCTA } from "@/components/discover/CreatorCTA";
 import { BlogSection } from "@/components/discover/BlogSection";
 import { EmailSignup } from "@/components/discover/EmailSignup";
@@ -21,7 +17,6 @@ import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { formatNumber, formatPrice } from "@/lib/format";
 import {
   getDiscoverData,
-  getDiscoverCategories,
   getHeroConfig,
   type DiscoverData,
 } from "@/services/discover.service";
@@ -48,18 +43,6 @@ import {
 
 const ITEMS_PER_PAGE = 12;
 const BLOG_SECTION_ENABLED = false;
-const CONTROLS_BAR_CLASS_NAME =
-  "rounded-[28px] border border-surface-200/90 bg-white/90 p-3 sm:p-4 lg:p-5";
-const CONTROLS_BAR_META_CLASS_NAME =
-  "flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-text-secondary";
-const CONTROLS_BAR_MAIN_CLASS_NAME =
-  "mt-3 flex flex-col gap-4 lg:mt-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6";
-const CONTROLS_BAR_GROUP_CLASS_NAME =
-  "order-2 flex min-w-0 items-center gap-3 overflow-hidden lg:order-1";
-const CONTROLS_BAR_SEARCH_CLASS_NAME =
-  "order-1 flex w-full shrink-0 flex-col gap-3 sm:flex-row lg:order-2 lg:max-w-xl lg:items-center";
-const CONTROLS_BAR_CHIP_SHELL_CLASS_NAME =
-  "flex min-w-0 items-center gap-2 rounded-[20px] border border-surface-200 bg-surface-50/80 p-1";
 
 type ResourcesPageContentProps = {
   isDiscoverMode: boolean;
@@ -284,10 +267,6 @@ export async function ResourcesPageContent({
       : categories.find((item) => item.slug === category)?.name ?? "Browse resources";
   const sortLabel = SORT_OPTIONS.find((option) => option.value === sort)?.label ?? "Newest";
   const hasActiveFilters = !!(search?.trim() || price !== "" || sort !== "newest" || tag || featured === "true");
-  const mobileFilterActiveCount = [
-    Boolean(category && category !== "all"),
-    Boolean(tag),
-  ].filter(Boolean).length;
   const resourceGridParams = new URLSearchParams();
   if (search?.trim()) resourceGridParams.set("search", search.trim());
   if (category) resourceGridParams.set("category", category);
@@ -378,10 +357,7 @@ export async function ResourcesPageContent({
               </p>
             ) : null}
           </div>
-        </div>
-
-        <div className={CONTROLS_BAR_CLASS_NAME}>
-          <div className={CONTROLS_BAR_META_CLASS_NAME}>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-text-secondary">
             <span className="font-medium text-text-primary">
               {formatNumber(total)} results
             </span>
@@ -389,34 +365,6 @@ export async function ResourcesPageContent({
               •
             </span>
             <span>{`Sorted by ${sortLabel}`}</span>
-          </div>
-
-          <div className={CONTROLS_BAR_MAIN_CLASS_NAME}>
-            <div className={CONTROLS_BAR_SEARCH_CLASS_NAME}>
-              <div className="flex-1 lg:min-w-[360px]">
-                <Suspense fallback={<SearchFallback />}>
-                  <HeroSearch variant="listing" />
-                </Suspense>
-              </div>
-              <MobileFilterDialog
-                categories={categories as FilterCategory[]}
-                activeCount={mobileFilterActiveCount}
-                className="shrink-0"
-              />
-            </div>
-
-            <div className={CONTROLS_BAR_GROUP_CLASS_NAME}>
-              <div className={CONTROLS_BAR_CHIP_SHELL_CLASS_NAME}>
-                <Suspense fallback={<DiscoverFallback />}>
-                  <DiscoverButton />
-                </Suspense>
-                <ScrollableCategoryNav>
-                  <Suspense fallback={<ChipsFallback />}>
-                    <CategoryChips categories={categories as ChipCategory[]} />
-                  </Suspense>
-                </ScrollableCategoryNav>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -523,8 +471,6 @@ export async function ResourcesPageContent({
   );
 }
 
-type DiscoverCategoriesWithCount = Awaited<ReturnType<typeof getDiscoverCategories>>;
-
 async function AwaitResolvedNode({
   promise,
 }: {
@@ -534,7 +480,6 @@ async function AwaitResolvedNode({
 }
 
 async function ResourcesDiscoverContent({ userId }: { userId?: string }) {
-  const discoverCategoriesPromise = trackRequestWork(loadDiscoverCategoriesSafe());
   const discoverDataPromise = trackRequestWork(loadDiscoverDataSafe());
   const ownedIdsPromise = userId
     ? trackRequestWork(loadOwnedIdsSafe(userId))
@@ -542,9 +487,6 @@ async function ResourcesDiscoverContent({ userId }: { userId?: string }) {
   const learningProfilePromise = userId
     ? trackRequestWork(loadLearningProfileSafe(userId))
     : null;
-  const introPromise = trackRequestWork(
-    DiscoverIntroDeferred({ discoverCategoriesPromise }),
-  );
   const sectionsPromise = trackRequestWork(
     ResourcesDiscoverDeferredSections({
       discoverDataPromise,
@@ -556,97 +498,10 @@ async function ResourcesDiscoverContent({ userId }: { userId?: string }) {
 
   return (
     <>
-      <Suspense fallback={<DiscoverIntroFallback />}>
-        <AwaitResolvedNode promise={introPromise} />
-      </Suspense>
-
       <Suspense fallback={<DiscoverSectionsFallback />}>
         <AwaitResolvedNode promise={sectionsPromise} />
       </Suspense>
     </>
-  );
-}
-
-async function DiscoverIntroDeferred({
-  discoverCategoriesPromise,
-}: {
-  discoverCategoriesPromise: Promise<DiscoverCategoriesWithCount>;
-}) {
-  const discoverCategoriesWithCount = await discoverCategoriesPromise;
-  const categories = discoverCategoriesWithCount.map((item) => ({
-    id: item.id,
-    name: item.name,
-    slug: item.slug,
-  }));
-  const discoverResourceCount = discoverCategoriesWithCount.reduce(
-    (sum, item) => sum + item._count.resources,
-    0,
-  );
-
-  return (
-    <DiscoverIntroSection
-      categories={categories as ChipCategory[]}
-      categoryCount={discoverCategoriesWithCount.length}
-      resourceCount={discoverResourceCount}
-    />
-  );
-}
-
-function DiscoverIntroSection({
-  categories,
-  categoryCount,
-  resourceCount,
-}: {
-  categories: ChipCategory[];
-  categoryCount: number;
-  resourceCount: number;
-}) {
-  return (
-    <section className="pb-7 sm:pb-8">
-      <div className={CONTROLS_BAR_CLASS_NAME}>
-        <div className={CONTROLS_BAR_META_CLASS_NAME}>
-          <p>
-            <span className="font-semibold text-text-primary">{formatNumber(categoryCount)}</span>{" "}
-            categories
-          </p>
-          <span className="text-text-muted" aria-hidden>
-            •
-          </span>
-          <p>
-            <span className="font-semibold text-text-primary">{formatNumber(resourceCount)}</span>{" "}
-            resources
-          </p>
-        </div>
-
-        <div className={CONTROLS_BAR_MAIN_CLASS_NAME}>
-          <div className={CONTROLS_BAR_SEARCH_CLASS_NAME}>
-            <div className="flex-1 lg:min-w-[360px]">
-              <Suspense fallback={<SearchFallback />}>
-                <HeroSearch variant="listing" />
-              </Suspense>
-            </div>
-            <MobileFilterDialog
-              categories={categories as FilterCategory[]}
-              activeCount={0}
-              className="shrink-0"
-            />
-          </div>
-
-          <div className={CONTROLS_BAR_GROUP_CLASS_NAME}>
-            <div className={CONTROLS_BAR_CHIP_SHELL_CLASS_NAME}>
-              <Suspense fallback={<DiscoverFallback />}>
-                <DiscoverButton />
-              </Suspense>
-              <ScrollableCategoryNav>
-                <Suspense fallback={<ChipsFallback />}>
-                  <CategoryChips categories={categories} />
-                </Suspense>
-              </ScrollableCategoryNav>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -892,20 +747,6 @@ async function ResourcesDiscoverDeferredSections({
 // ResourcesDiscoverPersonalisedSection removed — replaced by
 // ResourcesDiscoverRFYFinalSection + ResourcesDiscoverPersonalisedExtras below.
 
-async function loadDiscoverCategoriesSafe(): Promise<DiscoverCategoriesWithCount> {
-  try {
-    return await traceServerStep("resources.getDiscoverCategories", () =>
-      getDiscoverCategories(),
-    );
-  } catch (error) {
-    if (!isMissingTableError(error)) {
-      throw error;
-    }
-
-    return [];
-  }
-}
-
 async function loadDiscoverDataSafe(): Promise<DiscoverData | null> {
   try {
     return await traceServerStep("resources.getDiscoverData", () =>
@@ -1052,91 +893,6 @@ function SectionHeader({
   );
 }
 
-function DiscoverFallback() {
-  return (
-    <div className="inline-flex h-10 items-center gap-2 rounded-full border border-surface-200 bg-white px-3.5 text-sm font-medium text-text-secondary shadow-sm">
-      <LoadingSkeleton className="h-2 w-2 rounded-full bg-primary-500" />
-      <span>Loading</span>
-    </div>
-  );
-}
-
-/**
- * Height-matched skeleton for DiscoverIntroSection.
- * Uses the same outer section class and composites the existing chip/search
- * fallbacks so the layout dimensions match the real component exactly.
- */
-function DiscoverIntroFallback() {
-  return (
-    <section className="border-b border-surface-200/80 pb-7 sm:pb-8">
-      <div className={CONTROLS_BAR_CLASS_NAME}>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <LoadingSkeleton className="h-4 w-24" />
-          <LoadingSkeleton className="h-4 w-28" />
-        </div>
-        <div className={CONTROLS_BAR_MAIN_CLASS_NAME}>
-          <div className={CONTROLS_BAR_SEARCH_CLASS_NAME}>
-            <div className="flex-1 lg:min-w-[360px]">
-              <SearchFallback />
-            </div>
-            <FiltersButtonFallback />
-          </div>
-          <div className={CONTROLS_BAR_GROUP_CLASS_NAME}>
-            <div className={CONTROLS_BAR_CHIP_SHELL_CLASS_NAME}>
-              <DiscoverFallback />
-              <ScrollableCategoryNav>
-                <ChipsFallback />
-              </ScrollableCategoryNav>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SearchFallback() {
-  return (
-    <div className="flex h-11 w-full items-center gap-3 rounded-full border border-border-subtle bg-white px-4 text-sm text-text-muted shadow-sm">
-      <LoadingSkeleton className="h-2.5 w-2.5 rounded-full bg-primary-500" />
-      <span>Loading search…</span>
-    </div>
-  );
-}
-
-function FiltersButtonFallback() {
-  return (
-    <div className="inline-flex h-11 w-full shrink-0 items-center justify-center rounded-2xl border border-surface-200 bg-surface-50 px-4 text-sm font-medium text-text-muted sm:w-auto">
-      Filters
-    </div>
-  );
-}
-
-function ChipsFallback() {
-  return (
-    <div className="flex gap-2 overflow-hidden">
-      {[
-        "Loading",
-        "Categories",
-        "Popular",
-        "Recent",
-      ].map((label, index) => (
-        <div
-          key={label}
-          className={`inline-flex h-9 shrink-0 items-center rounded-full border border-surface-200 bg-surface-50 px-3 text-sm text-text-muted ${
-            index === 0 ? "gap-2 pr-4" : ""
-          }`}
-        >
-          {index === 0 ? (
-            <LoadingSkeleton className="h-2 w-2 rounded-full bg-primary-500" />
-          ) : null}
-          <span>{label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function FilterBarFallback() {
   return (
     <div className="flex flex-col gap-3 border-b border-surface-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1207,7 +963,7 @@ function DeferredSectionFallback({
 export function ResourcesContentFallback({ isDiscoverMode }: { isDiscoverMode: boolean }) {
   return (
     <>
-      <ResourcesIntroSectionSkeleton isDiscoverMode={isDiscoverMode} />
+      {!isDiscoverMode ? <ResourcesIntroSectionSkeleton isDiscoverMode={false} /> : null}
 
       {isDiscoverMode ? (
         <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
@@ -1221,27 +977,9 @@ export function ResourcesContentFallback({ isDiscoverMode }: { isDiscoverMode: b
             <LoadingSkeleton className="h-3 w-16" />
             <LoadingSkeleton className="h-8 w-56 rounded-lg" />
             <LoadingSkeleton className="h-4 w-72" />
-            <div className={CONTROLS_BAR_CLASS_NAME}>
-              <div className={CONTROLS_BAR_META_CLASS_NAME}>
-                <LoadingSkeleton className="h-4 w-20" />
-                <LoadingSkeleton className="h-4 w-24" />
-              </div>
-              <div className={CONTROLS_BAR_MAIN_CLASS_NAME}>
-                <div className={CONTROLS_BAR_SEARCH_CLASS_NAME}>
-                  <div className="flex-1 lg:min-w-[360px]">
-                    <SearchFallback />
-                  </div>
-                  <FiltersButtonFallback />
-                </div>
-                <div className={CONTROLS_BAR_GROUP_CLASS_NAME}>
-                  <div className={CONTROLS_BAR_CHIP_SHELL_CLASS_NAME}>
-                    <DiscoverFallback />
-                    <ScrollableCategoryNav>
-                      <ChipsFallback />
-                    </ScrollableCategoryNav>
-                  </div>
-                </div>
-              </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-text-secondary">
+              <LoadingSkeleton className="h-4 w-20" />
+              <LoadingSkeleton className="h-4 w-24" />
             </div>
           </div>
 

@@ -18,6 +18,10 @@ import {
 } from "./ResourcesPageContent";
 import { HeroBannerSkeleton } from "@/components/marketplace/HeroBanner";
 import {
+  ResourcesCatalogControls,
+  ResourcesCatalogControlsSkeleton,
+} from "@/components/marketplace/ResourcesCatalogControls";
+import {
   trackRequestWork,
   traceServerStep,
   updateRequestPerformanceDetails,
@@ -97,6 +101,9 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
   const pageParam = getSearchParamValue(rawPage)?.trim();
   const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const isDiscoverMode = !category;
+  const mobileFilterActiveCount = isDiscoverMode
+    ? 0
+    : [Boolean(category && category !== "all"), Boolean(tag)].filter(Boolean).length;
   const discoverHeroClassName =
     "min-h-[440px] rounded-[26px] border-white/70 bg-surface-100 sm:min-h-[500px] lg:min-h-[540px]";
 
@@ -160,7 +167,16 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
 
       return (
         <div className="flex min-h-screen flex-col bg-surface-50">
-          <Navbar />
+          <Navbar
+            secondaryRow={
+              <Suspense fallback={<ResourcesCatalogControlsSkeleton showDiscoverMeta={isDiscoverMode} />}>
+                <ResourcesCatalogControls
+                  activeCount={mobileFilterActiveCount}
+                  showDiscoverMeta={isDiscoverMode}
+                />
+              </Suspense>
+            }
+          />
 
           <main className="flex-1">
             {isDiscoverMode ? (

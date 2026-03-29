@@ -70,7 +70,7 @@ export function DiscoverButton() {
       aria-label="Discover resources"
       aria-busy={isPending}
       className={cn(
-        "inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-3.5 text-small font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 sm:px-4",
+        "inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-small font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 sm:h-8 sm:px-3.5",
         isDiscover
           ? "border-primary-200 bg-primary-50 text-primary-700 shadow-sm"
           : "border-transparent bg-transparent text-text-secondary hover:bg-white hover:text-text-primary",
@@ -168,7 +168,7 @@ function Chip({
       aria-pressed={active}
       aria-busy={pending}
       className={cn(
-        "inline-flex h-9 shrink-0 items-center whitespace-nowrap rounded-full border px-3.5 text-small font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70",
+        "inline-flex h-9 shrink-0 items-center whitespace-nowrap rounded-full border px-3 text-small font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 sm:h-8 sm:px-3.5",
         // Active or optimistically-pending target → blue
         active || pending
           ? "border-primary-200 bg-primary-50 text-primary-700 shadow-sm"

@@ -87,7 +87,7 @@ export function HeroSearch({
         disabled={isPending}
         className={cn(
           variant === "listing" &&
-            "h-11 rounded-2xl border-surface-200 bg-white py-2.5 pl-11 pr-11 text-small shadow-sm sm:pl-11 sm:pr-11",
+            "h-11 sm:h-10 rounded-xl sm:rounded-2xl border-surface-200 bg-white py-2 pl-10 pr-10 text-small shadow-sm sm:pl-11 sm:pr-11",
           className,
         )}
       />
