@@ -1,5 +1,6 @@
 "use client";
 
+// Legacy primitive implementation. App code should import Avatar from `@/design-system`.
 import * as React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";

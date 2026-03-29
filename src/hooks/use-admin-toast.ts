@@ -10,4 +10,4 @@
  *   toast.warning("Some items were skipped");
  *   toast.info("No changes to apply");
  */
-export { useToast as useAdminToast } from "@/hooks/use-toast";
+export { useToast as useAdminToast } from "@/design-system";
