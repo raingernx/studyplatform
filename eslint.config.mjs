@@ -118,6 +118,26 @@ export default [
               message: "Use `@/design-system` SearchInput instead.",
             },
             {
+              name: "@/components/ui/Badge",
+              message: "Use `@/design-system` Badge instead.",
+            },
+            {
+              name: "@/components/ui/Modal",
+              message: "Use `@/design-system` Modal instead.",
+            },
+            {
+              name: "@/components/ui/Avatar",
+              message: "Use `@/design-system` Avatar instead.",
+            },
+            {
+              name: "@/components/ui/toast-provider",
+              message: "Use `@/design-system` ToastProvider instead.",
+            },
+            {
+              name: "@/hooks/use-toast",
+              message: "Use `@/design-system` useToast instead.",
+            },
+            {
               name: "@/components/shared/SearchInput",
               message: "Use `@/design-system` SearchInput instead.",
             },
