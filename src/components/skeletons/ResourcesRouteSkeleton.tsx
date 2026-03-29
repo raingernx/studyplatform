@@ -1,7 +1,10 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Container } from "@/components/layout/container";
 import { HeroBannerSkeleton } from "@/components/marketplace/HeroBanner";
-import { ResourcesCatalogControlsSkeleton } from "@/components/marketplace/ResourcesCatalogControls";
+import {
+  ResourcesCatalogControlsSkeleton,
+  ResourcesCatalogSearchSkeleton,
+} from "@/components/marketplace/ResourcesCatalogControls";
 import { ResourceCardSkeleton } from "@/components/resources/ResourceCardSkeleton";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 
@@ -18,7 +21,10 @@ export function ResourcesRouteSkeleton() {
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-50">
-      <Navbar secondaryRow={<ResourcesCatalogControlsSkeleton showDiscoverMeta />} />
+      <Navbar
+        headerSearch={<ResourcesCatalogSearchSkeleton />}
+        secondaryRow={<ResourcesCatalogControlsSkeleton showDiscoverMeta />}
+      />
 
       <main className="flex-1">
         <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(224,231,255,0.78),transparent_32%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">

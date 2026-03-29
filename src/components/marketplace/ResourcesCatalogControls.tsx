@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { isMissingTableError } from "@/lib/prismaErrors";
 import { Container } from "@/components/layout/container";
-import { HeroSearch } from "@/components/marketplace/HeroSearch";
 import {
   CategoryChips,
   DiscoverButton,
@@ -15,13 +14,11 @@ import { getDiscoverCategories } from "@/services/discover.service";
 
 const CONTROLS_BAR_CLASS_NAME = "border-b border-surface-200/80 bg-white/95";
 const CONTROLS_BAR_MAIN_CLASS_NAME =
-  "flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-5";
+  "flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4";
 const CONTROLS_BAR_GROUP_CLASS_NAME =
-  "order-2 flex min-w-0 items-center gap-2 overflow-hidden lg:order-1";
-const CONTROLS_BAR_SEARCH_CLASS_NAME =
-  "order-1 flex w-full shrink-0 flex-col gap-3 sm:flex-row lg:order-2 lg:max-w-xl lg:items-center";
-const CONTROLS_BAR_CHIP_SHELL_CLASS_NAME =
-  "flex min-w-0 items-center gap-1.5 rounded-[22px] border border-surface-200 bg-surface-50/90 p-1";
+  "flex min-w-0 items-center gap-2 overflow-hidden";
+const CONTROLS_BAR_ACTIONS_CLASS_NAME =
+  "flex flex-col items-start gap-1.5 lg:items-end";
 
 type ResourcesCatalogControlsProps = {
   activeCount: number;
@@ -55,43 +52,36 @@ export async function ResourcesCatalogControls({
 
   return (
     <div className={CONTROLS_BAR_CLASS_NAME}>
-      <Container className="py-4 sm:py-4 lg:py-4.5">
+      <Container className="py-2.5 sm:py-3">
         <div className={CONTROLS_BAR_MAIN_CLASS_NAME}>
-          <div className={CONTROLS_BAR_SEARCH_CLASS_NAME}>
-            <div className="flex-1 lg:min-w-[360px]">
-              <Suspense fallback={<SearchFallback />}>
-                <HeroSearch variant="listing" />
+          <div className={CONTROLS_BAR_GROUP_CLASS_NAME}>
+            <Suspense fallback={<DiscoverFallback />}>
+              <DiscoverButton />
+            </Suspense>
+            <ScrollableCategoryNav>
+              <Suspense fallback={<ChipsFallback />}>
+                <CategoryChips categories={categories as ChipCategory[]} />
               </Suspense>
-            </div>
+            </ScrollableCategoryNav>
+          </div>
+
+          <div className={CONTROLS_BAR_ACTIONS_CLASS_NAME}>
             <MobileFilterDialog
               categories={categories as FilterCategory[]}
               activeCount={activeCount}
               className="shrink-0"
             />
-          </div>
-
-          <div className={CONTROLS_BAR_GROUP_CLASS_NAME}>
-            <div className={CONTROLS_BAR_CHIP_SHELL_CLASS_NAME}>
-              <Suspense fallback={<DiscoverFallback />}>
-                <DiscoverButton />
-              </Suspense>
-              <ScrollableCategoryNav>
-                <Suspense fallback={<ChipsFallback />}>
-                  <CategoryChips categories={categories as ChipCategory[]} />
-                </Suspense>
-              </ScrollableCategoryNav>
-            </div>
+            {showDiscoverMeta ? (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-text-secondary">
+                <span>{categoryCount} categories</span>
+                <span className="text-text-muted/80" aria-hidden>
+                  •
+                </span>
+                <span>{resourceCount} resources</span>
+              </div>
+            ) : null}
           </div>
         </div>
-        {showDiscoverMeta ? (
-          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-secondary lg:justify-end">
-            <span>{categoryCount} categories</span>
-            <span className="text-text-muted/80" aria-hidden>
-              •
-            </span>
-            <span>{resourceCount} resources</span>
-          </div>
-        ) : null}
       </Container>
     </div>
   );
@@ -104,35 +94,35 @@ export function ResourcesCatalogControlsSkeleton({
 }) {
   return (
     <div className={CONTROLS_BAR_CLASS_NAME}>
-      <Container className="py-4 sm:py-4 lg:py-4.5">
+      <Container className="py-2.5 sm:py-3">
         <div className={CONTROLS_BAR_MAIN_CLASS_NAME}>
-          <div className={CONTROLS_BAR_SEARCH_CLASS_NAME}>
-            <div className="flex-1 lg:min-w-[360px]">
-              <SearchFallback />
-            </div>
-            <FiltersButtonFallback />
-          </div>
           <div className={CONTROLS_BAR_GROUP_CLASS_NAME}>
-            <div className={CONTROLS_BAR_CHIP_SHELL_CLASS_NAME}>
-              <DiscoverFallback />
-              <ScrollableCategoryNav>
-                <ChipsFallback />
-              </ScrollableCategoryNav>
-            </div>
+            <DiscoverFallback />
+            <ScrollableCategoryNav>
+              <ChipsFallback />
+            </ScrollableCategoryNav>
+          </div>
+
+          <div className={CONTROLS_BAR_ACTIONS_CLASS_NAME}>
+            <FiltersButtonFallback />
+            {showDiscoverMeta ? (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-text-secondary">
+                <LoadingSkeleton className="h-4 w-20" />
+                <span className="text-text-muted/80" aria-hidden>
+                  •
+                </span>
+                <LoadingSkeleton className="h-4 w-24" />
+              </div>
+            ) : null}
           </div>
         </div>
-        {showDiscoverMeta ? (
-          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-secondary lg:justify-end">
-            <LoadingSkeleton className="h-4 w-20" />
-            <span className="text-text-muted/80" aria-hidden>
-              •
-            </span>
-            <LoadingSkeleton className="h-4 w-24" />
-          </div>
-        ) : null}
       </Container>
     </div>
   );
+}
+
+export function ResourcesCatalogSearchSkeleton() {
+  return <SearchFallback />;
 }
 
 function DiscoverFallback() {
