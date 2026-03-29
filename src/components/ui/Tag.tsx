@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
+import { Badge } from "@/design-system";
 import { cn } from "@/lib/utils";
 
-/** KruCraft Design System: tags are lowercase, bg-neutral-100 text-neutral-700, max 2 visible in cards. */
+/** Legacy compatibility entrypoint. Prefer Badge from "@/design-system". */
 interface TagProps {
   children: ReactNode;
   className?: string;
@@ -9,15 +10,11 @@ interface TagProps {
 
 export function Tag({ children, className }: TagProps) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-0.5",
-        "text-xs font-medium text-neutral-700",
-        className
-      )}
+    <Badge
+      variant="neutral"
+      className={cn("bg-neutral-100 text-neutral-700", className)}
     >
       {children}
-    </span>
+    </Badge>
   );
 }
-

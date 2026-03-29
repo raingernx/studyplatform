@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { requireSession } from "@/lib/auth/require-session";
 import { formatDate, formatFileSize } from "@/lib/format";
 import { getUserDownloadHistory } from "@/services/purchase.service";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 export const metadata = {
   title: "Downloads",
@@ -45,24 +46,25 @@ export default async function DownloadsPage() {
         </div>
 
         {downloads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-white py-20 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50">
-              <Download className="h-7 w-7 text-blue-400" />
-            </div>
-            <h2 className="mt-4 text-[15px] font-semibold text-zinc-900">
-              No downloads yet
-            </h2>
-            <p className="mt-1.5 max-w-sm text-[13px] text-zinc-500">
-              Downloaded files will appear here after you open them from your library.
-            </p>
-            <Link
-              href="/resources"
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-zinc-700"
-            >
-              <BookOpen className="h-4 w-4" />
-              Browse marketplace
-            </Link>
-          </div>
+          <EmptyState
+            className="bg-white py-20"
+            icon={
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50">
+                <Download className="h-7 w-7 text-blue-400" />
+              </div>
+            }
+            title="No downloads yet"
+            description="Downloaded files will appear here after you open them from your library."
+            action={
+              <Link
+                href="/resources"
+                className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-zinc-700"
+              >
+                <BookOpen className="h-4 w-4" />
+                Browse marketplace
+              </Link>
+            }
+          />
         ) : (
           <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-card">
             {/* Table header */}

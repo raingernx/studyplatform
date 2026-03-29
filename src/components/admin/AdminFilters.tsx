@@ -1,8 +1,7 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
-import { Input } from "@/design-system";
+import { SearchInput } from "@/design-system";
 import { cn } from "@/lib/utils";
 
 /** Simple admin list filters: search + optional status. For resources, users, orders. */
@@ -22,9 +21,9 @@ export function AdminFilters({
   const searchParams = useSearchParams();
   const value = searchParams.get(searchParam) ?? "";
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function updateSearch(nextValue: string) {
     const params = new URLSearchParams(searchParams.toString());
-    const v = e.target.value.trim();
+    const v = nextValue.trim();
     if (v) params.set(searchParam, v);
     else params.delete(searchParam);
     params.delete("page");
@@ -39,19 +38,13 @@ export function AdminFilters({
       >
         Search
       </label>
-      <div className="relative">
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-text-muted">
-          <Search className="h-4 w-4" />
-        </span>
-        <Input
-          id={`admin-filter-${searchParam}`}
-          type="search"
-          placeholder={searchPlaceholder}
-          value={value}
-          onChange={handleChange}
-          className="w-full pl-9"
-        />
-      </div>
+      <SearchInput
+        id={`admin-filter-${searchParam}`}
+        placeholder={searchPlaceholder}
+        value={value}
+        onChange={(e) => updateSearch(e.target.value)}
+        onClear={() => updateSearch("")}
+      />
     </div>
   );
 }

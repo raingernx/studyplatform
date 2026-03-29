@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Bell } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/design-system";
-import { Switch } from "@/design-system";
+import { FormSection, Switch } from "@/design-system";
 
 type ToggleRowProps = {
   id: string;
@@ -110,12 +109,11 @@ export function NotificationSettings({
   }
 
   return (
-    <Card className="mb-5">
-      <CardHeader>
-        <CardTitle>Notifications</CardTitle>
-        <CardDescription>Control which emails and alerts you receive.</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <FormSection
+      title="Notifications"
+      description="Control which emails and alerts you receive."
+      className="mb-5"
+    >
         <div className="flex items-center gap-2 rounded-xl bg-surface-50 px-3 py-2 text-[12px] text-zinc-600">
           <Bell className="h-3.5 w-3.5 text-zinc-400" />
           Notification preferences are stored locally for now.
@@ -181,7 +179,6 @@ export function NotificationSettings({
             }}
           />
         </div>
-      </CardContent>
-    </Card>
+    </FormSection>
   );
 }

@@ -14,6 +14,7 @@ import { requireSession } from "@/lib/auth/require-session";
 import { prisma } from "@/lib/prisma";
 import { formatDate, formatPrice } from "@/lib/format";
 import { getPlatform } from "@/services/platform.service";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 export const metadata = {
   title: "Purchases",
@@ -98,24 +99,25 @@ export default async function PurchasesPage() {
         </div>
 
         {purchases.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-white py-20 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50">
-              <ShoppingBag className="h-7 w-7 text-violet-400" />
-            </div>
-            <h2 className="mt-4 text-[15px] font-semibold text-zinc-900">
-              No purchases yet
-            </h2>
-            <p className="mt-1.5 max-w-sm text-[13px] text-zinc-500">
-              Browse the marketplace to find and purchase resources.
-            </p>
-            <Link
-              href="/resources"
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-zinc-700"
-            >
-              <BookOpen className="h-4 w-4" />
-              Browse marketplace
-            </Link>
-          </div>
+          <EmptyState
+            className="bg-white py-20"
+            icon={
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50">
+                <ShoppingBag className="h-7 w-7 text-violet-400" />
+              </div>
+            }
+            title="No purchases yet"
+            description="Browse the marketplace to find and purchase resources."
+            action={
+              <Link
+                href="/resources"
+                className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-zinc-700"
+              >
+                <BookOpen className="h-4 w-4" />
+                Browse marketplace
+              </Link>
+            }
+          />
         ) : (
           <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-card">
             {/* Table header */}

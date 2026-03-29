@@ -7,6 +7,7 @@ import { isMissingTableError } from "@/lib/prismaErrors";
 import { logActivity } from "@/lib/activity";
 import { Navbar } from "@/components/layout/Navbar";
 import { Container } from "@/components/layout/container";
+import { HeroSearch } from "@/components/marketplace/HeroSearch";
 import { AlertCircle, BookOpen, CheckCircle, Download } from "lucide-react";
 import Link from "next/link";
 import { formatFileSize } from "@/lib/format";
@@ -300,7 +301,7 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar />
+      <Navbar headerSearch={<HeroSearch variant="listing" />} />
 
       <main className="flex-1 bg-zinc-50">
         <Container className="py-8 sm:py-10 lg:py-12">

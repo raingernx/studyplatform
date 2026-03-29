@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { Button } from "@/design-system";
 import { ResourceTable, type AdminResourceRow } from "@/components/admin/ResourceTable";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { AdminResourcesFilters } from "./AdminResourcesFilters";
 import { getAdminResourcesPageData } from "@/services/admin-operations.service";
 import {
@@ -158,17 +159,20 @@ export default async function AdminResourcesPage({
           />
 
           {rows.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-subtle bg-surface-50/50 px-6 py-12 text-center">
-              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-50">
-                <BookOpen className="h-6 w-6 text-primary-700" />
-              </span>
-              <p className="mt-4 font-semibold text-text-primary">No resources found</p>
-              <p className="mt-1.5 max-w-md text-small text-text-secondary">
-                {hasFilters
+            <EmptyState
+              className="min-h-0 border-border-subtle bg-surface-50/50 px-6 py-12"
+              icon={
+                <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-50">
+                  <BookOpen className="h-6 w-6 text-primary-700" />
+                </span>
+              }
+              title="No resources found"
+              description={
+                hasFilters
                   ? "Try adjusting your search or filters."
-                  : "Create your first resource to populate the library."}
-              </p>
-            </div>
+                  : "Create your first resource to populate the library."
+              }
+            />
           ) : (
             <>
               <ResourceTable resources={rows} categories={categories} />

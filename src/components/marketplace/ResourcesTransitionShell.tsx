@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { ResourceDetailLoadingShell } from "@/components/resources/ResourceDetailLoadingShell";
 import {
   canonicalizeResourcesHref,
   clearResourcesNavigation,
@@ -23,15 +24,21 @@ export function ResourcesTransitionShell({
     currentSearch ? `${pathname}?${currentSearch}` : pathname,
   );
   const isPending = Boolean(navigationState.mode && navigationState.href);
+  const shouldFreezePreviousRoute =
+    isPending && navigationState.mode !== "detail";
+  const shouldShowPendingDetailShell =
+    isPending &&
+    navigationState.mode === "detail" &&
+    currentHref !== navigationState.href;
   const reachedTarget =
     isPending && currentHref === navigationState.href;
   const [frozenChildren, setFrozenChildren] = useState(children);
 
   useEffect(() => {
-    if (!isPending) {
+    if (!shouldFreezePreviousRoute) {
       setFrozenChildren(children);
     }
-  }, [children, isPending]);
+  }, [children, shouldFreezePreviousRoute]);
 
   useEffect(() => {
     if (!navigationState.mode || !navigationState.href || !reachedTarget) {
@@ -66,15 +73,19 @@ export function ResourcesTransitionShell({
       <div
         aria-busy={isPending}
         className={
-          isPending
+          shouldFreezePreviousRoute
             ? "pointer-events-none opacity-[0.94] transition-opacity duration-150 ease-out motion-reduce:transition-none"
             : "transition-opacity duration-150 ease-out motion-reduce:transition-none"
         }
       >
-        {isPending ? frozenChildren : children}
+        {shouldShowPendingDetailShell
+          ? <ResourceDetailLoadingShell />
+          : shouldFreezePreviousRoute
+            ? frozenChildren
+            : children}
       </div>
 
-      {isPending ? (
+      {shouldFreezePreviousRoute ? (
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.22))]"

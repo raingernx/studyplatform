@@ -3,8 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Card } from "@/design-system";
-import { Tag } from "@/components/ui/Tag";
+import { Badge, Card } from "@/design-system";
 
 export interface FilterCategory {
   id: string;
@@ -238,9 +237,9 @@ export function ResourceFilters({ categories, tags }: ResourceFiltersProps) {
           {/* Active-tag pill + dismiss — shown above the list when a tag is selected */}
           {activeTag && (
             <div className="mb-2 flex items-center gap-1.5">
-              <Tag className="bg-violet-100 text-violet-700">
+              <Badge variant="neutral" className="bg-violet-100 text-violet-700">
                 {tags.find((t) => t.slug === activeTag)?.name ?? activeTag}
-              </Tag>
+              </Badge>
               <button
                 onClick={() => updateParam("tag", null)}
                 className="flex h-4 w-4 flex-shrink-0 items-center justify-center

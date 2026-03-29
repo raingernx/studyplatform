@@ -3,7 +3,7 @@ import { ResourcesNavigationFeedback } from "@/components/marketplace/ResourcesN
 import { ResourcesTransitionFallback } from "@/components/marketplace/ResourcesTransitionFallback";
 import { ResourcesTransitionShell } from "@/components/marketplace/ResourcesTransitionShell";
 
-export default function ResourcesLayout({
+export default function LocaleResourcesLayout({
   children,
 }: {
   children: ReactNode;

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
+import { SearchInput } from "@/design-system";
 import { ResourceCard, type ResourceCardResource } from "@/components/resources/ResourceCard";
 import { LIBRARY_GRID_CLASSES } from "./LibraryGrid";
 
@@ -138,16 +139,14 @@ export function LibraryGridClient({ items }: LibraryGridClientProps) {
         </div>
 
         <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center">
-          <label className="relative block min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="search"
-              placeholder="Search your library by title or creator"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-surface-200 bg-surface-50 py-2.5 pl-10 pr-4 text-small text-zinc-900 placeholder:text-zinc-400 focus:border-primary-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/10"
-            />
-          </label>
+          <SearchInput
+            placeholder="Search your library by title or creator"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch("")}
+            containerClassName="min-w-0 flex-1"
+            className="bg-surface-50"
+          />
 
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="inline-flex items-center gap-2 px-1 text-caption font-medium text-zinc-500">
