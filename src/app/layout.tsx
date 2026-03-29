@@ -25,14 +25,14 @@ export default async function RootLayout({
   const platform = await getPlatform();
 
   return (
-    <html lang="th" data-scroll-behavior="smooth">
+    <html lang="th" data-scroll-behavior="smooth" className="min-h-screen bg-background">
       <body
-        className={`${fontVariables} font-sans antialiased`.trim()}
+        className={`${fontVariables} min-h-screen bg-background font-sans text-foreground antialiased`.trim()}
       >
         <PlatformConfigProvider initialConfig={platform}>
           <ThemeProvider>
             <Providers>
-              <div className="flex min-h-screen flex-col">
+              <div className="flex min-h-screen flex-col bg-background">
                 <div className="flex-1 min-h-0">{children}</div>
                 <PublicFooterGate>
                   <Footer platformName={platform.platformShortName} />
