@@ -93,14 +93,15 @@ const config: Config = {
       fontSize: fontSizeScale,
       letterSpacing: letterSpacingScale,
       boxShadow: {
-        "card":               "0 1px 2px rgba(15,23,42,0.04)",
-        "card-md":            "0 8px 20px -12px rgba(15,23,42,0.12)",
-        "card-lg":            "0 18px 40px -24px rgba(15,23,42,0.18)",
+        sm:                   "0 0 #0000",
+        "card":               "0 0 #0000",
+        "card-md":            "0 0 #0000",
+        "card-lg":            "0 0 #0000",
         "glow-blue":          "0 0 0 1px rgba(37,99,235,0.08), 0 10px 24px -18px rgba(37,99,235,0.22)",
         "glow-violet":        "0 0 0 1px rgba(79,70,229,0.08), 0 10px 24px -18px rgba(79,70,229,0.22)",
         "glow-orange":        "0 0 0 1px rgba(245,158,11,0.10), 0 10px 24px -18px rgba(245,158,11,0.24)",
-        "pricing-featured":   "0 0 0 1px rgba(79,70,229,0.10), 0 18px 40px -24px rgba(79,70,229,0.22)",
-        "inner-sm":           "inset 0 1px 2px rgba(15,23,42,0.05)",
+        "pricing-featured":   "0 0 0 1px rgba(79,70,229,0.08)",
+        "inner-sm":           "inset 0 0 #0000",
       },
       keyframes: {
         "fade-up": {

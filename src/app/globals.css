@@ -145,8 +145,8 @@
     --destructive:           0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border:                217 32.6% 17.5%;
-    --input:                 217 32.6% 17.5%;
+    --border:                214 31.8% 91.4%;
+    --input:                 214 31.8% 91.4%;
     --ring:                  242 64.8% 64%;
 
     --chart-1:               221 83% 53%;
@@ -161,7 +161,7 @@
     --sidebar-primary-foreground: 222 47.4% 11.2%;
     --sidebar-accent:        217 32.6% 17.5%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border:        217 32.6% 17.5%;
+    --sidebar-border:        214 31.8% 91.4%;
     --sidebar-ring:          242 64.8% 64%;
   }
 
