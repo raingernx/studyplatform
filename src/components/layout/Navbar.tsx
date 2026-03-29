@@ -2,28 +2,107 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
-import { useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
+import { useId, useRef, useState } from "react";
 import {
-  Menu,
-  X,
   LogOut,
   LayoutDashboard,
   BookOpen,
-  ShoppingBag,
+  Menu,
   Settings,
+  ShoppingBag,
+  X,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { AccountTrigger } from "@/components/layout/account/AccountTrigger";
-import { Container } from "@/components/layout/container";
 import { NavbarBrand } from "@/components/layout/NavbarBrand";
 import { NavbarItem } from "@/components/layout/navbar/NavbarItem";
+import { Container } from "@/components/layout/container";
 import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
+import { cn } from "@/lib/utils";
 
 const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/resources", label: "มาร์เก็ตเพลส" },
   { href: "/dashboard/library", label: "คลังของฉัน" },
 ];
+
+const MARKETPLACE_CATEGORY_ITEMS = [
+  { href: "/resources", label: "ค้นหา", category: null, mode: "discover" as const },
+  { href: "/resources?category=all", label: "ทั้งหมด", category: "all", mode: "listing" as const },
+  {
+    href: "/resources?category=art-creativity",
+    label: "ศิลปะและความคิดสร้างสรรค์",
+    category: "art-creativity",
+    mode: "listing" as const,
+  },
+  {
+    href: "/resources?category=early-learning",
+    label: "ปฐมวัย",
+    category: "early-learning",
+    mode: "listing" as const,
+  },
+  {
+    href: "/resources?category=humanities",
+    label: "มนุษยศาสตร์",
+    category: "humanities",
+    mode: "listing" as const,
+  },
+  { href: "/resources?category=language", label: "ภาษา", category: "language", mode: "listing" as const },
+  {
+    href: "/resources?category=mathematics",
+    label: "คณิตศาสตร์",
+    category: "mathematics",
+    mode: "listing" as const,
+  },
+  {
+    href: "/resources?category=science",
+    label: "วิทยาศาสตร์",
+    category: "science",
+    mode: "listing" as const,
+  },
+  {
+    href: "/resources?category=study-skills",
+    label: "ทักษะการเรียน",
+    category: "study-skills",
+    mode: "listing" as const,
+  },
+  {
+    href: "/resources?category=test-prep",
+    label: "Test Prep",
+    category: "test-prep",
+    mode: "listing" as const,
+  },
+];
+
+const MOBILE_VISIBLE_CATEGORY_COUNT = 2;
+const HORIZONTAL_SCROLL_CLASS_NAME =
+  "overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden";
+const MARKETPLACE_ACTION_LINK_CLASS_NAME =
+  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-base font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
+const MARKETPLACE_PRIMARY_ACTION_CLASS_NAME =
+  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-brand-600 px-4 text-base font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
+const MARKETPLACE_PREMIUM_ACTION_CLASS_NAME =
+  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-4 text-base font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40 focus-visible:ring-offset-2";
+const MARKETPLACE_CATEGORY_ITEM_CLASS_NAME =
+  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
+
+function isMarketplaceCategoryActive(currentCategory: string | null, itemCategory: string | null) {
+  if (itemCategory === null) {
+    return currentCategory === null;
+  }
+
+  return currentCategory === itemCategory;
+}
+
+function marketplaceCategoryClassName(active: boolean) {
+  return cn(
+    MARKETPLACE_CATEGORY_ITEM_CLASS_NAME,
+    active
+      ? "border-surface-300 bg-surface-100 text-text-primary shadow-sm"
+      : "border-surface-200 bg-white text-text-secondary hover:border-surface-300 hover:bg-surface-50 hover:text-text-primary",
+  );
+}
 
 export function Navbar({
   secondaryRow,
@@ -32,22 +111,44 @@ export function Navbar({
   secondaryRow?: ReactNode;
   headerSearch?: ReactNode;
 }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const isLoading = status === "loading";
+  const isMarketplaceNavbar = Boolean(headerSearch);
+  const currentCategory = searchParams.get("category");
+  const userMenuId = useId();
+  const mobileMoreRef = useRef<HTMLDetailsElement | null>(null);
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
+  const visibleMobileCategoryItems = MARKETPLACE_CATEGORY_ITEMS.slice(0, MOBILE_VISIBLE_CATEGORY_COUNT);
+  const overflowMobileCategoryItems = MARKETPLACE_CATEGORY_ITEMS.slice(MOBILE_VISIBLE_CATEGORY_COUNT);
+  const isMoreMenuActive = overflowMobileCategoryItems.some((item) =>
+    isMarketplaceCategoryActive(currentCategory, item.category),
+  );
+
+  function closeMobileMoreMenu() {
+    mobileMoreRef.current?.removeAttribute("open");
+  }
+
   function closeAll() {
     setMobileOpen(false);
     setUserMenuOpen(false);
+    closeMobileMoreMenu();
   }
 
   function handleHomeNavigation(href: string) {
     if (href === "/resources") {
       beginResourcesNavigation("discover", href);
     }
+  }
+
+  function handleMarketplaceNavigation(mode: "discover" | "listing", href: string) {
+    beginResourcesNavigation(mode, href);
+    closeMobileMoreMenu();
   }
 
   async function handleSignOut() {
@@ -63,6 +164,273 @@ export function Navbar({
     } catch {
       setIsSigningOut(false);
     }
+  }
+
+  function renderUserMenu() {
+    if (!session?.user) {
+      return null;
+    }
+
+    return (
+      <>
+        <div
+          className="fixed inset-0 z-10"
+          aria-hidden
+          onClick={() => setUserMenuOpen(false)}
+        />
+        <div
+          id={userMenuId}
+          className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-lg border border-surface-200 bg-white shadow-card-lg"
+        >
+          <div className="border-b border-surface-100 px-4 py-3">
+            <div className="min-w-0">
+              <p className="truncate text-[13px] font-semibold text-text-primary">
+                {session.user.name}
+              </p>
+              <p className="mt-0.5 truncate text-[11px] text-text-muted">
+                {session.user.email}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-1.5">
+            <Link
+              href="/dashboard"
+              onClick={() => setUserMenuOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
+            >
+              <span className="inline-flex items-center gap-2.5">
+                <LayoutDashboard className="h-3.5 w-3.5 text-text-muted" aria-hidden />
+                <span>Dashboard</span>
+              </span>
+            </Link>
+            <Link
+              href="/dashboard/library"
+              onClick={() => setUserMenuOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
+            >
+              <span className="inline-flex items-center gap-2.5">
+                <BookOpen className="h-3.5 w-3.5 text-text-muted" aria-hidden />
+                <span>My Library</span>
+              </span>
+            </Link>
+            <Link
+              href="/dashboard/purchases"
+              onClick={() => setUserMenuOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
+            >
+              <span className="inline-flex items-center gap-2.5">
+                <ShoppingBag className="h-3.5 w-3.5 text-text-muted" aria-hidden />
+                <span>Purchases</span>
+              </span>
+            </Link>
+
+            <div className="my-1.5 border-t border-surface-100" />
+
+            <Link
+              href="/settings"
+              onClick={() => setUserMenuOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
+            >
+              <span className="inline-flex items-center gap-2.5">
+                <Settings className="h-3.5 w-3.5 text-text-muted" aria-hidden />
+                <span>Settings</span>
+              </span>
+            </Link>
+            <button
+              type="button"
+              disabled={isSigningOut}
+              onClick={() => void handleSignOut()}
+              className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <LogOut className="h-3.5 w-3.5" aria-hidden />
+              {isSigningOut ? "Signing out…" : "Sign out"}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (isMarketplaceNavbar) {
+    return (
+      <header className="sticky top-0 z-40 w-full border-b border-surface-200 bg-white">
+        <Container className="py-3 sm:py-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex items-center gap-3 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center lg:gap-6">
+              <div className="flex h-11 shrink-0 items-center">
+                <NavbarBrand />
+              </div>
+
+              <div className="hidden min-w-0 lg:block">
+                {headerSearch}
+              </div>
+
+              <div className="ml-auto hidden items-center gap-2.5 lg:flex">
+                <Link href="/dashboard/library" className={MARKETPLACE_ACTION_LINK_CLASS_NAME}>
+                  คลังของฉัน
+                </Link>
+                <Link href="/membership" className={MARKETPLACE_PREMIUM_ACTION_CLASS_NAME}>
+                  KC Premium
+                </Link>
+
+                {isLoading ? (
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-10 w-24 animate-pulse rounded-full bg-surface-100" />
+                    <div className="h-10 w-32 animate-pulse rounded-full bg-surface-100" />
+                  </div>
+                ) : session?.user ? (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setUserMenuOpen((open) => !open)}
+                      className="group transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
+                      aria-label="เปิดเมนูบัญชี"
+                      aria-haspopup="menu"
+                      aria-expanded={userMenuOpen}
+                      aria-controls={userMenuId}
+                    >
+                      <AccountTrigger
+                        name={session.user.name?.split(" ")[0] ?? "Account"}
+                        image={session.user.image}
+                        email={session.user.email}
+                        isOpen={userMenuOpen}
+                      />
+                    </button>
+                    {userMenuOpen ? renderUserMenu() : null}
+                  </div>
+                ) : (
+                  <>
+                    <Link href="/auth/login" className={MARKETPLACE_ACTION_LINK_CLASS_NAME}>
+                      เข้าสู่ระบบ
+                    </Link>
+                    <Link href="/auth/register" className={MARKETPLACE_PRIMARY_ACTION_CLASS_NAME}>
+                      เริ่มต้นใช้งาน
+                    </Link>
+                  </>
+                )}
+              </div>
+
+              <div className={cn("ml-auto flex min-w-0 max-w-[68vw] items-center gap-1.5 lg:hidden", HORIZONTAL_SCROLL_CLASS_NAME)}>
+                <Link href="/dashboard/library" className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-base font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
+                  คลังของฉัน
+                </Link>
+                <Link href="/membership" className="inline-flex h-10 shrink-0 items-center rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-3 text-base font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40 focus-visible:ring-offset-2">
+                  KC Premium
+                </Link>
+
+                {isLoading ? (
+                  <>
+                    <div className="h-10 w-24 shrink-0 animate-pulse rounded-full bg-surface-100" />
+                    <div className="h-10 w-28 shrink-0 animate-pulse rounded-full bg-surface-100" />
+                  </>
+                ) : session?.user ? (
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setUserMenuOpen((open) => !open)}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-surface-200 bg-white shadow-sm transition-colors hover:bg-surface-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
+                      aria-label="เปิดเมนูบัญชี"
+                      aria-haspopup="menu"
+                      aria-expanded={userMenuOpen}
+                      aria-controls={userMenuId}
+                    >
+                      <Avatar
+                        src={session.user.image}
+                        name={session.user.name}
+                        email={session.user.email}
+                        size={30}
+                      />
+                    </button>
+                    {userMenuOpen ? renderUserMenu() : null}
+                  </div>
+                ) : (
+                  <>
+                    <Link href="/auth/login" className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-base font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
+                      เข้าสู่ระบบ
+                    </Link>
+                    <Link href="/auth/register" className="inline-flex h-10 shrink-0 items-center rounded-full bg-brand-600 px-3 text-base font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
+                      เริ่มต้นใช้งาน
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="min-w-0 lg:hidden">
+              {headerSearch}
+            </div>
+
+            <nav className="hidden sm:block" aria-label="หมวดหมู่ทรัพยากร">
+              <div className={cn("flex items-center gap-2 whitespace-nowrap", HORIZONTAL_SCROLL_CLASS_NAME)}>
+                {MARKETPLACE_CATEGORY_ITEMS.map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => handleMarketplaceNavigation(item.mode, item.href)}
+                    className={marketplaceCategoryClassName(
+                      pathname === "/resources" &&
+                        isMarketplaceCategoryActive(currentCategory, item.category),
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+
+            <div className="flex items-center gap-2 sm:hidden">
+              {visibleMobileCategoryItems.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => handleMarketplaceNavigation(item.mode, item.href)}
+                  className={marketplaceCategoryClassName(
+                    pathname === "/resources" &&
+                      isMarketplaceCategoryActive(currentCategory, item.category),
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+
+              <details ref={mobileMoreRef} className="relative ml-auto shrink-0">
+                <summary
+                  className={cn(
+                    marketplaceCategoryClassName(pathname === "/resources" && isMoreMenuActive),
+                    "list-none cursor-pointer select-none [&::-webkit-details-marker]:hidden",
+                  )}
+                >
+                  More
+                </summary>
+
+                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-72 rounded-2xl border border-surface-200 bg-white p-1.5 shadow-card-lg">
+                  <ul className="flex flex-col gap-1" aria-label="หมวดหมู่เพิ่มเติม">
+                    {overflowMobileCategoryItems.map((item) => (
+                      <li key={item.label}>
+                        <Link
+                          href={item.href}
+                          onClick={() => handleMarketplaceNavigation(item.mode, item.href)}
+                          className={cn(
+                            "flex rounded-xl px-3 py-2.5 text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
+                            pathname === "/resources" &&
+                              isMarketplaceCategoryActive(currentCategory, item.category)
+                              ? "bg-surface-100 text-text-primary"
+                              : "text-text-secondary hover:bg-surface-50 hover:text-text-primary",
+                          )}
+                        >
+                          {item.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </details>
+            </div>
+          </div>
+        </Container>
+      </header>
+    );
   }
 
   return (
@@ -122,8 +490,12 @@ export function Navbar({
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setUserMenuOpen((v) => !v)}
-                  className="group transition"
+                  onClick={() => setUserMenuOpen((open) => !open)}
+                  className="group transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
+                  aria-label="เปิดเมนูบัญชี"
+                  aria-haspopup="menu"
+                  aria-expanded={userMenuOpen}
+                  aria-controls={userMenuId}
                 >
                   <AccountTrigger
                     name={session.user.name?.split(" ")[0] ?? "Account"}
@@ -133,82 +505,7 @@ export function Navbar({
                   />
                 </button>
 
-                {userMenuOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      aria-hidden
-                      onClick={() => setUserMenuOpen(false)}
-                    />
-                    <div className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-lg border border-surface-200 bg-white shadow-card-lg">
-                      <div className="border-b border-surface-100 px-4 py-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-[13px] font-semibold text-text-primary">
-                            {session.user.name}
-                          </p>
-                          <p className="mt-0.5 truncate text-[11px] text-text-muted">
-                            {session.user.email}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="p-1.5">
-                        <Link
-                          href="/dashboard"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
-                        >
-                          <span className="inline-flex items-center gap-2.5">
-                            <LayoutDashboard className="h-3.5 w-3.5 text-text-muted" aria-hidden />
-                            <span>Dashboard</span>
-                          </span>
-                        </Link>
-                        <Link
-                          href="/dashboard/library"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
-                        >
-                          <span className="inline-flex items-center gap-2.5">
-                            <BookOpen className="h-3.5 w-3.5 text-text-muted" aria-hidden />
-                            <span>My Library</span>
-                          </span>
-                        </Link>
-                        <Link
-                          href="/dashboard/purchases"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
-                        >
-                          <span className="inline-flex items-center gap-2.5">
-                            <ShoppingBag className="h-3.5 w-3.5 text-text-muted" aria-hidden />
-                            <span>Purchases</span>
-                          </span>
-                        </Link>
-
-                        <div className="my-1.5 border-t border-surface-100" />
-
-                        <Link
-                          href="/settings"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
-                        >
-                          <span className="inline-flex items-center gap-2.5">
-                            <Settings className="h-3.5 w-3.5 text-text-muted" aria-hidden />
-                            <span>Settings</span>
-                          </span>
-                        </Link>
-                        <button
-                          type="button"
-                          disabled={isSigningOut}
-                          onClick={() => void handleSignOut()}
-                          className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
-                        >
-                          <LogOut className="h-3.5 w-3.5" aria-hidden />
-                          {isSigningOut ? "Signing out…" : "Sign out"}
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
+                {userMenuOpen ? renderUserMenu() : null}
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -222,8 +519,8 @@ export function Navbar({
 
           <button
             type="button"
-            className="ml-auto rounded-lg p-1.5 text-text-secondary hover:bg-surface-100 lg:hidden"
-            onClick={() => setMobileOpen((v) => !v)}
+            className="ml-auto rounded-lg p-1.5 text-text-secondary hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 lg:hidden"
+            onClick={() => setMobileOpen((open) => !open)}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
           >
@@ -232,7 +529,7 @@ export function Navbar({
         </div>
       </Container>
 
-      {mobileOpen && (
+      {mobileOpen ? (
         <div className="border-b border-surface-200 bg-white px-4 pb-5 pt-3 shadow-card-md lg:hidden">
           <nav className="flex flex-col gap-0.5" aria-label="Mobile navigation">
             {NAV_LINKS.map(({ href, label }) => (
@@ -307,14 +604,14 @@ export function Navbar({
                 <Link
                   href="/auth/login"
                   onClick={closeAll}
-                  className="rounded-lg border border-surface-200 px-4 py-2.5 text-center text-sm font-medium text-text-secondary hover:bg-surface-50 font-thai"
+                  className="rounded-lg border border-surface-200 px-4 py-2.5 text-center font-thai text-sm font-medium text-text-secondary hover:bg-surface-50"
                 >
                   เข้าสู่ระบบ
                 </Link>
                 <Link
                   href="/auth/register"
                   onClick={closeAll}
-                  className="rounded-lg bg-brand-600 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-brand-700 font-thai"
+                  className="rounded-lg bg-brand-600 px-4 py-2.5 text-center font-thai text-sm font-semibold text-white transition-colors hover:bg-brand-700"
                 >
                   เริ่มต้นใช้งาน
                 </Link>
@@ -322,7 +619,7 @@ export function Navbar({
             )}
           </div>
         </div>
-      )}
+      ) : null}
 
       {secondaryRow}
     </header>
