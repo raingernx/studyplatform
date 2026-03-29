@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design Tokens */
+/* Runtime semantic/theme layer derived from src/design-system/tokens. */
 :root {
   /* Primary */
   --color-primary: #2D28BB;
@@ -71,6 +71,7 @@
 
 @layer base {
   :root {
+    /* Theme values mirror `themeColors.light` in src/design-system/tokens/colors.ts. */
     /* ── shadcn/ui v3 design tokens aligned to KRUCraft surface system ── */
     --background:            0 0% 100%;
     --foreground:            222 47.4% 11.2%;
@@ -119,6 +120,7 @@
   }
 
   .dark {
+    /* Theme values mirror `themeColors.dark` in src/design-system/tokens/colors.ts. */
     --background:            222 47.4% 11.2%;
     --foreground:            0 0% 98%;
 
