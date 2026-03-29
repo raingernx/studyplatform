@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { Sun, Coins, Clock4 } from "lucide-react";
 import { Button, FormSection, Select } from "@/design-system";
+import { useTheme } from "@/components/providers/ThemeProvider";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
+import { readStoredTheme } from "@/lib/theme";
 
 type ThemeValue = "light" | "dark" | "system";
 type CurrencyValue = "THB" | "USD";
@@ -37,6 +39,7 @@ export function PreferenceSettings({
   timezone: initialTimezone,
 }: PreferenceSettingsProps) {
   const platform = usePlatformConfig();
+  const { setTheme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<{
     tone: "saved" | "error";
@@ -53,17 +56,10 @@ export function PreferenceSettings({
     initialPreferences,
   );
 
-  // Apply initial theme on mount
   useEffect(() => {
-    if (typeof document === "undefined") return;
-    const applied =
-      (initialPreferences.theme ?? "system") === "system"
-        ? window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light"
-        : initialPreferences.theme;
-    document.documentElement.dataset.theme = applied;
-  }, [initialPreferences.theme]);
+    if (readStoredTheme() !== null) return;
+    setTheme(initialPreferences.theme ?? "system", { persist: false });
+  }, [initialPreferences.theme, setTheme]);
 
   const hasChanges =
     pendingPreferences.theme !== initialPreferences.theme ||
@@ -125,15 +121,8 @@ export function PreferenceSettings({
         throw new Error("Could not save your preferences. Try again.");
       }
 
-      if (updates.theme && typeof window !== "undefined" && typeof document !== "undefined") {
-        window.localStorage.setItem("user_theme", updates.theme);
-        const applied =
-          updates.theme === "system"
-            ? window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light"
-            : updates.theme;
-        document.documentElement.dataset.theme = applied;
+      if (updates.theme) {
+        setTheme(updates.theme);
       }
 
       if (updates.currency && typeof window !== "undefined") {

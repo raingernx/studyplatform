@@ -119,7 +119,7 @@
     --sidebar-ring:          242 64.8% 44.5%;
   }
 
-  .dark {
+  :root[data-theme="dark"] {
     /* Theme values mirror `themeColors.dark` in src/design-system/tokens/colors.ts. */
     --background:            222 47.4% 11.2%;
     --foreground:            0 0% 98%;
