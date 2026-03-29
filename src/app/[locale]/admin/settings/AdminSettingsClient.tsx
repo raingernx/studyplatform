@@ -397,23 +397,6 @@ export function AdminSettingsClient({
         description="Manage global platform branding and metadata. Other sections stay local-only for now."
       />
 
-      <Card className="flex flex-col gap-4 rounded-2xl p-5 shadow-card sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-sm font-semibold text-text-primary">
-            Typography
-          </h2>
-          <p className="mt-1 text-sm text-text-secondary">
-            Global typography now lives in a dedicated editor with live
-            preview, preset controls, and script-aware font overrides.
-          </p>
-        </div>
-        <Button asChild size="sm" variant="outline">
-          <Link href={routes.adminTypographySettings}>
-            Open typography settings
-          </Link>
-        </Button>
-      </Card>
-
       <Card className="space-y-6 rounded-2xl p-6 shadow-card sm:p-7">
         <div>
           <h2 className="text-sm font-semibold text-text-primary">General</h2>

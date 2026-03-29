@@ -204,26 +204,6 @@ model PlatformSettings {
   updatedAt              DateTime @updatedAt
 }
 
-model PlatformTypographySettings {
-  id                  String   @id @default(cuid())
-  singletonKey        String?  @unique
-  presetKey           String   @default("modern-education")
-  headingLatin        String?
-  headingThai         String?
-  bodyLatin           String?
-  bodyThai            String?
-  uiLatin             String?
-  uiThai              String?
-  mono                String?
-  baseFontSize        String?
-  headingScale        String?
-  lineHeightDensity   String?
-  letterSpacingPreset String?
-  enableFontSmoothing Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-}
-
 model Hero {
   id               String   @id @default(cuid())
   name             String

@@ -58,7 +58,6 @@ export const CACHE_KEYS = {
   discoverCategories: "discover_categories",
   resourceDetail: (slug: string) => `resource_detail:${slug}`,
   platformSettings: "platform_settings",
-  platformTypographySettings: "platform_typography_settings",
   marketplaceCategories: "marketplace_categories",
   resourceMetadata: (slug: string) => `resource_metadata:${slug}`,
   relatedResources: (categoryId: string, excludeId: string, take: number) =>

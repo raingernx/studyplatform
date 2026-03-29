@@ -14,7 +14,6 @@ import {
   Star,
   Tag,
   Tags,
-  Type,
   Users,
 } from "lucide-react";
 import type { DashboardNavSection } from "@/components/layout/dashboard/dashboard-nav.types";
@@ -77,7 +76,6 @@ export const ADMIN_DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
     label: "System",
     items: [
       { href: routes.adminSettings, label: "Settings", icon: SettingsIcon },
-      { href: routes.adminTypographySettings, label: "Typography", icon: Type },
     ],
   },
 ];

@@ -77,7 +77,6 @@ export const routes = {
   adminHeroes: "/admin/heroes",
   adminNewHero: "/admin/heroes/new",
   adminSettings: "/admin/settings",
-  adminTypographySettings: "/admin/settings/typography",
   adminCreators: "/admin/creators",
 
   /**

@@ -179,9 +179,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-body)"],
-        display: ["var(--font-heading)"],
-        ui: ["var(--font-ui)"],
+        sans: ["var(--font-noto-sans-thai)", "system-ui", "sans-serif"],
+        display: ["var(--font-noto-sans-thai)", "system-ui", "sans-serif"],
+        ui: ["var(--font-noto-sans-thai)", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)"],
       },
       fontSize: {
