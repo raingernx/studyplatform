@@ -23,7 +23,7 @@ interface HeroSearchProps {
 export function HeroSearch({
   variant = "hero",
   className,
-  placeholder = "Search worksheets, flashcards, notes…",
+  placeholder = "ค้นหาใบงาน แฟลชการ์ด โน้ต...",
 }: HeroSearchProps) {
   const router       = useRouter();
   const pathname     = usePathname();
@@ -87,7 +87,7 @@ export function HeroSearch({
         disabled={isPending}
         className={cn(
           variant === "listing" &&
-            "h-10 rounded-xl border-surface-200 bg-white py-2 pl-10 pr-10 text-small shadow-sm sm:h-10 sm:rounded-2xl sm:pl-11 sm:pr-11",
+            "h-10 rounded-xl border-surface-200 bg-white py-2.5 pl-10 pr-10 text-base shadow-sm sm:h-10 sm:rounded-2xl sm:pl-11 sm:pr-11",
           className,
         )}
       />

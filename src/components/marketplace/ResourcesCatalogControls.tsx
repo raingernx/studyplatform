@@ -11,9 +11,9 @@ import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { getDiscoverCategories } from "@/services/discover.service";
 
 const CONTROLS_BAR_CLASS_NAME = "border-b border-surface-200 bg-white";
-const CONTROLS_BAR_MAIN_CLASS_NAME = "flex min-w-0 items-center gap-1.5 overflow-hidden";
+const CONTROLS_BAR_MAIN_CLASS_NAME = "flex min-w-0 items-center gap-2 overflow-hidden";
 const CONTROLS_BAR_GROUP_CLASS_NAME =
-  "flex min-w-0 items-center gap-1.5 overflow-hidden";
+  "flex min-w-0 items-center gap-2 overflow-hidden";
 
 type ResourcesCatalogControlsProps = {
   activeCount: number;
@@ -41,7 +41,7 @@ export async function ResourcesCatalogControls({
   }));
   return (
     <div className={CONTROLS_BAR_CLASS_NAME}>
-      <Container className="py-1.5 sm:py-2">
+      <Container className="py-2.5 sm:py-3">
         <div className={CONTROLS_BAR_MAIN_CLASS_NAME}>
           <div className={CONTROLS_BAR_GROUP_CLASS_NAME}>
             <Suspense fallback={<DiscoverFallback />}>
@@ -66,7 +66,7 @@ export function ResourcesCatalogControlsSkeleton({
 }) {
   return (
     <div className={CONTROLS_BAR_CLASS_NAME}>
-      <Container className="py-1.5 sm:py-2">
+      <Container className="py-2.5 sm:py-3">
         <div className={CONTROLS_BAR_MAIN_CLASS_NAME}>
           <div className={CONTROLS_BAR_GROUP_CLASS_NAME}>
             <DiscoverFallback />
@@ -86,29 +86,29 @@ export function ResourcesCatalogSearchSkeleton() {
 
 function DiscoverFallback() {
   return (
-    <div className="inline-flex h-10 items-center gap-2 rounded-full border border-surface-200 bg-surface-50 px-3.5 text-sm font-medium text-text-secondary shadow-sm">
+    <div className="inline-flex h-10 items-center gap-2 rounded-full border border-surface-200 bg-surface-50 px-4 text-base font-medium text-text-secondary shadow-sm">
       <LoadingSkeleton className="h-2 w-2 rounded-full bg-primary-500" />
-      <span>Loading</span>
+      <span>กำลังโหลด</span>
     </div>
   );
 }
 
 function SearchFallback() {
   return (
-    <div className="flex h-10 sm:h-9 w-full items-center gap-3 rounded-xl sm:rounded-2xl border border-border-subtle bg-white px-4 text-sm text-text-muted shadow-sm">
+    <div className="flex h-10 w-full items-center gap-3 rounded-xl border border-border-subtle bg-white px-4 text-base text-text-muted shadow-sm sm:rounded-2xl">
       <LoadingSkeleton className="h-2.5 w-2.5 rounded-full bg-primary-500" />
-      <span>Loading search…</span>
+      <span>กำลังค้นหา...</span>
     </div>
   );
 }
 
 function ChipsFallback() {
   return (
-    <div className="flex gap-2 overflow-hidden">
-      {["Loading", "Categories", "Popular", "Recent", "More"].map((label, index) => (
+    <div className="flex gap-2.5 overflow-hidden">
+      {["กำลังโหลด", "หมวดหมู่", "ยอดนิยม", "ล่าสุด", "เพิ่มเติม"].map((label, index) => (
         <div
           key={label}
-          className={`inline-flex h-10 shrink-0 items-center rounded-full border border-surface-200 bg-surface-50 px-3.5 text-sm text-text-muted ${
+          className={`inline-flex h-10 shrink-0 items-center rounded-full border border-surface-200 bg-surface-50 px-4 text-base text-text-muted ${
             index === 0 ? "gap-2 pr-4" : ""
           }`}
         >

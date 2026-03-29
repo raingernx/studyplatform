@@ -33,6 +33,20 @@ export interface ChipCategory {
   slug: string;
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  "Art & Creativity": "ศิลปะและความคิดสร้างสรรค์",
+  "Early Learning": "ปฐมวัย",
+  Humanities: "มนุษยศาสตร์",
+  Language: "ภาษา",
+  Mathematics: "คณิตศาสตร์",
+  Science: "วิทยาศาสตร์",
+  "Study Skills": "ทักษะการเรียน",
+};
+
+function getCategoryLabel(name: string) {
+  return CATEGORY_LABELS[name] ?? name;
+}
+
 /**
  * Discover button — removes the category param and navigates to the current
  * path. Never treat category=all as Discover.
@@ -68,17 +82,17 @@ export function DiscoverButton() {
       onMouseEnter={() => prefetchCategoryChipHref(router, discoverUrl)}
       onFocus={() => prefetchCategoryChipHref(router, discoverUrl)}
       disabled={isPending}
-      aria-label="Discover resources"
+      aria-label="ค้นหาทรัพยากร"
       aria-busy={isPending}
       className={cn(
-        "inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-3.5 text-small font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70",
+        "inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-base font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70",
         isDiscover
           ? "border-primary-300 bg-primary-100 text-primary-800 shadow-sm"
           : "border-surface-200 bg-surface-50 text-text-secondary hover:border-surface-300 hover:bg-surface-100 hover:text-text-primary",
         isPending && "cursor-wait opacity-70"
       )}
     >
-      Discover
+      ค้นหา
     </button>
   );
 }
@@ -148,11 +162,11 @@ export function CategoryChips({ categories }: CategoryChipsProps) {
   return (
     <div
       role="navigation"
-      aria-label="Filter by category"
-      className="flex shrink-0 items-center gap-1.5 pr-1"
+      aria-label="กรองตามหมวดหมู่"
+      className="flex shrink-0 items-center gap-2 pr-2"
     >
       <Chip
-        label="All"
+        label="ทั้งหมด"
         active={isAll}
         pending={pendingSlug === "all" && isPending}
         anyPending={isPending}
@@ -162,7 +176,7 @@ export function CategoryChips({ categories }: CategoryChipsProps) {
       {categories.map((cat) => (
         <Chip
           key={cat.id}
-          label={cat.name}
+          label={getCategoryLabel(cat.name)}
           active={category === cat.slug}
           pending={pendingSlug === cat.slug && isPending}
           anyPending={isPending}
@@ -174,7 +188,7 @@ export function CategoryChips({ categories }: CategoryChipsProps) {
       {primaryCategories.map((cat) => (
         <Chip
           key={`desktop-${cat.id}`}
-          label={cat.name}
+          label={getCategoryLabel(cat.name)}
           active={category === cat.slug}
           pending={pendingSlug === cat.slug && isPending}
           anyPending={isPending}
@@ -191,13 +205,13 @@ export function CategoryChips({ categories }: CategoryChipsProps) {
             disabled={isPending}
             aria-haspopup="menu"
             aria-expanded={moreOpen}
-            aria-label="More categories"
+            aria-label="หมวดหมู่เพิ่มเติม"
             className={cn(
               chipClassName(Boolean(activeOverflowCategory), false, isPending, "inline-flex"),
               moreOpen && "border-surface-300 bg-surface-100 text-text-primary",
             )}
           >
-            <span>{activeOverflowCategory?.name ?? "More"}</span>
+            <span>{activeOverflowCategory ? getCategoryLabel(activeOverflowCategory.name) : "เพิ่มเติม"}</span>
             <ChevronDown
               className={cn("h-4 w-4 text-current transition-transform", moreOpen && "rotate-180")}
               aria-hidden
@@ -207,7 +221,7 @@ export function CategoryChips({ categories }: CategoryChipsProps) {
           {moreOpen ? (
             <div
               role="menu"
-              aria-label="More categories"
+              aria-label="หมวดหมู่เพิ่มเติม"
               className="absolute right-0 top-[calc(100%+0.5rem)] z-30 min-w-[220px] overflow-hidden rounded-2xl border border-surface-200 bg-white p-1.5 shadow-card-lg"
             >
               <div className="flex max-h-72 flex-col overflow-y-auto">
@@ -219,13 +233,13 @@ export function CategoryChips({ categories }: CategoryChipsProps) {
                     onClick={() => navigate(cat.slug)}
                     disabled={isPending}
                     className={cn(
-                      "flex h-10 items-center rounded-xl px-3 text-left text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70",
+                      "flex h-10 items-center rounded-xl px-3.5 text-left text-base font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70",
                       category === cat.slug || (pendingSlug === cat.slug && isPending)
                         ? "bg-primary-100 text-primary-800"
                         : "text-text-secondary hover:bg-surface-50 hover:text-text-primary",
                     )}
                   >
-                    {cat.name}
+                    {getCategoryLabel(cat.name)}
                   </button>
                 ))}
               </div>
@@ -277,10 +291,10 @@ function chipClassName(
   className?: string,
 ) {
   return cn(
-    "inline-flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border px-3.5 text-small font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70",
+    "inline-flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border px-4 text-base font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70",
     active || pending
-      ? "border-primary-300 bg-primary-100 text-primary-800 shadow-sm"
-      : "border-surface-200 bg-surface-50 text-text-secondary hover:border-surface-300 hover:bg-surface-100 hover:text-text-primary",
+      ? "border-primary-400 bg-primary-100 text-primary-900 shadow-sm"
+      : "border-surface-200 bg-surface-50 text-text-secondary hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800",
     pending && "cursor-wait opacity-75",
     anyPending && !pending && !active && "opacity-40",
     className,
