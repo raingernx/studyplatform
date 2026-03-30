@@ -13,7 +13,8 @@ import {
   getResourceDetailPageDeferredContent,
   getResourceDetailPageRelatedSection,
   getResourceDetailPageResource,
-  getResourceDetailPageReviewSection,
+  getResourceDetailPageReviewList,
+  getResourceDetailPageViewerReview,
 } from "@/services/resources/resource-detail-page.service";
 import { runNonCriticalResourceDetailTask } from "@/services/resources/resource-detail-resilience";
 
@@ -113,32 +114,33 @@ export async function ResourceDetailReviewSection({
   resourceTitle,
   userId,
   ownershipPromise,
+  reviewListPromise,
 }: {
   resourceId: string;
   resourceTitle: string;
   userId?: string;
   ownershipPromise: Promise<{ isOwned: boolean }>;
+  reviewListPromise: Promise<Awaited<ReturnType<typeof getResourceDetailPageReviewList>>>;
 }) {
-  const { isOwned } = await ownershipPromise;
-  const { reviews, viewerReview } = await runNonCriticalResourceDetailTask(
-    () =>
-      getResourceDetailPageReviewSection({
-        resourceId,
-        userId,
-        isOwned,
-        reviewTake: 5,
-      }),
-    {
-      context: {
-        resourceId,
-        section: "reviews",
-      },
-      fallback: {
-        reviews: [],
-        viewerReview: null,
-      },
-    },
-  );
+  // Resolve ownership and the pre-fetched public review list in parallel.
+  // reviewListPromise was started in the page component before this Suspense
+  // boundary rendered, so it's already in-flight and doesn't depend on ownership.
+  const [{ isOwned }, reviews] = await Promise.all([
+    ownershipPromise,
+    reviewListPromise,
+  ]);
+
+  // Viewer's own review is only relevant for owners — small sequential fetch.
+  const viewerReview =
+    userId && isOwned
+      ? await runNonCriticalResourceDetailTask(
+          () => getResourceDetailPageViewerReview(userId, resourceId),
+          {
+            context: { resourceId, section: "viewer-review" },
+            fallback: null,
+          },
+        )
+      : null;
 
   return (
     <>

@@ -9,6 +9,7 @@ import {
   getResourceDetailReviewSection,
   getResourceDetailTrustSummary,
 } from "@/services/resources/resource.service";
+import { getResourceReviews, getUserResourceReview } from "@/services/review.service";
 
 /**
  * Canonical public resource-detail read surface.
@@ -60,4 +61,22 @@ export async function getResourceDetailPageReviewSection(input: {
   reviewTake?: number;
 }) {
   return getResourceDetailReviewSection(input);
+}
+
+/** Fetches the public review list without requiring ownership state.
+ *  Used to start the review fetch in parallel with the ownership check. */
+export async function getResourceDetailPageReviewList(
+  resourceId: string,
+  reviewTake = 5,
+) {
+  return getResourceReviews(resourceId, reviewTake);
+}
+
+/** Fetches the viewer's own review for a resource they own.
+ *  Only called after ownership is confirmed. */
+export async function getResourceDetailPageViewerReview(
+  userId: string,
+  resourceId: string,
+) {
+  return getUserResourceReview(userId, resourceId);
 }

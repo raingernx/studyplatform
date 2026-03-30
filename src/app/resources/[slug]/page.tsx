@@ -31,6 +31,7 @@ import {
   getResourceDetailPageMetadata,
   getResourceDetailPageRelatedSection,
   getResourceDetailPageResource,
+  getResourceDetailPageReviewList,
   getResourceDetailPageReviewSection,
   getResourceDetailPageTrustSummary,
 } from "@/services/resources/resource-detail-page.service";
@@ -336,6 +337,24 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
           },
         },
       );
+      // Fetch public reviews in parallel with ownership — reviews are public
+      // content and do not depend on whether the user owns the resource.
+      const reviewListPromise = runNonCriticalResourceDetailTask(
+        () =>
+          traceServerStep(
+            "resource_detail.getReviewList",
+            () => getResourceDetailPageReviewList(resource.id, 5),
+            { slug },
+          ),
+        {
+          fallback: [],
+          context: {
+            resourceId: resource.id,
+            section: "review-list",
+            slug,
+          },
+        },
+      );
 
       const hasFile = Boolean(resource.fileUrl ?? resource.fileKey);
       const isReturningFromCheckout = paymentStatus === "success";
@@ -506,6 +525,7 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                 <Suspense fallback={<ResourceDetailReviewsFallback />}>
                   <ResourceDetailReviewSection
                     ownershipPromise={ownershipPromise}
+                    reviewListPromise={reviewListPromise}
                     resourceId={resource.id}
                     resourceTitle={resource.title}
                     userId={userId}
