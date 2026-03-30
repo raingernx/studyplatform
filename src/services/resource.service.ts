@@ -613,73 +613,85 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
 
 const RESOURCE_DETAIL_REVALIDATE_SECONDS = CACHE_TTLS.homepageList;
 
+// Module-level Maps ensure each slug gets exactly one stable unstable_cache
+// function reference for its lifetime in this Lambda. A new closure per call
+// would defeat unstable_cache deduplication (it keys partly on function identity).
+// Per-slug tags are preserved so revalidateTag(getResourceCacheTag(slug)) still works.
+type CachedFn<T> = () => Promise<T>;
+const _resourceDetailCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceDetailBySlug>>>>();
+const _resourceMetadataCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceMetadataBySlug>> | null>>();
+
 /** Returns a fully-hydrated Resource row by slug, or null if not found. */
 export async function getResourceBySlug(slug: string) {
   recordCacheCall("getResourceBySlug", { slug });
-  const singleFlightKey = `resource-detail:${slug}`;
 
-  return unstable_cache(
-    async function _getResourceBySlug() {
-      recordCacheMiss("getResourceBySlug", { slug });
-      logPerformanceEvent("cache_execute:getResourceBySlug", {
-        slug,
-      });
-      // rememberJson adds a Redis cross-instance layer on top of unstable_cache.
-      // Cold Vercel lambda instances return the cached resource in <10 ms instead
-      // of running the full DB fetch.  Only public, non-user-specific data is
-      // stored here — slug, title, price, author, category, previews, stats.
-      return rememberJson(
-        CACHE_KEYS.resourceDetail(slug),
-        RESOURCE_DETAIL_REVALIDATE_SECONDS,
-        () => runSingleFlight(singleFlightKey, () =>
-          findPublicResourceDetailBySlug(slug),
-        ),
-        {
-          metricName: "resource.getResourceBySlug",
-          details: { slug },
-        },
-      );
-    },
-    ["public-resource-detail", slug],
-    {
-      revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
-      tags: [getResourceCacheTag(slug)],
-    },
-  )();
+  let cachedFn = _resourceDetailCacheMap.get(slug);
+  if (!cachedFn) {
+    const singleFlightKey = `resource-detail:${slug}`;
+    cachedFn = unstable_cache(
+      async function _getResourceBySlug() {
+        recordCacheMiss("getResourceBySlug", { slug });
+        logPerformanceEvent("cache_execute:getResourceBySlug", { slug });
+        // rememberJson adds a Redis cross-instance layer on top of unstable_cache.
+        // Cold Vercel lambda instances return the cached resource in <10 ms instead
+        // of running the full DB fetch.  Only public, non-user-specific data is
+        // stored here — slug, title, price, author, category, previews, stats.
+        return rememberJson(
+          CACHE_KEYS.resourceDetail(slug),
+          RESOURCE_DETAIL_REVALIDATE_SECONDS,
+          () => runSingleFlight(singleFlightKey, () =>
+            findPublicResourceDetailBySlug(slug),
+          ),
+          { metricName: "resource.getResourceBySlug", details: { slug } },
+        );
+      },
+      ["public-resource-detail", slug],
+      {
+        revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+        tags: [getResourceCacheTag(slug)],
+      },
+    );
+    _resourceDetailCacheMap.set(slug, cachedFn);
+  }
+
+  return cachedFn();
 }
 
 export async function getResourceMetadataBySlug(slug: string) {
   recordCacheCall("getResourceMetadataBySlug", { slug });
-  const singleFlightKey = `resource-metadata:${slug}`;
 
-  return unstable_cache(
-    async function _getResourceMetadataBySlug() {
-      recordCacheMiss("getResourceMetadataBySlug", { slug });
-      logPerformanceEvent("cache_execute:getResourceMetadataBySlug", {
-        slug,
-      });
-      try {
-        return await rememberJson(
-          CACHE_KEYS.resourceMetadata(slug),
-          RESOURCE_DETAIL_REVALIDATE_SECONDS,
-          () => runSingleFlight(singleFlightKey, () => findPublicResourceMetadataBySlug(slug)),
-          { metricName: "resource.metadata", details: { slug } },
-        );
-      } catch (error) {
-        if (!isResourceMetadataTransientDbError(error)) {
-          throw error;
+  let cachedFn = _resourceMetadataCacheMap.get(slug);
+  if (!cachedFn) {
+    const singleFlightKey = `resource-metadata:${slug}`;
+    cachedFn = unstable_cache(
+      async function _getResourceMetadataBySlug() {
+        recordCacheMiss("getResourceMetadataBySlug", { slug });
+        logPerformanceEvent("cache_execute:getResourceMetadataBySlug", { slug });
+        try {
+          return await rememberJson(
+            CACHE_KEYS.resourceMetadata(slug),
+            RESOURCE_DETAIL_REVALIDATE_SECONDS,
+            () => runSingleFlight(singleFlightKey, () => findPublicResourceMetadataBySlug(slug)),
+            { metricName: "resource.metadata", details: { slug } },
+          );
+        } catch (error) {
+          if (!isResourceMetadataTransientDbError(error)) {
+            throw error;
+          }
+          console.warn("[RESOURCE_METADATA_BEST_EFFORT]", error);
+          return null;
         }
+      },
+      ["public-resource-metadata", slug],
+      {
+        revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+        tags: [getResourceCacheTag(slug)],
+      },
+    );
+    _resourceMetadataCacheMap.set(slug, cachedFn);
+  }
 
-        console.warn("[RESOURCE_METADATA_BEST_EFFORT]", error);
-        return null;
-      }
-    },
-    ["public-resource-metadata", slug],
-    {
-      revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
-      tags: [getResourceCacheTag(slug)],
-    },
-  )();
+  return cachedFn();
 }
 
 function isResourceMetadataTransientDbError(error: unknown) {

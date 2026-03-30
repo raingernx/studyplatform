@@ -831,11 +831,7 @@ export async function findPublicResourceDetailBySlug(slug: string) {
     prisma.review.aggregate({
       where: {
         isVisible: true,
-        resource: {
-          slug,
-          deletedAt: null,
-          status: "PUBLISHED",
-        },
+        resource: { slug },
       },
       _avg: {
         rating: true,
