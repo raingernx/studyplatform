@@ -21,7 +21,8 @@ import {
   getHeroConfig,
   type DiscoverData,
 } from "@/services/discover.service";
-import { SORT_OPTIONS } from "@/config/sortOptions";
+import { DEFAULT_SORT, SORT_OPTIONS } from "@/config/sortOptions";
+import { MARKETPLACE_LISTING_PAGE_SIZE } from "@/config/marketplace";
 import { getOwnedResourceIds, getUserLearningProfile } from "@/services/purchase.service";
 import {
   getCachedNewResourcesInCategories,
@@ -42,7 +43,6 @@ import {
   traceServerStep,
 } from "@/lib/performance/observability";
 
-const ITEMS_PER_PAGE = 12;
 const BLOG_SECTION_ENABLED = false;
 
 type ResourcesPageContentProps = {
@@ -243,7 +243,7 @@ export async function ResourcesPageContent({
           tag,
           sort: effectiveSort,
           page: currentPage,
-          pageSize: ITEMS_PER_PAGE,
+          pageSize: MARKETPLACE_LISTING_PAGE_SIZE,
         }),
       {
         category: category ?? "all",
@@ -266,15 +266,24 @@ export async function ResourcesPageContent({
     category === "all"
       ? "All categories"
       : categories.find((item) => item.slug === category)?.name ?? "Browse resources";
-  const sortLabel = SORT_OPTIONS.find((option) => option.value === sort)?.label ?? "Newest";
-  const hasActiveFilters = !!(search?.trim() || price !== "" || sort !== "newest" || tag || featured === "true");
+  const sortLabel =
+    SORT_OPTIONS.find((option) => option.value === sort)?.label ??
+    SORT_OPTIONS.find((option) => option.value === DEFAULT_SORT)?.label ??
+    "Trending";
+  const hasActiveFilters = !!(
+    search?.trim() ||
+    price !== "" ||
+    sort !== DEFAULT_SORT ||
+    tag ||
+    featured === "true"
+  );
   const resourceGridParams = new URLSearchParams();
   if (search?.trim()) resourceGridParams.set("search", search.trim());
   if (category) resourceGridParams.set("category", category);
   if (price) resourceGridParams.set("price", price);
   if (featured === "true") resourceGridParams.set("featured", "true");
   if (tag) resourceGridParams.set("tag", tag);
-  if (effectiveSort !== "newest") resourceGridParams.set("sort", effectiveSort);
+  if (effectiveSort !== DEFAULT_SORT) resourceGridParams.set("sort", effectiveSort);
   if (safePage > 1) resourceGridParams.set("page", String(safePage));
   const resourceGridQuery = resourceGridParams.toString();
   const resourceGridQueryKey = routes.marketplaceQuery(resourceGridQuery);
@@ -410,7 +419,7 @@ export async function ResourcesPageContent({
                   }}
                   variant="hero"
                   owned={false}
-                  linkPrefetchMode="intent"
+                  linkPrefetchMode="viewport"
                   badge={
                     ownedIdsPromise ? (
                       <DeferredOwnedCardBadge
@@ -447,7 +456,7 @@ export async function ResourcesPageContent({
               totalPages={totalPages}
               hasActiveFilters={hasActiveFilters}
               progressiveLoad
-              cardPrefetchMode="intent"
+              cardPrefetchMode="viewport"
               badgeNodes={resourceGridBadgeNodes}
               deferredOwnedIdsHydrator={
                 ownedIdsPromise ? (
@@ -572,7 +581,7 @@ async function ResourcesDiscoverDeferredSections({
                 }}
                 variant="marketplace"
                 ownedIdsPromise={ownedIdsPromise}
-                linkPrefetchMode="intent"
+                linkPrefetchMode="viewport"
               />
             ))}
           </div>
@@ -634,7 +643,7 @@ async function ResourcesDiscoverDeferredSections({
                 resource={resource}
                 variant="marketplace"
                 ownedIdsPromise={ownedIdsPromise}
-                linkPrefetchMode="intent"
+                linkPrefetchMode="viewport"
               />
             ))}
           </div>
@@ -655,7 +664,7 @@ async function ResourcesDiscoverDeferredSections({
                 resource={resource}
                 variant="marketplace"
                 ownedIdsPromise={ownedIdsPromise}
-                linkPrefetchMode="intent"
+                linkPrefetchMode="viewport"
               />
             ))}
           </div>
@@ -675,7 +684,7 @@ async function ResourcesDiscoverDeferredSections({
                 resource={resource}
                 variant="marketplace"
                 ownedIdsPromise={ownedIdsPromise}
-                linkPrefetchMode="intent"
+                linkPrefetchMode="viewport"
               />
             ))}
           </div>
@@ -695,7 +704,7 @@ async function ResourcesDiscoverDeferredSections({
                 resource={resource}
                 variant="marketplace"
                 ownedIdsPromise={ownedIdsPromise}
-                linkPrefetchMode="intent"
+                linkPrefetchMode="viewport"
               />
             ))}
           </div>
@@ -719,7 +728,7 @@ async function ResourcesDiscoverDeferredSections({
                 }}
                 variant="marketplace"
                 ownedIdsPromise={ownedIdsPromise}
-                linkPrefetchMode="intent"
+                linkPrefetchMode="viewport"
               />
             ))}
           </div>
@@ -1099,7 +1108,7 @@ async function ResourcesDiscoverRFYFinalSection({
               variant="marketplace"
               ownedIdsPromise={ownedIdsPromise}
               priority={index < 2}
-              linkPrefetchMode="intent"
+              linkPrefetchMode="viewport"
             />
           ))}
         </div>
@@ -1155,7 +1164,7 @@ async function ResourcesDiscoverRFYFinalSection({
                 variant="marketplace"
                 ownedIdsPromise={ownedIdsPromise}
                 priority={index < 2}
-                linkPrefetchMode="intent"
+                linkPrefetchMode="viewport"
               />
             </div>
           ))}
@@ -1235,7 +1244,7 @@ async function ResourcesDiscoverPersonalisedExtras({
                 }}
                 variant="marketplace"
                 ownedIdsPromise={ownedIdsPromise}
-                linkPrefetchMode="intent"
+                linkPrefetchMode="viewport"
               />
             ))}
           </div>
@@ -1259,7 +1268,7 @@ async function ResourcesDiscoverPersonalisedExtras({
                 }}
                 variant="marketplace"
                 ownedIdsPromise={ownedIdsPromise}
-                linkPrefetchMode="intent"
+                linkPrefetchMode="viewport"
               />
             ))}
           </div>

@@ -71,6 +71,30 @@ export function FilterSidebar({
 
   const isAllCategories = current.category === "all";
 
+  const buildHref = useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+      params.delete("page");
+      const query = params.toString();
+      return query ? `${pathname}?${query}` : pathname;
+    },
+    [pathname, searchParams],
+  );
+
+  const prefetchHref = useCallback(
+    (href: string) => {
+      startTransition(() => {
+        router.prefetch(href);
+      });
+    },
+    [router],
+  );
+
   /** Returns true when this specific key+value is the optimistic target. */
   function isOptimistic(key: string, value: string) {
     return isPending && pendingParam?.key === key && pendingParam?.value === value;
@@ -109,7 +133,7 @@ export function FilterSidebar({
       router.push(href, { scroll: false });
     });
     onNavigate?.();
-  }, [router, pathname, onNavigate]);
+  }, [onNavigate, pathname, router]);
 
   return (
     <aside
@@ -152,6 +176,8 @@ export function FilterSidebar({
                   <button
                     type="button"
                     onClick={() => updateParam("sort", opt.value)}
+                    onMouseEnter={() => prefetchHref(buildHref("sort", opt.value))}
+                    onFocus={() => prefetchHref(buildHref("sort", opt.value))}
                     aria-pressed={active}
                     className={cn(
                       "w-full rounded-xl px-3 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
@@ -178,6 +204,8 @@ export function FilterSidebar({
               <button
                 type="button"
                 onClick={() => updateParam("category", "all")}
+                onMouseEnter={() => prefetchHref(buildHref("category", "all"))}
+                onFocus={() => prefetchHref(buildHref("category", "all"))}
                 aria-pressed={isAllCategories || isOptimistic("category", "all")}
                 className={cn(
                   "w-full rounded-xl px-3 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
@@ -198,6 +226,8 @@ export function FilterSidebar({
                   <button
                     type="button"
                     onClick={() => updateParam("category", cat.slug)}
+                    onMouseEnter={() => prefetchHref(buildHref("category", cat.slug))}
+                    onFocus={() => prefetchHref(buildHref("category", cat.slug))}
                     aria-pressed={active}
                     className={cn(
                       "w-full rounded-xl px-3 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
@@ -228,6 +258,8 @@ export function FilterSidebar({
                   <button
                     type="button"
                     onClick={() => updateParam("price", opt.value)}
+                    onMouseEnter={() => prefetchHref(buildHref("price", opt.value))}
+                    onFocus={() => prefetchHref(buildHref("price", opt.value))}
                     aria-pressed={active}
                     className={cn(
                       "w-full rounded-xl px-3 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
@@ -258,6 +290,12 @@ export function FilterSidebar({
                 key={diff.value}
                 type="button"
                 onClick={() => updateParam("tag", currentlyActive ? "" : diff.value)}
+                onMouseEnter={() =>
+                  prefetchHref(buildHref("tag", currentlyActive ? "" : diff.value))
+                }
+                onFocus={() =>
+                  prefetchHref(buildHref("tag", currentlyActive ? "" : diff.value))
+                }
                 aria-pressed={active}
                 className={cn(
                   "rounded-full px-3 py-1.5 text-caption transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
@@ -286,6 +324,12 @@ export function FilterSidebar({
                 key={type.value}
                 type="button"
                 onClick={() => updateParam("tag", currentlyActive ? "" : type.value)}
+                onMouseEnter={() =>
+                  prefetchHref(buildHref("tag", currentlyActive ? "" : type.value))
+                }
+                onFocus={() =>
+                  prefetchHref(buildHref("tag", currentlyActive ? "" : type.value))
+                }
                 aria-pressed={active}
                 className={cn(
                   "rounded-full px-3 py-1.5 text-caption transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",

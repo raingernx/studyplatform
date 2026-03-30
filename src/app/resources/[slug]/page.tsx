@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
-import { authOptions } from "@/lib/auth";
+import { getCachedServerSession } from "@/lib/auth";
 import { isMissingTableError } from "@/lib/prismaErrors";
 import { logActivity } from "@/lib/activity";
 import { AlertCircle, BookOpen, CheckCircle, Download } from "lucide-react";
@@ -74,7 +73,7 @@ async function getOptionalSession() {
   }
 
   try {
-    return await getServerSession(authOptions);
+    return await getCachedServerSession();
   } catch (error) {
     if (!isMissingTableError(error)) {
       throw error;

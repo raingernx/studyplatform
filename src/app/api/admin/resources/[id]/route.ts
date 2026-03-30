@@ -5,6 +5,7 @@ import { requireAdminApi } from "@/lib/auth/require-admin-api";
 import {
   CACHE_TAGS,
   deleteDiscoverRedisKeys,
+  deleteMarketplaceRecommendedListingRedisKeys,
   deleteRelatedResourcesRedisKeys,
   deleteResourceRedisKeys,
   getResourceCacheTag,
@@ -39,6 +40,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
     const previousCacheTarget = await getAdminResourcePublicCacheTarget(id);
     const result = await updateAdminResource(id, await req.json(), auth.session.user.id);
+    const currentCacheTarget = await getAdminResourcePublicCacheTarget(result.data.id);
     revalidateTag(CACHE_TAGS.discover, "max");
     revalidateTag(CACHE_TAGS.creatorPublic, "max");
     revalidateTag(getResourceCacheTag(result.data.slug), "max");
@@ -47,9 +49,13 @@ export async function PATCH(req: Request, { params }: Params) {
     }
     await Promise.all([
       deleteDiscoverRedisKeys(),
+      deleteMarketplaceRecommendedListingRedisKeys([
+        previousCacheTarget?.categorySlug,
+        currentCacheTarget?.categorySlug,
+      ]),
       deleteRelatedResourcesRedisKeys(id, [
         previousCacheTarget?.categoryId,
-        result.data.categoryId,
+        currentCacheTarget?.categoryId ?? result.data.categoryId,
       ]),
       ...(previousCacheTarget && previousCacheTarget.slug !== result.data.slug
         ? [deleteResourceRedisKeys(previousCacheTarget.slug)]
@@ -91,6 +97,7 @@ export async function DELETE(_req: Request, { params }: Params) {
     }
     await Promise.all([
       deleteDiscoverRedisKeys(),
+      deleteMarketplaceRecommendedListingRedisKeys([cacheTarget?.categorySlug]),
       ...(cacheTarget
         ? [
             deleteRelatedResourcesRedisKeys(cacheTarget.id, [cacheTarget.categoryId]),

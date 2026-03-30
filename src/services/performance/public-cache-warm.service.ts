@@ -1,4 +1,5 @@
 import { findResourceById } from "@/repositories/resources/resource.repository";
+import { deleteMarketplaceRecommendedListingRedisKeys } from "@/lib/cache";
 import { logPerformanceEvent, withPerformanceTiming } from "@/lib/performance/observability";
 import { getCreatorPublicProfile } from "@/services/creator.service";
 import {
@@ -17,9 +18,10 @@ import {
 } from "@/services/resources/public-resource-read.service";
 import {
   MARKETPLACE_DEFAULT_PAGE,
-  MARKETPLACE_DEFAULT_PAGE_SIZE,
 } from "@/services/resource.service";
 import { getResourceTrustSummary } from "@/services/review.service";
+import { DEFAULT_SORT } from "@/config/sortOptions";
+import { MARKETPLACE_LISTING_PAGE_SIZE } from "@/config/marketplace";
 
 const PUBLIC_WARM_LIMITS = {
   resourceDetails: 8,
@@ -28,9 +30,10 @@ const PUBLIC_WARM_LIMITS = {
 } as const;
 
 const MARKETPLACE_WARM_VARIANTS: readonly MarketplaceFilters[] = [
-  { category: "all", page: MARKETPLACE_DEFAULT_PAGE, pageSize: MARKETPLACE_DEFAULT_PAGE_SIZE },
-  { category: "all", page: MARKETPLACE_DEFAULT_PAGE, pageSize: MARKETPLACE_DEFAULT_PAGE_SIZE, sort: "newest" },
-  { category: "all", page: MARKETPLACE_DEFAULT_PAGE, pageSize: MARKETPLACE_DEFAULT_PAGE_SIZE, sort: "recommended" },
+  { category: "all", page: MARKETPLACE_DEFAULT_PAGE, pageSize: MARKETPLACE_LISTING_PAGE_SIZE },
+  { category: "all", page: MARKETPLACE_DEFAULT_PAGE, pageSize: MARKETPLACE_LISTING_PAGE_SIZE, sort: DEFAULT_SORT },
+  { category: "all", page: MARKETPLACE_DEFAULT_PAGE, pageSize: MARKETPLACE_LISTING_PAGE_SIZE, sort: "newest" },
+  { category: "all", page: MARKETPLACE_DEFAULT_PAGE, pageSize: MARKETPLACE_LISTING_PAGE_SIZE, sort: "recommended" },
 ];
 
 type ResourceWarmTarget = {
@@ -103,11 +106,44 @@ function pushUniqueResourceTarget(
 }
 
 function describeMarketplaceVariant(filters: MarketplaceFilters) {
+  const category = filters.category ?? "all";
+
   if (!filters.sort) {
-    return "default";
+    return `default:${DEFAULT_SORT}:${category}`;
   }
 
-  return filters.sort;
+  return `${filters.sort}:${category}`;
+}
+
+function buildRecommendedMarketplaceVariant(
+  category: string | null | undefined,
+): MarketplaceFilters {
+  return {
+    category: category ?? "all",
+    page: MARKETPLACE_DEFAULT_PAGE,
+    pageSize: MARKETPLACE_LISTING_PAGE_SIZE,
+    sort: "recommended",
+  };
+}
+
+function buildMarketplaceWarmVariants(categorySlugs: string[] = []) {
+  const uniqueCategorySlugs = Array.from(
+    new Set(
+      categorySlugs
+        .map((categorySlug) => categorySlug?.trim())
+        .filter(
+          (categorySlug): categorySlug is string =>
+            typeof categorySlug === "string" && categorySlug.length > 0,
+        ),
+    ),
+  );
+
+  return [
+    ...MARKETPLACE_WARM_VARIANTS,
+    ...uniqueCategorySlugs.map((categorySlug) =>
+      buildRecommendedMarketplaceVariant(categorySlug),
+    ),
+  ];
 }
 
 function summarizeResult(
@@ -223,6 +259,29 @@ async function warmCreatorProfiles(creatorIdentifiers: string[]) {
   );
 }
 
+async function resolveRecommendedListingCategorySlugs(
+  targets: ResourceWarmTarget[],
+) {
+  if (targets.length === 0) {
+    return [];
+  }
+
+  const pages = await Promise.all(
+    targets.map((target) => getPublicResourcePageData(target.slug)),
+  );
+
+  return Array.from(
+    new Set(
+      pages
+        .map((page) => page.resource?.category?.slug?.trim())
+        .filter(
+          (categorySlug): categorySlug is string =>
+            typeof categorySlug === "string" && categorySlug.length > 0,
+        ),
+    ),
+  );
+}
+
 export async function warmPublicCaches(
   options: WarmPublicCacheOptions = {},
 ) {
@@ -234,18 +293,20 @@ export async function warmPublicCaches(
     async () => {
       let discoverData: DiscoverData | null = null;
       let marketplaceResults: Array<Awaited<ReturnType<typeof getMarketplaceResources>>> = [];
+      let discoverCategories: Awaited<ReturnType<typeof getDiscoverCategories>> = [];
+      let marketplaceWarmVariants: MarketplaceFilters[] = [];
 
       await Promise.all([
         getHeroConfig(),
-        getDiscoverCategories(),
+        getDiscoverCategories().then((categories) => {
+          discoverCategories = categories;
+          marketplaceWarmVariants = buildMarketplaceWarmVariants(
+            categories.map((category) => category.slug),
+          );
+        }),
         getDiscoverData().then((data) => {
           discoverData = data;
         }),
-        Promise.all(MARKETPLACE_WARM_VARIANTS.map((filters) => getMarketplaceResources(filters))).then(
-          (results) => {
-            marketplaceResults = results;
-          },
-        ),
       ]);
 
       const resourceTargets: ResourceWarmTarget[] = [];
@@ -262,6 +323,10 @@ export async function warmPublicCaches(
           creatorSeen,
         );
       }
+
+      marketplaceResults = await Promise.all(
+        marketplaceWarmVariants.map((filters) => getMarketplaceResources(filters)),
+      );
 
       collectMarketplaceWarmTargets(
         marketplaceResults,
@@ -285,13 +350,13 @@ export async function warmPublicCaches(
         {
           discover: 1,
           hero: 1,
-          marketplaceVariants: MARKETPLACE_WARM_VARIANTS.length,
+          marketplaceVariants: marketplaceResults.length,
           resourceDetails: headResourceTargets.length,
           trustSummaries: trustSummaryTargets.length,
           creatorProfiles: headCreatorIdentifiers.length,
         },
         {
-          marketplaceVariants: MARKETPLACE_WARM_VARIANTS.map(describeMarketplaceVariant),
+          marketplaceVariants: marketplaceWarmVariants.map(describeMarketplaceVariant),
           resourceSlugs: headResourceTargets.map((target) => target.slug),
           creatorIdentifiers: headCreatorIdentifiers,
         },
@@ -344,8 +409,19 @@ export async function warmTargetedPublicCaches(
         0,
         PUBLIC_WARM_LIMITS.resourceDetails,
       );
+      const recommendedCategorySlugs = includeListings
+        ? await resolveRecommendedListingCategorySlugs(warmResourceTargets)
+        : [];
 
       let warmedMarketplaceVariants: string[] = [];
+
+      if (includeListings) {
+        await deleteMarketplaceRecommendedListingRedisKeys(recommendedCategorySlugs);
+      }
+
+      const listingWarmVariants = includeListings
+        ? buildMarketplaceWarmVariants(recommendedCategorySlugs)
+        : [];
 
       const [, , , trustSummaryTargets] = await Promise.all([
         includeListings
@@ -356,11 +432,9 @@ export async function warmTargetedPublicCaches(
           : Promise.resolve(null),
         includeListings
           ? Promise.all(
-              MARKETPLACE_WARM_VARIANTS.map((filters) => getMarketplaceResources(filters)),
+              listingWarmVariants.map((filters) => getMarketplaceResources(filters)),
             ).then(() => {
-              warmedMarketplaceVariants = MARKETPLACE_WARM_VARIANTS.map(
-                describeMarketplaceVariant,
-              );
+              warmedMarketplaceVariants = listingWarmVariants.map(describeMarketplaceVariant);
             })
           : Promise.resolve(),
         warmResourceTargets.length > 0

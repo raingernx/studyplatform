@@ -42,7 +42,7 @@ const DEFAULT_HERO: HeroSurfaceConfig = {
   subtitle:
     "Worksheets, flashcards, and study guides from educators and creators.",
   primaryCtaText: "Browse resources",
-  primaryCtaLink: routes.marketplace,
+  primaryCtaLink: routes.marketplaceCategory("all"),
   secondaryCtaText: "Start selling",
   secondaryCtaLink: routes.membership,
   badgeText: "Trusted by 12,000+ educators",
@@ -365,14 +365,14 @@ export function HeroSurface({
   const badgeText = hero.badgeText ?? DEFAULT_HERO.badgeText;
   const mediaUrl = normalizeOptionalString(hero.mediaUrl);
   const imageUrl = normalizeOptionalString(hero.imageUrl);
-  const bgSrc =
-    mediaUrl ||
-    imageUrl ||
-    "/brand/krucraft-mark.svg";
+  const bgSrc = mediaUrl || imageUrl;
+  const hasHeroMedia = Boolean(bgSrc);
+  const heroMediaSrc = bgSrc ?? "";
   const isGif = hero.mediaType === "gif";
   const useOptimizedImage =
+    hasHeroMedia &&
     !isGif &&
-    (bgSrc.startsWith("/") || isOptimizableRemoteHeroSrc(bgSrc));
+    (heroMediaSrc.startsWith("/") || isOptimizableRemoteHeroSrc(heroMediaSrc));
   const alignment = HERO_ALIGNMENT_CLASS[style.textAlign];
   const titleSize = HERO_TITLE_RESPONSIVE_CLASS[style.titleSize];
   const subtitleSize = HERO_SUBTITLE_RESPONSIVE_CLASS[style.subtitleSize];
@@ -393,9 +393,9 @@ export function HeroSurface({
         className,
       )}
     >
-      {useOptimizedImage ? (
+      {hasHeroMedia && useOptimizedImage ? (
         <Image
-          src={bgSrc}
+          src={heroMediaSrc}
           alt=""
           fill
           priority
@@ -404,9 +404,9 @@ export function HeroSurface({
           className="absolute inset-0 h-full w-full object-cover"
           aria-hidden
         />
-      ) : (
+      ) : hasHeroMedia ? (
         <img
-          src={bgSrc}
+          src={heroMediaSrc}
           alt=""
           fetchPriority="high"
           loading="eager"
@@ -414,6 +414,23 @@ export function HeroSurface({
           className="absolute inset-0 h-full w-full object-cover"
           aria-hidden
         />
+      ) : (
+        <div
+          aria-hidden
+          className="absolute inset-0 overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.95),rgba(255,255,255,0.82)_26%,rgba(240,244,255,0.6)_42%,rgba(224,232,255,0.3)_56%,rgba(219,234,254,0.12)_72%,rgba(219,234,254,0)_100%),linear-gradient(135deg,#eef3ff_0%,#ffffff_34%,#e5edff_100%)]"
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(92,106,196,0.12)_1px,transparent_1px)] [background-size:28px_28px]" />
+          <div className="absolute inset-y-0 left-0 w-1/3 bg-[linear-gradient(180deg,rgba(70,48,217,0.22),rgba(49,46,129,0.1))]" />
+          <div className="absolute -left-20 top-12 h-72 w-72 rounded-[48px] bg-[linear-gradient(180deg,rgba(67,56,202,0.92),rgba(49,46,129,0.86))] opacity-95 shadow-[0_18px_60px_rgba(67,56,202,0.18)]" />
+          <div className="absolute left-[28%] top-6 h-48 w-48 rounded-[36px] border border-white/45 bg-white/78 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur-sm" />
+          <div className="absolute left-[42%] top-0 h-24 w-24 rounded-[28px] bg-[linear-gradient(180deg,rgba(67,56,202,0.92),rgba(79,70,229,0.82))]" />
+          <div className="absolute right-[19%] top-6 h-56 w-24 rounded-[28px] bg-[linear-gradient(180deg,rgba(67,56,202,0.92),rgba(79,70,229,0.82))]" />
+          <div className="absolute right-0 top-8 h-[calc(100%-2rem)] w-40 rounded-l-[40px] bg-[linear-gradient(180deg,rgba(67,56,202,0.96),rgba(49,46,129,0.92))] shadow-[-16px_0_48px_rgba(67,56,202,0.16)]" />
+          <div className="absolute left-[37%] top-[18%] h-72 w-80 rounded-[42px] border border-white/30 bg-white/8 backdrop-blur-[2px]" />
+          <div className="absolute bottom-0 left-0 right-0 h-[54%] bg-[linear-gradient(180deg,rgba(55,48,163,0.9),rgba(30,27,75,0.96))]" />
+          <div className="absolute bottom-0 left-[38%] h-56 w-56 rounded-t-[48px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.76),rgba(255,255,255,0.38)_44%,rgba(255,255,255,0)_72%)]" />
+          <div className="absolute bottom-0 right-[10%] h-72 w-[22rem] rounded-t-[72px] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.74),rgba(255,255,255,0.42)_38%,rgba(255,255,255,0)_72%)]" />
+        </div>
       )}
 
       <div

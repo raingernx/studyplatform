@@ -1291,6 +1291,7 @@ export async function getCreatorResourcePublicCacheTarget(
     id: resource.id,
     slug: resource.slug,
     categoryId: resource.categoryId,
+    categorySlug: resource.category?.slug ?? null,
   };
 }
 

@@ -28,6 +28,7 @@ import {
   recordCacheMiss,
   traceServerStep,
 } from "@/lib/performance/observability";
+import { MARKETPLACE_LISTING_PAGE_SIZE } from "@/config/marketplace";
 import { DEFAULT_SORT, normaliseSortParam } from "@/config/sortOptions";
 import {
   countMarketplaceResources,
@@ -225,6 +226,25 @@ export function buildOrderBy(sort: string) {
   }
 }
 
+function getPrecomputedRecommendedListingCacheKey(
+  filters: NormalizedMarketplaceFilters,
+) {
+  const isCandidate =
+    filters.search === null &&
+    filters.price === null &&
+    filters.featured === false &&
+    filters.tag === null &&
+    filters.sort === "recommended" &&
+    filters.page === MARKETPLACE_DEFAULT_PAGE &&
+    filters.pageSize === MARKETPLACE_LISTING_PAGE_SIZE;
+
+  if (!isCandidate) {
+    return null;
+  }
+
+  return CACHE_KEYS.marketplaceRecommendedListing(filters.category);
+}
+
 /**
  * Returns a paginated list of published resources matching the supplied
  * filters, together with the full category list for the filter sidebar.
@@ -302,6 +322,45 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
         }),
         { page, pageSize, categoryId: categoryId ?? "all" },
       );
+
+    const precomputedRecommendedListingCacheKey =
+      getPrecomputedRecommendedListingCacheKey(filters);
+
+    if (precomputedRecommendedListingCacheKey) {
+      const loadRecommendedLanding = async () => {
+        const { rows, total } = await loadRankedRows();
+        return {
+          resources: rows.map((row) => withPreview(toActivationRankedCardShape(row))),
+          total,
+        };
+      };
+
+      const { resources, total } = await rememberJson(
+        precomputedRecommendedListingCacheKey,
+        CACHE_TTLS.homepageList,
+        () =>
+          runSingleFlight(
+            precomputedRecommendedListingCacheKey,
+            loadRecommendedLanding,
+          ),
+        {
+          metricName: "marketplace.recommendedResources.precomputed",
+          details: {
+            page,
+            pageSize,
+            categorySlug: category ?? "all",
+            scope: "listing",
+          },
+        },
+      );
+
+      return {
+        resources,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+        categories,
+      };
+    }
 
     // Cache in shared Redis (cross-instance) when no search term is present.
     // The outer unstable_cache layer handles same-instance warm hits; this

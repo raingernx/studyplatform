@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import type { MouseEvent } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
 import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
@@ -81,6 +83,8 @@ export function Logo({
   dark = false,
   className,
 }: LogoProps) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const platform = usePlatformConfig();
   const platformName = platform.platformShortName;
   const textColor = dark ? "text-white" : "text-zinc-900";
@@ -180,12 +184,23 @@ export function Logo({
     );
   }
 
+  function handleLogoClick(event: MouseEvent<HTMLAnchorElement>) {
+    beginResourcesNavigation("discover", routes.marketplace);
+
+    const isAlreadyDiscoverRoute =
+      pathname === routes.marketplace && !searchParams.toString();
+
+    if (isAlreadyDiscoverRoute) {
+      event.preventDefault();
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
+  }
+
   return (
     <Link
       href={routes.marketplace}
-      onClick={() => {
-        beginResourcesNavigation("discover", routes.marketplace);
-      }}
+      scroll
+      onClick={handleLogoClick}
       className={cn(
         "inline-flex items-center justify-start gap-2.5 align-bottom transition-opacity hover:opacity-90",
         className,

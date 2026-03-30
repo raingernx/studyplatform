@@ -59,6 +59,8 @@ export const CACHE_KEYS = {
   resourceDetail: (slug: string) => `resource_detail:${slug}`,
   platformSettings: "platform_settings",
   marketplaceCategories: "marketplace_categories",
+  marketplaceRecommendedListing: (categorySlug?: string | null) =>
+    `marketplace_recommended_listing:${categorySlug ?? "all"}:page1:12`,
   resourceMetadata: (slug: string) => `resource_metadata:${slug}`,
   relatedResources: (categoryId: string, excludeId: string, take: number) =>
     `related_resources:${categoryId}:${excludeId}:${take}`,
@@ -136,12 +138,35 @@ export async function deleteDiscoverRedisKeys(): Promise<void> {
     deleteCachedKey(CACHE_KEYS.discoverData),
     deleteCachedKey(CACHE_KEYS.discoverCategories),
     deleteCachedKey(CACHE_KEYS.marketplaceCategories),
+    deleteMarketplaceRecommendedListingRedisKeys(),
     deleteCachedKey(`${CACHE_KEYS.trendingResources}:8`),
     deleteCachedKey(`${CACHE_KEYS.popularResources}:8`),
     deleteCachedKey(`${CACHE_KEYS.newestResources}:8`),
     deleteCachedKey(`${CACHE_KEYS.featuredResources}:8`),
     deleteCachedKey(`${CACHE_KEYS.freeResources}:8`),
     deleteCachedKey(CACHE_KEYS.topCreator),
+  ]);
+}
+
+export async function deleteMarketplaceRecommendedListingRedisKeys(
+  categorySlugs: Array<string | null | undefined> = [],
+): Promise<void> {
+  const uniqueCategorySlugs = Array.from(
+    new Set(
+      categorySlugs
+        .map((categorySlug) => categorySlug?.trim())
+        .filter(
+          (categorySlug): categorySlug is string =>
+            typeof categorySlug === "string" && categorySlug.length > 0,
+        ),
+    ),
+  );
+
+  await Promise.all([
+    deleteCachedKey(CACHE_KEYS.marketplaceRecommendedListing()),
+    ...uniqueCategorySlugs.map((categorySlug) =>
+      deleteCachedKey(CACHE_KEYS.marketplaceRecommendedListing(categorySlug)),
+    ),
   ]);
 }
 

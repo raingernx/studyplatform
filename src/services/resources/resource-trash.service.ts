@@ -3,12 +3,13 @@ import { logActivity } from "@/lib/activity";
 import {
   CACHE_TAGS,
   deleteDiscoverRedisKeys,
+  deleteMarketplaceRecommendedListingRedisKeys,
   deleteRelatedResourcesRedisKeys,
   deleteResourceRedisKeys,
   getResourceCacheTag,
 } from "@/lib/cache";
 import {
-  findResourceById,
+  findResourcePublicCacheTargetById,
   permanentlyDeleteAdminResource,
   restoreAdminResource,
 } from "@/repositories/resources/resource.repository";
@@ -30,7 +31,7 @@ interface ResourceTrashInput {
 }
 
 export async function restoreTrashedResource(input: ResourceTrashInput) {
-  const existing = await findResourceById(input.resourceId);
+  const existing = await findResourcePublicCacheTargetById(input.resourceId);
   if (!existing) {
     throw new ResourceTrashServiceError(404, {
       error: "Resource not found.",
@@ -52,6 +53,7 @@ export async function restoreTrashedResource(input: ResourceTrashInput) {
   revalidateTag(getResourceCacheTag(existing.slug), "max");
   await Promise.all([
     deleteDiscoverRedisKeys(),
+    deleteMarketplaceRecommendedListingRedisKeys([existing.category?.slug]),
     deleteRelatedResourcesRedisKeys(existing.id, [existing.categoryId]),
     deleteResourceRedisKeys(existing.slug),
   ]);
@@ -62,7 +64,7 @@ export async function restoreTrashedResource(input: ResourceTrashInput) {
 export async function permanentlyDeleteTrashedResource(
   input: ResourceTrashInput,
 ) {
-  const existing = await findResourceById(input.resourceId);
+  const existing = await findResourcePublicCacheTargetById(input.resourceId);
   if (!existing) {
     throw new ResourceTrashServiceError(404, {
       error: "Resource not found.",
@@ -90,6 +92,7 @@ export async function permanentlyDeleteTrashedResource(
   revalidateTag(getResourceCacheTag(existing.slug), "max");
   await Promise.all([
     deleteDiscoverRedisKeys(),
+    deleteMarketplaceRecommendedListingRedisKeys([existing.category?.slug]),
     deleteRelatedResourcesRedisKeys(existing.id, [existing.categoryId]),
     deleteResourceRedisKeys(existing.slug),
   ]);

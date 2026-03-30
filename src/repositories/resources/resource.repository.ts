@@ -397,6 +397,26 @@ export async function findResourceById(id: string) {
   });
 }
 
+export async function findResourcePublicCacheTargetById(id: string) {
+  return prisma.resource.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      slug: true,
+      categoryId: true,
+      category: {
+        select: {
+          slug: true,
+        },
+      },
+      deletedAt: true,
+      title: true,
+      authorId: true,
+      status: true,
+    },
+  });
+}
+
 export async function findResourceRouteDetailById(resourceId: string) {
   return prisma.resource.findUnique({
     where: { id: resourceId },

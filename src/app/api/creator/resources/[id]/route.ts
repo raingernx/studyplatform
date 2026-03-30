@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import {
   CACHE_TAGS,
   deleteDiscoverRedisKeys,
+  deleteMarketplaceRecommendedListingRedisKeys,
   deleteRelatedResourcesRedisKeys,
   deleteResourceRedisKeys,
   getCreatorPublicCacheTag,
@@ -82,6 +83,10 @@ export async function PATCH(req: Request, { params }: Params) {
     }
     await Promise.all([
       deleteDiscoverRedisKeys(),
+      deleteMarketplaceRecommendedListingRedisKeys([
+        previousCacheTarget?.categorySlug,
+        currentCacheTarget?.categorySlug,
+      ]),
       deleteRelatedResourcesRedisKeys(id, [
         previousCacheTarget?.categoryId,
         currentCacheTarget?.categoryId,

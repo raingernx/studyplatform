@@ -27,7 +27,7 @@ export function NavbarItem({
       href={href}
       onClick={onClick}
       className={cn(
-        "font-ui inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-150",
+        "font-ui inline-flex items-center justify-center whitespace-nowrap text-small font-medium transition-all duration-150",
         mobile ? "w-full rounded-lg px-4 py-2.5" : "h-10 rounded-lg px-4",
         variant === "primary"
           ? "bg-brand-600 text-white shadow-sm hover:bg-brand-700"

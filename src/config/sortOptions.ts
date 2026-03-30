@@ -19,7 +19,7 @@ export const SORT_OPTIONS = [
 export type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 
 /** Default sort applied when the ?sort= param is absent. */
-export const DEFAULT_SORT: SortValue = "recommended";
+export const DEFAULT_SORT: SortValue = "trending";
 
 /**
  * Maps legacy or non-standard sort param values to a canonical SortValue.
@@ -27,7 +27,7 @@ export const DEFAULT_SORT: SortValue = "recommended";
  *
  * e.g.  normaliseSortParam("popular")  → "downloads"
  *       normaliseSortParam("oldest")   → "newest"
- *       normaliseSortParam(undefined)  → "newest"
+ *       normaliseSortParam(undefined)  → DEFAULT_SORT
  */
 export function normaliseSortParam(raw: string | null | undefined): SortValue {
   const LEGACY: Record<string, SortValue> = {

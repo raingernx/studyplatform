@@ -2,7 +2,12 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ArrowUpDown } from "lucide-react";
-import { SORT_OPTIONS, normaliseSortParam, type SortValue } from "@/config/sortOptions";
+import {
+  DEFAULT_SORT,
+  SORT_OPTIONS,
+  normaliseSortParam,
+  type SortValue,
+} from "@/config/sortOptions";
 
 // Re-export for any callers that import SortOption from this file.
 export type SortOption = SortValue;
@@ -12,13 +17,13 @@ export function ResourceSort() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Mirror the active sort from the URL; normalise legacy values and fall back to "newest".
+  // Mirror the active sort from the URL; normalise legacy values and fall back to the canonical default sort.
   const current = normaliseSortParam(searchParams.get("sort"));
 
   function handleChange(value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value === "newest") {
-      // "newest" is the default — keep the URL clean by omitting the param
+    if (value === DEFAULT_SORT) {
+      // Keep the URL clean by omitting the param when the user picks the default sort.
       params.delete("sort");
     } else {
       params.set("sort", value);

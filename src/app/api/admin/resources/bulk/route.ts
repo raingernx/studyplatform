@@ -5,6 +5,7 @@ import { requireAdminApi } from "@/lib/auth/require-admin-api";
 import {
   CACHE_TAGS,
   deleteDiscoverRedisKeys,
+  deleteMarketplaceRecommendedListingRedisKeys,
   deleteRelatedResourcesRedisKeys,
   deleteResourceRedisKeys,
   getResourceCacheTag,
@@ -71,18 +72,26 @@ export async function PATCH(req: Request) {
       typeof (body as { action?: unknown })?.action === "string"
         ? (body as { action: string }).action
         : null;
-    const cacheTargets = await getAdminResourcePublicCacheTargets(targetIds);
+    const previousCacheTargets = await getAdminResourcePublicCacheTargets(targetIds);
     const result = await mutateAdminResourcesInBulk(body);
+    const currentCacheTargets =
+      action === "publish" || action === "moveToCategory"
+        ? await getAdminResourcePublicCacheTargets(targetIds)
+        : [];
 
     if (result.data.updated > 0 || result.data.deleted > 0) {
       revalidateTag(CACHE_TAGS.discover, "max");
       revalidateTag(CACHE_TAGS.creatorPublic, "max");
-      cacheTargets.forEach((target) => {
+      previousCacheTargets.forEach((target) => {
         revalidateTag(getResourceCacheTag(target.slug), "max");
       });
       await Promise.all([
         deleteDiscoverRedisKeys(),
-        ...cacheTargets.map((target) =>
+        deleteMarketplaceRecommendedListingRedisKeys([
+          ...previousCacheTargets.map((target) => target.categorySlug),
+          ...currentCacheTargets.map((target) => target.categorySlug),
+        ]),
+        ...previousCacheTargets.map((target) =>
           Promise.all([
             deleteRelatedResourcesRedisKeys(target.id, [target.categoryId]),
             deleteResourceRedisKeys(target.slug),
@@ -95,7 +104,7 @@ export async function PATCH(req: Request) {
           includeListings: true,
           resourceTargets:
             action === "publish" || action === "moveToCategory"
-              ? cacheTargets.map((target) => ({ id: target.id, slug: target.slug }))
+              ? currentCacheTargets.map((target) => ({ id: target.id, slug: target.slug }))
               : [],
         }).catch((error) => {
           console.error("[ADMIN_RESOURCES_BULK_PATCH_WARM]", error);

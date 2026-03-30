@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
-import { SORT_OPTIONS, normaliseSortParam } from "@/config/sortOptions";
+import { DEFAULT_SORT, SORT_OPTIONS, normaliseSortParam } from "@/config/sortOptions";
 import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
 
 const PRICE_OPTIONS = [
@@ -36,11 +36,11 @@ export function FilterBar({ total }: Props) {
   const sort  = normaliseSortParam(searchParams.get("sort"));
   const price = searchParams.get("price") ?? "";
 
-  const hasActiveFilterControls = price !== "" || sort !== "newest";
+  const hasActiveFilterControls = price !== "" || sort !== DEFAULT_SORT;
 
   function update(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    const isEmpty = value === "" || (key === "sort" && value === "newest");
+    const isEmpty = value === "" || (key === "sort" && value === DEFAULT_SORT);
     if (isEmpty) {
       params.delete(key);
     } else {
@@ -126,7 +126,7 @@ function FilterSelect({
   disabled?: boolean;
   "aria-label"?: string;
 }) {
-  const isActive = value !== "" && value !== "newest";
+  const isActive = value !== "" && value !== DEFAULT_SORT;
 
   return (
     <div className="relative min-w-0">

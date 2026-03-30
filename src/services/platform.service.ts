@@ -5,7 +5,13 @@ import {
   getPlatformSettings as getStoredPlatformSettings,
   updatePlatformSettings as savePlatformSettings,
 } from "@/repositories/platformSettings.repository";
-import { CACHE_KEYS, CACHE_TAGS, CACHE_TTLS } from "@/lib/cache";
+import {
+  CACHE_KEYS,
+  CACHE_TAGS,
+  CACHE_TTLS,
+  rememberJson,
+  runSingleFlight,
+} from "@/lib/cache";
 import { PLATFORM_DEFAULTS } from "@/lib/platform/platform-defaults";
 import { isMissingTableError } from "@/lib/prismaErrors";
 import type {
@@ -15,7 +21,27 @@ import type {
 } from "@/lib/platform/platform.types";
 
 const readPlatformSettings = unstable_cache(
-  async () => getStoredPlatformSettings(),
+  async () => {
+    try {
+      return await rememberJson(
+        CACHE_KEYS.platformSettings,
+        CACHE_TTLS.platform,
+        () =>
+          runSingleFlight(CACHE_KEYS.platformSettings, () =>
+            getStoredPlatformSettings(),
+          ),
+        {
+          metricName: "platform.settings",
+        },
+      );
+    } catch (error) {
+      if (!isMissingTableError(error) && !isPlatformSettingsTransientDbError(error)) {
+        throw error;
+      }
+      // Missing table or transient DB pool/connectivity failure — use defaults.
+      return null;
+    }
+  },
   [CACHE_KEYS.platformSettings],
   {
     revalidate: CACHE_TTLS.platform,
@@ -140,16 +166,8 @@ export function resolvePlatformConfig(
 }
 
 export async function getPlatformConfig() {
-  try {
-    const settings = await readPlatformSettings();
-    return resolvePlatformConfig(settings);
-  } catch (error) {
-    if (!isMissingTableError(error) && !isPlatformSettingsTransientDbError(error)) {
-      throw error;
-    }
-    // Missing table or transient DB pool/connectivity failure — use defaults.
-    return resolvePlatformConfig(null);
-  }
+  const settings = await readPlatformSettings();
+  return resolvePlatformConfig(settings);
 }
 
 export const getPlatform = cache(getPlatformConfig);

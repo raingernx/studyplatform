@@ -29,7 +29,7 @@ const NAV_LINKS: { href: string; label: string }[] = [
 ];
 
 const MARKETPLACE_CATEGORY_ITEMS = [
-  { href: routes.marketplace, label: "ค้นหา", category: null, mode: "discover" as const },
+  { href: routes.marketplace, label: "สำรวจ", category: null, mode: "discover" as const },
   { href: routes.marketplaceCategory("all"), label: "ทั้งหมด", category: "all", mode: "listing" as const },
   {
     href: routes.marketplaceCategory("art-creativity"),
@@ -80,13 +80,13 @@ const MOBILE_VISIBLE_CATEGORY_COUNT = 2;
 const HORIZONTAL_SCROLL_CLASS_NAME =
   "overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden";
 const MARKETPLACE_ACTION_LINK_CLASS_NAME =
-  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-base font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
+  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-[14px] leading-[22px] font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
 const MARKETPLACE_PRIMARY_ACTION_CLASS_NAME =
-  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-brand-600 px-4 text-base font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
+  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-brand-600 px-4 text-[14px] leading-[22px] font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
 const MARKETPLACE_PREMIUM_ACTION_CLASS_NAME =
-  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-4 text-base font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40 focus-visible:ring-offset-2";
+  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-4 text-[14px] leading-[22px] font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40 focus-visible:ring-offset-2";
 const MARKETPLACE_CATEGORY_ITEM_CLASS_NAME =
-  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
+  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 text-[14px] leading-[22px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
 
 function isMarketplaceCategoryActive(currentCategory: string | null, itemCategory: string | null) {
   if (itemCategory === null) {
@@ -101,7 +101,23 @@ function marketplaceCategoryClassName(active: boolean) {
     MARKETPLACE_CATEGORY_ITEM_CLASS_NAME,
     active
       ? "border-surface-300 bg-surface-100 text-text-primary shadow-sm"
-      : "border-surface-200 bg-white text-text-secondary hover:border-surface-300 hover:bg-surface-50 hover:text-text-primary",
+      : "border-transparent bg-white text-text-secondary hover:bg-surface-50 hover:text-text-primary",
+  );
+}
+
+function marketplaceCategoryItemClassName(
+  active: boolean,
+  itemCategory: string | null,
+) {
+  if (itemCategory === null) {
+    return marketplaceCategoryClassName(active);
+  }
+
+  return cn(
+    MARKETPLACE_CATEGORY_ITEM_CLASS_NAME,
+    active
+      ? "border-surface-300 bg-surface-100 text-text-primary shadow-sm"
+      : "border-transparent bg-white text-text-secondary shadow-none hover:bg-surface-50 hover:text-text-primary",
   );
 }
 
@@ -329,10 +345,10 @@ function NavbarInner({
               </div>
 
               <div className={cn("ml-auto flex min-w-0 max-w-[68vw] items-center gap-1.5 lg:hidden", HORIZONTAL_SCROLL_CLASS_NAME)}>
-                <Link href={routes.library} className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-base font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
+                <Link href={routes.library} className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] leading-[22px] font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
                   คลังของฉัน
                 </Link>
-                <Link href={routes.membership} className="inline-flex h-10 shrink-0 items-center rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-3 text-base font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40 focus-visible:ring-offset-2">
+                <Link href={routes.membership} className="inline-flex h-10 shrink-0 items-center rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-3 text-[14px] leading-[22px] font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40 focus-visible:ring-offset-2">
                   KC Premium
                 </Link>
 
@@ -363,10 +379,10 @@ function NavbarInner({
                   </div>
                 ) : (
                   <>
-                    <Link href={routes.login} className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-base font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
+                    <Link href={routes.login} className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] leading-[22px] font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
                       เข้าสู่ระบบ
                     </Link>
-                    <Link href={routes.register} className="inline-flex h-10 shrink-0 items-center rounded-full bg-brand-600 px-3 text-base font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
+                    <Link href={routes.register} className="inline-flex h-10 shrink-0 items-center rounded-full bg-brand-600 px-3 text-[14px] leading-[22px] font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
                       เริ่มต้นใช้งาน
                     </Link>
                   </>
@@ -385,9 +401,10 @@ function NavbarInner({
                     key={item.label}
                     href={item.href}
                     onClick={() => handleMarketplaceNavigation(item.mode, item.href)}
-                    className={marketplaceCategoryClassName(
+                    className={marketplaceCategoryItemClassName(
                       pathname === routes.marketplace &&
                         isMarketplaceCategoryActive(currentCategory, item.category),
+                      item.category,
                     )}
                   >
                     {item.label}
@@ -402,9 +419,10 @@ function NavbarInner({
                   key={item.label}
                   href={item.href}
                   onClick={() => handleMarketplaceNavigation(item.mode, item.href)}
-                  className={marketplaceCategoryClassName(
+                  className={marketplaceCategoryItemClassName(
                     pathname === routes.marketplace &&
                       isMarketplaceCategoryActive(currentCategory, item.category),
+                    item.category,
                   )}
                 >
                   {item.label}
@@ -414,7 +432,10 @@ function NavbarInner({
               <details ref={mobileMoreRef} className="relative ml-auto shrink-0">
                 <summary
                   className={cn(
-                    marketplaceCategoryClassName(pathname === routes.marketplace && isMoreMenuActive),
+                    marketplaceCategoryItemClassName(
+                      pathname === routes.marketplace && isMoreMenuActive,
+                      "__more__",
+                    ),
                     "list-none cursor-pointer select-none [&::-webkit-details-marker]:hidden",
                   )}
                 >
@@ -429,7 +450,7 @@ function NavbarInner({
                           href={item.href}
                           onClick={() => handleMarketplaceNavigation(item.mode, item.href)}
                           className={cn(
-                            "flex rounded-xl px-3 py-2.5 text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
+                            "flex rounded-xl px-3 py-2.5 text-[14px] leading-[22px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                             pathname === routes.marketplace &&
                               isMarketplaceCategoryActive(currentCategory, item.category)
                               ? "bg-surface-100 text-text-primary"
@@ -482,7 +503,7 @@ function NavbarInner({
                   href={href}
                   onClick={() => handleHomeNavigation(href)}
                   variant="default"
-                  className="h-10 rounded-full px-4 text-base font-semibold"
+                  className="h-10 rounded-full px-4 text-[14px] leading-[22px] font-semibold"
                 >
                   {label}
                 </NavbarItem>
@@ -492,7 +513,7 @@ function NavbarInner({
             <NavbarItem
               href={routes.membership}
               variant="default"
-              className="h-10 rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-4 text-base font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950"
+              className="h-10 rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-4 text-[14px] leading-[22px] font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950"
             >
               KC Plus
             </NavbarItem>

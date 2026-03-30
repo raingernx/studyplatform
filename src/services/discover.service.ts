@@ -465,7 +465,13 @@ const readDiscoverCategories = unstable_cache(
     return rememberJson(
       CACHE_KEYS.discoverCategories,
       CACHE_TTLS.homepageList,
-      () => findDiscoverCategoriesWithCounts(),
+      () =>
+        runSingleFlight(CACHE_KEYS.discoverCategories, () =>
+          runBestEffortAsync(() => findDiscoverCategoriesWithCounts(), {
+            fallback: [],
+            warningLabel: "[DISCOVER_CATEGORIES_BEST_EFFORT]",
+          }),
+        ),
       { metricName: "discover.discoverCategories" },
     );
   },

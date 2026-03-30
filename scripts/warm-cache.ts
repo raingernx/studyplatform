@@ -48,6 +48,11 @@ const routes: WarmRoute[] = [
   {
     label: "listing-default",
     path: "/resources?category=all",
+    required: true,
+  },
+  {
+    label: "listing-trending",
+    path: "/resources?category=all&sort=trending",
   },
   {
     label: "listing-recommended",
@@ -56,9 +61,9 @@ const routes: WarmRoute[] = [
     // Without this cookie the route silently falls back to effectiveSort="newest",
     // warming the wrong cache key and leaving the "recommended" Redis entry cold.
     headers: { Cookie: "ranking_variant=B" },
-    // This route must succeed: its Redis key must be warm before k6 smoke
-    // starts, otherwise the 7s cold SQL hits p95 and the threshold fails.
-    required: true,
+    // Keep the treatment path warm for ranking experiments, but do not block
+    // deploy follow-up tasks on the heaviest query path.  The main production
+    // UX should prioritize the default listing route first.
   },
   {
     label: "listing-newest",

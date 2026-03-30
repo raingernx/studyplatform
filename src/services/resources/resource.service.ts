@@ -30,6 +30,7 @@ import {
   findRecommendedResourcesExcludingIds,
   findTopTrendingInCategoriesExcludingIds,
   findResourceById,
+  findResourcePublicCacheTargetById,
   findResourceBySlug,
   findTagBySlug,
   moveAdminResourcesToCategory,
@@ -256,7 +257,7 @@ export async function listAdminResources() {
 }
 
 export async function getAdminResourcePublicCacheTarget(resourceId: string) {
-  const resource = await findResourceById(resourceId);
+  const resource = await findResourcePublicCacheTargetById(resourceId);
   if (!resource) {
     return null;
   }
@@ -265,6 +266,7 @@ export async function getAdminResourcePublicCacheTarget(resourceId: string) {
     id: resource.id,
     slug: resource.slug,
     categoryId: resource.categoryId,
+    categorySlug: resource.category?.slug ?? null,
   };
 }
 
@@ -277,7 +279,9 @@ export async function getAdminResourcePublicCacheTargets(resourceIds: string[]) 
     return [];
   }
 
-  const resources = await Promise.all(uniqueIds.map((resourceId) => findResourceById(resourceId)));
+  const resources = await Promise.all(
+    uniqueIds.map((resourceId) => findResourcePublicCacheTargetById(resourceId)),
+  );
 
   return resources
     .filter((resource): resource is NonNullable<typeof resource> => Boolean(resource))
@@ -285,6 +289,7 @@ export async function getAdminResourcePublicCacheTargets(resourceIds: string[]) 
       id: resource.id,
       slug: resource.slug,
       categoryId: resource.categoryId,
+      categorySlug: resource.category?.slug ?? null,
     }));
 }
 
