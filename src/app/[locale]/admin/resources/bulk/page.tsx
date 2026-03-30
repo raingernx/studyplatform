@@ -1,12 +1,10 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { Navbar } from "@/components/layout/Navbar";
 import { PageContainer, PageContent } from "@/design-system";
 import { BulkUploadClient } from "./BulkUploadClient";
 import Link from "next/link";
 import { Layers } from "lucide-react";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Bulk Upload – Admin",
@@ -14,19 +12,7 @@ export const metadata = {
 };
 
 export default async function BulkUploadPage() {
-  const session = await getServerSession(authOptions);
-
-  // ── 1. Require login ─────────────────────────────────────────────────────
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminBulkUpload));
-  }
-
-  // ── 2. Require ADMIN role ────────────────────────────────────────────────
-  const role = session.user.role;
-
-  if (role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.adminBulkUpload);
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (

@@ -1,7 +1,6 @@
 import { Suspense, type ReactNode } from "react";
-import { getServerSession } from "next-auth";
 import { cookies } from "next/headers";
-import { authOptions } from "@/lib/auth";
+import { getCachedServerSession } from "@/lib/auth";
 import { Navbar } from "@/components/layout/Navbar";
 import { Container } from "@/components/layout/container";
 import { isMissingTableError } from "@/lib/prismaErrors";
@@ -62,7 +61,7 @@ function hasSessionTokenCookie(
 
 async function getOptionalSessionUserId() {
   try {
-    return (await getServerSession(authOptions))?.user?.id;
+    return (await getCachedServerSession())?.user?.id;
   } catch (error) {
     if (!isMissingTableError(error)) {
       throw error;

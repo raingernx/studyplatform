@@ -1,11 +1,9 @@
 import { notFound, redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-
-import { authOptions } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/design-system";
 import { getAdminResourceVersionsPageData } from "@/services/admin-operations.service";
 import { ResourceVersionsClient } from "./ResourceVersionsClient";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -15,15 +13,7 @@ export const metadata = {
 
 export default async function ResourceVersionsPage({ params }: Props) {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminResourceVersions(id)));
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.adminResourceVersions(id));
 
   const { resource, versions } = await getAdminResourceVersionsPageData(id);
 

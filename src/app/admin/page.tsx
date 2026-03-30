@@ -1,12 +1,10 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { Users, Package, CreditCard, Download } from "lucide-react";
 import { Card } from "@/design-system";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { formatNumber, formatDate, formatPrice } from "@/lib/format";
 import { getAdminDashboardOverview } from "@/services/analytics.service";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import {
   DataTable,
   DataTableBody,
@@ -23,19 +21,7 @@ export const metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  const session = await getServerSession(authOptions);
-
-  // ── 1. Require login ───────────────────────────────────────────────────────
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.admin));
-  }
-
-  // ── 2. Require ADMIN role ──────────────────────────────────────────────────
-  const role = session.user.role;
-
-  if (role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.admin);
 
   const {
     metrics,

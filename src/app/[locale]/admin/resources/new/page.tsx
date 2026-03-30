@@ -1,9 +1,7 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getAdminResourceCreatePageData } from "@/services/admin-operations.service";
 import { CreateResourceForm } from "./CreateResourceForm";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Create Resource – Admin",
@@ -11,15 +9,7 @@ export const metadata = {
 };
 
 export default async function AdminNewResourcePage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminNewResource));
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  const session = await requireAdminSession(routes.adminNewResource);
 
   const { categories, tags } = await getAdminResourceCreatePageData();
 

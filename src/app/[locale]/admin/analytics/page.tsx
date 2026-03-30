@@ -1,11 +1,9 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import Link from "next/link";
-import { authOptions } from "@/lib/auth";
 import { getPlatformMetrics } from "@/services/analytics.service";
 import { Card } from "@/design-system";
 import { formatPrice, formatNumber } from "@/lib/format";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import {
   Download,
   TrendingUp,
@@ -86,15 +84,7 @@ function StatCard({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function AdminAnalyticsPage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminAnalytics));
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.adminAnalytics);
 
   const metrics = await getPlatformMetrics();
 

@@ -1,12 +1,10 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { Card } from "@/design-system";
 import { Input } from "@/design-system";
 import { Button } from "@/design-system";
 import { formatPrice, formatNumber, formatDate } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { getAdminOrdersPageData } from "@/services/admin-operations.service";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Orders – Admin",
@@ -42,15 +40,7 @@ const STATUS_BADGE: Record<
 export default async function AdminOrdersPage({
   searchParams,
 }: AdminOrdersPageProps) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminOrders));
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.adminOrders);
 
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const statusFilter = resolvedSearchParams.status?.toUpperCase() || "";

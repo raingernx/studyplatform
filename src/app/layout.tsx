@@ -5,7 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { PlatformConfigProvider } from "@/components/providers/PlatformConfigProvider";
-import { PublicFooterGate } from "@/components/layout/PublicFooterGate";
+import { PublicSiteFooter } from "@/components/layout/PublicSiteFooter";
 import { Footer } from "@/components/layout/Footer";
 import { fontVariables } from "@/lib/fonts";
 import { getPlatform } from "@/services/platform.service";
@@ -34,9 +34,9 @@ export default async function RootLayout({
             <Providers>
               <div className="flex min-h-screen flex-col bg-white">
                 <div className="flex-1 min-h-0">{children}</div>
-                <PublicFooterGate>
+                <PublicSiteFooter>
                   <Footer platformName={platform.platformShortName} />
-                </PublicFooterGate>
+                </PublicSiteFooter>
               </div>
             </Providers>
           </ThemeProvider>

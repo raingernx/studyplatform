@@ -1,11 +1,9 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { Input } from "@/design-system";
 import { Button } from "@/design-system";
 import { formatNumber, formatDate } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { getAdminUsersPageData } from "@/services/admin-operations.service";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Users – Admin",
@@ -17,15 +15,7 @@ interface AdminUsersPageProps {
 }
 
 export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminUsers));
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.adminUsers);
 
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const query = resolvedSearchParams.q?.trim() ?? "";

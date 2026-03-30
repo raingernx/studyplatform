@@ -21,13 +21,13 @@ import {
   getHeroConfig,
   type DiscoverData,
 } from "@/services/discover.service";
-import { getMarketplaceResources } from "@/services/resource.service";
 import { SORT_OPTIONS } from "@/config/sortOptions";
 import { getOwnedResourceIds, getUserLearningProfile } from "@/services/purchase.service";
 import {
   getCachedNewResourcesInCategories,
   getCachedRecommendedResourcesByLevels,
-} from "@/services/resources/resource.service";
+  getMarketplaceResources,
+} from "@/services/resources/public-resource-read.service";
 import { getBehaviorBasedRecommendations, getPhase1Recommendations } from "@/services/recommendations/behavior-profile.service";
 import {
   assignRecommendationVariant,

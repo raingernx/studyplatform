@@ -1,11 +1,9 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { Navbar } from "@/components/layout/Navbar";
 import { PageContainer, PageContentWide } from "@/design-system";
 import Link from "next/link";
 import { getAdminTagsPageData } from "@/services/admin-operations.service";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import { TagsClient, type TagRow } from "./TagsClient";
 
 export const metadata = {
@@ -22,18 +20,7 @@ async function getTags(): Promise<TagRow[]> {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function AdminTagsPage() {
-  // ── 1. Auth ─────────────────────────────────────────────────────────────────
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminTags));
-  }
-
-  const role = session.user.role;
-
-  if (role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.adminTags);
 
   // ── 2. Data ──────────────────────────────────────────────────────────────────
   const tags = await getTags();

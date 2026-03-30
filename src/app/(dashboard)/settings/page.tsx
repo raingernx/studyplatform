@@ -2,6 +2,7 @@ import { requireSession } from "@/lib/auth/require-session";
 import { PageContentNarrow } from "@/design-system";
 import { SettingsTabs } from "@/components/settings/SettingsTabs";
 import { getDashboardSettingsPageData } from "@/services/admin-operations.service";
+import { routes } from "@/lib/routes";
 
 export const metadata = {
   title: "Settings",
@@ -10,7 +11,7 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const { userId } = await requireSession("/settings");
+  const { userId } = await requireSession(routes.settings);
 
   const { user, preferences } = await getDashboardSettingsPageData(userId);
 

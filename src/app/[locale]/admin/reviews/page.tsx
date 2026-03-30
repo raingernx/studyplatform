@@ -1,11 +1,9 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import Link from "next/link";
-import { authOptions } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { getAdminReviews } from "@/services/review.service";
 import { ReviewVisibilityAction } from "@/components/admin/ReviewVisibilityAction";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Reviews – Admin",
@@ -13,15 +11,7 @@ export const metadata = {
 };
 
 export default async function AdminReviewsPage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminReviews));
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  const session = await requireAdminSession(routes.adminReviews);
 
   const reviews = await getAdminReviews(session.user.id);
 

@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import Link from "next/link";
-import { authOptions } from "@/lib/auth";
 import {
   getPurchaseAnalytics,
   type FunnelStep,
@@ -21,6 +19,7 @@ import { Button, Input } from "@/design-system";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { TableToolbar } from "@/components/admin/table";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import {
   traceServerStep,
   withRequestPerformanceTrace,
@@ -266,18 +265,10 @@ export default async function PurchaseAnalyticsPage({
       end: end ?? "",
     },
     async () => {
-      const session = await traceServerStep(
-        "admin_analytics_purchases.getServerSession",
-        () => getServerSession(authOptions),
+      await traceServerStep(
+        "admin_analytics_purchases.requireAdminSession",
+        () => requireAdminSession(routes.adminPurchasesAnalytics),
       );
-
-      if (!session?.user) {
-        redirect(routes.loginWithNext(routes.adminPurchasesAnalytics));
-      }
-
-      if (session.user.role !== "ADMIN") {
-        redirect(routes.dashboard);
-      }
 
       const report = await traceServerStep(
         "admin_analytics_purchases.getPurchaseAnalytics",

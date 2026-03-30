@@ -1,13 +1,11 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { ArrowLeft } from "lucide-react";
 
-import { authOptions } from "@/lib/auth";
 import { Button } from "@/design-system";
 import { AdminResourcesTrashTable } from "@/components/admin/AdminResourcesTrashTable";
 import { getAdminResourcesTrashPageData } from "@/services/admin-operations.service";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Trash – Admin",
@@ -17,15 +15,7 @@ export const metadata = {
 const PAGE_SIZE = 50;
 
 export default async function AdminResourcesTrashPage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminTrash));
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.adminTrash);
 
   const rows = await getAdminResourcesTrashPageData({ take: PAGE_SIZE });
 

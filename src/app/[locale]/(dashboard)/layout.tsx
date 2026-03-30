@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCachedServerSession } from "@/lib/auth";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { getCreatorAccessState } from "@/services/creator.service";
+import { traceServerStep } from "@/lib/performance/observability";
 
 export const dynamic = "force-dynamic";
 
@@ -24,12 +24,22 @@ const CREATOR_ACCESS_FALLBACK = {
 export default async function DashboardGroupLayout({
   children,
 }: DashboardGroupLayoutProps) {
-  const session = await getServerSession(authOptions);
+  const session = await traceServerStep(
+    "dashboard_layout.getServerSession",
+    () => getCachedServerSession(),
+  );
 
   // Resolve creator access only after confirming a valid userId exists.
   // The .catch() ensures a transient DB error never crashes the dashboard shell.
   const creatorAccess = session?.user?.id
-    ? await getCreatorAccessState(session.user.id).catch(() => CREATOR_ACCESS_FALLBACK)
+    ? await traceServerStep(
+        "dashboard_layout.getCreatorAccessState",
+        () =>
+          getCreatorAccessState(session.user.id).catch(
+            () => CREATOR_ACCESS_FALLBACK,
+          ),
+        { userId: session.user.id },
+      )
     : CREATOR_ACCESS_FALLBACK;
 
   const user = {

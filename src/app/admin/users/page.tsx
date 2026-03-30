@@ -1,7 +1,4 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { Search } from "lucide-react";
-import { authOptions } from "@/lib/auth";
 import { Input, Button, RowActionButton, RowActions } from "@/design-system";
 import { formatNumber, formatDate } from "@/lib/format";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -22,6 +19,7 @@ import {
   withRequestPerformanceTrace,
 } from "@/lib/performance/observability";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Users – Admin",
@@ -42,18 +40,10 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
       hasQuery: Boolean(query),
     },
     async () => {
-      const session = await traceServerStep(
-        "admin_users.getServerSession",
-        () => getServerSession(authOptions),
+      await traceServerStep(
+        "admin_users.requireAdminSession",
+        () => requireAdminSession(routes.adminUsers),
       );
-
-      if (!session?.user) {
-        redirect(routes.loginWithNext(routes.adminUsers));
-      }
-
-      if (session.user.role !== "ADMIN") {
-        redirect(routes.dashboard);
-      }
 
       const users = await traceServerStep(
         "admin_users.getAdminUsersPageData",

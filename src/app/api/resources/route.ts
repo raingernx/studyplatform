@@ -6,12 +6,12 @@ import {
   isValidRankingVariant,
   variantToSort,
 } from "@/lib/ranking-experiment";
-import { getMarketplaceResources } from "@/services/resource.service";
 import {
   createOwnedResource,
+  getMarketplaceResources,
   listPublicResources,
-  ResourceServiceError,
-} from "@/services/resources/resource.service";
+} from "@/services/resources/public-resource-read.service";
+import { ResourceServiceError } from "@/services/resources/resource.service";
 
 function handleServiceError(err: unknown, label: string) {
   if (err instanceof ResourceServiceError) {

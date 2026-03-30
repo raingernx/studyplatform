@@ -1,6 +1,4 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getRecommendationReport, type VariantMetrics } from "@/services/analytics/recommendation-report.service";
 import {
   Card,
@@ -14,6 +12,7 @@ import {
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { TableToolbar } from "@/components/admin/table";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import {
   traceServerStep,
   withRequestPerformanceTrace,
@@ -184,18 +183,10 @@ export default async function RecommendationExperimentPage({
       end: end ?? "",
     },
     async () => {
-      const session = await traceServerStep(
-        "admin_analytics_recommendations.getServerSession",
-        () => getServerSession(authOptions),
+      await traceServerStep(
+        "admin_analytics_recommendations.requireAdminSession",
+        () => requireAdminSession(routes.adminRecommendationReport),
       );
-
-      if (!session?.user) {
-        redirect(routes.loginWithNext(routes.adminRecommendationReport));
-      }
-
-      if (session.user.role !== "ADMIN") {
-        redirect(routes.dashboard);
-      }
 
       const report = await traceServerStep(
         "admin_analytics_recommendations.getRecommendationReport",

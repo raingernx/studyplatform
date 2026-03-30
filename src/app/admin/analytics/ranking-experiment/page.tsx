@@ -1,6 +1,4 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getRankingExperimentReport } from "@/services/analytics/ranking-experiment.service";
 import { type RankingVariantRow } from "@/services/analytics/ranking-experiment.service";
 import { SlidersHorizontal, Info } from "lucide-react";
@@ -8,6 +6,7 @@ import { Button, Input } from "@/design-system";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { TableToolbar } from "@/components/admin/table";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Ranking Experiment – Admin",
@@ -107,9 +106,7 @@ export default async function RankingExperimentPage({
 }: {
   searchParams?: Promise<Record<string, string | undefined>>;
 }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) redirect(routes.loginWithNext(routes.adminRankingExperiment));
-  if (session.user.role !== "ADMIN") redirect(routes.dashboard);
+  await requireAdminSession(routes.adminRankingExperiment);
 
   const params = searchParams ? await searchParams : {};
   const startParam = params.start ?? "";

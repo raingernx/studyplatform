@@ -8,12 +8,16 @@ import {
   type DiscoverData,
 } from "@/services/discover.service";
 import {
-  getMarketplaceResources,
-  MARKETPLACE_DEFAULT_PAGE,
-  MARKETPLACE_DEFAULT_PAGE_SIZE,
   getPublicResourcePageData,
   getResourceMetadataBySlug,
+} from "@/services/resources/public-resource-read.service";
+import {
+  getMarketplaceResources,
   type MarketplaceFilters,
+} from "@/services/resources/public-resource-read.service";
+import {
+  MARKETPLACE_DEFAULT_PAGE,
+  MARKETPLACE_DEFAULT_PAGE_SIZE,
 } from "@/services/resource.service";
 import { getResourceTrustSummary } from "@/services/review.service";
 

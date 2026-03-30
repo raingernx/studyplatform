@@ -1,7 +1,4 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import Link from "next/link";
-import { authOptions } from "@/lib/auth";
 import { getPlatformMetrics } from "@/services/analytics.service";
 import { Card } from "@/design-system";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -24,6 +21,7 @@ import {
   withRequestPerformanceTrace,
 } from "@/lib/performance/observability";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Analytics – Admin",
@@ -100,18 +98,10 @@ export default async function AdminAnalyticsPage() {
       routeKind: "overview",
     },
     async () => {
-      const session = await traceServerStep(
-        "admin_analytics.getServerSession",
-        () => getServerSession(authOptions),
+      await traceServerStep(
+        "admin_analytics.requireAdminSession",
+        () => requireAdminSession(routes.adminAnalytics),
       );
-
-      if (!session?.user) {
-        redirect(routes.loginWithNext(routes.adminAnalytics));
-      }
-
-      if (session.user.role !== "ADMIN") {
-        redirect(routes.dashboard);
-      }
 
       const metrics = await traceServerStep(
         "admin_analytics.getPlatformMetrics",

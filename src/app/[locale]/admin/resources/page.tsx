@@ -1,14 +1,12 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { BookOpen, Plus, Upload } from "lucide-react";
 
-import { authOptions } from "@/lib/auth";
 import { Button } from "@/design-system";
 import { ResourceTable, type AdminResourceRow } from "@/components/admin/ResourceTable";
 import { AdminResourcesFilters } from "./AdminResourcesFilters";
 import { routes } from "@/lib/routes";
 import { getAdminResourcesPageData } from "@/services/admin-operations.service";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Resources – Admin",
@@ -48,15 +46,7 @@ function buildQueryString(base: {
 export default async function AdminResourcesPage({
   searchParams,
 }: AdminResourcesPageProps) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminResources));
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.adminResources);
 
   const resolvedSearchParams = searchParams ? await searchParams : {};
 

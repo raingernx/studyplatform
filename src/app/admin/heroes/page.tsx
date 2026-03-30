@@ -1,7 +1,4 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { Plus } from "lucide-react";
-import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { routes } from "@/lib/routes";
 import { formatDate } from "@/lib/format";
@@ -21,6 +18,7 @@ import {
   TableEmptyState,
   TableToolbar,
 } from "@/components/admin/table";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Heroes – Admin",
@@ -91,15 +89,7 @@ export default async function AdminHeroesPage({ searchParams }: Props) {
     resolvedSearchParams?.status === "expired"
       ? resolvedSearchParams.status
       : "all";
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminHeroes));
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.adminHeroes);
 
   const [heroes, hasEligibleHero, fallbackHero] = await Promise.all([
     getHeroList(statusFilter),

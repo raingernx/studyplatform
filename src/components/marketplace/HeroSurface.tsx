@@ -190,6 +190,20 @@ function normalizeOptionalString(value: string | null | undefined) {
   return trimmed ? trimmed : null;
 }
 
+function isOptimizableRemoteHeroSrc(src: string) {
+  try {
+    const url = new URL(src);
+
+    return (
+      url.protocol === "https:" &&
+      (url.hostname === "lh3.googleusercontent.com" ||
+        url.hostname.endsWith(".r2.dev"))
+    );
+  } catch {
+    return false;
+  }
+}
+
 const HERO_PRIMARY_CTA_COLOR_CLASS = {
   "brand-blue": {
     filled: "border-brand-600 bg-brand-600 text-white hover:border-brand-700 hover:bg-brand-700 active:bg-brand-800 focus-visible:ring-brand-500/50",
@@ -355,7 +369,10 @@ export function HeroSurface({
     mediaUrl ||
     imageUrl ||
     "/brand/krucraft-mark.svg";
-  const useImg = Boolean(mediaUrl) || bgSrc.startsWith("http");
+  const isGif = hero.mediaType === "gif";
+  const useOptimizedImage =
+    !isGif &&
+    (bgSrc.startsWith("/") || isOptimizableRemoteHeroSrc(bgSrc));
   const alignment = HERO_ALIGNMENT_CLASS[style.textAlign];
   const titleSize = HERO_TITLE_RESPONSIVE_CLASS[style.titleSize];
   const subtitleSize = HERO_SUBTITLE_RESPONSIVE_CLASS[style.subtitleSize];
@@ -376,17 +393,7 @@ export function HeroSurface({
         className,
       )}
     >
-      {useImg ? (
-        <img
-          src={bgSrc}
-          alt=""
-          fetchPriority="high"
-          loading="eager"
-          decoding="async"
-          className="absolute inset-0 h-full w-full object-cover"
-          aria-hidden
-        />
-      ) : (
+      {useOptimizedImage ? (
         <Image
           src={bgSrc}
           alt=""
@@ -394,7 +401,17 @@ export function HeroSurface({
           priority
           fetchPriority="high"
           sizes="100vw"
-          className="h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover"
+          aria-hidden
+        />
+      ) : (
+        <img
+          src={bgSrc}
+          alt=""
+          fetchPriority="high"
+          loading="eager"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover"
           aria-hidden
         />
       )}

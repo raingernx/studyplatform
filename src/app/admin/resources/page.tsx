@@ -1,9 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { BookOpen, Plus, Upload } from "lucide-react";
 
-import { authOptions } from "@/lib/auth";
 import { Button } from "@/design-system";
 import { ResourceTable, type AdminResourceRow } from "@/components/admin/ResourceTable";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -15,6 +12,7 @@ import {
   withRequestPerformanceTrace,
 } from "@/lib/performance/observability";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Resources – Admin",
@@ -73,18 +71,10 @@ export default async function AdminResourcesPage({
       statusFilter: statusFilter || "all",
     },
     async () => {
-      const session = await traceServerStep(
-        "admin_resources.getServerSession",
-        () => getServerSession(authOptions),
+      await traceServerStep(
+        "admin_resources.requireAdminSession",
+        () => requireAdminSession(routes.adminResources),
       );
-
-      if (!session?.user) {
-        redirect(routes.loginWithNext(routes.adminResources));
-      }
-
-      if (session.user.role !== "ADMIN") {
-        redirect(routes.dashboard);
-      }
 
       const {
         rows,

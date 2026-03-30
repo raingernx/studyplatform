@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getCreatorActivationFunnel } from "@/services/analytics/creator-activation.service";
 import { ArrowRight, Users, MousePointerClick, FilePlus, Rocket } from "lucide-react";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Creator Activation Funnel – Admin",
@@ -133,9 +132,7 @@ export default async function CreatorActivationPage({
 }: {
   searchParams?: Promise<Record<string, string | undefined>>;
 }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) redirect(routes.loginWithNext(routes.adminCreatorActivation));
-  if (session.user.role !== "ADMIN") redirect(routes.dashboard);
+  await requireAdminSession(routes.adminCreatorActivation);
 
   const params = searchParams ? await searchParams : {};
   const start = params.start || null;

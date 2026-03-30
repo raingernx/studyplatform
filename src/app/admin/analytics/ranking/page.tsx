@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import Link from "next/link";
-import { authOptions } from "@/lib/auth";
 import { getRankingDebugReport } from "@/services/analytics/ranking-debug.service";
 import { SlidersHorizontal, ExternalLink } from "lucide-react";
 import { Button, Input, Select } from "@/design-system";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { TableToolbar } from "@/components/admin/table";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Ranking Debug – Admin",
@@ -75,9 +74,7 @@ export default async function RankingDebugPage({
 }: {
   searchParams?: Promise<Record<string, string | undefined>>;
 }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) redirect(routes.loginWithNext(routes.adminRankingDebug));
-  if (session.user.role !== "ADMIN") redirect(routes.dashboard);
+  await requireAdminSession(routes.adminRankingDebug);
 
   const params = searchParams ? await searchParams : {};
   const category = params.category || "";

@@ -1,6 +1,3 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { Card } from "@/design-system";
 import { Input } from "@/design-system";
 import { Button } from "@/design-system";
@@ -23,6 +20,7 @@ import {
   withRequestPerformanceTrace,
 } from "@/lib/performance/observability";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Orders – Admin",
@@ -58,18 +56,10 @@ export default async function AdminOrdersPage({
       statusFilter: statusFilter || "all",
     },
     async () => {
-      const session = await traceServerStep(
-        "admin_orders.getServerSession",
-        () => getServerSession(authOptions),
+      await traceServerStep(
+        "admin_orders.requireAdminSession",
+        () => requireAdminSession(routes.adminOrders),
       );
-
-      if (!session?.user) {
-        redirect(routes.loginWithNext(routes.adminOrders));
-      }
-
-      if (session.user.role !== "ADMIN") {
-        redirect(routes.dashboard);
-      }
 
       const {
         orders,

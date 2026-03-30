@@ -1,6 +1,4 @@
 import { notFound, redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import {
   getAdminResourceEditPageData,
   getAdminResourceEditTitle,
@@ -8,6 +6,7 @@ import {
 import { EditResourceForm } from "./EditResourceForm";
 import type { ResourceCardData } from "@/components/resources/ResourceCard";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -27,19 +26,7 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function EditResourcePage({ params }: Props) {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
-
-  // ── 1. Require login ───────────────────────────────────────────────────────
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminResource(id)));
-  }
-
-  // ── 2. Require ADMIN role ──────────────────────────────────────────────────
-  const role = session.user.role;
-
-  if (role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  const session = await requireAdminSession(routes.adminResource(id));
 
   const { resource, categories, tags } = await getAdminResourceEditPageData(id);
 

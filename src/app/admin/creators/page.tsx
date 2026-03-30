@@ -1,10 +1,8 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getAllCreatorApplications } from "@/services/creator.service";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { CreatorApplicationActions } from "@/components/admin/CreatorApplicationActions";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Creator Applications – Admin",
@@ -20,14 +18,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 };
 
 export default async function AdminCreatorsPage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminCreators));
-  }
-  if (session.user.role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.adminCreators);
 
   const applications = await getAllCreatorApplications();
 

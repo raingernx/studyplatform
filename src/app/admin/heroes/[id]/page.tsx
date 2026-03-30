@@ -1,10 +1,9 @@
-import { notFound, redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { notFound } from "next/navigation";
 import { HeroForm, type HeroFormValues } from "@/components/admin/heroes/HeroForm";
 import { normalizeHeroStyle } from "@/lib/heroes/hero-style";
 import { getHeroById } from "@/services/heroes/hero.service";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -81,15 +80,7 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function EditHeroPage({ params }: Props) {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminHero(id)));
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.adminHero(id));
 
   const hero = await getHeroById(id);
 

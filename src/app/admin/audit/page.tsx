@@ -1,9 +1,6 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-
-import { authOptions } from "@/lib/auth";
 import { getAdminAuditPageData } from "@/services/admin-operations.service";
 import { routes } from "@/lib/routes";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import { AuditTrailClient } from "./AuditTrailClient";
 
 const PAGE_SIZE = 25;
@@ -27,15 +24,7 @@ export default async function AdminAuditPage({
   searchParams,
 }: AdminAuditPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect(routes.loginWithNext(routes.adminAudit));
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect(routes.dashboard);
-  }
+  await requireAdminSession(routes.adminAudit);
 
   const page = Math.max(1, Number(resolvedSearchParams?.page ?? "1") || 1);
   const actionFilter = (resolvedSearchParams?.action ?? "").trim();
