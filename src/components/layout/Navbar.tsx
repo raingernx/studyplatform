@@ -346,38 +346,19 @@ function NavbarInner({
                 )}
               </div>
 
+              {/* Scrollable links — overflow-x-auto would clip an absolute
+                  dropdown, so the avatar button lives outside this div. */}
               <div className={cn("ml-auto flex min-w-0 max-w-[68vw] items-center gap-1.5 lg:hidden", HORIZONTAL_SCROLL_CLASS_NAME)}>
                 <Link href={routes.library} className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] leading-[22px] font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
                   คลังของฉัน
                 </Link>
 
                 {isLoading ? (
-                  <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-surface-100" />
+                  <div className="h-10 w-24 shrink-0 animate-pulse rounded-full bg-surface-100" />
                 ) : session?.user ? (
-                  <>
-                    <Link href={routes.membership} className="inline-flex h-10 shrink-0 items-center rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-3 text-[14px] leading-[22px] font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40 focus-visible:ring-offset-2">
-                      KC Premium
-                    </Link>
-                    <div className="relative shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setUserMenuOpen((open) => !open)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-surface-200 bg-white shadow-sm transition-colors hover:bg-surface-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
-                        aria-label="เปิดเมนูบัญชี"
-                        aria-haspopup="menu"
-                        aria-expanded={userMenuOpen}
-                        aria-controls={userMenuId}
-                      >
-                        <Avatar
-                          src={session.user.image}
-                          name={session.user.name}
-                          email={session.user.email}
-                          size={30}
-                        />
-                      </button>
-                      {userMenuOpen ? renderUserMenu() : null}
-                    </div>
-                  </>
+                  <Link href={routes.membership} className="inline-flex h-10 shrink-0 items-center rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-3 text-[14px] leading-[22px] font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40 focus-visible:ring-offset-2">
+                    KC Premium
+                  </Link>
                 ) : (
                   <>
                     <Link href={routes.login} className={cn(MARKETPLACE_CATEGORY_ITEM_CLASS_NAME, "border-surface-300 bg-surface-100 px-3 text-text-primary shadow-sm")}>
@@ -389,6 +370,31 @@ function NavbarInner({
                   </>
                 )}
               </div>
+
+              {/* Avatar sits outside overflow-x-auto so its dropdown is not clipped */}
+              {isLoading ? (
+                <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-surface-100 lg:hidden" />
+              ) : session?.user ? (
+                <div className="relative shrink-0 lg:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setUserMenuOpen((open) => !open)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-surface-200 bg-white shadow-sm transition-colors hover:bg-surface-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
+                    aria-label="เปิดเมนูบัญชี"
+                    aria-haspopup="menu"
+                    aria-expanded={userMenuOpen}
+                    aria-controls={userMenuId}
+                  >
+                    <Avatar
+                      src={session.user.image}
+                      name={session.user.name}
+                      email={session.user.email}
+                      size={30}
+                    />
+                  </button>
+                  {userMenuOpen ? renderUserMenu() : null}
+                </div>
+              ) : null}
             </div>
 
             <div className="min-w-0 lg:hidden">
