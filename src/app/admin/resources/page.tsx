@@ -2,7 +2,6 @@ import Link from "next/link";
 import { BookOpen, Plus, Upload } from "lucide-react";
 
 import { Button } from "@/design-system";
-import { ResourceTable, type AdminResourceRow } from "@/components/admin/ResourceTable";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EmptyState } from "@/design-system";
 import { AdminResourcesFilters } from "./AdminResourcesFilters";
@@ -13,6 +12,12 @@ import {
 } from "@/lib/performance/observability";
 import { routes } from "@/lib/routes";
 import { requireAdminSession } from "@/lib/auth/require-admin-session";
+import dynamic from "next/dynamic";
+import type { AdminResourceRow } from "@/components/admin/ResourceTable";
+
+const ResourceTable = dynamic(() =>
+  import("@/components/admin/ResourceTable").then((m) => m.ResourceTable),
+);
 
 export const metadata = {
   title: "Resources – Admin",

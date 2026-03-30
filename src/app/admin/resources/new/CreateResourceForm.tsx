@@ -2,17 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ResourceForm,
-  type ResourceFormCategory,
-  type ResourceFormTag,
-  type ResourcePayload,
-  type ResourceFormResource,
-} from "@/components/admin/ResourceForm";
+import dynamic from "next/dynamic";
 import { Card } from "@/design-system";
 import { ResourceCard } from "@/components/resources/ResourceCard";
 import { AdminFormLayout } from "@/components/admin/AdminFormLayout";
 import type { ResourceCardData } from "@/components/resources/ResourceCard";
+import type {
+  ResourceFormCategory,
+  ResourceFormTag,
+  ResourcePayload,
+  ResourceFormResource,
+} from "@/components/admin/ResourceForm";
+
+const ResourceForm = dynamic(() =>
+  import("@/components/admin/ResourceForm").then((m) => m.ResourceForm),
+);
 
 interface CreateResourceFormProps {
   categories: ResourceFormCategory[];

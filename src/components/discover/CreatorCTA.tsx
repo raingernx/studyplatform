@@ -60,6 +60,7 @@ export async function CreatorCTA() {
               src="/brand/krucraft-mark.svg"
               alt={`Creators sharing study resources on ${platform.platformShortName}`}
               fill
+              sizes="(max-width: 1024px) calc(100vw - 48px), 448px"
               className="object-contain p-8"
             />
           </div>

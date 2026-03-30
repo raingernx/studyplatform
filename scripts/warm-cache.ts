@@ -85,6 +85,66 @@ type WarmResult = {
   error?: string;
 };
 
+/**
+ * Parse priority image URLs out of an HTML string and request each one so the
+ * Next.js image-optimisation cache (/_next/image) is warm before real users
+ * arrive.  Only /_next/image paths are warmed — external CDN assets (e.g.
+ * Cloudflare R2 logos) are already cached at the edge and don't need warming.
+ */
+async function warmImagesFromHtml(
+  html: string,
+  label: string,
+): Promise<void> {
+  const imageUrls = new Set<string>();
+
+  // Next.js renders priority <Image> as:
+  //   <link rel="preload" as="image" imagesrcset="/_next/image?...&w=640 640w, ...">
+  // Collect every /_next/image URL from every srcset.
+  for (const match of html.matchAll(/imagesrcset="([^"]+)"/g)) {
+    for (const entry of match[1].split(",")) {
+      const src = entry.trim().split(" ")[0];
+      if (src?.startsWith("/_next/image")) {
+        imageUrls.add(`${baseUrl}${src}`);
+      }
+    }
+  }
+
+  // Also handle plain href preloads: <link rel="preload" as="image" href="/_next/image?...">
+  for (const match of html.matchAll(/as="image"[^>]+href="([^"]+)"/g)) {
+    const src = match[1];
+    if (src?.startsWith("/_next/image")) {
+      imageUrls.add(src.startsWith("http") ? src : `${baseUrl}${src}`);
+    }
+  }
+
+  if (imageUrls.size === 0) {
+    return;
+  }
+
+  console.log(
+    `[warm-cache] ${label}: warming ${imageUrls.size} optimised image(s)`,
+  );
+
+  for (const imgUrl of imageUrls) {
+    const imgStart = Date.now();
+    try {
+      const res = await fetch(imgUrl, {
+        headers: { "user-agent": userAgent },
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      // Drain body so the connection is cleanly closed.
+      await res.arrayBuffer();
+      console.log(
+        `[warm-cache]   image ${res.status} ${res.headers.get("content-type") ?? "?"} ${Date.now() - imgStart}ms ${imgUrl.slice(0, 100)}`,
+      );
+    } catch (err) {
+      console.warn(
+        `[warm-cache]   image FAIL ${Date.now() - imgStart}ms ${imgUrl.slice(0, 100)} — ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+}
+
 async function warmRoute(route: WarmRoute): Promise<WarmResult> {
   const url = new URL(route.path, baseUrl);
   const startedAt = Date.now();
@@ -124,6 +184,9 @@ async function warmRoute(route: WarmRoute): Promise<WarmResult> {
     try {
       const body = await response.text();
       bodyBytes = body.length;
+      // Warm /_next/image URLs found in this page's preload hints so the
+      // image-optimisation cache is hot before real users trigger the LCP request.
+      await warmImagesFromHtml(body, route.label);
     } catch {
       // Body read failure is non-fatal — the status check already captured
       // whether the route responded correctly.

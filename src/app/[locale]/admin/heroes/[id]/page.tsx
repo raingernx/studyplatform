@@ -1,9 +1,14 @@
 import { notFound } from "next/navigation";
-import { HeroForm, type HeroFormValues } from "@/components/admin/heroes/HeroForm";
 import { normalizeHeroStyle } from "@/lib/heroes/hero-style";
 import { getHeroById } from "@/services/heroes/hero.service";
 import { routes } from "@/lib/routes";
 import { requireAdminSession } from "@/lib/auth/require-admin-session";
+import dynamic from "next/dynamic";
+import type { HeroFormValues } from "@/components/admin/heroes/HeroForm";
+
+const HeroForm = dynamic(() =>
+  import("@/components/admin/heroes/HeroForm").then((m) => m.HeroForm),
+);
 
 type Props = {
   params: Promise<{ id: string }>;
