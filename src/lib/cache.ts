@@ -22,6 +22,9 @@ export const CACHE_TTLS = {
   // work on every Redis expiry cycle.  300 s ensures the Redis entries outlive
   // the outer cache so they are always warm on a getDiscoverData cache miss.
   homepageList: 300,
+  // Resource detail pages are invalidated by revalidateTag on admin save,
+  // so it is safe to cache them for much longer than the homepage lists.
+  resourceDetail: 3600,
   hero: 60,
   stats: 300,
   publicPage: 120,

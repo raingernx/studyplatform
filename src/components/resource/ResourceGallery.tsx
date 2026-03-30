@@ -205,7 +205,7 @@ export function ResourceGallery({
           src={current.imageUrl}
           alt={`${resourceTitle} – preview ${activeIndex + 1} of ${total}`}
           fill
-          sizes="(max-width: 768px) 100vw, 640px"
+          sizes="(max-width: 1023px) 100vw, calc(100vw - 608px)"
           className="h-full w-full object-contain object-top"
           priority
         />

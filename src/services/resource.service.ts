@@ -611,7 +611,7 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
 
 // ── Single resource detail ────────────────────────────────────────────────────
 
-const RESOURCE_DETAIL_REVALIDATE_SECONDS = CACHE_TTLS.homepageList;
+const RESOURCE_DETAIL_REVALIDATE_SECONDS = CACHE_TTLS.resourceDetail;
 
 // Module-level Maps ensure each slug gets exactly one stable unstable_cache
 // function reference for its lifetime in this Lambda. A new closure per call
