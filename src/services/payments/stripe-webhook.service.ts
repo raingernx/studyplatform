@@ -226,19 +226,16 @@ interface StripePurchaseAnalyticsInput {
 async function recordStripePurchaseAnalytics(
   input: StripePurchaseAnalyticsInput,
 ) {
-  const context =
-    (await findPurchaseAnalyticsContextByStripeSessionId(input.sessionId)) ??
-    (input.paymentIntentId
-      ? await findPurchaseAnalyticsContextByStripePaymentIntentId(
-          input.paymentIntentId,
-        )
-      : null) ??
-    (input.userId && input.resourceId
-      ? await findPurchaseAnalyticsContextByUserAndResource(
-          input.userId,
-          input.resourceId,
-        )
-      : null);
+  const [bySession, byPaymentIntent, byUserResource] = await Promise.all([
+    findPurchaseAnalyticsContextByStripeSessionId(input.sessionId),
+    input.paymentIntentId
+      ? findPurchaseAnalyticsContextByStripePaymentIntentId(input.paymentIntentId)
+      : null,
+    input.userId && input.resourceId
+      ? findPurchaseAnalyticsContextByUserAndResource(input.userId, input.resourceId)
+      : null,
+  ]);
+  const context = bySession ?? byPaymentIntent ?? byUserResource;
 
   if (!context) {
     return;

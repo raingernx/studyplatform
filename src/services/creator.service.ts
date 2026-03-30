@@ -54,6 +54,9 @@ import {
 } from "@/repositories/creators/creator.repository";
 import { findResourceBySlug } from "@/repositories/resources/resource.repository";
 
+// Request-level memoization: deduplicates getCreatorStats calls within one render pass.
+const getCachedCreatorStats = cache(getCreatorStats);
+
 const previewUrlSchema = z.string().refine(
   (value) =>
     value.startsWith("http://") ||
@@ -720,7 +723,7 @@ export async function getCreatorDashboardStats(
 ): Promise<CreatorDashboardStats> {
   await requireCreatorAccess(userId);
 
-  const stats = await getCreatorStats(userId);
+  const stats = await getCachedCreatorStats(userId);
 
   return {
     totalRevenue: stats.totalRevenue ?? 0,
@@ -780,7 +783,7 @@ export async function getCreatorBalance(userId: string): Promise<CreatorBalance>
   await requireCreatorAccess(userId);
 
   const [stats, payouts, totalPayouts] = await Promise.all([
-    getCreatorStats(userId),
+    getCachedCreatorStats(userId),
     getCreatorPayouts(userId),
     sumCreatorPayouts(userId),
   ]);

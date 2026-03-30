@@ -493,21 +493,16 @@ async function ResourcesDiscoverContent({ userId }: { userId?: string }) {
   const learningProfilePromise = userId
     ? trackRequestWork(loadLearningProfileSafe(userId))
     : null;
-  const sectionsPromise = trackRequestWork(
-    ResourcesDiscoverDeferredSections({
-      discoverDataPromise,
-      ownedIdsPromise,
-      learningProfilePromise,
-      userId,
-    }),
-  );
 
   return (
-    <>
-      <Suspense fallback={<DiscoverSectionsFallback />}>
-        <AwaitResolvedNode promise={sectionsPromise} />
-      </Suspense>
-    </>
+    <Suspense fallback={<DiscoverSectionsFallback />}>
+      <ResourcesDiscoverDeferredSections
+        discoverDataPromise={discoverDataPromise}
+        ownedIdsPromise={ownedIdsPromise}
+        learningProfilePromise={learningProfilePromise}
+        userId={userId}
+      />
+    </Suspense>
   );
 }
 
@@ -987,8 +982,17 @@ function SidebarFallback() {
 function DiscoverSectionsFallback() {
   return (
     <div className="space-y-16 lg:space-y-20">
-      <DeferredSectionFallback titleWidth="w-32" cardCount={4} />
-      <DeferredSectionFallback titleWidth="w-40" cardCount={4} />
+      <DeferredSectionFallback titleWidth="w-32" cardCount={5} />
+      {/* top creator block skeleton */}
+      <div className="rounded-[22px] border border-surface-200 bg-surface-50/75 p-4 sm:p-5">
+        <LoadingSkeleton className="mb-2 h-3 w-24" />
+        <LoadingSkeleton className="h-6 w-48" />
+        <LoadingSkeleton className="mt-1 h-4 w-80" />
+      </div>
+      <DeferredSectionFallback titleWidth="w-40" cardCount={5} />
+      <DeferredSectionFallback titleWidth="w-36" cardCount={5} />
+      <DeferredSectionFallback titleWidth="w-28" cardCount={5} />
+      <DeferredSectionFallback titleWidth="w-44" cardCount={5} />
     </div>
   );
 }

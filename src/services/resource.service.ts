@@ -163,25 +163,26 @@ export function getMarketplaceCacheKey(filters: NormalizedMarketplaceFilters) {
   return JSON.stringify(filters);
 }
 
+const _cachedMarketplaceCategories = unstable_cache(
+  async function _getMarketplaceCategories() {
+    recordCacheMiss("getMarketplaceCategories");
+    return rememberJson(
+      CACHE_KEYS.marketplaceCategories,
+      CACHE_TTLS.publicPage,
+      () => findCategoriesOrderedByName(),
+      { metricName: "marketplace.categories" },
+    );
+  },
+  ["marketplace-categories"],
+  {
+    revalidate: CACHE_TTLS.publicPage,
+    tags: [CACHE_TAGS.discover],
+  },
+);
+
 async function getCachedMarketplaceCategories() {
   recordCacheCall("getMarketplaceCategories");
-
-  return unstable_cache(
-    async function _getMarketplaceCategories() {
-      recordCacheMiss("getMarketplaceCategories");
-      return rememberJson(
-        CACHE_KEYS.marketplaceCategories,
-        CACHE_TTLS.publicPage,
-        () => findCategoriesOrderedByName(),
-        { metricName: "marketplace.categories" },
-      );
-    },
-    ["marketplace-categories"],
-    {
-      revalidate: CACHE_TTLS.publicPage,
-      tags: [CACHE_TAGS.discover],
-    },
-  )();
+  return _cachedMarketplaceCategories();
 }
 
 /** Builds a Prisma `orderBy` clause from a sort key string.

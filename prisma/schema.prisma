@@ -343,6 +343,7 @@ model Resource {
   @@index([status, createdAt])
   @@index([status, downloadCount])
   @@index([status, featured])
+  @@index([status, isFree, createdAt])
   @@index([deletedAt])
   @@index([deletedAt, createdAt])
   @@index([authorId, deletedAt, createdAt])

@@ -88,19 +88,21 @@ export async function getAdminResourcesPageData(input: {
 
   const skip = (input.currentPage - 1) * input.pageSize;
 
-  const [resources, totalCount, categories] = await Promise.all([
-    findAdminResourcesPage({
-      where,
-      skip,
-      take: input.pageSize,
-    }),
+  const resourcesPromise = findAdminResourcesPage({
+    where,
+    skip,
+    take: input.pageSize,
+  });
+  const purchaseSummariesPromise = resourcesPromise.then((resources) =>
+    findAdminResourcePurchaseSummaries(resources.map((r) => r.id)),
+  );
+
+  const [resources, totalCount, categories, purchaseSummaries] = await Promise.all([
+    resourcesPromise,
     countMarketplaceResources(where),
     findCategoriesOrderedByName(),
+    purchaseSummariesPromise,
   ]);
-
-  const purchaseSummaries = await findAdminResourcePurchaseSummaries(
-    resources.map((resource) => resource.id),
-  );
 
   const purchaseSummaryByResourceId = new Map(
     purchaseSummaries.map((row) => [
