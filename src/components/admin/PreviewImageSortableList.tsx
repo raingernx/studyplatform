@@ -18,6 +18,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Trash2 } from "lucide-react";
 import { MediaPreview, PickerIconButton, PreviewCard } from "@/design-system";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 
 interface PreviewImageSortableListProps {
   images: string[];
@@ -73,6 +74,7 @@ function SortableItem({ id, index, url, onRemove, onSetCover }: SortableItemProp
           width={96}
           height={64}
           sizes="96px"
+          unoptimized={shouldBypassImageOptimizer(url)}
           className="h-16 w-24 object-cover"
         />
       </MediaPreview>

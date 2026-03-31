@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { FileText } from "lucide-react";
 import { PriceBadge } from "@/components/ui/PriceBadge";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 
 export type CreatorResourcePreviewProps = {
   title: string;
@@ -41,6 +42,7 @@ export function CreatorResourcePreview({
               alt={title || "Resource preview"}
               fill
               sizes="320px"
+              unoptimized={shouldBypassImageOptimizer(thumbnailUrl)}
               className="h-full w-full object-cover"
               onError={() => setImageError(true)}
             />

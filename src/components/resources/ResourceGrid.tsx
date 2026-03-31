@@ -261,7 +261,6 @@ function ResourceGridBody({
               resource={resource}
               variant="marketplace"
               owned={ownedIdSet.has(resource.id)}
-              priority={index < 2}
               linkPrefetchMode={cardPrefetchMode}
               linkPrefetchScope={cardPrefetchScope}
               badge={badgeNodes?.[index]}

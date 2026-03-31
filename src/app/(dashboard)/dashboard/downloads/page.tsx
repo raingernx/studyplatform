@@ -4,6 +4,7 @@ import { Download, FileText, BookOpen } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { requireSession } from "@/lib/auth/require-session";
 import { formatDate, formatFileSize } from "@/lib/format";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 import { routes } from "@/lib/routes";
 import { getUserDownloadHistory } from "@/services/purchase.service";
 import { EmptyState } from "@/design-system";
@@ -102,6 +103,7 @@ export default async function DownloadsPage() {
                             width={36}
                             height={36}
                             sizes="36px"
+                            unoptimized={shouldBypassImageOptimizer(dl.resource.previewUrl)}
                             className="h-9 w-9 rounded-xl object-cover"
                           />
                         ) : (

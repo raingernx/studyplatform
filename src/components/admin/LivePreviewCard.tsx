@@ -5,6 +5,7 @@ import { FileText } from "lucide-react";
 import { Card } from "@/design-system";
 import type { ResourceCardData } from "@/components/resources/ResourceCard";
 import { formatPrice } from "@/lib/format";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 
 /**
  * Admin preview card. Reuses same structure as marketplace ResourceCard
@@ -39,6 +40,7 @@ export function LivePreviewCard({ data }: LivePreviewCardProps) {
               alt={data.title}
               fill
               sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+              unoptimized={shouldBypassImageOptimizer(data.previewUrl)}
               className="h-full w-full object-cover"
             />
           ) : (

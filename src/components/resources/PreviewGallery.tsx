@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -25,6 +26,7 @@ export function PreviewGallery({ previews, resourceTitle }: Props) {
   if (previews.length === 0) return null;
 
   const current = previews[active];
+  const bypassCurrentImageOptimizer = shouldBypassImageOptimizer(current.imageUrl);
   const hasPrev = active > 0;
   const hasNext = active < previews.length - 1;
 
@@ -41,6 +43,7 @@ export function PreviewGallery({ previews, resourceTitle }: Props) {
           alt={`${resourceTitle} – preview ${active + 1} of ${previews.length}`}
           fill
           sizes="(max-width: 768px) 100vw, 640px"
+          unoptimized={bypassCurrentImageOptimizer}
           className="object-contain"
         />
 
@@ -107,6 +110,7 @@ export function PreviewGallery({ previews, resourceTitle }: Props) {
                 width={72}
                 height={72}
                 sizes="72px"
+                unoptimized={shouldBypassImageOptimizer(p.imageUrl)}
                 className="h-full w-full object-cover"
               />
             </button>

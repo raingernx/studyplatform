@@ -156,13 +156,11 @@ function ResourceCardWithDeferredOwnedBadge({
   resource,
   ownedIdsPromise,
   variant = "marketplace",
-  priority = false,
   linkPrefetchMode = "intent",
 }: {
   resource: ResourceCardData;
   ownedIdsPromise: Promise<Set<string>> | null;
   variant?: "marketplace" | "hero";
-  priority?: boolean;
   linkPrefetchMode?: "intent" | "viewport" | "none";
 }) {
   return (
@@ -170,7 +168,6 @@ function ResourceCardWithDeferredOwnedBadge({
       resource={resource}
       variant={variant}
       owned={false}
-      priority={priority}
       linkPrefetchMode={linkPrefetchMode}
       badge={
         ownedIdsPromise ? (
@@ -1124,7 +1121,6 @@ async function ResourcesDiscoverRFYFinalSection({
               resource={resource}
               variant="marketplace"
               ownedIdsPromise={ownedIdsPromise}
-              priority={index < 2}
               linkPrefetchMode="viewport"
             />
           ))}
@@ -1185,7 +1181,6 @@ async function ResourcesDiscoverRFYFinalSection({
                 resource={resource}
                 variant="marketplace"
                 ownedIdsPromise={ownedIdsPromise}
-                priority={index < 2}
                 linkPrefetchMode="viewport"
               />
             </div>

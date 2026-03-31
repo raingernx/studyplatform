@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Download } from "lucide-react";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 
 interface Preview {
   id: string;
@@ -37,6 +38,7 @@ export function FilePreview({
               alt={`${resourceTitle} – preview ${i + 1} of ${previews.length}`}
               fill
               sizes="(max-width: 768px) 33vw, 200px"
+              unoptimized={shouldBypassImageOptimizer(p.imageUrl)}
               className="object-cover"
             />
           </div>

@@ -12,6 +12,7 @@ import {
 import { authOptions } from "@/lib/auth";
 import { requireSession } from "@/lib/auth/require-session";
 import { formatDate, formatPrice } from "@/lib/format";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 import { routes } from "@/lib/routes";
 import { getDashboardPurchaseHistoryPageData } from "@/services/admin-operations.service";
 import { getPlatform } from "@/services/platform.service";
@@ -138,6 +139,7 @@ export default async function PurchasesPage() {
                             width={36}
                             height={36}
                             sizes="36px"
+                            unoptimized={shouldBypassImageOptimizer(purchase.resource.previewUrl)}
                             className="h-9 w-9 rounded-xl object-cover"
                           />
                           ) : (

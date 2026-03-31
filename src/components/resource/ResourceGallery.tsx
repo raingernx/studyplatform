@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { ChevronUp, ChevronDown, FileText, X, ZoomIn } from "lucide-react";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 
 const VISIBLE_THUMBNAILS = 5;
 
@@ -61,6 +62,7 @@ export function ResourceGallery({
 
   const activeIndex = Math.min(active, resolvedPreviews.length - 1);
   const current = resolvedPreviews[activeIndex];
+  const currentIsRemotePreview = shouldBypassImageOptimizer(current.imageUrl);
   const hasThumbnailNavigation = resolvedPreviews.length > 1;
   const maxStart = Math.max(0, resolvedPreviews.length - VISIBLE_THUMBNAILS);
   const clampedStartIndex = Math.min(startIndex, maxStart);
@@ -104,6 +106,7 @@ export function ResourceGallery({
               alt={`${resourceTitle} – preview ${activeIndex + 1} of ${total}`}
               width={1400}
               height={1050}
+              unoptimized={currentIsRemotePreview}
               className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain"
             />
           </div>
@@ -161,6 +164,7 @@ export function ResourceGallery({
                     alt={`Thumbnail ${globalIndex + 1}`}
                     fill
                     sizes="(max-width: 1023px) 64px, 80px"
+                    unoptimized={shouldBypassImageOptimizer(p.imageUrl)}
                     className="object-cover"
                   />
                 </button>
@@ -205,9 +209,10 @@ export function ResourceGallery({
           src={current.imageUrl}
           alt={`${resourceTitle} – preview ${activeIndex + 1} of ${total}`}
           fill
-          sizes="(max-width: 1023px) 100vw, calc(100vw - 608px)"
+          sizes="(max-width: 1023px) calc(100vw - 2rem), 910px"
           className="h-full w-full object-contain object-top"
           priority
+          unoptimized={currentIsRemotePreview}
         />
 
         {/* Enlarge badge — visual hint only, top-right, visible on hover */}

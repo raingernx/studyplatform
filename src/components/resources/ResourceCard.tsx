@@ -7,6 +7,7 @@ import { FileText } from "lucide-react";
 import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
 import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import { formatPrice } from "@/lib/format";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
@@ -81,8 +82,6 @@ interface ResourceCardProps {
   owned?: boolean;
   /** When true, renders as a static, non-clickable preview (no marketplace link wrapping). */
   previewMode?: boolean;
-  /** When true, tells Next.js to preload this image (use only for above-the-fold LCP cards). */
-  priority?: boolean;
   /**
    * Controls the prefetch strategy for the card's link wrapper.
    * Defaults to "viewport" (fires on scroll-into-view).
@@ -172,7 +171,6 @@ function CardBody({
   authorName,
   isOwned,
   isNavigating = false,
-  priority = false,
   badge,
 }: {
   resource: ResourceCardResource;
@@ -181,7 +179,6 @@ function CardBody({
   authorName: string | null;
   isOwned: boolean;
   isNavigating?: boolean;
-  priority?: boolean;
   badge?: ReactNode;
 }) {
   const isFree = resource.isFree ?? (resource.price === 0 || !resource.price);
@@ -196,6 +193,7 @@ function CardBody({
     resource.previewImages?.[0] ??
     resource.previewUrl ??
     null;
+  const bypassImageOptimizer = shouldBypassImageOptimizer(thumbnail);
   const soldLabel = formatSoldCount(
     resource.salesCount ?? resource._count?.purchases ?? null,
   );
@@ -245,11 +243,11 @@ function CardBody({
             alt={resource.title}
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+            unoptimized={bypassImageOptimizer}
             className={thumbImgClass}
             onError={() => {
               setImageError(true);
             }}
-            priority={priority}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
@@ -337,7 +335,6 @@ function ResourceCardInner({
   size = "md",
   owned = false,
   previewMode = false,
-  priority = false,
   linkPrefetchMode = "viewport",
   linkPrefetchScope = "resource-card-grid",
   badge,
@@ -372,7 +369,6 @@ function ResourceCardInner({
     authorName,
     isOwned,
     isNavigating,
-    priority,
     badge,
   };
 

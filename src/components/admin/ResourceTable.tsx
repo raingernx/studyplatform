@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/Dropdown";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { formatPrice, formatDate } from "@/lib/format";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 import { routes } from "@/lib/routes";
 import { useNotifications } from "@/features/notifications/useNotifications";
 import { useUndo } from "@/features/undo/useUndo";
@@ -468,6 +469,7 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                             width={48}
                             height={48}
                             sizes="48px"
+                            unoptimized={shouldBypassImageOptimizer(resource.previewUrl)}
                             className="h-full w-full object-cover"
                           />
                         ) : (

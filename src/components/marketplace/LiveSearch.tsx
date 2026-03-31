@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { Search, FileText } from "lucide-react";
 import Image from "next/image";
 import { SearchInput } from "@/design-system";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 import { routes } from "@/lib/routes";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -204,6 +205,7 @@ export function LiveSearch({
                     alt={r.title}
                     width={36}
                     height={36}
+                    unoptimized={shouldBypassImageOptimizer(r.previewUrl)}
                     className="h-9 w-9 rounded-lg object-cover"
                   />
                 ) : (

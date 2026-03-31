@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { buttonVariants } from "@/design-system";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import {
@@ -191,20 +192,6 @@ function normalizeOptionalString(value: string | null | undefined) {
   return trimmed ? trimmed : null;
 }
 
-function isOptimizableRemoteHeroSrc(src: string) {
-  try {
-    const url = new URL(src);
-
-    return (
-      url.protocol === "https:" &&
-      (url.hostname === "lh3.googleusercontent.com" ||
-        url.hostname.endsWith(".r2.dev"))
-    );
-  } catch {
-    return false;
-  }
-}
-
 const HERO_PRIMARY_CTA_COLOR_CLASS = {
   "brand-blue": {
     filled: "border-brand-600 bg-brand-600 text-white hover:border-brand-700 hover:bg-brand-700 active:bg-brand-800 focus-visible:ring-brand-500/50",
@@ -370,10 +357,11 @@ export function HeroSurface({
   const hasHeroMedia = Boolean(bgSrc);
   const heroMediaSrc = bgSrc ?? "";
   const isGif = hero.mediaType === "gif";
+  const bypassHeroOptimizer = shouldBypassImageOptimizer(heroMediaSrc);
   const useOptimizedImage =
     hasHeroMedia &&
     !isGif &&
-    (heroMediaSrc.startsWith("/") || isOptimizableRemoteHeroSrc(heroMediaSrc));
+    !bypassHeroOptimizer;
   const alignment = HERO_ALIGNMENT_CLASS[style.textAlign];
   const titleSize = HERO_TITLE_RESPONSIVE_CLASS[style.titleSize];
   const subtitleSize = HERO_SUBTITLE_RESPONSIVE_CLASS[style.subtitleSize];
@@ -402,6 +390,7 @@ export function HeroSurface({
           priority
           fetchPriority="high"
           sizes="100vw"
+          unoptimized={bypassHeroOptimizer}
           className="absolute inset-0 h-full w-full object-cover"
           aria-hidden
         />

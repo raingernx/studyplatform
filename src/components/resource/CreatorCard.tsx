@@ -1,7 +1,6 @@
 import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import { Avatar } from "@/design-system";
 import { routes } from "@/lib/routes";
-import { getPlatform } from "@/services/platform.service";
 
 export interface CreatorCardCreator {
   id: string;
@@ -15,8 +14,7 @@ interface CreatorCardProps {
   creator: CreatorCardCreator;
 }
 
-export async function CreatorCard({ creator }: CreatorCardProps) {
-  const platform = await getPlatform();
+export function CreatorCard({ creator }: CreatorCardProps) {
   const displayName = creator.name ?? "Creator";
 
   return (
@@ -32,7 +30,7 @@ export async function CreatorCard({ creator }: CreatorCardProps) {
         <div className="flex-1 min-w-0">
           <p className="font-medium text-zinc-900 truncate">{displayName}</p>
           <p className="mt-1 text-small leading-6 text-zinc-600 line-clamp-2">
-            {creator.bio ?? `Creator on ${platform.platformShortName}`}
+            {creator.bio ?? "Marketplace creator sharing practical learning resources."}
           </p>
           {creator.creatorSlug && (
             <IntentPrefetchLink

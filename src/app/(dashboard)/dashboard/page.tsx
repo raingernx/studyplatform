@@ -23,6 +23,7 @@ import {
   traceServerStep,
   withRequestPerformanceTrace,
 } from "@/lib/performance/observability";
+import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 import { routes } from "@/lib/routes";
 
 export const metadata = {
@@ -97,6 +98,7 @@ function DashboardShelfCard({
             alt={resource.title}
             fill
             sizes="(min-width: 1280px) 220px, (min-width: 768px) 204px, 70vw"
+            unoptimized={shouldBypassImageOptimizer(resource.previewUrl)}
             className="object-cover"
           />
         ) : (
@@ -329,6 +331,7 @@ export default async function DashboardPage() {
                           width={44}
                           height={44}
                           sizes="44px"
+                          unoptimized={shouldBypassImageOptimizer(purchase.resource.previewUrl)}
                           className="h-11 w-11 rounded-xl object-cover"
                         />
                       ) : (
@@ -376,6 +379,7 @@ export default async function DashboardPage() {
                         width={44}
                         height={44}
                         sizes="44px"
+                        unoptimized={shouldBypassImageOptimizer(lastOpened.resource.previewUrl)}
                         className="h-11 w-11 rounded-xl object-cover"
                       />
                     ) : (
