@@ -61,7 +61,6 @@ src/
     api/                  # All API routes — thin HTTP handlers only
     (dashboard)/          # Primary user/creator dashboard routes
     admin/                # Primary admin routes
-    [locale]/             # Legacy locale passthrough (DO NOT add new routes here)
   services/               # Business logic layer — one file per domain
   repositories/           # Prisma query layer — one file per model/domain
   components/             # React UI components
@@ -81,9 +80,9 @@ prisma/
 messages/                 # i18n translation files
 ```
 
-### The `[locale]` Route Group
+### Legacy Locale Handling
 
-The `[locale]` segment is a **backwards-compatibility passthrough only**. Middleware redirects `/th/*` → `/*`. All new routes go into the primary route groups (`(dashboard)/`, `admin/`, `app/api/`). Do not add new pages under `[locale]`.
+Legacy locale-prefixed URLs are handled at the proxy layer and redirected to flat routes. Do not reintroduce `[locale]` route trees unless the project is explicitly moving back to full locale-prefixed routing.
 
 ---
 
@@ -168,7 +167,7 @@ These rules are non-negotiable. Violating them risks data leaks, payment fraud, 
 4. **Never grant payment access from client redirects.** Webhooks only.
 5. **Use transactions** for any write that involves purchase state, subscription state, or financial data.
 6. **Do not break API contracts.** Changing a route's response shape or removing a field is a breaking change. Treat it as such.
-7. **Do not add new routes under `[locale]/`.** That segment is a legacy compatibility shim.
+7. **Do not reintroduce locale-prefixed duplicate route trees** unless the project explicitly restores full locale-prefixed routing.
 8. **`ResourceCard` is a single shared component with variants.** Do not create alternative resource card components.
 9. **Validate all external input at the route boundary** using Zod before it reaches a service.
 10. **Admin access requires `role === ADMIN` verified server-side**, not just a middleware redirect.

@@ -1,12 +1,33 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Card } from "@/design-system";
+import { routes } from "@/lib/routes";
 
 const MOCK_POSTS = [
-  { slug: "study-tips-exams", title: "5 study tips for exam season", excerpt: "Simple strategies to stay focused and retain more." },
-  { slug: "flashcards-that-stick", title: "Flashcards that stick", excerpt: "How to build decks that actually help you remember." },
-  { slug: "worksheets-for-teachers", title: "Worksheets that work", excerpt: "Design printables your students will love." },
-  { slug: "selling-resources-online", title: "Selling resources online", excerpt: "A quick guide for educators and creators." },
+  {
+    slug: "study-tips-exams",
+    title: "5 study tips for exam season",
+    excerpt: "Simple strategies to stay focused and retain more.",
+    href: routes.marketplaceSearch("exam study tips"),
+  },
+  {
+    slug: "flashcards-that-stick",
+    title: "Flashcards that stick",
+    excerpt: "How to build decks that actually help you remember.",
+    href: routes.marketplaceSearch("flashcards"),
+  },
+  {
+    slug: "worksheets-for-teachers",
+    title: "Worksheets that work",
+    excerpt: "Design printables your students will love.",
+    href: routes.marketplaceSearch("worksheets"),
+  },
+  {
+    slug: "selling-resources-online",
+    title: "Selling resources online",
+    excerpt: "A quick guide for educators and creators.",
+    href: routes.marketplaceSearch("creator resources"),
+  },
 ];
 
 export function BlogSection() {
@@ -23,7 +44,7 @@ export function BlogSection() {
           </p>
         </div>
         <Link
-          href="/blog"
+          href={routes.marketplace}
           className="flex items-center gap-1 text-[13px] font-medium text-brand-600 transition hover:text-brand-700"
         >
           <span className="inline-flex items-center gap-1">
@@ -34,7 +55,7 @@ export function BlogSection() {
       </div>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {MOCK_POSTS.map((post) => (
-          <Link key={post.slug} href={`/blog/${post.slug}`}>
+          <Link key={post.slug} href={post.href}>
             <Card className="h-full rounded-2xl border border-surface-200 transition duration-200 hover:-translate-y-1 hover:shadow-card-lg">
               <div className="p-5">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">
