@@ -28,6 +28,7 @@ Primary bottleneck class is now:
 - category smoke route now matches its actual page intent and is warmed explicitly
 - `/resources` discover fallback no longer swaps in fake CTA content while data resolves
 - discover hero loading now falls back to a plain blue banner shell; discover sections fall back to section/card skeletons that match final geometry
+- route-level `/resources/loading` now matches the discover UI more closely instead of showing a stale meta strip or a generic card wall
 
 ---
 

@@ -40,6 +40,10 @@ The discover page now mixes:
 - streamed server sections
 - warmed cache variants
 - lighter-weight fallbacks that match the final section intent
+- a route-level loading shell that mirrors the live discover shape:
+  - plain blue hero block
+  - section header + resource-card skeletons
+  - no extra discover-meta strip above the hero while loading
 
 ## Sorting Options
 

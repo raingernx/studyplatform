@@ -107,7 +107,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
     ? 0
     : [Boolean(category && category !== "all"), Boolean(tag)].filter(Boolean).length;
   const discoverHeroClassName =
-    "min-h-[440px] rounded-[26px] border-white/70 bg-surface-100 sm:min-h-[500px] lg:min-h-[540px]";
+    "min-h-[440px] rounded-[26px] border-white/70 sm:min-h-[500px] lg:min-h-[540px]";
 
   return withRequestPerformanceTrace(
     "route:/resources",
