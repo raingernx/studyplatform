@@ -8,6 +8,7 @@ const baseUrl =
 const hotSlug =
   process.env.HOT_SLUG?.trim() ||
   "middle-school-science-quiz-assessment-set";
+const categorySlug = process.env.CATEGORY?.trim() || "science";
 
 const warmSecret = process.env.PERFORMANCE_WARM_SECRET?.trim();
 
@@ -74,6 +75,11 @@ const routes: WarmRoute[] = [
   {
     label: "resource-detail-hot",
     path: `/resources/${encodeURIComponent(hotSlug)}`,
+  },
+  {
+    label: "category-listing",
+    path: `/categories/${encodeURIComponent(categorySlug)}`,
+    required: true,
   },
 ];
 

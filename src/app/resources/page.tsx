@@ -16,7 +16,7 @@ import {
   ResourcesPageContent,
   ResourcesContentFallback,
 } from "./ResourcesPageContent";
-import { HeroBannerSkeleton } from "@/components/marketplace/HeroBanner";
+import { HeroBanner } from "@/components/marketplace/HeroBanner";
 import { ResourcesCatalogControls } from "@/components/marketplace/ResourcesCatalogControls";
 import {
   ResourcesCatalogSearchSkeleton,
@@ -200,7 +200,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
               <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(224,231,255,0.78),transparent_32%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
                 <Container className="space-y-4 py-4 sm:space-y-5 sm:py-6 lg:space-y-6 lg:py-7">
                   {heroPromise ? (
-                    <Suspense fallback={<HeroBannerSkeleton className={discoverHeroClassName} />}>
+                    <Suspense fallback={<HeroBanner className={discoverHeroClassName} />}>
                       <AwaitResolvedNode promise={heroPromise} />
                     </Suspense>
                   ) : null}

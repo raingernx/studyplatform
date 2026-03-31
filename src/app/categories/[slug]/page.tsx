@@ -50,7 +50,7 @@ async function getCategoryResources(slug: string) {
       category: slug,
       page: 1,
       pageSize: 12,
-      sort: "recommended",
+      sort: "newest",
     });
 
     return { items: data.resources, total: data.total };

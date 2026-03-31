@@ -481,3 +481,68 @@ When implementing features:
 5. Maintain security for downloads and admin routes.
 
 AI agents should avoid large architectural changes unless explicitly requested.
+
+---
+
+# AI Context Maintenance
+
+The repo includes a shared AI context pack under:
+
+```
+krucraft-ai-contexts/
+```
+
+Agents should treat that directory as a maintained reference for current
+project truth, not a frozen export.
+
+## When context updates are required
+
+Update the relevant files in `krucraft-ai-contexts/` in the **same commit** when
+the change affects system-level understanding, including:
+
+- architecture or request/data flow
+- routing, proxy, middleware, or auth behavior
+- caching, warm-cache, performance workflow, or rendering strategy
+- deployment, build, migration, or environment requirements
+- major feature flows (payments, downloads, account recovery, admin workflows)
+- brand/platform behavior that affects shared understanding across agents
+
+## When context updates are usually not required
+
+Context updates are usually unnecessary for:
+
+- small visual tweaks
+- copy edits
+- isolated bug fixes that do not change system behavior
+- test-only changes
+- local refactors that preserve the same external behavior
+
+## Commit-time reminder
+
+Before commits that touch system-level behavior, run:
+
+```bash
+npm run context:check:staged
+```
+
+This repo also includes a pre-commit hook template under:
+
+```bash
+.githooks/pre-commit
+```
+
+To enable it locally:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+This repo now enforces the staged check in pre-commit. Commits that touch
+system-level behavior but do not update `krucraft-ai-contexts/` will fail until
+the relevant context files are included in the same commit.
+
+To run the blocking version manually:
+
+```bash
+npm run context:check:staged:strict
+```
