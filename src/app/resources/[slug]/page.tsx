@@ -6,7 +6,6 @@ import { isMissingTableError } from "@/lib/prismaErrors";
 import { logActivity } from "@/lib/activity";
 import { AlertCircle, BookOpen, CheckCircle, Download } from "lucide-react";
 import Link from "next/link";
-import { formatFileSize } from "@/lib/format";
 import { ResourceHeader } from "@/components/resource/ResourceHeader";
 import { ResourceGallery } from "@/components/resource/ResourceGallery";
 import { PurchaseCardSkeleton } from "@/components/resource/PurchaseCardSkeleton";
@@ -26,9 +25,10 @@ import {
 } from "@/components/resources/ResourceDetailSections";
 import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import {
-  getResourceDetailPageDeferredContent,
+  getResourceDetailPageBodyContent,
   getResourceDetailPageExtras,
-  getResourceDetailPageMetadata,
+  getResourceDetailPageFooterContent,
+  getResourceDetailPagePurchaseMeta,
   getResourceDetailPageRelatedSection,
   getResourceDetailPageResource,
   getResourceDetailPageReviewList,
@@ -127,8 +127,7 @@ function buildIdentityTargets(resource: {
 function buildOutcomePoints(resource: {
   category: { name: string } | null;
   type: string;
-  fileUrl: string | null;
-  fileKey: string | null;
+  hasFile: boolean;
 }) {
   const subject = resource.category?.name ?? "your subject";
   const formatLabel = resource.type === "PDF" ? "PDF" : "document";
@@ -138,7 +137,7 @@ function buildOutcomePoints(resource: {
     `Work from a clearer starting point so you can spend more time reviewing and less time setting up.`,
   ];
 
-  if (resource.fileUrl ?? resource.fileKey) {
+  if (resource.hasFile) {
     points.push(
       "Keep it in your library for repeat revision whenever you need a quick refresher.",
     );
@@ -160,33 +159,11 @@ function buildOutcomeHint(resource: {
     : "Built for structured note-taking";
 }
 
-function buildIncludedFiles(resource: {
-  fileName: string | null;
-  fileSize: number | null;
-  fileUrl: string | null;
-  fileKey: string | null;
-  type: string;
-}) {
-  if (resource.fileName) {
-    return [{ name: resource.fileName, size: resource.fileSize ?? undefined }];
-  }
-
-  if (!(resource.fileUrl ?? resource.fileKey)) {
-    return [];
-  }
-
-  const fallbackName =
-    resource.fileKey?.split("/").pop() ||
-    (resource.type === "PDF" ? "Downloadable PDF" : "Downloadable file");
-
-  return [{ name: fallbackName, size: resource.fileSize ?? undefined }];
-}
-
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const resource = await getResourceDetailPageMetadata(slug);
+  const resource = await getResourceDetailPageResource(slug);
 
   return {
     title: resource ? resource.title : "Resource",
@@ -211,21 +188,33 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
       slug,
     },
     async () => {
-      const [resourceSettled, sessionSettled] = await Promise.allSettled([
+      const sessionPromise = runNonCriticalResourceDetailTask(
+        () =>
+          traceServerStep(
+            "resource_detail.optional_session",
+            () => getOptionalSession(),
+            { slug },
+          ),
+        {
+          fallback: null,
+          context: {
+            section: "optional-session",
+            slug,
+          },
+        },
+      );
+
+      const resourceSettled = await Promise.allSettled([
         traceServerStep(
           "resource_detail.getResourceBySlug",
           () => getResourceDetailPageResource(slug),
           { slug },
         ),
-        traceServerStep(
-          "resource_detail.optional_session",
-          () => getOptionalSession(),
-          { slug },
-        ),
       ]);
+      const resourceResult = resourceSettled[0];
 
-      if (resourceSettled.status === "rejected") {
-        const error = resourceSettled.reason;
+      if (resourceResult.status === "rejected") {
+        const error = resourceResult.reason;
         logResourceDetailFailure(
           {
             critical: true,
@@ -240,29 +229,11 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
         notFound();
       }
 
-      const resource = resourceSettled.value;
+      const resource = resourceResult.value;
 
       if (!resource || resource.status !== "PUBLISHED") {
         notFound();
       }
-
-      if (sessionSettled.status === "rejected") {
-        logResourceDetailFailure(
-          {
-            critical: false,
-            section: "optional-session",
-            slug,
-          },
-          sessionSettled.reason,
-          0,
-          {
-            fallbackApplied: true,
-          },
-        );
-      }
-
-      const session = sessionSettled.status === "fulfilled" ? sessionSettled.value : null;
-      const userId = session?.user?.id;
 
       const trustSummaryPromise = runNonCriticalResourceDetailTask(
         () =>
@@ -271,9 +242,9 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
             () =>
               getResourceDetailPageTrustSummary({
                 resourceId: resource.id,
-                resourceAverageRating: resource.averageRating ?? null,
+                resourceAverageRating: null,
                 resourceSalesCount: resource.resourceStat?.purchases ?? null,
-                resourceTotalReviews: resource.visibleReviewCount ?? 0,
+                resourceTotalReviews: 0,
               }),
             {
               slug,
@@ -281,8 +252,8 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
           ),
         {
           fallback: {
-            averageRating: resource.averageRating ?? null,
-            totalReviews: resource.visibleReviewCount ?? 0,
+            averageRating: null,
+            totalReviews: 0,
             totalSales: resource.resourceStat?.purchases ?? 0,
           },
           context: {
@@ -292,47 +263,81 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
           },
         },
       );
-      updateRequestPerformanceDetails({
-        hasSession: Boolean(userId),
-      });
+      const ownershipPromise = sessionPromise.then((session) => {
+        const userId = session?.user?.id;
 
-      const ownershipPromise = userId
-        ? runNonCriticalResourceDetailTask(
-            () =>
-              traceServerStep(
-                "resource_detail.getResourceDetailOwnership",
-                () =>
-                  getResourceDetailPageExtras({
-                    resourceId: resource.id,
-                    userId,
-                  }),
-                {
-                  personalized: true,
-                  slug,
-                },
-              ),
-            {
-              fallback: { isOwned: false },
-              context: {
-                resourceId: resource.id,
-                section: "ownership",
+        if (!userId) {
+          return { isOwned: false };
+        }
+
+        return runNonCriticalResourceDetailTask(
+          () =>
+            traceServerStep(
+              "resource_detail.getResourceDetailOwnership",
+              () =>
+                getResourceDetailPageExtras({
+                  resourceId: resource.id,
+                  userId,
+                }),
+              {
+                personalized: true,
                 slug,
               },
+            ),
+          {
+            fallback: { isOwned: false },
+            context: {
+              resourceId: resource.id,
+              section: "ownership",
+              slug,
             },
-          )
-        : Promise.resolve({ isOwned: false });
-      const deferredContentPromise = runNonCriticalResourceDetailTask(
+          },
+        );
+      });
+      const bodyContentPromise = runNonCriticalResourceDetailTask(
         () =>
           traceServerStep(
-            "resource_detail.getResourceDetailDeferredContent",
-            () => getResourceDetailPageDeferredContent(slug),
+            "resource_detail.getResourceDetailBodyContent",
+            () => getResourceDetailPageBodyContent(slug),
             { slug },
           ),
         {
           fallback: null,
           context: {
             resourceId: resource.id,
-            section: "deferred-content",
+            section: "body-content",
+            slug,
+          },
+        },
+      );
+      const footerContentPromise = runNonCriticalResourceDetailTask(
+        () =>
+          traceServerStep(
+            "resource_detail.getResourceDetailFooterContent",
+            () => getResourceDetailPageFooterContent(slug),
+            { slug },
+          ),
+        {
+          fallback: null,
+          context: {
+            resourceId: resource.id,
+            section: "footer-content",
+            slug,
+          },
+        },
+      );
+      const purchaseMetaPromise = runNonCriticalResourceDetailTask(
+        () =>
+          traceServerStep(
+            "resource_detail.getResourceDetailPurchaseMeta",
+            () => getResourceDetailPagePurchaseMeta(slug),
+            { slug },
+          ),
+        {
+          fallback: null,
+          context: {
+            resourceId: resource.id,
+            section: "purchase-meta",
             slug,
           },
         },
@@ -360,26 +365,37 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
       const isReturningFromCheckout = paymentStatus === "success";
 
   const fallbackPreviewUrl = resource.previewUrl ?? resource.previews[0]?.imageUrl ?? null;
-  const includedFiles = buildIncludedFiles(resource);
   const identityTargets = buildIdentityTargets(resource);
-  const outcomePoints = buildOutcomePoints(resource);
+  const outcomePoints = buildOutcomePoints({
+    category: resource.category,
+    type: resource.type,
+    hasFile,
+  });
   const levelLabel = formatLevel(resource.level);
   const outcomeHint = buildOutcomeHint(resource);
 
-  logActivity({
-    userId,
-    action: "RESOURCE_VIEW",
-    entity: "Resource",
-    entityId: resource.id,
-    metadata: {
-      slug: resource.slug,
-      title: resource.title,
-      categoryId: resource.categoryId,
-      isFree: resource.isFree || resource.price === 0,
-    },
-  }).catch((error) => {
-    console.error("[RESOURCE_PAGE] Failed to log resource detail view activity:", error);
-  });
+  sessionPromise
+    .then((session) => {
+      updateRequestPerformanceDetails({
+        hasSession: Boolean(session?.user?.id),
+      });
+
+      return logActivity({
+        userId: session?.user?.id,
+        action: "RESOURCE_VIEW",
+        entity: "Resource",
+        entityId: resource.id,
+        metadata: {
+          slug: resource.slug,
+          title: resource.title,
+          categoryId: resource.categoryId,
+          isFree: resource.isFree || resource.price === 0,
+        },
+      });
+    })
+    .catch((error) => {
+      console.error("[RESOURCE_PAGE] Failed to resolve session or log resource detail view activity:", error);
+    });
 
   return (
     <ResourceDetailShell>
@@ -447,97 +463,28 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
               {/* CONTENT — order-3 mobile, col-1 row-2 desktop */}
               <div className="order-3 space-y-7 lg:col-start-1 lg:row-start-2">
 
-                <section className="space-y-4 border-t border-surface-200 pt-5">
-                  {((resource.fileSize != null && resource.fileSize > 0) ||
-                    resource.type ||
-                    hasFile) && (
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-small text-zinc-500">
-                      <span className="font-medium text-zinc-700">Included</span>
-                      {resource.type && (
-                        <span>
-                          {resource.type === "PDF"
-                            ? "PDF document"
-                            : resource.type}
-                        </span>
-                      )}
-                      {resource.fileSize != null &&
-                        resource.fileSize > 0 && (
-                          <span>{formatFileSize(resource.fileSize)}</span>
-                        )}
-                      {hasFile && <span className="text-emerald-600">Ready to download</span>}
-                    </div>
-                  )}
-
-                  <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <p className="text-caption font-semibold text-primary-700">
-                          What you&apos;ll achieve
-                        </p>
-                        <h2 className="font-display text-xl font-semibold text-zinc-900">
-                          Move faster with a clearer study path
-                        </h2>
-                      </div>
-                      <ul className="space-y-3">
-                        {outcomePoints.map((point) => (
-                          <li key={point} className="flex gap-3 text-body leading-7 text-zinc-600">
-                            <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary-500" />
-                            <span>{point}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div className="space-y-4 border-t border-surface-200 pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-                      <div className="space-y-1.5">
-                        <p className="text-caption font-semibold text-primary-700">
-                          Best for
-                        </p>
-                        <h2 className="font-display text-xl font-semibold text-zinc-900">
-                          Learners who want a stronger starting point
-                        </h2>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {identityTargets.map((target) => (
-                          <span
-                            key={target}
-                            className="inline-flex rounded-full border border-surface-200 bg-surface-50 px-3 py-1.5 text-small font-medium text-zinc-700"
-                          >
-                            {target}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-small leading-6 text-zinc-500">
-                        A good fit if you want less guesswork, a cleaner study workflow, and
-                        something you can revisit when it matters.
-                      </p>
-                    </div>
-                  </div>
-                </section>
-
                 {/* 4. About + 5. Included files */}
                 <Suspense fallback={<ResourceDetailBodyFallback />}>
                   <ResourceDetailBodySection
-                    deferredContentPromise={deferredContentPromise}
-                    includedFiles={includedFiles}
+                    bodyContentPromise={bodyContentPromise}
                   />
                 </Suspense>
 
                 {/* 6. Reviews */}
                 <Suspense fallback={<ResourceDetailReviewsFallback />}>
                   <ResourceDetailReviewSection
+                    sessionPromise={sessionPromise}
                     ownershipPromise={ownershipPromise}
                     reviewListPromise={reviewListPromise}
                     resourceId={resource.id}
                     resourceTitle={resource.title}
-                    userId={userId}
                   />
                 </Suspense>
 
                 {/* 8. Tags + 9. Creator */}
                 <Suspense fallback={<ResourceDetailFooterFallback />}>
                   <ResourceDetailFooterSection
-                    deferredContentPromise={deferredContentPromise}
+                    footerContentPromise={footerContentPromise}
                   />
                 </Suspense>
 
@@ -548,7 +495,8 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                 <Suspense fallback={<PurchaseCardSkeleton />}>
                   <ResourceDetailPurchaseCard
                     resource={resource}
-                    session={session}
+                    sessionPromise={sessionPromise}
+                    purchaseMetaPromise={purchaseMetaPromise}
                     ownershipPromise={ownershipPromise}
                     trustSummaryPromise={trustSummaryPromise}
                     isReturningFromCheckout={isReturningFromCheckout}
@@ -566,13 +514,61 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                 currentDownloads={resource.resourceStat?.downloads ?? resource.downloadCount ?? 0}
                 currentIsFree={resource.isFree || resource.price === 0}
                 currentPrice={resource.price ?? 0}
-                currentRating={resource.averageRating ?? 0}
+                currentRating={0}
                 currentSales={resource.resourceStat?.purchases ?? 0}
                 categoryId={resource.categoryId}
                 resourceId={resource.id}
-                userId={userId}
+                sessionPromise={sessionPromise}
               />
             </Suspense>
+
+            <section className="space-y-4 border-t border-surface-200 pt-6">
+              <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <p className="text-caption font-semibold text-primary-700">
+                      What you&apos;ll achieve
+                    </p>
+                    <h2 className="font-display text-xl font-semibold text-zinc-900">
+                      Move faster with a clearer study path
+                    </h2>
+                  </div>
+                  <ul className="space-y-3">
+                    {outcomePoints.map((point) => (
+                      <li key={point} className="flex gap-3 text-body leading-7 text-zinc-600">
+                        <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary-500" />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="space-y-4 border-t border-surface-200 pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                  <div className="space-y-1.5">
+                    <p className="text-caption font-semibold text-primary-700">
+                      Best for
+                    </p>
+                    <h2 className="font-display text-xl font-semibold text-zinc-900">
+                      Learners who want a stronger starting point
+                    </h2>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {identityTargets.map((target) => (
+                      <span
+                        key={target}
+                        className="inline-flex rounded-full border border-surface-200 bg-surface-50 px-3 py-1.5 text-small font-medium text-zinc-700"
+                      >
+                        {target}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-small leading-6 text-zinc-500">
+                    A good fit if you want less guesswork, a cleaner study workflow, and
+                    something you can revisit when it matters.
+                  </p>
+                </div>
+              </div>
+            </section>
 
             {/* Back link */}
             <div className="border-t border-surface-200 pt-6">

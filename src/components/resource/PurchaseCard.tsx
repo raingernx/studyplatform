@@ -120,9 +120,24 @@ type TrustSummary = {
   totalSales: number;
 };
 
+type PurchaseCardMeta = {
+  mimeType: string | null;
+  fileSize: number | null;
+  updatedAt: Date | string | null;
+  resourceStat: {
+    last30dDownloads: number;
+    last30dPurchases: number;
+  } | null;
+} | null;
+
+type OptionalSession = {
+  user?: { id?: string; subscriptionStatus?: string };
+} | null;
+
 interface PurchaseCardProps {
   resource: PurchaseCardResource;
-  session: { user?: { id?: string; subscriptionStatus?: string } } | null;
+  sessionPromise: Promise<OptionalSession>;
+  purchaseMetaPromise: Promise<PurchaseCardMeta>;
   hasFile: boolean;
   isReturningFromCheckout?: boolean;
   ownershipPromise: Promise<{ isOwned: boolean }>;
@@ -158,7 +173,8 @@ async function PurchaseCardMiddle({
   ownershipPromise,
   trustSummaryPromise,
   resource,
-  session,
+  sessionPromise,
+  purchaseMetaPromise,
   hasFile,
   isReturningFromCheckout,
   isFree,
@@ -166,14 +182,17 @@ async function PurchaseCardMiddle({
   ownershipPromise: Promise<{ isOwned: boolean }>;
   trustSummaryPromise: Promise<TrustSummary>;
   resource: PurchaseCardResource;
-  session: { user?: { id?: string; subscriptionStatus?: string } } | null;
+  sessionPromise: Promise<OptionalSession>;
+  purchaseMetaPromise: Promise<PurchaseCardMeta>;
   hasFile: boolean;
   isReturningFromCheckout: boolean;
   isFree: boolean;
 }) {
-  const [{ isOwned }, trustSummary] = await Promise.all([
+  const [{ isOwned }, trustSummary, session, purchaseMeta] = await Promise.all([
     ownershipPromise,
     trustSummaryPromise,
+    sessionPromise,
+    purchaseMetaPromise,
   ]);
 
   const userId = session?.user?.id;
@@ -186,8 +205,13 @@ async function PurchaseCardMiddle({
   const ctaCopy = isOwned ? CTA_COPY.owned : isFree ? CTA_COPY.free : CTA_COPY.paid;
   const hasReviews =
     typeof trustSummary.averageRating === "number" && trustSummary.totalReviews > 0;
-  const recentActivityLabel = getRecentActivityLabel(resource);
-  const recentActivityHeading = getRecentActivityHeading(resource);
+  const recentActivityResource = {
+    ...resource,
+    recentDownloads: purchaseMeta?.resourceStat?.last30dDownloads ?? 0,
+    recentSales: purchaseMeta?.resourceStat?.last30dPurchases ?? 0,
+  };
+  const recentActivityLabel = getRecentActivityLabel(recentActivityResource);
+  const recentActivityHeading = getRecentActivityHeading(recentActivityResource);
 
   const trustItems: Array<{
     label: string;
@@ -327,7 +351,7 @@ async function PurchaseCardMiddle({
                 <Download className="h-4 w-4" />
                 Download instantly
               </a>
-              {isPreviewSupported(resource.mimeType) && (
+              {isPreviewSupported(purchaseMeta?.mimeType) && (
                 <a
                   href={`/api/preview/${resource.id}`}
                   target="_blank"
@@ -397,39 +421,96 @@ async function PurchaseCardMiddle({
   );
 }
 
+function PurchaseCardDetailsSkeleton() {
+  return (
+    <dl className="space-y-3 text-small">
+      {[0, 1, 2, 3].map((index) => (
+        <div key={index} className="flex items-start justify-between gap-4">
+          <div className="h-4 w-20 rounded bg-zinc-100" />
+          <div className="h-4 w-24 rounded bg-zinc-100" />
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+async function PurchaseCardDetailsSection({
+  resource,
+  purchaseMetaPromise,
+}: {
+  resource: PurchaseCardResource;
+  purchaseMetaPromise: Promise<PurchaseCardMeta>;
+}) {
+  const purchaseMeta = await purchaseMetaPromise;
+
+  return (
+    <dl className="space-y-3 text-small">
+      <PurchaseMetaRow label="Format">
+        {TYPE_LABELS[resource.type] ?? resource.type}
+      </PurchaseMetaRow>
+      {resource.pageCount != null && (
+        <PurchaseMetaRow label="Pages">
+          {formatNumber(resource.pageCount)}
+        </PurchaseMetaRow>
+      )}
+      {purchaseMeta?.fileSize != null && purchaseMeta.fileSize > 0 && (
+        <PurchaseMetaRow label="File size">
+          {formatFileSize(purchaseMeta.fileSize)}
+        </PurchaseMetaRow>
+      )}
+      {resource.category && (
+        <PurchaseMetaRow label="Category">
+          {resource.category.name}
+        </PurchaseMetaRow>
+      )}
+      <PurchaseMetaRow label="Downloads">
+        {formatNumber(resource.downloadCount)}
+      </PurchaseMetaRow>
+      {purchaseMeta?.updatedAt != null && (
+        <PurchaseMetaRow label="Updated">
+          {formatUpdated(purchaseMeta.updatedAt)}
+        </PurchaseMetaRow>
+      )}
+    </dl>
+  );
+}
+
 /**
  * Renders the membership upsell section. Isolated so getPlatform() does not
  * block the price or CTA from appearing.
  */
 async function PurchaseCardMembershipSection({
-  session,
+  sessionPromise,
 }: {
-  session: { user?: { id?: string; subscriptionStatus?: string } } | null;
+  sessionPromise: Promise<OptionalSession>;
 }) {
-  const platform = await runNonCriticalResourceDetailTask(() => getPlatform(), {
-    context: {
-      section: "purchase-card-membership",
-    },
-    fallback: {
-      defaultCurrency: "THB",
-      defaultLanguage: "en",
-      defaultMetaDescription: "",
-      defaultMetaTitle: "",
-      emailSenderName: "KruCraft",
-      faviconUrl: "",
-      logoEmailUrl: "",
-      logoFullUrl: "",
-      logoIconUrl: "",
-      logoOgUrl: "",
-      logoUrl: "",
-      ogSiteName: "KruCraft",
-      platformDescription: "",
-      platformName: "KruCraft Marketplace",
-      platformShortName: "KC",
-      siteUrl: "",
-      supportEmail: "",
-    },
-  });
+  const [session, platform] = await Promise.all([
+    sessionPromise,
+    runNonCriticalResourceDetailTask(() => getPlatform(), {
+      context: {
+        section: "purchase-card-membership",
+      },
+      fallback: {
+        defaultCurrency: "THB",
+        defaultLanguage: "en",
+        defaultMetaDescription: "",
+        defaultMetaTitle: "",
+        emailSenderName: "KruCraft",
+        faviconUrl: "",
+        logoEmailUrl: "",
+        logoFullUrl: "",
+        logoIconUrl: "",
+        logoOgUrl: "",
+        logoUrl: "",
+        ogSiteName: "KruCraft",
+        platformDescription: "",
+        platformName: "KruCraft Marketplace",
+        platformShortName: "KC",
+        siteUrl: "",
+        supportEmail: "",
+      },
+    }),
+  ]);
   const isMember =
     session?.user?.subscriptionStatus === "ACTIVE" ||
     session?.user?.subscriptionStatus === "TRIALING";
@@ -474,7 +555,8 @@ async function PurchaseCardMembershipSection({
  */
 export function PurchaseCard({
   resource,
-  session,
+  sessionPromise,
+  purchaseMetaPromise,
   hasFile,
   isReturningFromCheckout = false,
   ownershipPromise,
@@ -512,7 +594,8 @@ export function PurchaseCard({
               ownershipPromise={ownershipPromise}
               trustSummaryPromise={trustSummaryPromise}
               resource={resource}
-              session={session}
+              sessionPromise={sessionPromise}
+              purchaseMetaPromise={purchaseMetaPromise}
               hasFile={hasFile}
               isReturningFromCheckout={isReturningFromCheckout}
               isFree={isFree}
@@ -522,38 +605,16 @@ export function PurchaseCard({
 
         {/* Bottom section: static file meta + streaming membership upsell */}
         <div className={DIVIDED_SECTION_CLASS}>
-          <dl className="space-y-3 text-small">
-            <PurchaseMetaRow label="Format">
-              {TYPE_LABELS[resource.type] ?? resource.type}
-            </PurchaseMetaRow>
-            {resource.pageCount != null && (
-              <PurchaseMetaRow label="Pages">
-                {formatNumber(resource.pageCount)}
-              </PurchaseMetaRow>
-            )}
-            {resource.fileSize != null && resource.fileSize > 0 && (
-              <PurchaseMetaRow label="File size">
-                {formatFileSize(resource.fileSize)}
-              </PurchaseMetaRow>
-            )}
-            {resource.category && (
-              <PurchaseMetaRow label="Category">
-                {resource.category.name}
-              </PurchaseMetaRow>
-            )}
-            <PurchaseMetaRow label="Downloads">
-              {formatNumber(resource.downloadCount)}
-            </PurchaseMetaRow>
-            {resource.updatedAt != null && (
-              <PurchaseMetaRow label="Updated">
-                {formatUpdated(resource.updatedAt)}
-              </PurchaseMetaRow>
-            )}
-          </dl>
+          <Suspense fallback={<PurchaseCardDetailsSkeleton />}>
+            <PurchaseCardDetailsSection
+              resource={resource}
+              purchaseMetaPromise={purchaseMetaPromise}
+            />
+          </Suspense>
 
           {/* Membership upsell — streams in independently */}
           <Suspense fallback={<PurchaseCardMembershipSkeleton />}>
-            <PurchaseCardMembershipSection session={session} />
+            <PurchaseCardMembershipSection sessionPromise={sessionPromise} />
           </Suspense>
         </div>
       </div>

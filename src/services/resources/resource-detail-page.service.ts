@@ -1,7 +1,8 @@
 import {
+  getResourceDetailBodyContent,
   getResourceBySlug,
-  getResourceDetailDeferredContent,
-  getResourceMetadataBySlug,
+  getResourceDetailFooterContent,
+  getResourceDetailPurchaseMetaBySlug,
 } from "@/services/resource.service";
 import {
   getResourceDetailExtras,
@@ -22,11 +23,25 @@ export async function getResourceDetailPageResource(slug: string) {
 }
 
 export async function getResourceDetailPageMetadata(slug: string) {
-  return getResourceMetadataBySlug(slug);
+  const resource = await getResourceBySlug(slug);
+  return resource
+    ? {
+        title: resource.title,
+        description: resource.description,
+      }
+    : null;
 }
 
-export async function getResourceDetailPageDeferredContent(slug: string) {
-  return getResourceDetailDeferredContent(slug);
+export async function getResourceDetailPageBodyContent(slug: string) {
+  return getResourceDetailBodyContent(slug);
+}
+
+export async function getResourceDetailPageFooterContent(slug: string) {
+  return getResourceDetailFooterContent(slug);
+}
+
+export async function getResourceDetailPagePurchaseMeta(slug: string) {
+  return getResourceDetailPurchaseMetaBySlug(slug);
 }
 
 export async function getResourceDetailPageExtras(input: {

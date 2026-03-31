@@ -10,13 +10,19 @@ import { ResourceReviews } from "@/components/resource/ResourceReviews";
 import { ResourceReviewForm } from "@/components/resource/ResourceReviewForm";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import {
-  getResourceDetailPageDeferredContent,
+  getResourceDetailPageBodyContent,
+  getResourceDetailPageFooterContent,
+  getResourceDetailPagePurchaseMeta,
   getResourceDetailPageRelatedSection,
   getResourceDetailPageResource,
   getResourceDetailPageReviewList,
   getResourceDetailPageViewerReview,
 } from "@/services/resources/resource-detail-page.service";
 import { runNonCriticalResourceDetailTask } from "@/services/resources/resource-detail-resilience";
+
+type OptionalSession = {
+  user?: { id?: string; subscriptionStatus?: string };
+} | null;
 
 export function ResourceDetailBodyFallback() {
   return (
@@ -112,23 +118,25 @@ export function ResourceDetailRelatedFallback() {
 export async function ResourceDetailReviewSection({
   resourceId,
   resourceTitle,
-  userId,
+  sessionPromise,
   ownershipPromise,
   reviewListPromise,
 }: {
   resourceId: string;
   resourceTitle: string;
-  userId?: string;
+  sessionPromise: Promise<OptionalSession>;
   ownershipPromise: Promise<{ isOwned: boolean }>;
   reviewListPromise: Promise<Awaited<ReturnType<typeof getResourceDetailPageReviewList>>>;
 }) {
   // Resolve ownership and the pre-fetched public review list in parallel.
   // reviewListPromise was started in the page component before this Suspense
   // boundary rendered, so it's already in-flight and doesn't depend on ownership.
-  const [{ isOwned }, reviews] = await Promise.all([
+  const [{ isOwned }, reviews, session] = await Promise.all([
     ownershipPromise,
     reviewListPromise,
+    sessionPromise,
   ]);
+  const userId = session?.user?.id;
 
   // Viewer's own review is only relevant for owners — small sequential fetch.
   const viewerReview =
@@ -157,17 +165,28 @@ export async function ResourceDetailReviewSection({
 }
 
 export async function ResourceDetailBodySection({
-  deferredContentPromise,
-  includedFiles,
+  bodyContentPromise,
 }: {
-  deferredContentPromise: Promise<Awaited<ReturnType<typeof getResourceDetailPageDeferredContent>>>;
-  includedFiles: Array<{ name: string; size?: number | null }>;
+  bodyContentPromise: Promise<Awaited<ReturnType<typeof getResourceDetailPageBodyContent>>>;
 }) {
-  const content = await deferredContentPromise;
+  const content = await bodyContentPromise;
 
   if (!content) {
     return null;
   }
+
+  const includedFiles = content.fileName
+    ? [{ name: content.fileName, size: content.fileSize ?? undefined }]
+    : content.fileUrl ?? content.fileKey
+      ? [
+          {
+            name:
+              content.fileKey?.split("/").pop() ||
+              (content.type === "PDF" ? "Downloadable PDF" : "Downloadable file"),
+            size: content.fileSize ?? undefined,
+          },
+        ]
+      : [];
 
   return (
     <>
@@ -180,7 +199,7 @@ export async function ResourceDetailBodySection({
 export async function ResourceDetailRelatedSection({
   resourceId,
   categoryId,
-  userId,
+  sessionPromise,
   currentIsFree,
   currentPrice,
   currentRating,
@@ -189,13 +208,15 @@ export async function ResourceDetailRelatedSection({
 }: {
   resourceId: string;
   categoryId?: string | null;
-  userId?: string;
+  sessionPromise: Promise<OptionalSession>;
   currentIsFree: boolean;
   currentPrice: number;
   currentRating: number;
   currentSales: number;
   currentDownloads: number;
 }) {
+  const session = await sessionPromise;
+  const userId = session?.user?.id;
   const { relatedResources, ownedRelatedIds } =
     await runNonCriticalResourceDetailTask(
       () =>
@@ -245,11 +266,11 @@ export async function ResourceDetailRelatedSection({
 }
 
 export async function ResourceDetailFooterSection({
-  deferredContentPromise,
+  footerContentPromise,
 }: {
-  deferredContentPromise: Promise<Awaited<ReturnType<typeof getResourceDetailPageDeferredContent>>>;
+  footerContentPromise: Promise<Awaited<ReturnType<typeof getResourceDetailPageFooterContent>>>;
 }) {
-  const content = await deferredContentPromise;
+  const content = await footerContentPromise;
 
   if (!content) {
     return null;
@@ -327,7 +348,8 @@ export function ResourceDetailSuccessSkeleton({
 
 export function ResourceDetailPurchaseCard({
   resource,
-  session,
+  sessionPromise,
+  purchaseMetaPromise,
   ownershipPromise,
   trustSummaryPromise,
   isReturningFromCheckout,
@@ -336,7 +358,8 @@ export function ResourceDetailPurchaseCard({
   outcomeHint,
 }: {
   resource: NonNullable<Awaited<ReturnType<typeof getResourceDetailPageResource>>>;
-  session: { user?: { id?: string; subscriptionStatus?: string } } | null;
+  sessionPromise: Promise<OptionalSession>;
+  purchaseMetaPromise: Promise<Awaited<ReturnType<typeof getResourceDetailPagePurchaseMeta>>>;
   ownershipPromise: Promise<{ isOwned: boolean }>;
   trustSummaryPromise: Promise<{ averageRating: number | null; totalReviews: number; totalSales: number }>;
   isReturningFromCheckout: boolean;
@@ -354,11 +377,6 @@ export function ResourceDetailPurchaseCard({
     downloadCount: resource.resourceStat?.downloads ?? resource.downloadCount,
     author: resource.author,
     category: resource.category,
-    mimeType: resource.mimeType ?? null,
-    fileSize: resource.fileSize ?? undefined,
-    updatedAt: resource.updatedAt ?? undefined,
-    recentDownloads: resource.resourceStat?.last30dDownloads ?? 0,
-    recentSales: resource.resourceStat?.last30dPurchases ?? 0,
     levelLabel,
     outcomeHint,
   };
@@ -366,7 +384,8 @@ export function ResourceDetailPurchaseCard({
   return (
     <PurchaseCard
       resource={purchaseCardResource}
-      session={session}
+      sessionPromise={sessionPromise}
+      purchaseMetaPromise={purchaseMetaPromise}
       hasFile={hasFile}
       isReturningFromCheckout={isReturningFromCheckout}
       ownershipPromise={ownershipPromise}

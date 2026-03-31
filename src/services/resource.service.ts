@@ -34,9 +34,10 @@ import {
   countMarketplaceResources,
   findActivationRankedResources,
   findCategoriesOrderedByName,
+  findPublicResourceDetailBodyContentBySlug,
   findMarketplaceResourceCards,
-  findPublicResourceDetailDeferredContentBySlug,
-  findPublicResourceMetadataBySlug,
+  findPublicResourceDetailFooterContentBySlug,
+  findPublicResourceDetailPurchaseMetaBySlug,
   findPublicResourceDetailBySlug,
   findRelatedListedResources,
   type FindActivationRankedResourcesRow,
@@ -619,7 +620,9 @@ const RESOURCE_DETAIL_REVALIDATE_SECONDS = CACHE_TTLS.resourceDetail;
 // Per-slug tags are preserved so revalidateTag(getResourceCacheTag(slug)) still works.
 type CachedFn<T> = () => Promise<T>;
 const _resourceDetailCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceDetailBySlug>>>>();
-const _resourceMetadataCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceMetadataBySlug>> | null>>();
+const _resourcePurchaseMetaCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceDetailPurchaseMetaBySlug>>>>();
+const _resourceDetailBodyContentCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceDetailBodyContentBySlug>>>>();
+const _resourceDetailFooterContentCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceDetailFooterContentBySlug>>>>();
 
 /** Returns a fully-hydrated Resource row by slug, or null if not found. */
 export async function getResourceBySlug(slug: string) {
@@ -658,93 +661,129 @@ export async function getResourceBySlug(slug: string) {
 }
 
 export async function getResourceMetadataBySlug(slug: string) {
-  recordCacheCall("getResourceMetadataBySlug", { slug });
+  const resource = await getResourceBySlug(slug);
+  return resource
+    ? {
+        title: resource.title,
+        description: resource.description,
+      }
+    : null;
+}
 
-  let cachedFn = _resourceMetadataCacheMap.get(slug);
+export async function getResourceDetailPurchaseMetaBySlug(slug: string) {
+  recordCacheCall("getResourceDetailPurchaseMetaBySlug", { slug });
+
+  let cachedFn = _resourcePurchaseMetaCacheMap.get(slug);
   if (!cachedFn) {
-    const singleFlightKey = `resource-metadata:${slug}`;
+    const singleFlightKey = `resource-purchase-meta:${slug}`;
     cachedFn = unstable_cache(
-      async function _getResourceMetadataBySlug() {
-        recordCacheMiss("getResourceMetadataBySlug", { slug });
-        logPerformanceEvent("cache_execute:getResourceMetadataBySlug", { slug });
-        try {
-          return await rememberJson(
-            CACHE_KEYS.resourceMetadata(slug),
-            RESOURCE_DETAIL_REVALIDATE_SECONDS,
-            () => runSingleFlight(singleFlightKey, () => findPublicResourceMetadataBySlug(slug)),
-            { metricName: "resource.metadata", details: { slug } },
-          );
-        } catch (error) {
-          if (!isResourceMetadataTransientDbError(error)) {
-            throw error;
-          }
-          console.warn("[RESOURCE_METADATA_BEST_EFFORT]", error);
-          return null;
-        }
+      async function _getResourceDetailPurchaseMetaBySlug() {
+        recordCacheMiss("getResourceDetailPurchaseMetaBySlug", { slug });
+        logPerformanceEvent("cache_execute:getResourceDetailPurchaseMetaBySlug", {
+          slug,
+        });
+        return rememberJson(
+          CACHE_KEYS.resourcePurchaseMeta(slug),
+          RESOURCE_DETAIL_REVALIDATE_SECONDS,
+          () =>
+            runSingleFlight(singleFlightKey, () =>
+              findPublicResourceDetailPurchaseMetaBySlug(slug),
+            ),
+          {
+            metricName: "resource.purchaseMeta",
+            details: { slug },
+          },
+        );
       },
-      ["public-resource-metadata", slug],
+      ["public-resource-detail-purchase-meta", slug],
       {
         revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
         tags: [getResourceCacheTag(slug)],
       },
     );
-    _resourceMetadataCacheMap.set(slug, cachedFn);
+    _resourcePurchaseMetaCacheMap.set(slug, cachedFn);
   }
 
   return cachedFn();
 }
 
-function isResourceMetadataTransientDbError(error: unknown) {
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    return error.code === "P2024" || error.code === "P1017";
+async function _getResourceDetailBodyContent(slug: string) {
+  recordCacheCall("getResourceDetailBodyContent", { slug });
+  const singleFlightKey = `resource-detail-body:${slug}`;
+
+  let cachedFn = _resourceDetailBodyContentCacheMap.get(slug);
+  if (!cachedFn) {
+    cachedFn = unstable_cache(
+      async function __getResourceDetailBodyContent() {
+        recordCacheMiss("getResourceDetailBodyContent", { slug });
+        logPerformanceEvent("cache_execute:getResourceDetailBodyContent", {
+          slug,
+        });
+        return rememberJson(
+          CACHE_KEYS.resourceBodyContent(slug),
+          RESOURCE_DETAIL_REVALIDATE_SECONDS,
+          () =>
+            runSingleFlight(singleFlightKey, () =>
+              findPublicResourceDetailBodyContentBySlug(slug),
+            ),
+          {
+            metricName: "resource.bodyContent",
+            details: { slug },
+          },
+        );
+      },
+      ["public-resource-detail-body", slug],
+      {
+        revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+        tags: [getResourceCacheTag(slug)],
+      },
+    );
+    _resourceDetailBodyContentCacheMap.set(slug, cachedFn);
   }
 
-  if (
-    error instanceof Prisma.PrismaClientInitializationError ||
-    error instanceof Prisma.PrismaClientUnknownRequestError
-  ) {
-    return true;
+  return cachedFn();
+}
+
+export const getResourceDetailBodyContent = cache(_getResourceDetailBodyContent);
+
+async function _getResourceDetailFooterContent(slug: string) {
+  recordCacheCall("getResourceDetailFooterContent", { slug });
+  const singleFlightKey = `resource-detail-footer:${slug}`;
+
+  let cachedFn = _resourceDetailFooterContentCacheMap.get(slug);
+  if (!cachedFn) {
+    cachedFn = unstable_cache(
+      async function __getResourceDetailFooterContent() {
+        recordCacheMiss("getResourceDetailFooterContent", { slug });
+        logPerformanceEvent("cache_execute:getResourceDetailFooterContent", {
+          slug,
+        });
+        return rememberJson(
+          CACHE_KEYS.resourceFooterContent(slug),
+          RESOURCE_DETAIL_REVALIDATE_SECONDS,
+          () =>
+            runSingleFlight(singleFlightKey, () =>
+              findPublicResourceDetailFooterContentBySlug(slug),
+            ),
+          {
+            metricName: "resource.footerContent",
+            details: { slug },
+          },
+        );
+      },
+      ["public-resource-detail-footer", slug],
+      {
+        revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+        tags: [getResourceCacheTag(slug)],
+      },
+    );
+    _resourceDetailFooterContentCacheMap.set(slug, cachedFn);
   }
 
-  const message = error instanceof Error ? error.message : String(error);
-  return (
-    message.includes("Timed out fetching a new connection from the connection pool") ||
-    message.includes("Server has closed the connection") ||
-    message.includes("Can't reach database server") ||
-    message.includes("connection closed") ||
-    message.includes("Error in PostgreSQL connection") ||
-    message.includes("kind: Closed")
-  );
+  return cachedFn();
 }
 
-// Private implementation — unstable_cache + runSingleFlight as before.
-async function _getResourceDetailDeferredContent(slug: string) {
-  recordCacheCall("getResourceDetailDeferredContent", { slug });
-  const singleFlightKey = `resource-detail-deferred:${slug}`;
-
-  return unstable_cache(
-    async function __getResourceDetailDeferredContent() {
-      recordCacheMiss("getResourceDetailDeferredContent", { slug });
-      logPerformanceEvent("cache_execute:getResourceDetailDeferredContent", {
-        slug,
-      });
-      return runSingleFlight(singleFlightKey, () =>
-        findPublicResourceDetailDeferredContentBySlug(slug),
-      );
-    },
-    ["public-resource-detail-deferred", slug],
-    {
-      revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
-      tags: [getResourceCacheTag(slug)],
-    },
-  )();
-}
-
-// React.cache() adds per-request memoization on top of unstable_cache.
-// ResourceDetailBodySection and ResourceDetailFooterSection both call this
-// with the same slug in the same RSC render tree. The second call returns
-// the already-resolving Promise without touching unstable_cache or the DB.
-export const getResourceDetailDeferredContent = cache(_getResourceDetailDeferredContent);
+export const getResourceDetailFooterContent = cache(_getResourceDetailFooterContent);
 
 /** Returns related resources in the same category (excludes the current resource). */
 export async function getRelatedResources(

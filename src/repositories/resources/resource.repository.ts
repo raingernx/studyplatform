@@ -104,6 +104,7 @@ const CREATOR_DASHBOARD_RESOURCE_SELECT = {
 const RESOURCE_DETAIL_SELECT = {
   id: true,
   title: true,
+  description: true,
   slug: true,
   type: true,
   status: true,
@@ -113,12 +114,8 @@ const RESOURCE_DETAIL_SELECT = {
   price: true,
   downloadCount: true,
   categoryId: true,
-  fileSize: true,
-  fileName: true,
   fileUrl: true,
   fileKey: true,
-  mimeType: true,
-  updatedAt: true,
   previewUrl: true,
   author: {
     select: {
@@ -147,20 +144,32 @@ const RESOURCE_DETAIL_SELECT = {
     select: {
       downloads: true,
       purchases: true,
-      last30dDownloads: true,
-      last30dPurchases: true,
-      trendingScore: true,
     },
   },
 } as const;
 
-const RESOURCE_METADATA_SELECT = {
-  title: true,
-  description: true,
+const RESOURCE_DETAIL_PURCHASE_META_SELECT = {
+  mimeType: true,
+  fileSize: true,
+  updatedAt: true,
+  resourceStat: {
+    select: {
+      last30dDownloads: true,
+      last30dPurchases: true,
+    },
+  },
 } as const;
 
-const RESOURCE_DETAIL_DEFERRED_CONTENT_SELECT = {
+const RESOURCE_DETAIL_BODY_CONTENT_SELECT = {
   description: true,
+  fileName: true,
+  fileSize: true,
+  fileUrl: true,
+  fileKey: true,
+  type: true,
+} as const;
+
+const RESOURCE_DETAIL_FOOTER_CONTENT_SELECT = {
   author: {
     select: {
       id: true,
@@ -828,47 +837,30 @@ export async function countMarketplaceResources(where: Prisma.ResourceWhereInput
 }
 
 export async function findPublicResourceDetailBySlug(slug: string) {
-  const [resource, reviewAggregate] = await Promise.all([
-    prisma.resource.findUnique({
-      where: { slug },
-      select: RESOURCE_DETAIL_SELECT,
-    }),
-    prisma.review.aggregate({
-      where: {
-        isVisible: true,
-        resource: { slug },
-      },
-      _avg: {
-        rating: true,
-      },
-      _count: {
-        id: true,
-      },
-    }),
-  ]);
-
-  if (!resource) {
-    return null;
-  }
-
-  return {
-    ...resource,
-    averageRating: reviewAggregate._avg.rating ?? null,
-    visibleReviewCount: reviewAggregate._count.id ?? 0,
-  };
-}
-
-export async function findPublicResourceMetadataBySlug(slug: string) {
   return prisma.resource.findUnique({
     where: { slug },
-    select: RESOURCE_METADATA_SELECT,
+    select: RESOURCE_DETAIL_SELECT,
   });
 }
 
-export async function findPublicResourceDetailDeferredContentBySlug(slug: string) {
+export async function findPublicResourceDetailBodyContentBySlug(slug: string) {
   return prisma.resource.findUnique({
     where: { slug },
-    select: RESOURCE_DETAIL_DEFERRED_CONTENT_SELECT,
+    select: RESOURCE_DETAIL_BODY_CONTENT_SELECT,
+  });
+}
+
+export async function findPublicResourceDetailFooterContentBySlug(slug: string) {
+  return prisma.resource.findUnique({
+    where: { slug },
+    select: RESOURCE_DETAIL_FOOTER_CONTENT_SELECT,
+  });
+}
+
+export async function findPublicResourceDetailPurchaseMetaBySlug(slug: string) {
+  return prisma.resource.findUnique({
+    where: { slug },
+    select: RESOURCE_DETAIL_PURCHASE_META_SELECT,
   });
 }
 
