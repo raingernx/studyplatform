@@ -83,8 +83,6 @@ const MARKETPLACE_ACTION_LINK_CLASS_NAME =
   "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-[14px] leading-[22px] font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
 const MARKETPLACE_PRIMARY_ACTION_CLASS_NAME =
   "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-brand-600 px-4 text-[14px] leading-[22px] font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
-const MARKETPLACE_PREMIUM_ACTION_CLASS_NAME =
-  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-4 text-[14px] leading-[22px] font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40 focus-visible:ring-offset-2";
 const MARKETPLACE_CATEGORY_ITEM_CLASS_NAME =
   "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 text-[14px] leading-[22px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
 
@@ -228,6 +226,14 @@ function NavbarInner({
 
           <div className="p-1.5">
             <Link
+              href={routes.membership}
+              onClick={() => setUserMenuOpen(false)}
+              className="flex items-center rounded-lg px-3 py-2 text-[13px] font-medium text-amber-700 transition-colors hover:bg-amber-50"
+            >
+              KC Premium
+            </Link>
+            <div className="my-1 border-t border-surface-100" />
+            <Link
               href={routes.dashboard}
               onClick={() => setUserMenuOpen(false)}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
@@ -300,10 +306,6 @@ function NavbarInner({
               </div>
 
               <div className="ml-auto hidden items-center gap-2.5 lg:flex">
-                <Link href={routes.library} className={MARKETPLACE_ACTION_LINK_CLASS_NAME}>
-                  คลังของฉัน
-                </Link>
-
                 {isLoading ? (
                   <div className="flex items-center gap-2.5">
                     <div className="h-10 w-24 animate-pulse rounded-full bg-surface-100" />
@@ -311,8 +313,8 @@ function NavbarInner({
                   </div>
                 ) : session?.user ? (
                   <>
-                    <Link href={routes.membership} className={MARKETPLACE_PREMIUM_ACTION_CLASS_NAME}>
-                      KC Premium
+                    <Link href={routes.library} className={MARKETPLACE_ACTION_LINK_CLASS_NAME}>
+                      คลังของฉัน
                     </Link>
                     <div className="relative">
                       <button
@@ -349,15 +351,11 @@ function NavbarInner({
               {/* Scrollable links — overflow-x-auto would clip an absolute
                   dropdown, so the avatar button lives outside this div. */}
               <div className={cn("ml-auto flex min-w-0 max-w-[68vw] items-center gap-1.5 lg:hidden", HORIZONTAL_SCROLL_CLASS_NAME)}>
-                <Link href={routes.library} className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] leading-[22px] font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
-                  คลังของฉัน
-                </Link>
-
                 {isLoading ? (
                   <div className="h-10 w-24 shrink-0 animate-pulse rounded-full bg-surface-100" />
                 ) : session?.user ? (
-                  <Link href={routes.membership} className="inline-flex h-10 shrink-0 items-center rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-3 text-[14px] leading-[22px] font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40 focus-visible:ring-offset-2">
-                    KC Premium
+                  <Link href={routes.library} className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] leading-[22px] font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
+                    คลังของฉัน
                   </Link>
                 ) : (
                   <>
@@ -504,7 +502,7 @@ function NavbarInner({
         <div className={headerSearch ? "order-2 ml-auto lg:order-3 lg:ml-0" : "ml-auto"}>
           <div className="hidden shrink-0 items-center gap-3.5 lg:flex">
             <nav className="hidden items-center gap-2 lg:flex" aria-label="เมนูหลัก">
-              {NAV_LINKS.map(({ href, label }) => (
+              {NAV_LINKS.filter(({ href }) => href !== routes.library || (!isLoading && Boolean(session?.user))).map(({ href, label }) => (
                 <NavbarItem
                   key={href}
                   href={href}
@@ -516,19 +514,6 @@ function NavbarInner({
                 </NavbarItem>
               ))}
             </nav>
-
-            {!isLoading && session?.user ? (
-              <>
-                <NavbarItem
-                  href={routes.membership}
-                  variant="default"
-                  className="h-10 rounded-full border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] px-4 text-[14px] leading-[22px] font-semibold text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950"
-                >
-                  KC Plus
-                </NavbarItem>
-                <div className="mx-1 h-5 w-px bg-surface-200/70" aria-hidden />
-              </>
-            ) : null}
 
             {isLoading ? (
               <div className="flex items-center gap-2.5">
@@ -581,7 +566,7 @@ function NavbarInner({
       {mobileOpen ? (
         <div className="border-b border-surface-200 bg-white px-4 pb-5 pt-3 shadow-card-md lg:hidden">
           <nav className="flex flex-col gap-0.5" aria-label="Mobile navigation">
-            {NAV_LINKS.map(({ href, label }) => (
+            {NAV_LINKS.filter(({ href }) => href !== routes.library || Boolean(session?.user)).map(({ href, label }) => (
               <NavbarItem
                 key={href}
                 href={href}
@@ -596,20 +581,6 @@ function NavbarInner({
               </NavbarItem>
             ))}
           </nav>
-
-          {session?.user ? (
-            <div className="mt-4">
-              <NavbarItem
-                href={routes.membership}
-                onClick={closeAll}
-                variant="default"
-                mobile
-                className="border border-amber-200 bg-[linear-gradient(135deg,#fff8dc,#fff4bf)] text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff9e7,#fff1b0)] hover:text-amber-950"
-              >
-                KC Plus
-              </NavbarItem>
-            </div>
-          ) : null}
 
           <div className="mt-4 flex flex-col gap-2 border-t border-surface-100 pt-4">
             {session?.user ? (
@@ -628,6 +599,14 @@ function NavbarInner({
                     <p className="truncate text-xs text-text-muted">{session.user.email}</p>
                   </div>
                 </div>
+
+                <Link
+                  href={routes.membership}
+                  onClick={closeAll}
+                  className="flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-sm font-medium text-amber-700 hover:bg-amber-50"
+                >
+                  KC Premium
+                </Link>
 
                 <Link
                   href={routes.dashboard}
