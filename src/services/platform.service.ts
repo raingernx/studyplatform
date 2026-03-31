@@ -173,6 +173,10 @@ export async function getPlatformConfig() {
 
 export const getPlatform = cache(getPlatformConfig);
 
+export function getBuildSafePlatformConfig(): PlatformConfig {
+  return resolvePlatformConfig(null);
+}
+
 export async function updatePlatformConfig(input: PlatformSettingsInput) {
   return savePlatformSettings(input);
 }

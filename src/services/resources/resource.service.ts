@@ -5,7 +5,7 @@ import { logActivity } from "@/lib/activity";
 import { logAdminAction } from "@/lib/auditLogger";
 import { slugify } from "@/lib/utils";
 import { CACHE_TAGS, CACHE_TTLS } from "@/lib/cache";
-import { getOwnedDetailState, getOwnedIdsFromSet } from "@/services/purchase.service";
+import { getOwnedDetailState } from "@/services/purchase.service";
 import { getRelatedResources } from "@/services/resource.service";
 import {
   getResourceReviews,
@@ -393,19 +393,12 @@ function isResourceDetailRelatedPoolPressureError(error: unknown) {
 export async function getResourceDetailRelatedSection(input: {
   resourceId: string;
   categoryId?: string | null;
-  userId?: string;
   take?: number;
 }) {
-  const {
-    resourceId,
-    categoryId,
-    userId,
-    take = 4,
-  } = input;
+  const { resourceId, categoryId, take = 4 } = input;
 
   if (!categoryId) {
     return {
-      ownedRelatedIds: [] as string[],
       relatedResources: [],
     };
   }
@@ -420,21 +413,11 @@ export async function getResourceDetailRelatedSection(input: {
     }
 
     return {
-      ownedRelatedIds: [] as string[],
       relatedResources: [],
     };
   }
 
-  const ownedRelatedIds =
-    userId && relatedResources.length > 0
-      ? await getOwnedIdsFromSet(
-          userId,
-          relatedResources.map((resource) => resource.id),
-        )
-      : [];
-
   return {
-    ownedRelatedIds,
     relatedResources,
   };
 }

@@ -58,6 +58,62 @@ type ResourcesPageContentProps = {
   userIdPromise?: Promise<string | undefined> | null;
 };
 
+type DiscoverFallbackLink = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  href: string;
+  prefetchScope: string;
+};
+
+const DISCOVER_FALLBACK_PRIMARY_LINKS: DiscoverFallbackLink[] = [
+  {
+    eyebrow: "Trending",
+    title: "Open the fastest-moving resources",
+    description: "Jump straight into the picks with the strongest current sales and review momentum.",
+    href: routes.marketplaceQuery("sort=trending&category=all"),
+    prefetchScope: "discover-fallback-trending",
+  },
+  {
+    eyebrow: "Newest",
+    title: "See the latest uploads first",
+    description: "Browse fresh releases while the discover feed finishes loading in the background.",
+    href: routes.marketplaceQuery("sort=newest&category=all"),
+    prefetchScope: "discover-fallback-newest",
+  },
+  {
+    eyebrow: "Free",
+    title: "Start with free resources",
+    description: "Open zero-cost worksheets, flashcards, and guides without waiting for tailored ranking.",
+    href: routes.marketplaceQuery("price=free&category=all"),
+    prefetchScope: "discover-fallback-free",
+  },
+  {
+    eyebrow: "Popular",
+    title: "Browse the most-downloaded picks",
+    description: "Use download volume as a shortcut when you want reliable marketplace winners quickly.",
+    href: routes.marketplaceQuery("sort=downloads&category=all"),
+    prefetchScope: "discover-fallback-downloads",
+  },
+];
+
+const DISCOVER_FALLBACK_SECONDARY_LINKS: DiscoverFallbackLink[] = [
+  {
+    eyebrow: "Featured",
+    title: "Explore featured picks",
+    description: "Open hand-picked resources that are already being spotlighted across the marketplace.",
+    href: routes.marketplaceQuery("sort=featured&category=all"),
+    prefetchScope: "discover-fallback-featured",
+  },
+  {
+    eyebrow: "Browse",
+    title: "See every resource",
+    description: "Open the full marketplace listing if you already know you want to scan everything yourself.",
+    href: routes.marketplace,
+    prefetchScope: "discover-fallback-marketplace",
+  },
+];
+
 function isNewCardBadge(createdAt?: Date | string) {
   if (!createdAt) return false;
   const date = new Date(createdAt);
@@ -988,20 +1044,73 @@ function SidebarFallback() {
   );
 }
 
+function DiscoverFallbackLinkCard({
+  link,
+}: {
+  link: DiscoverFallbackLink;
+}) {
+  return (
+    <IntentPrefetchLink
+      href={link.href}
+      prefetchMode="intent"
+      prefetchScope={link.prefetchScope}
+      prefetchLimit={1}
+      resourcesNavigationMode="listing"
+      className="group rounded-[22px] border border-surface-200 bg-white p-5 transition hover:border-primary-200 hover:bg-primary-50/40"
+    >
+      <p className="text-caption font-semibold uppercase tracking-[0.08em] text-primary-600">
+        {link.eyebrow}
+      </p>
+      <p className="mt-2 text-lg font-semibold tracking-tight text-text-primary transition-colors group-hover:text-primary-800">
+        {link.title}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-text-secondary">
+        {link.description}
+      </p>
+      <span className="mt-4 inline-flex items-center gap-1 text-small font-medium text-primary-700">
+        Open now
+        <ArrowRight className="h-3.5 w-3.5" />
+      </span>
+    </IntentPrefetchLink>
+  );
+}
+
 function DiscoverSectionsFallback() {
   return (
     <div className="space-y-16 lg:space-y-20">
-      <DeferredSectionFallback titleWidth="w-32" cardCount={5} />
-      {/* top creator block skeleton */}
-      <div className="rounded-[22px] border border-surface-200 bg-surface-50/75 p-4 sm:p-5">
-        <LoadingSkeleton className="mb-2 h-3 w-24" />
-        <LoadingSkeleton className="h-6 w-48" />
-        <LoadingSkeleton className="mt-1 h-4 w-80" />
-      </div>
-      <DeferredSectionFallback titleWidth="w-40" cardCount={5} />
-      <DeferredSectionFallback titleWidth="w-36" cardCount={5} />
-      <DeferredSectionFallback titleWidth="w-28" cardCount={5} />
-      <DeferredSectionFallback titleWidth="w-44" cardCount={5} />
+      <section className="space-y-5">
+        <SectionHeader
+          title="Explore while tailored picks load"
+          description="You can keep moving with high-signal marketplace views right away instead of waiting for the full discover feed."
+          viewAllHref={routes.marketplace}
+        />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {DISCOVER_FALLBACK_PRIMARY_LINKS.map((link) => (
+            <DiscoverFallbackLinkCard key={link.title} link={link} />
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[22px] border border-surface-200 bg-surface-50/75 p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="font-ui text-caption tracking-[0.12em] text-primary-700">
+              Quick routes
+            </p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-900">
+              Keep browsing without waiting on ranking
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-zinc-600">
+              These shortcuts stay useful even before personalized and campaign-driven sections finish resolving.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {DISCOVER_FALLBACK_SECONDARY_LINKS.map((link) => (
+              <DiscoverFallbackLinkCard key={link.title} link={link} />
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
@@ -1303,9 +1412,9 @@ function RecommendedForYouFallbackSection() {
         description="A focused set of picks to help you keep momentum without sorting through the whole library."
         viewAllHref={routes.marketplaceQuery("sort=trending&category=all")}
       />
-      <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <ResourceCardSkeleton key={index} />
+      <div className="grid gap-4 lg:grid-cols-3">
+        {DISCOVER_FALLBACK_PRIMARY_LINKS.slice(0, 3).map((link) => (
+          <DiscoverFallbackLinkCard key={link.title} link={link} />
         ))}
       </div>
     </section>

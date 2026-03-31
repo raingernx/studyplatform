@@ -15,7 +15,7 @@ import { formatDate, formatPrice } from "@/lib/format";
 import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 import { routes } from "@/lib/routes";
 import { getDashboardPurchaseHistoryPageData } from "@/services/admin-operations.service";
-import { getPlatform } from "@/services/platform.service";
+import { getBuildSafePlatformConfig } from "@/services/platform.service";
 import { EmptyState } from "@/design-system";
 
 export const metadata = {
@@ -50,7 +50,7 @@ const STATUS_CONFIG = {
 export default async function PurchasesPage() {
   const { userId } = await requireSession(routes.purchases);
 
-  const platform = await getPlatform();
+  const platform = getBuildSafePlatformConfig();
   const purchases = await getDashboardPurchaseHistoryPageData(userId);
 
   const totalSpent = purchases

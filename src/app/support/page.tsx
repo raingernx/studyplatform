@@ -4,7 +4,7 @@ import { Mail, LifeBuoy, ArrowLeft } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Navbar } from "@/components/layout/Navbar";
 import { HeroSearch } from "@/components/marketplace/HeroSearch";
-import { getPlatform } from "@/services/platform.service";
+import { getBuildSafePlatformConfig } from "@/services/platform.service";
 import { routes } from "@/lib/routes";
 
 export const metadata: Metadata = {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function SupportPage() {
-  const platform = await getPlatform();
+  const platform = getBuildSafePlatformConfig();
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-50">

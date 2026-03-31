@@ -15,7 +15,7 @@ import {
 import { formatDate } from "@/lib/format";
 import { PageContentNarrow } from "@/design-system";
 import { getDashboardSubscriptionPageData } from "@/services/admin-operations.service";
-import { getPlatform } from "@/services/platform.service";
+import { getBuildSafePlatformConfig } from "@/services/platform.service";
 import { routes } from "@/lib/routes";
 
 export const metadata = {
@@ -50,7 +50,7 @@ const PRO_BENEFITS = [
 export default async function SubscriptionPage() {
   const { userId } = await requireSession(routes.subscription);
 
-  const platform = await getPlatform();
+  const platform = getBuildSafePlatformConfig();
   const user = await getDashboardSubscriptionPageData(userId);
 
   const isActive = user?.subscriptionStatus === "ACTIVE";

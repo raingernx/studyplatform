@@ -15,11 +15,14 @@ import {
   ResourceDetailBodySection,
   ResourceDetailFooterFallback,
   ResourceDetailFooterSection,
+  ResourceDetailOwnerReviewFallback,
+  ResourceDetailOwnerReviewSection,
   ResourceDetailPurchaseCard,
   ResourceDetailRelatedFallback,
+  ResourceDetailRelatedQuickLinks,
   ResourceDetailRelatedSection,
+  ResourceDetailPublicReviewsSection,
   ResourceDetailReviewsFallback,
-  ResourceDetailReviewSection,
   ResourceDetailSuccessShell,
   ResourceDetailSuccessSkeleton,
 } from "@/components/resources/ResourceDetailSections";
@@ -472,10 +475,16 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
 
                 {/* 6. Reviews */}
                 <Suspense fallback={<ResourceDetailReviewsFallback />}>
-                  <ResourceDetailReviewSection
+                  <ResourceDetailPublicReviewsSection
+                    reviewListPromise={reviewListPromise}
+                    resourceTitle={resource.title}
+                  />
+                </Suspense>
+
+                <Suspense fallback={<ResourceDetailOwnerReviewFallback />}>
+                  <ResourceDetailOwnerReviewSection
                     sessionPromise={sessionPromise}
                     ownershipPromise={ownershipPromise}
-                    reviewListPromise={reviewListPromise}
                     resourceId={resource.id}
                     resourceTitle={resource.title}
                   />
@@ -509,7 +518,14 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
             </div>
 
             {/* ── Related resources — outside the two-column grid ─────────── */}
-            <Suspense fallback={<ResourceDetailRelatedFallback />}>
+            <Suspense
+              fallback={
+                <ResourceDetailRelatedQuickLinks
+                  categoryName={resource.category?.name}
+                  categorySlug={resource.category?.slug}
+                />
+              }
+            >
               <ResourceDetailRelatedSection
                 currentDownloads={resource.resourceStat?.downloads ?? resource.downloadCount ?? 0}
                 currentIsFree={resource.isFree || resource.price === 0}
@@ -518,7 +534,6 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                 currentSales={resource.resourceStat?.purchases ?? 0}
                 categoryId={resource.categoryId}
                 resourceId={resource.id}
-                sessionPromise={sessionPromise}
               />
             </Suspense>
 

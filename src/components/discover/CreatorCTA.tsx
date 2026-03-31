@@ -3,10 +3,10 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { Button } from "@/design-system";
 import { routes } from "@/lib/routes";
-import { getPlatform } from "@/services/platform.service";
+import { getBuildSafePlatformConfig } from "@/services/platform.service";
 
 export async function CreatorCTA() {
-  const platform = await getPlatform();
+  const platform = getBuildSafePlatformConfig();
 
   return (
     <section className="py-10">

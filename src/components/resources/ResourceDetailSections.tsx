@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CheckCircle, Download } from "lucide-react";
 import { AutoScrollOnSuccess } from "@/components/resource/AutoScrollOnSuccess";
 import { PurchaseCard } from "@/components/resource/PurchaseCard";
@@ -66,6 +67,10 @@ export function ResourceDetailReviewsFallback() {
   );
 }
 
+export function ResourceDetailOwnerReviewFallback() {
+  return null;
+}
+
 export function ResourceDetailFooterFallback() {
   return (
     <>
@@ -115,52 +120,102 @@ export function ResourceDetailRelatedFallback() {
   );
 }
 
-export async function ResourceDetailReviewSection({
+export function ResourceDetailRelatedQuickLinks({
+  categoryName,
+  categorySlug,
+}: {
+  categoryName?: string | null;
+  categorySlug?: string | null;
+}) {
+  if (!categoryName || !categorySlug) {
+    return <ResourceDetailRelatedFallback />;
+  }
+
+  return (
+    <section className="space-y-4 border-t border-surface-200 pt-7">
+      <div className="space-y-1.5">
+        <h2 className="font-display text-lg font-semibold text-zinc-900">More like this</h2>
+        <p className="text-small leading-6 text-zinc-500">
+          Keep exploring nearby resources while we load tailored suggestions.
+        </p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Link
+          href={`/categories/${categorySlug}`}
+          className="rounded-2xl border border-surface-200 bg-white p-5 transition hover:border-primary-200 hover:bg-primary-50/40"
+        >
+          <p className="text-caption font-semibold uppercase tracking-[0.08em] text-primary-600">
+            Category
+          </p>
+          <p className="mt-2 text-lg font-semibold text-zinc-900">
+            Browse more in {categoryName}
+          </p>
+          <p className="mt-2 text-small leading-6 text-zinc-500">
+            Jump straight into similar resources from the same subject area.
+          </p>
+        </Link>
+        <Link
+          href="/resources?sort=newest"
+          className="rounded-2xl border border-surface-200 bg-white p-5 transition hover:border-primary-200 hover:bg-primary-50/40"
+        >
+          <p className="text-caption font-semibold uppercase tracking-[0.08em] text-primary-600">
+            Explore
+          </p>
+          <p className="mt-2 text-lg font-semibold text-zinc-900">
+            See the newest marketplace picks
+          </p>
+          <p className="mt-2 text-small leading-6 text-zinc-500">
+            Open the latest uploads while the tailored list finishes loading.
+          </p>
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+export async function ResourceDetailPublicReviewsSection({
+  resourceTitle,
+  reviewListPromise,
+}: {
+  resourceTitle: string;
+  reviewListPromise: Promise<Awaited<ReturnType<typeof getResourceDetailPageReviewList>>>;
+}) {
+  const reviews = await reviewListPromise;
+  return <ResourceReviews reviews={reviews} resourceTitle={resourceTitle} />;
+}
+
+export async function ResourceDetailOwnerReviewSection({
   resourceId,
   resourceTitle,
   sessionPromise,
   ownershipPromise,
-  reviewListPromise,
 }: {
   resourceId: string;
   resourceTitle: string;
   sessionPromise: Promise<OptionalSession>;
   ownershipPromise: Promise<{ isOwned: boolean }>;
-  reviewListPromise: Promise<Awaited<ReturnType<typeof getResourceDetailPageReviewList>>>;
 }) {
-  // Resolve ownership and the pre-fetched public review list in parallel.
-  // reviewListPromise was started in the page component before this Suspense
-  // boundary rendered, so it's already in-flight and doesn't depend on ownership.
-  const [{ isOwned }, reviews, session] = await Promise.all([
-    ownershipPromise,
-    reviewListPromise,
-    sessionPromise,
-  ]);
+  const [{ isOwned }, session] = await Promise.all([ownershipPromise, sessionPromise]);
   const userId = session?.user?.id;
 
-  // Viewer's own review is only relevant for owners — small sequential fetch.
-  const viewerReview =
-    userId && isOwned
-      ? await runNonCriticalResourceDetailTask(
-          () => getResourceDetailPageViewerReview(userId, resourceId),
-          {
-            context: { resourceId, section: "viewer-review" },
-            fallback: null,
-          },
-        )
-      : null;
+  if (!userId || !isOwned) {
+    return null;
+  }
+
+  const viewerReview = await runNonCriticalResourceDetailTask(
+    () => getResourceDetailPageViewerReview(userId, resourceId),
+    {
+      context: { resourceId, section: "viewer-review" },
+      fallback: null,
+    },
+  );
 
   return (
-    <>
-      <ResourceReviews reviews={reviews} resourceTitle={resourceTitle} />
-      {userId && isOwned ? (
-        <ResourceReviewForm
-          resourceId={resourceId}
-          resourceTitle={resourceTitle}
-          existingReview={viewerReview}
-        />
-      ) : null}
-    </>
+    <ResourceReviewForm
+      resourceId={resourceId}
+      resourceTitle={resourceTitle}
+      existingReview={viewerReview}
+    />
   );
 }
 
@@ -199,7 +254,6 @@ export async function ResourceDetailBodySection({
 export async function ResourceDetailRelatedSection({
   resourceId,
   categoryId,
-  sessionPromise,
   currentIsFree,
   currentPrice,
   currentRating,
@@ -208,22 +262,18 @@ export async function ResourceDetailRelatedSection({
 }: {
   resourceId: string;
   categoryId?: string | null;
-  sessionPromise: Promise<OptionalSession>;
   currentIsFree: boolean;
   currentPrice: number;
   currentRating: number;
   currentSales: number;
   currentDownloads: number;
 }) {
-  const session = await sessionPromise;
-  const userId = session?.user?.id;
-  const { relatedResources, ownedRelatedIds } =
+  const { relatedResources } =
     await runNonCriticalResourceDetailTask(
       () =>
         getResourceDetailPageRelatedSection({
           resourceId,
           categoryId,
-          userId,
           take: 4,
         }),
       {
@@ -232,7 +282,6 @@ export async function ResourceDetailRelatedSection({
           section: "related-resources",
         },
         fallback: {
-          ownedRelatedIds: [],
           relatedResources: [],
         },
       },
@@ -258,10 +307,7 @@ export async function ResourceDetailRelatedSection({
   });
 
   return (
-    <RelatedResources
-      resources={relatedResourcesWithBadges}
-      ownedIds={ownedRelatedIds}
-    />
+    <RelatedResources resources={relatedResourcesWithBadges} />
   );
 }
 

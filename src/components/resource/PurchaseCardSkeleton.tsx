@@ -76,6 +76,32 @@ export function PurchaseCardMiddleSkeleton() {
   );
 }
 
+export function PurchaseCardContentSkeleton() {
+  return (
+    <div className={SECTION_STACK_CLASS}>
+      <div className="space-y-3">
+        <LoadingSkeleton className="h-8 w-32 rounded-full" />
+        <div className="space-y-2">
+          <LoadingSkeleton className="h-4 w-full" />
+          <LoadingSkeleton className="h-4 w-4/5" />
+        </div>
+        <LoadingSkeleton className="h-3.5 w-36" />
+      </div>
+
+      <div className="flex flex-wrap gap-2.5">
+        {[112, 132, 140].map((w) => (
+          <LoadingSkeleton key={w} className="h-7 rounded-full" style={{ width: w }} />
+        ))}
+      </div>
+
+      <div className="space-y-3 border-t border-surface-200 py-5">
+        <LoadingSkeleton className="h-12 w-full rounded-xl" />
+        <LoadingSkeleton className="mx-auto h-4 w-36" />
+      </div>
+    </div>
+  );
+}
+
 export function PurchaseCardMembershipSkeleton() {
   return (
     <div className="space-y-2.5">

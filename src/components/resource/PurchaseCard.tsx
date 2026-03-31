@@ -1,26 +1,18 @@
 import { Suspense } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import {
-  ChevronRight,
-  CheckCircle,
-  Download,
-  Eye,
-  ShieldCheck,
-  Sparkles,
-  Star,
-} from "lucide-react";
+import { ChevronRight, CheckCircle, Download, Eye, ShieldCheck, Sparkles, Star } from "lucide-react";
 import { PriceLabel } from "@/components/ui/PriceLabel";
 import { BuyButton } from "@/components/resources/BuyButton";
 import { PendingPurchasePoller } from "@/components/checkout/PendingPurchasePoller";
 import { formatFileSize, formatNumber } from "@/lib/format";
 import { routes } from "@/lib/routes";
-import { getPlatform } from "@/services/platform.service";
+import { getBuildSafePlatformConfig } from "@/services/platform.service";
 import { runNonCriticalResourceDetailTask } from "@/services/resources/resource-detail-resilience";
 import { isPreviewSupported } from "@/lib/preview/previewPolicy";
 import {
+  PurchaseCardContentSkeleton,
   PurchaseCardMembershipSkeleton,
-  PurchaseCardMiddleSkeleton,
   PurchaseCardSkeleton,
 } from "@/components/resource/PurchaseCardSkeleton";
 
@@ -161,17 +153,8 @@ function PurchaseMetaRow({
 
 // ── Async subcomponents ───────────────────────────────────────────────────────
 
-/**
- * Renders the card's interactive middle section: kicker, proof, trust grid,
- * benefit items, recent activity, and the primary CTA button.
- *
- * Awaits ownershipPromise + trustSummaryPromise together so that isOwned and
- * trust data are available at the same time. This prevents a partial render
- * where the CTA would appear before trust items or vice versa.
- */
-async function PurchaseCardMiddle({
+async function PurchaseCardContentSection({
   ownershipPromise,
-  trustSummaryPromise,
   resource,
   sessionPromise,
   purchaseMetaPromise,
@@ -180,7 +163,6 @@ async function PurchaseCardMiddle({
   isFree,
 }: {
   ownershipPromise: Promise<{ isOwned: boolean }>;
-  trustSummaryPromise: Promise<TrustSummary>;
   resource: PurchaseCardResource;
   sessionPromise: Promise<OptionalSession>;
   purchaseMetaPromise: Promise<PurchaseCardMeta>;
@@ -188,12 +170,7 @@ async function PurchaseCardMiddle({
   isReturningFromCheckout: boolean;
   isFree: boolean;
 }) {
-  const [{ isOwned }, trustSummary, session, purchaseMeta] = await Promise.all([
-    ownershipPromise,
-    trustSummaryPromise,
-    sessionPromise,
-    purchaseMetaPromise,
-  ]);
+  const [{ isOwned }, session] = await Promise.all([ownershipPromise, sessionPromise]);
 
   const userId = session?.user?.id;
   const isPendingPurchase = isReturningFromCheckout && !isOwned && !!userId;
@@ -203,53 +180,7 @@ async function PurchaseCardMiddle({
   }
 
   const ctaCopy = isOwned ? CTA_COPY.owned : isFree ? CTA_COPY.free : CTA_COPY.paid;
-  const hasReviews =
-    typeof trustSummary.averageRating === "number" && trustSummary.totalReviews > 0;
-  const recentActivityResource = {
-    ...resource,
-    recentDownloads: purchaseMeta?.resourceStat?.last30dDownloads ?? 0,
-    recentSales: purchaseMeta?.resourceStat?.last30dPurchases ?? 0,
-  };
-  const recentActivityLabel = getRecentActivityLabel(recentActivityResource);
-  const recentActivityHeading = getRecentActivityHeading(recentActivityResource);
-
-  const trustItems: Array<{
-    label: string;
-    value: string;
-    meta: string;
-    icon: ReactNode;
-  }> = [
-    hasReviews
-      ? {
-          label: "Rating",
-          value: trustSummary.averageRating!.toFixed(1),
-          meta: `${formatNumber(trustSummary.totalReviews)} reviews`,
-          icon: <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />,
-        }
-      : null,
-    trustSummary.totalSales > 0
-      ? {
-          label: "Sales",
-          value: formatNumber(trustSummary.totalSales),
-          meta:
-            trustSummary.totalSales === 1
-              ? "verified purchase"
-              : "verified purchases",
-          icon: <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />,
-        }
-      : null,
-    resource.downloadCount > 0
-      ? {
-          label: "Downloads",
-          value: formatNumber(resource.downloadCount),
-          meta: "library unlocks",
-          icon: <Download className="h-3.5 w-3.5 text-zinc-500" />,
-        }
-      : null,
-  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
-
   const summaryParts = [
-    hasReviews ? `${trustSummary.averageRating!.toFixed(1)}★` : null,
     resource.levelLabel ?? null,
     TYPE_LABELS[resource.type] ?? resource.type,
   ].filter(Boolean) as string[];
@@ -276,23 +207,6 @@ async function PurchaseCardMiddle({
         )}
       </div>
 
-      {trustItems.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 border-t border-surface-200 py-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-          {trustItems.map((item) => (
-            <div key={item.label} className="space-y-1.5">
-              <div className="flex items-center gap-2 text-caption font-medium text-zinc-500">
-                {item.icon}
-                <span>{item.label}</span>
-              </div>
-              <p className="text-lg font-semibold tracking-tight text-zinc-900">
-                {item.value}
-              </p>
-              <p className="text-caption text-zinc-500">{item.meta}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
       {benefitItems.length > 0 && (
         <div className="flex flex-wrap gap-2.5 text-caption text-zinc-600">
           {benefitItems.map((item) => (
@@ -304,25 +218,6 @@ async function PurchaseCardMiddle({
               <span>{item}</span>
             </span>
           ))}
-        </div>
-      )}
-
-      {!isOwned && (trustSummary.totalSales >= 10 || resource.downloadCount >= 50) && (
-        <p className="text-caption font-medium text-zinc-500">
-          {trustSummary.totalSales >= 10
-            ? `Used by ${formatNumber(trustSummary.totalSales)}+ teachers`
-            : resource.category
-              ? `Popular in ${resource.category.name}`
-              : `${formatNumber(resource.downloadCount)}+ learners have this`}
-        </p>
-      )}
-
-      {recentActivityLabel && !isOwned && (
-        <div className="rounded-xl border border-primary-100 bg-primary-50/60 px-4 py-3.5">
-          <p className="text-caption font-semibold text-primary-700/90">
-            {recentActivityHeading}
-          </p>
-          <p className="mt-1 text-small font-medium text-primary-900">{recentActivityLabel}</p>
         </div>
       )}
 
@@ -351,17 +246,12 @@ async function PurchaseCardMiddle({
                 <Download className="h-4 w-4" />
                 Download instantly
               </a>
-              {isPreviewSupported(purchaseMeta?.mimeType) && (
-                <a
-                  href={`/api/preview/${resource.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={SECONDARY_LINK_CLASS}
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                  Preview
-                </a>
-              )}
+              <Suspense fallback={null}>
+                <PurchaseCardOwnedPreviewAction
+                  resourceId={resource.id}
+                  purchaseMetaPromise={purchaseMetaPromise}
+                />
+              </Suspense>
               <p className={HELPER_TEXT_CLASS}>
                 Secure, authenticated download
               </p>
@@ -421,6 +311,149 @@ async function PurchaseCardMiddle({
   );
 }
 
+async function PurchaseCardOwnedPreviewAction({
+  resourceId,
+  purchaseMetaPromise,
+}: {
+  resourceId: string;
+  purchaseMetaPromise: Promise<PurchaseCardMeta>;
+}) {
+  const purchaseMeta = await purchaseMetaPromise;
+
+  if (!isPreviewSupported(purchaseMeta?.mimeType)) {
+    return null;
+  }
+
+  return (
+    <a
+      href={`/api/preview/${resourceId}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={SECONDARY_LINK_CLASS}
+    >
+      <Eye className="h-3.5 w-3.5" />
+      Preview
+    </a>
+  );
+}
+
+async function PurchaseCardTrustSection({
+  ownershipPromise,
+  trustSummaryPromise,
+  purchaseMetaPromise,
+  resource,
+  isReturningFromCheckout,
+  sessionPromise,
+}: {
+  ownershipPromise: Promise<{ isOwned: boolean }>;
+  trustSummaryPromise: Promise<TrustSummary>;
+  purchaseMetaPromise: Promise<PurchaseCardMeta>;
+  resource: PurchaseCardResource;
+  isReturningFromCheckout: boolean;
+  sessionPromise: Promise<OptionalSession>;
+}) {
+  const [{ isOwned }, trustSummary, purchaseMeta, session] = await Promise.all([
+    ownershipPromise,
+    trustSummaryPromise,
+    purchaseMetaPromise,
+    sessionPromise,
+  ]);
+  const isPendingPurchase = isReturningFromCheckout && !isOwned && !!session?.user?.id;
+
+  if (isPendingPurchase) {
+    return null;
+  }
+
+  const hasReviews =
+    typeof trustSummary.averageRating === "number" && trustSummary.totalReviews > 0;
+  const recentActivityResource = {
+    ...resource,
+    recentDownloads: purchaseMeta?.resourceStat?.last30dDownloads ?? 0,
+    recentSales: purchaseMeta?.resourceStat?.last30dPurchases ?? 0,
+  };
+  const recentActivityLabel = getRecentActivityLabel(recentActivityResource);
+  const recentActivityHeading = getRecentActivityHeading(recentActivityResource);
+  const trustItems: Array<{
+    label: string;
+    value: string;
+    meta: string;
+    icon: ReactNode;
+  }> = [
+    hasReviews
+      ? {
+          label: "Rating",
+          value: trustSummary.averageRating!.toFixed(1),
+          meta: `${formatNumber(trustSummary.totalReviews)} reviews`,
+          icon: <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />,
+        }
+      : null,
+    trustSummary.totalSales > 0
+      ? {
+          label: "Sales",
+          value: formatNumber(trustSummary.totalSales),
+          meta:
+            trustSummary.totalSales === 1
+              ? "verified purchase"
+              : "verified purchases",
+          icon: <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />,
+        }
+      : null,
+    resource.downloadCount > 0
+      ? {
+          label: "Downloads",
+          value: formatNumber(resource.downloadCount),
+          meta: "library unlocks",
+          icon: <Download className="h-3.5 w-3.5 text-zinc-500" />,
+        }
+      : null,
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const showSocialProof = !isOwned && (trustSummary.totalSales >= 10 || resource.downloadCount >= 50);
+
+  if (trustItems.length === 0 && !showSocialProof && !recentActivityLabel) {
+    return null;
+  }
+
+  return (
+    <div className={SECTION_STACK_CLASS}>
+      {trustItems.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 border-t border-surface-200 py-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+          {trustItems.map((item) => (
+            <div key={item.label} className="space-y-1.5">
+              <div className="flex items-center gap-2 text-caption font-medium text-zinc-500">
+                {item.icon}
+                <span>{item.label}</span>
+              </div>
+              <p className="text-lg font-semibold tracking-tight text-zinc-900">
+                {item.value}
+              </p>
+              <p className="text-caption text-zinc-500">{item.meta}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showSocialProof && (
+        <p className="text-caption font-medium text-zinc-500">
+          {trustSummary.totalSales >= 10
+            ? `Used by ${formatNumber(trustSummary.totalSales)}+ teachers`
+            : resource.category
+              ? `Popular in ${resource.category.name}`
+              : `${formatNumber(resource.downloadCount)}+ learners have this`}
+        </p>
+      )}
+
+      {recentActivityLabel && !isOwned && (
+        <div className="rounded-xl border border-primary-100 bg-primary-50/60 px-4 py-3.5">
+          <p className="text-caption font-semibold text-primary-700/90">
+            {recentActivityHeading}
+          </p>
+          <p className="mt-1 text-small font-medium text-primary-900">{recentActivityLabel}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PurchaseCardDetailsSkeleton() {
   return (
     <dl className="space-y-3 text-small">
@@ -441,8 +474,6 @@ async function PurchaseCardDetailsSection({
   resource: PurchaseCardResource;
   purchaseMetaPromise: Promise<PurchaseCardMeta>;
 }) {
-  const purchaseMeta = await purchaseMetaPromise;
-
   return (
     <dl className="space-y-3 text-small">
       <PurchaseMetaRow label="Format">
@@ -453,11 +484,6 @@ async function PurchaseCardDetailsSection({
           {formatNumber(resource.pageCount)}
         </PurchaseMetaRow>
       )}
-      {purchaseMeta?.fileSize != null && purchaseMeta.fileSize > 0 && (
-        <PurchaseMetaRow label="File size">
-          {formatFileSize(purchaseMeta.fileSize)}
-        </PurchaseMetaRow>
-      )}
       {resource.category && (
         <PurchaseMetaRow label="Category">
           {resource.category.name}
@@ -466,51 +492,47 @@ async function PurchaseCardDetailsSection({
       <PurchaseMetaRow label="Downloads">
         {formatNumber(resource.downloadCount)}
       </PurchaseMetaRow>
+      <Suspense fallback={null}>
+        <PurchaseCardAsyncMetaRows purchaseMetaPromise={purchaseMetaPromise} />
+      </Suspense>
+    </dl>
+  );
+}
+
+async function PurchaseCardAsyncMetaRows({
+  purchaseMetaPromise,
+}: {
+  purchaseMetaPromise: Promise<PurchaseCardMeta>;
+}) {
+  const purchaseMeta = await purchaseMetaPromise;
+
+  return (
+    <>
+      {purchaseMeta?.fileSize != null && purchaseMeta.fileSize > 0 && (
+        <PurchaseMetaRow label="File size">
+          {formatFileSize(purchaseMeta.fileSize)}
+        </PurchaseMetaRow>
+      )}
       {purchaseMeta?.updatedAt != null && (
         <PurchaseMetaRow label="Updated">
           {formatUpdated(purchaseMeta.updatedAt)}
         </PurchaseMetaRow>
       )}
-    </dl>
+    </>
   );
 }
 
 /**
- * Renders the membership upsell section. Isolated so getPlatform() does not
- * block the price or CTA from appearing.
+ * Renders the membership upsell section without hitting the database. The CTA
+ * copy only needs stable platform branding, so a build-safe config is enough.
  */
 async function PurchaseCardMembershipSection({
   sessionPromise,
 }: {
   sessionPromise: Promise<OptionalSession>;
 }) {
-  const [session, platform] = await Promise.all([
-    sessionPromise,
-    runNonCriticalResourceDetailTask(() => getPlatform(), {
-      context: {
-        section: "purchase-card-membership",
-      },
-      fallback: {
-        defaultCurrency: "THB",
-        defaultLanguage: "en",
-        defaultMetaDescription: "",
-        defaultMetaTitle: "",
-        emailSenderName: "KruCraft",
-        faviconUrl: "",
-        logoEmailUrl: "",
-        logoFullUrl: "",
-        logoIconUrl: "",
-        logoOgUrl: "",
-        logoUrl: "",
-        ogSiteName: "KruCraft",
-        platformDescription: "",
-        platformName: "KruCraft Marketplace",
-        platformShortName: "KC",
-        siteUrl: "",
-        supportEmail: "",
-      },
-    }),
-  ]);
+  const session = await sessionPromise;
+  const platform = getBuildSafePlatformConfig();
   const isMember =
     session?.user?.subscriptionStatus === "ACTIVE" ||
     session?.user?.subscriptionStatus === "TRIALING";
@@ -588,17 +610,27 @@ export function PurchaseCard({
             <PriceLabel price={resource.price} isFree={isFree} />
           </p>
 
-          {/* Middle section: kicker, trust, CTA — streams in */}
-          <Suspense fallback={<PurchaseCardMiddleSkeleton />}>
-            <PurchaseCardMiddle
+          {/* CTA / ownership state resolves before trust metrics */}
+          <Suspense fallback={<PurchaseCardContentSkeleton />}>
+            <PurchaseCardContentSection
               ownershipPromise={ownershipPromise}
-              trustSummaryPromise={trustSummaryPromise}
               resource={resource}
               sessionPromise={sessionPromise}
               purchaseMetaPromise={purchaseMetaPromise}
               hasFile={hasFile}
               isReturningFromCheckout={isReturningFromCheckout}
               isFree={isFree}
+            />
+          </Suspense>
+
+          <Suspense fallback={null}>
+            <PurchaseCardTrustSection
+              ownershipPromise={ownershipPromise}
+              trustSummaryPromise={trustSummaryPromise}
+              purchaseMetaPromise={purchaseMetaPromise}
+              resource={resource}
+              isReturningFromCheckout={isReturningFromCheckout}
+              sessionPromise={sessionPromise}
             />
           </Suspense>
         </div>

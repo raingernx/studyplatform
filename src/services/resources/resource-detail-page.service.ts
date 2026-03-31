@@ -63,7 +63,6 @@ export async function getResourceDetailPageTrustSummary(input: {
 export async function getResourceDetailPageRelatedSection(input: {
   resourceId: string;
   categoryId?: string | null;
-  userId?: string;
   take?: number;
 }) {
   return getResourceDetailRelatedSection(input);

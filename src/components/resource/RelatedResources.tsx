@@ -2,10 +2,9 @@ import { ResourceCard, type ResourceCardResource } from "@/design-system";
 
 interface RelatedResourcesProps {
   resources: ResourceCardResource[];
-  ownedIds?: string[];
 }
 
-export function RelatedResources({ resources, ownedIds = [] }: RelatedResourcesProps) {
+export function RelatedResources({ resources }: RelatedResourcesProps) {
   if (resources.length === 0) return null;
 
   return (
@@ -22,7 +21,6 @@ export function RelatedResources({ resources, ownedIds = [] }: RelatedResourcesP
             key={resource.id ?? resource.slug ?? resource.title}
             resource={resource}
             variant="marketplace"
-            owned={ownedIds.includes(resource.id ?? "")}
           />
         ))}
       </div>
