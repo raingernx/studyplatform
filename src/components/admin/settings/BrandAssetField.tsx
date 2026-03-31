@@ -20,6 +20,10 @@ interface BrandAssetFieldProps {
   onUpload: (file: File) => void;
 }
 
+function isRuntimeBrandAsset(value: string) {
+  return value.startsWith("/brand-assets/");
+}
+
 function BrandAssetPreview({
   label,
   value,
@@ -51,7 +55,7 @@ function BrandAssetPreview({
 
       <div className="relative flex h-full w-full items-center justify-center px-4 py-3">
         {hasAsset ? (
-          effectiveValue.startsWith("/") ? (
+          effectiveValue.startsWith("/") && !isRuntimeBrandAsset(effectiveValue) ? (
             <Image
               src={effectiveValue}
               alt={`${platformName} ${label.toLowerCase()} preview`}

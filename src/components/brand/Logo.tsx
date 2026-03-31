@@ -52,8 +52,12 @@ const TEXT_SIZE_CLASS: Record<LogoSize, string> = {
   xl: "text-4xl",
 };
 
+function isRuntimeBrandAsset(src: string) {
+  return src.startsWith("/brand-assets/");
+}
+
 function renderLogoAsset(src: string, alt: string, className: string) {
-  if (src.startsWith("/")) {
+  if (src.startsWith("/") && !isRuntimeBrandAsset(src)) {
     return (
       <Image
         src={src}
