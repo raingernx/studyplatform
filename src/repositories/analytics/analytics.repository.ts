@@ -91,6 +91,20 @@ export interface PlatformOverviewCounts {
   totalUsers: number;
 }
 
+export interface PlatformTotalsRow {
+  totalDownloads: number;
+  totalPurchases: number;
+  totalRevenue: number;
+}
+
+export interface PlatformWindowTotalsRow {
+  downloadsLast30Days: number;
+  purchasesLast30Days: number;
+  revenueLast30Days: number;
+  newUsersLast30Days: number;
+  newResourcesLast30Days: number;
+}
+
 export interface TopCreatorThisWeekRow {
   creatorId: string;
   resources: number;
@@ -196,6 +210,47 @@ export async function findPlatformOverviewCounts(): Promise<PlatformOverviewCoun
   return {
     totalResources,
     totalUsers,
+  };
+}
+
+export async function findPlatformTotals(): Promise<PlatformTotalsRow> {
+  const totals = await prisma.platformStat.aggregate({
+    _sum: {
+      totalDownloads: true,
+      totalSales: true,
+      totalRevenue: true,
+    },
+  });
+
+  return {
+    totalDownloads: totals._sum.totalDownloads ?? 0,
+    totalPurchases: totals._sum.totalSales ?? 0,
+    totalRevenue: totals._sum.totalRevenue ?? 0,
+  };
+}
+
+export async function findPlatformTotalsSince(since: Date): Promise<PlatformWindowTotalsRow> {
+  const totals = await prisma.platformStat.aggregate({
+    where: {
+      date: {
+        gte: since,
+      },
+    },
+    _sum: {
+      totalDownloads: true,
+      totalSales: true,
+      totalRevenue: true,
+      newUsers: true,
+      newResources: true,
+    },
+  });
+
+  return {
+    downloadsLast30Days: totals._sum.totalDownloads ?? 0,
+    purchasesLast30Days: totals._sum.totalSales ?? 0,
+    revenueLast30Days: totals._sum.totalRevenue ?? 0,
+    newUsersLast30Days: totals._sum.newUsers ?? 0,
+    newResourcesLast30Days: totals._sum.newResources ?? 0,
   };
 }
 

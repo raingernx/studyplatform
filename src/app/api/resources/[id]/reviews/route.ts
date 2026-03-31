@@ -3,7 +3,12 @@ import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
-import { CACHE_TAGS, deleteResourceTrustRedisKeys, getResourceDetailDataTag } from "@/lib/cache";
+import {
+  CACHE_TAGS,
+  deleteResourceReviewRedisKeys,
+  deleteResourceTrustRedisKeys,
+  getResourceDetailDataTag,
+} from "@/lib/cache";
 import { checkRateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 import { createReview, ReviewServiceError, updateReview } from "@/services/review.service";
 
@@ -55,7 +60,10 @@ export async function POST(req: Request, { params }: Params) {
 
     revalidateTag(CACHE_TAGS.discover, "max");
     revalidateTag(getResourceDetailDataTag(id), "max");
-    await deleteResourceTrustRedisKeys(id);
+    await Promise.all([
+      deleteResourceTrustRedisKeys(id),
+      deleteResourceReviewRedisKeys(id),
+    ]);
 
     return NextResponse.json({ data: review }, { status: 201 });
   } catch (error) {
@@ -110,7 +118,10 @@ export async function PATCH(req: Request, { params }: Params) {
 
     revalidateTag(CACHE_TAGS.discover, "max");
     revalidateTag(getResourceDetailDataTag(id), "max");
-    await deleteResourceTrustRedisKeys(id);
+    await Promise.all([
+      deleteResourceTrustRedisKeys(id),
+      deleteResourceReviewRedisKeys(id),
+    ]);
 
     return NextResponse.json({ data: review });
   } catch (error) {

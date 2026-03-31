@@ -14,6 +14,8 @@ import {
   findRecentCompletedPurchases,
   findRecentResources,
   findPlatformOverviewCounts,
+  findPlatformTotals,
+  findPlatformTotalsSince,
   findPlatformStatsSince,
   findTopResourcesByDownloads,
   reconcileResourceDownloadCounts,
@@ -95,11 +97,15 @@ const readPlatformMetrics = unstable_cache(
 
     const [
       overviewCounts,
+      allTimeTotals,
+      recentTotals,
       platformStats,
       topResourcesRaw,
     ] = await Promise.all([
       findPlatformOverviewCounts(),
-      findPlatformStatsSince(new Date(Date.UTC(2020, 0, 1))),
+      findPlatformTotals(),
+      findPlatformTotalsSince(thirtyDaysAgo),
+      findPlatformStatsSince(thirtyDaysAgo),
       findTopResourcesByDownloads(10),
     ]);
 
@@ -134,49 +140,18 @@ const readPlatformMetrics = unstable_cache(
       revenue: row.revenue,
     }));
 
-    const totalDownloads = platformStats.reduce(
-      (sum, row) => sum + row.totalDownloads,
-      0,
-    );
-    const totalPurchases = platformStats.reduce(
-      (sum, row) => sum + row.totalSales,
-      0,
-    );
-    const totalRevenue = platformStats.reduce(
-      (sum, row) => sum + row.totalRevenue,
-      0,
-    );
-    const recentStats = platformStats.filter((row) => row.date >= thirtyDaysAgo);
-    const downloadsLast30 = recentStats.reduce(
-      (sum, row) => sum + row.totalDownloads,
-      0,
-    );
-    const purchasesLast30 = recentStats.reduce(
-      (sum, row) => sum + row.totalSales,
-      0,
-    );
-    const revenueLast30 = recentStats.reduce(
-      (sum, row) => sum + row.totalRevenue,
-      0,
-    );
-    const newUsersLast30 = recentStats.reduce((sum, row) => sum + row.newUsers, 0);
-    const newResourcesLast30 = recentStats.reduce(
-      (sum, row) => sum + row.newResources,
-      0,
-    );
-
     return {
       totalResources: overviewCounts.totalResources,
-      totalDownloads,
-      totalPurchases,
-      totalRevenue,
+      totalDownloads: allTimeTotals.totalDownloads,
+      totalPurchases: allTimeTotals.totalPurchases,
+      totalRevenue: allTimeTotals.totalRevenue,
       totalUsers: overviewCounts.totalUsers,
 
-      downloadsLast30Days: downloadsLast30,
-      purchasesLast30Days: purchasesLast30,
-      reveneuLast30Days: revenueLast30,
-      newUsersLast30Days: newUsersLast30,
-      newResourcesLast30Days: newResourcesLast30,
+      downloadsLast30Days: recentTotals.downloadsLast30Days,
+      purchasesLast30Days: recentTotals.purchasesLast30Days,
+      reveneuLast30Days: recentTotals.revenueLast30Days,
+      newUsersLast30Days: recentTotals.newUsersLast30Days,
+      newResourcesLast30Days: recentTotals.newResourcesLast30Days,
 
       dailyDownloads: toPoints(dlMap),
       dailyRevenue: toPoints(revMap),

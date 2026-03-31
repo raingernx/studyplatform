@@ -48,6 +48,22 @@ export interface CreatorResourceStatusSummaryRecord {
   archived: number;
 }
 
+export interface CreatorOverviewResourceCountsRecord {
+  totalResources: number;
+  publishedResources: number;
+  freeResources: number;
+  paidResources: number;
+}
+
+export interface CreatorTopResourceRecord {
+  id: string;
+  title: string;
+  slug: string;
+  downloadCount: number;
+  salesCount: number;
+  revenue: number;
+}
+
 export interface CreatorReviewOverviewRecord {
   averageRating: number | null;
   totalVisibleReviews: number;
@@ -480,6 +496,57 @@ export async function findCreatorResourcesByUserId(
       },
     },
   });
+}
+
+export async function findCreatorOverviewResourceCounts(
+  userId: string,
+): Promise<CreatorOverviewResourceCountsRecord> {
+  const [row] = await prisma.$queryRaw<CreatorOverviewResourceCountsRecord[]>`
+    SELECT
+      COUNT(*)::int AS "totalResources",
+      COUNT(*) FILTER (WHERE r.status = 'PUBLISHED')::int AS "publishedResources",
+      COUNT(*) FILTER (
+        WHERE r."isFree" = true OR r.price = 0
+      )::int AS "freeResources",
+      COUNT(*) FILTER (
+        WHERE NOT (r."isFree" = true OR r.price = 0)
+      )::int AS "paidResources"
+    FROM "Resource" r
+    WHERE r."authorId" = ${userId}
+      AND r."deletedAt" IS NULL
+  `;
+
+  return row ?? {
+    totalResources: 0,
+    publishedResources: 0,
+    freeResources: 0,
+    paidResources: 0,
+  };
+}
+
+export async function findCreatorTopResources(
+  userId: string,
+  limit: number,
+): Promise<CreatorTopResourceRecord[]> {
+  return prisma.$queryRaw<CreatorTopResourceRecord[]>`
+    SELECT
+      r.id,
+      r.title,
+      r.slug,
+      COALESCE(rs.downloads, r."downloadCount", 0)::int AS "downloadCount",
+      COALESCE(rs.purchases, 0)::int AS "salesCount",
+      COALESCE(rs.revenue, 0)::int AS revenue
+    FROM "Resource" r
+    LEFT JOIN "ResourceStat" rs
+      ON rs."resourceId" = r.id
+    WHERE r."authorId" = ${userId}
+      AND r."deletedAt" IS NULL
+    ORDER BY
+      COALESCE(rs.revenue, 0) DESC,
+      COALESCE(rs.downloads, r."downloadCount", 0) DESC,
+      r."updatedAt" DESC
+    LIMIT ${limit}
+  `;
 }
 
 export async function getCreatorStats(authorId: string): Promise<CreatorDashboardStatsRecord> {

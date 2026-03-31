@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { requireAdminApi } from "@/lib/auth/require-admin-api";
-import { CACHE_TAGS, deleteResourceTrustRedisKeys, getResourceDetailDataTag } from "@/lib/cache";
+import {
+  CACHE_TAGS,
+  deleteResourceReviewRedisKeys,
+  deleteResourceTrustRedisKeys,
+  getResourceDetailDataTag,
+} from "@/lib/cache";
 import {
   hideReview,
   ReviewServiceError,
@@ -39,7 +44,10 @@ export async function PATCH(req: Request, { params }: Params) {
 
     revalidateTag(CACHE_TAGS.discover, "max");
     revalidateTag(getResourceDetailDataTag(review.resourceId), "max");
-    await deleteResourceTrustRedisKeys(review.resourceId);
+    await Promise.all([
+      deleteResourceTrustRedisKeys(review.resourceId),
+      deleteResourceReviewRedisKeys(review.resourceId),
+    ]);
 
     return NextResponse.json({ data: review });
   } catch (error) {

@@ -30,7 +30,9 @@ import {
   findCreatorResourceById,
   findCreatorResourceBySlug,
   findCreatorResourceStatusSummary,
+  findCreatorOverviewResourceCounts,
   findCreatorResourcesByUserId,
+  findCreatorTopResources,
   getCreatorResourcePerformance,
   getCreatorStats,
   findCreatorRevenueSeries,
@@ -655,7 +657,7 @@ export async function isCreatorEligible(userId: string) {
 export async function getCreatorOverview(userId: string): Promise<CreatorOverview> {
   await requireCreatorAccess(userId);
 
-  const [creatorStat, earnings, resourcesRaw, recentSalesRaw, recentDownloadsRaw] =
+  const [creatorStat, earnings, resourceCounts, topResources, recentSalesRaw, recentDownloadsRaw] =
     await Promise.all([
       rememberJson(
         CACHE_KEYS.creatorStats(userId),
@@ -663,34 +665,33 @@ export async function getCreatorOverview(userId: string): Promise<CreatorOvervie
         () => findCreatorStatByCreatorId(userId),
       ),
       findCreatorEarningsTotals(userId),
-      findCreatorResourcesByUserId(userId),
+      findCreatorOverviewResourceCounts(userId),
+      findCreatorTopResources(userId, 5),
       findCreatorRecentSales(userId, 8),
       findCreatorRecentDownloads(userId, 8),
     ]);
 
-  const resources = resourcesRaw.map(mapManagementResource);
-  const publishedResources = resources.filter((resource) => resource.status === "PUBLISHED");
-  const freeResources = resources.filter((resource) => resource.isFree);
-  const paidResources = resources.filter((resource) => !resource.isFree);
-  const topResources = [...resources]
-    .sort((a, b) => b.revenue - a.revenue || b.downloadCount - a.downloadCount)
-    .slice(0, 5)
-    .map(mapTopResource);
-
   return {
     totals: {
-      totalResources: resources.length,
-      publishedResources: publishedResources.length,
+      totalResources: resourceCounts.totalResources,
+      publishedResources: resourceCounts.publishedResources,
       totalDownloads: creatorStat?.totalDownloads ?? 0,
       totalSales: creatorStat?.totalSales ?? 0,
       grossRevenue: creatorStat?.totalRevenue ?? earnings.grossRevenue,
       creatorShare: earnings.creatorShare,
       platformFees: earnings.platformFees,
-      freeResources: freeResources.length,
-      paidResources: paidResources.length,
+      freeResources: resourceCounts.freeResources,
+      paidResources: resourceCounts.paidResources,
       downloadsLast30Days: creatorStat?.last30dDownloads ?? 0,
     },
-    topResources,
+    topResources: topResources.map((resource) => ({
+      id: resource.id,
+      title: resource.title,
+      slug: resource.slug,
+      downloadCount: resource.downloadCount,
+      salesCount: resource.salesCount,
+      revenue: resource.revenue,
+    })),
     recentSales: recentSalesRaw.map((sale) => ({
       id: sale.id,
       resourceTitle: sale.resource.title,

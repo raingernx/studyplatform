@@ -35,6 +35,7 @@ export const metadata = {
 };
 
 type SearchParamValue = string | string[] | undefined;
+type OptionalUserIdPromise = Promise<string | undefined> | null;
 
 interface ResourcesPageProps {
   searchParams?: Promise<Record<string, SearchParamValue>>;
@@ -132,21 +133,31 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
         effectiveSort = variantToSort(isValidRankingVariant(rawVariant) ? rawVariant : null);
       }
 
-      const userId = hasSessionCookie
-        ? await traceServerStep(
-            "resources.optional_session_user",
-            () => getOptionalSessionUserId(),
-            { isDiscoverMode },
+      const userIdPromise: OptionalUserIdPromise = hasSessionCookie
+        ? trackRequestWork(
+            traceServerStep(
+              "resources.optional_session_user",
+              () => getOptionalSessionUserId(),
+              { isDiscoverMode },
+            ).then((userId) => {
+              updateRequestPerformanceDetails({
+                hasSession: Boolean(userId),
+              });
+
+              return userId;
+            }),
           )
-        : undefined;
-      updateRequestPerformanceDetails({
-        hasSession: Boolean(userId),
-      });
+        : null;
+
+      if (!userIdPromise) {
+        updateRequestPerformanceDetails({
+          hasSession: false,
+        });
+      }
 
       const heroPromise = isDiscoverMode
         ? trackRequestWork(
             ResourcesDiscoverHero({
-              userId,
               className: discoverHeroClassName,
             }),
           )
@@ -162,7 +173,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
           sort,
           effectiveSort,
           currentPage,
-          userId,
+          userIdPromise,
         }),
       );
 

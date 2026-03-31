@@ -55,7 +55,7 @@ type ResourcesPageContentProps = {
   sort: string;
   effectiveSort: string;
   currentPage: number;
-  userId?: string;
+  userIdPromise?: Promise<string | undefined> | null;
 };
 
 function isNewCardBadge(createdAt?: Date | string) {
@@ -182,10 +182,8 @@ function ResourceCardWithDeferredOwnedBadge({
 }
 
 export async function ResourcesDiscoverHero({
-  userId,
   className,
 }: {
-  userId?: string;
   className?: string;
 }) {
   let heroConfig: Awaited<ReturnType<typeof getHeroConfig>> = null;
@@ -193,8 +191,8 @@ export async function ResourcesDiscoverHero({
   try {
     heroConfig = await traceServerStep(
       "resources.getHeroConfig",
-      () => getHeroConfig({ userId }),
-      { personalized: Boolean(userId) },
+      () => getHeroConfig(),
+      { personalized: false },
     );
   } catch (error) {
     if (!isMissingTableError(error)) {
@@ -215,14 +213,14 @@ export async function ResourcesPageContent({
   sort,
   effectiveSort,
   currentPage,
-  userId,
+  userIdPromise,
 }: ResourcesPageContentProps) {
   if (isDiscoverMode) {
-    return ResourcesDiscoverContent({ userId });
+    return ResourcesDiscoverContent({ userIdPromise });
   }
 
-  const ownedIdsPromise = userId
-    ? trackRequestWork(loadOwnedIdsSafe(userId))
+  const ownedIdsPromise = userIdPromise
+    ? trackRequestWork(loadOwnedIdsFromPromiseSafe(userIdPromise))
     : null;
 
   let categories: { id: string; name: string; slug: string }[] = [];
@@ -485,13 +483,17 @@ async function AwaitResolvedNode({
   return <>{await promise}</>;
 }
 
-async function ResourcesDiscoverContent({ userId }: { userId?: string }) {
+async function ResourcesDiscoverContent({
+  userIdPromise,
+}: {
+  userIdPromise?: Promise<string | undefined> | null;
+}) {
   const discoverDataPromise = trackRequestWork(loadDiscoverDataSafe());
-  const ownedIdsPromise = userId
-    ? trackRequestWork(loadOwnedIdsSafe(userId))
+  const ownedIdsPromise = userIdPromise
+    ? trackRequestWork(loadOwnedIdsFromPromiseSafe(userIdPromise))
     : null;
-  const learningProfilePromise = userId
-    ? trackRequestWork(loadLearningProfileSafe(userId))
+  const learningProfilePromise = userIdPromise
+    ? trackRequestWork(loadLearningProfileFromPromiseSafe(userIdPromise))
     : null;
 
   return (
@@ -500,7 +502,7 @@ async function ResourcesDiscoverContent({ userId }: { userId?: string }) {
         discoverDataPromise={discoverDataPromise}
         ownedIdsPromise={ownedIdsPromise}
         learningProfilePromise={learningProfilePromise}
-        userId={userId}
+        userIdPromise={userIdPromise}
       />
     </Suspense>
   );
@@ -510,12 +512,12 @@ async function ResourcesDiscoverDeferredSections({
   discoverDataPromise,
   ownedIdsPromise,
   learningProfilePromise,
-  userId,
+  userIdPromise,
 }: {
   discoverDataPromise: Promise<DiscoverData | null>;
   ownedIdsPromise: Promise<Set<string>> | null;
   learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null> | null;
-  userId?: string;
+  userIdPromise?: Promise<string | undefined> | null;
 }) {
   const discoverData = await discoverDataPromise;
   const ownedIds = new Set<string>();
@@ -527,25 +529,23 @@ async function ResourcesDiscoverDeferredSections({
   const globalFiltered = (discoverData.recommended as ResourceCardData[]).filter(
     (resource) => !ownedIds.has(resource.id),
   );
-  const recommendationVariant = userId ? assignRecommendationVariant(userId) : null;
   // Two independent Suspense paths instead of one deeply nested chain:
   //   A) RFY section — single Suspense, always resolves to exactly 5 cards
   //   B) Extras (becauseYouStudied, recommendedForLevel) — separate Suspense,
   //      placed after main sections so it extends below the fold rather than
   //      expanding the middle of the page
-  const recommendedForYouFinalPromise = userId && learningProfilePromise
+  const recommendedForYouFinalPromise = userIdPromise && learningProfilePromise
     ? trackRequestWork(
         ResourcesDiscoverRFYFinalSection({
           learningProfilePromise,
-          recommendationVariant,
           ownedIds,
           ownedIdsPromise,
           globalFiltered,
-          userId,
+          userIdPromise,
         }),
       )
     : null;
-  const personalisedExtrasPromise = userId && learningProfilePromise
+  const personalisedExtrasPromise = userIdPromise && learningProfilePromise
     ? trackRequestWork(
         ResourcesDiscoverPersonalisedExtras({
           learningProfilePromise,
@@ -785,6 +785,12 @@ async function loadOwnedIdsSafe(userId?: string) {
   }
 }
 
+async function loadOwnedIdsFromPromiseSafe(
+  userIdPromise: Promise<string | undefined>,
+) {
+  return loadOwnedIdsSafe(await userIdPromise);
+}
+
 async function loadLearningProfileSafe(userId?: string) {
   if (!userId) {
     return null;
@@ -806,6 +812,12 @@ async function loadLearningProfileSafe(userId?: string) {
 
     return null;
   }
+}
+
+async function loadLearningProfileFromPromiseSafe(
+  userIdPromise: Promise<string | undefined>,
+) {
+  return loadLearningProfileSafe(await userIdPromise);
 }
 
 function isDiscoverPersonalizationTransientError(error: unknown) {
@@ -1078,21 +1090,22 @@ export function ResourcesContentFallback({ isDiscoverMode }: { isDiscoverMode: b
 
 async function ResourcesDiscoverRFYFinalSection({
   learningProfilePromise,
-  recommendationVariant,
   ownedIds,
   ownedIdsPromise,
   globalFiltered,
-  userId,
+  userIdPromise,
 }: {
   learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null>;
-  recommendationVariant: RecommendationVariant | null;
   ownedIds: Set<string>;
   ownedIdsPromise: Promise<Set<string>> | null;
   globalFiltered: ResourceCardData[];
-  userId: string;
+  userIdPromise: Promise<string | undefined>;
 }) {
   const fallbackCards = globalFiltered.slice(0, 5);
-  const learningProfile = await learningProfilePromise;
+  const [learningProfile, userId] = await Promise.all([
+    learningProfilePromise,
+    userIdPromise,
+  ]);
 
   // No purchase history — resolve to same 5 cards as fallback (invisible swap)
   if (!learningProfile?.hasHistory) {
@@ -1120,6 +1133,11 @@ async function ResourcesDiscoverRFYFinalSection({
     );
   }
 
+  if (!userId) {
+    return null;
+  }
+
+  const recommendationVariant = assignRecommendationVariant(userId);
   const topCategoryIds = learningProfile.topCategories.map((item) => item.id);
   const recommendedForYou = (await (
     recommendationVariant === "phase1"

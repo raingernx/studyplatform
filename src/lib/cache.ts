@@ -68,6 +68,8 @@ export const CACHE_KEYS = {
   marketplaceRecommendedListing: (categorySlug?: string | null) =>
     `marketplace_recommended_listing:${categorySlug ?? "all"}:page1:12`,
   resourceMetadata: (slug: string) => `resource_metadata:${slug}`,
+  resourceReviews: (resourceId: string, take: number) =>
+    `resource_reviews:${resourceId}:${take}`,
   relatedResources: (categoryId: string, excludeId: string, take: number) =>
     `related_resources:${categoryId}:${excludeId}:${take}`,
   resourceStats: (resourceId: string) => `resource_stats:${resourceId}`,
@@ -197,6 +199,15 @@ export async function deleteResourceTrustRedisKeys(resourceId: string): Promise<
     deleteCachedKey(CACHE_KEYS.resourceTrust(resourceId)),
     deleteCachedKey(CACHE_KEYS.resourceTrustSummary(resourceId)),
   ]);
+}
+
+export async function deleteResourceReviewRedisKeys(
+  resourceId: string,
+  takes: number[] = [5],
+): Promise<void> {
+  await Promise.all(
+    takes.map((take) => deleteCachedKey(CACHE_KEYS.resourceReviews(resourceId, take))),
+  );
 }
 
 /**

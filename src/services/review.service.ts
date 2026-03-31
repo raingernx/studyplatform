@@ -142,8 +142,17 @@ export async function createReview(
 export async function getResourceReviews(resourceId: string, take: number) {
   return unstable_cache(
     async function _getResourceReviews() {
-      return runSingleFlight(`resource-reviews:${resourceId}:${take}`, () =>
-        findResourceReviews(resourceId, take),
+      return rememberJson(
+        CACHE_KEYS.resourceReviews(resourceId, take),
+        CACHE_TTLS.resourceDetail,
+        () =>
+          runSingleFlight(`resource-reviews:${resourceId}:${take}`, () =>
+            findResourceReviews(resourceId, take),
+          ),
+        {
+          metricName: "review.resourceReviews",
+          details: { resourceId, take },
+        },
       );
     },
     ["resource-reviews", resourceId, String(take)],

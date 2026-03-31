@@ -8,9 +8,13 @@ const designSystemMessage =
 
 export default [
   {
+    name: "studyplatform/global-ignores",
+    ignores: [".next/**", "node_modules/**", "out/**", "build/**"],
+  },
+  {
     name: "studyplatform/parser",
     files: ["**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
-    ignores: [".next/**", "node_modules/**", "out/**", "build/**", "next-env.d.ts"],
+    ignores: ["next-env.d.ts"],
     languageOptions: {
       parser: nextParser,
       parserOptions: {

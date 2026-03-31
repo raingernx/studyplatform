@@ -5,10 +5,10 @@ import { Container } from "@/components/layout/container";
 import { Badge } from "@/design-system";
 import { ResourceGrid, RESOURCE_GRID_CLASSES } from "@/components/resources/ResourceGrid";
 import { ResourceCardSkeleton } from "@/components/resources/ResourceCard";
-import { getBaseUrl } from "@/lib/api";
 import Link from "next/link";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import { routes } from "@/lib/routes";
+import { getMarketplaceResources } from "@/services/resources/public-resource-read.service";
 
 const CATEGORY_META: Record<
   string,
@@ -46,13 +46,14 @@ interface CategoryPageProps {
 
 async function getCategoryResources(slug: string) {
   try {
-    const res = await fetch(
-      `${getBaseUrl()}/api/resources?category=${slug}&pageSize=12`,
-      { next: { revalidate: 120 } }
-    );
-    if (!res.ok) return { items: [], total: 0 };
-    const json = await res.json();
-    return { items: json.data?.items ?? [], total: json.data?.total ?? 0 };
+    const data = await getMarketplaceResources({
+      category: slug,
+      page: 1,
+      pageSize: 12,
+      sort: "recommended",
+    });
+
+    return { items: data.resources, total: data.total };
   } catch {
     return { items: [], total: 0 };
   }
