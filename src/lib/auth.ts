@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
+import { env } from "@/env";
 import { prisma } from "./prisma";
 import { isMissingTableError } from "./prismaErrors";
 import { routes } from "./routes";
@@ -60,6 +61,63 @@ function setCachedRole(
 
 // ── Auth options ──────────────────────────────────────────────────────────────
 
+const providers = [
+  ...(env.googleOAuthConfigured
+    ? [
+        (() => {
+          const clientId = env.GOOGLE_CLIENT_ID;
+          const clientSecret = env.GOOGLE_CLIENT_SECRET;
+
+          if (!clientId || !clientSecret) {
+            throw new Error("Google OAuth configuration is incomplete.");
+          }
+
+          return GoogleProvider({
+            clientId,
+            clientSecret,
+          });
+        })(),
+      ]
+    : []),
+  CredentialsProvider({
+    name: "credentials",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+    },
+    async authorize(credentials) {
+      if (!credentials?.email || !credentials?.password) {
+        throw new Error("Email and password are required.");
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { email: credentials.email },
+      });
+
+      if (!user || !user.hashedPassword) {
+        throw new Error("No account found with that email.");
+      }
+
+      const passwordMatch = await bcrypt.compare(
+        credentials.password,
+        user.hashedPassword
+      );
+
+      if (!passwordMatch) {
+        throw new Error("Incorrect password.");
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        image: user.image,
+        role: user.role,
+      };
+    },
+  }),
+];
+
 export const authOptions: NextAuthOptions = {
   // @ts-expect-error – PrismaAdapter type mismatch between next-auth v4 and @auth/prisma-adapter v2
   adapter: PrismaAdapter(prisma),
@@ -72,53 +130,7 @@ export const authOptions: NextAuthOptions = {
     signIn: routes.login,
     error: routes.login,
   },
-
-  providers: [
-    // ── OAuth ────────────────────────────────────────────────────────────────
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-
-    // ── Email + Password ─────────────────────────────────────────────────────
-    CredentialsProvider({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password are required.");
-        }
-
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
-
-        if (!user || !user.hashedPassword) {
-          throw new Error("No account found with that email.");
-        }
-
-        const passwordMatch = await bcrypt.compare(
-          credentials.password,
-          user.hashedPassword
-        );
-
-        if (!passwordMatch) {
-          throw new Error("Incorrect password.");
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role,
-        };
-      },
-    }),
-  ],
+  providers,
 
   callbacks: {
     // Persist role + id in the JWT, keeping them in sync with the DB via

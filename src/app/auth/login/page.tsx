@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/design-system";
 import { Logo } from "@/components/brand/Logo";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { routes } from "@/lib/routes";
 
 // Google icon — inline so we don't need an extra dep
@@ -40,6 +40,11 @@ function LoginForm() {
   // Honour ?next= so protected pages can redirect back after sign-in
   const next = sanitizeNext(searchParams.get("next"));
   const googleCallbackUrl = getGoogleCallbackUrl(next);
+  const verificationState = searchParams.get("verify");
+  const hasVerifiedEmail = searchParams.get("verified") === "1";
+  const resetSuccess = searchParams.get("reset") === "success";
+  const shouldCheckEmail = searchParams.get("checkEmail") === "1";
+  const emailHint = searchParams.get("email");
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -125,6 +130,36 @@ function LoginForm() {
 
           {/* Email / password form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {hasVerifiedEmail ? (
+              <div className="flex items-start gap-2.5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 ring-1 ring-emerald-200">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+                Your email is verified. You can sign in now.
+              </div>
+            ) : null}
+
+            {resetSuccess ? (
+              <div className="flex items-start gap-2.5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 ring-1 ring-emerald-200">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+                Your password has been updated. Sign in with your new password.
+              </div>
+            ) : null}
+
+            {shouldCheckEmail ? (
+              <div className="flex items-start gap-2.5 rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-700 ring-1 ring-blue-200">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500" />
+                {emailHint
+                  ? `Check ${emailHint} for a verification link before you continue.`
+                  : "Check your inbox for a verification link."}
+              </div>
+            ) : null}
+
+            {verificationState === "invalid" ? (
+              <div className="flex items-start gap-2.5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
+                This verification link is invalid or has expired.
+              </div>
+            ) : null}
+
             {error && (
               <div className="flex items-start gap-2.5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
                 <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
@@ -155,7 +190,7 @@ function LoginForm() {
                 <label htmlFor="password" className="text-[13px] font-medium text-zinc-700">
                   Password
                 </label>
-                <Link href="/auth/reset-password"
+                <Link href={routes.resetPassword}
                   className="text-[12px] text-blue-600 hover:text-blue-800 transition-colors">
                   Forgot password?
                 </Link>

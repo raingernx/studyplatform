@@ -55,8 +55,7 @@ export default function RegisterPage() {
         setError(json.error ?? "Something went wrong. Please try again.");
         return;
       }
-      // Auto sign-in after successful registration
-      await signIn("credentials", { email, password, callbackUrl: routes.dashboard });
+      router.push(`${routes.login}?checkEmail=1&email=${encodeURIComponent(email)}`);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { env } from "@/env";
 import { recordPurchaseAnalytics } from "@/analytics/event.service";
 import { stripe } from "@/lib/stripe";
 import { logActivity } from "@/lib/activity";
@@ -34,7 +35,7 @@ export function constructStripeWebhookEvent(
     return stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!,
+      env.STRIPE_WEBHOOK_SECRET,
     );
   } catch (error) {
     console.error("[WEBHOOK] Signature verification failed:", error);

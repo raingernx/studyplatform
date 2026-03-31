@@ -36,12 +36,19 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl as awsGetSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { env } from "@/env";
 import type { StorageProvider } from "./storage";
 
 // ── Config validation ──────────────────────────────────────────────────────────
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
+type RequiredR2EnvKey =
+  | "R2_ENDPOINT"
+  | "R2_BUCKET"
+  | "R2_ACCESS_KEY_ID"
+  | "R2_SECRET_ACCESS_KEY";
+
+function requireEnv(name: RequiredR2EnvKey): string {
+  const value = env[name];
   if (!value) {
     throw new Error(
       `[R2Provider] Missing required environment variable: ${name}`
@@ -78,7 +85,7 @@ export class R2Provider implements StorageProvider {
 
     // Optional custom domain (e.g. https://files.krucraft.com).
     // If not set, getUrl() constructs a URL from the R2 endpoint.
-    this.publicUrl = process.env.R2_PUBLIC_URL?.replace(/\/$/, "") ?? null;
+    this.publicUrl = env.R2_PUBLIC_URL?.replace(/\/$/, "") ?? null;
   }
 
   // ── upload ─────────────────────────────────────────────────────────────────
@@ -132,7 +139,7 @@ export class R2Provider implements StorageProvider {
 
     // Derive a public URL from the R2 endpoint:
     // https://<account>.r2.cloudflarestorage.com/<bucket>/<key>
-    const endpoint = process.env.R2_ENDPOINT!.replace(/\/$/, "");
+    const endpoint = requireEnv("R2_ENDPOINT").replace(/\/$/, "");
     return `${endpoint}/${this.bucket}/${key}`;
   }
 

@@ -1,10 +1,19 @@
 import Xendit from "xendit-node";
+import { env } from "@/env";
 
 // Server-side Xendit client (secret key).
 // Mirrors the pattern used in src/lib/stripe.ts.
-export const xenditClient = new Xendit({
-  secretKey: process.env.XENDIT_SECRET_KEY!,
-});
+export const xenditClient = env.xenditConfigured
+  ? (() => {
+      if (!env.XENDIT_SECRET_KEY) {
+        throw new Error("Xendit configuration is incomplete.");
+      }
+
+      return new Xendit({
+        secretKey: env.XENDIT_SECRET_KEY,
+      });
+    })()
+  : null;
 
 // ---------------------------------------------------------------------------
 // Webhook callback token verification.
@@ -17,6 +26,6 @@ export const xenditClient = new Xendit({
 //   verifyXenditWebhook(req.headers.get("x-callback-token"))
 // ---------------------------------------------------------------------------
 export function verifyXenditWebhook(token: string | null): boolean {
-  if (!token) return false;
-  return token === process.env.XENDIT_WEBHOOK_TOKEN;
+  if (!token || !env.xenditConfigured) return false;
+  return token === env.XENDIT_WEBHOOK_TOKEN;
 }

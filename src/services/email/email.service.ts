@@ -14,6 +14,7 @@
 
 import { getResendClient } from "@/lib/resend";
 import { routes } from "@/lib/routes";
+import { env } from "@/env";
 import { findCheckoutUserById } from "@/repositories/users/user.repository";
 import { findResourceEmailContext } from "@/repositories/resources/resource.repository";
 
@@ -177,7 +178,7 @@ export async function sendPurchaseConfirmationEmail(
       return;
     }
 
-    const appUrl = (process.env.NEXTAUTH_URL ?? "").replace(/\/$/, "");
+    const appUrl = env.appBaseUrl.replace(/\/$/, "");
 
     // Resolve user email and resource context in parallel — neither query
     // blocks the other and both are required before the email can be built.
@@ -204,7 +205,7 @@ export async function sendPurchaseConfirmationEmail(
 
     const downloadUrl = `${appUrl}/api/download/${input.resourceId}`;
     const resourceUrl = `${appUrl}${routes.resourcePaymentSuccess(resource.slug)}`;
-    const from = process.env.EMAIL_FROM ?? "KruCraft <noreply@krucraft.com>";
+    const from = env.EMAIL_FROM ?? "KruCraft <noreply@krucraft.com>";
 
     const { error } = await resend.emails.send({
       from,

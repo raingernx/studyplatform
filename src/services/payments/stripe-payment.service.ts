@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { z } from "zod";
+import { env } from "@/env";
 import { logActivity } from "@/lib/activity";
 import { stripe, SUBSCRIPTION_PLANS, type SubscriptionPlan } from "@/lib/stripe";
 import {
@@ -136,7 +137,7 @@ export async function createLegacyStripeCheckout(body: unknown, userId: string) 
 
   const { user, customerId } = await ensureStripeCustomer(userId);
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = env.appBaseUrl;
 
   let priceId = resource.stripePriceId;
   if (!priceId) {
@@ -206,7 +207,7 @@ export async function createStripeCheckout(body: unknown, userId: string) {
   }
 
   const { user, customerId } = await ensureStripeCustomer(userId);
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = env.appBaseUrl;
 
   if (parsed.data.mode === "payment") {
     const { resourceId } = parsed.data;

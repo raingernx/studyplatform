@@ -265,7 +265,7 @@ npm run dev           # Start dev server (webpack)
 npm run dev:turbo     # Start dev server (turbopack — faster, experimental)
 
 # Production
-npm run build
+npm run build         # Build app only; must stay schema-mutation-free
 npm run start
 
 # Linting
@@ -273,6 +273,7 @@ npm run lint
 
 # Database
 npm run db:migrate    # Create and apply a new migration (prisma migrate dev)
+npm run db:deploy     # Apply committed migrations separately from app build; use DIRECT_URL
 npm run db:push       # Push schema changes without a migration file
 npm run db:generate   # Regenerate Prisma client after schema changes
 npm run db:seed       # Seed the database
@@ -284,5 +285,10 @@ npm run stripe        # Forward Stripe webhooks to localhost:3000/api/stripe/web
 # Scripts
 npm run analytics:reconcile-download-counts
 ```
+
+Production note:
+- Never couple `prisma migrate deploy` to `npm run build` in this repo.
+- Vercel build must not mutate schema.
+- Run migrations as a separate operational step and use `DIRECT_URL` for migration commands.
 
 There are no automated tests in this project.

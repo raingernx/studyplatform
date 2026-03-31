@@ -105,6 +105,9 @@ export const LIMITS = {
   /** Account registration: 5 per hour per IP to prevent account factory abuse. */
   register: makeLimiter(5, 3600),
 
+  /** Password reset request: 3 per hour per IP to reduce email abuse. */
+  passwordReset: makeLimiter(3, 3600),
+
   /** Creator application: 3 per hour per IP — one-time action, very low threshold. */
   creatorApply: makeLimiter(3, 3600),
 

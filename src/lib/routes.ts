@@ -60,6 +60,9 @@ export const routes = {
   // ── Auth ──────────────────────────────────────────────────────────────────
   login: "/auth/login",
   register: "/auth/register",
+  resetPassword: "/auth/reset-password",
+  resetPasswordConfirm: "/auth/reset-password/confirm",
+  verifyEmail: "/api/auth/verify-email",
   loginWithNext: (next: string) =>
     `/auth/login?next=${encodeURIComponent(next)}`,
 

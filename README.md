@@ -94,6 +94,25 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 
 ---
 
+## Production Deployment
+
+Application build and Prisma migration deploy are intentionally separate in this repo.
+
+```bash
+# Build the app only (schema-mutation-free)
+npm run build
+
+# Apply Prisma migrations separately when production baseline is ready
+DIRECT_URL="postgresql://..." npm run db:deploy
+```
+
+- `npm run build` must stay schema-mutation-free for Vercel builds.
+- Run `npm run db:deploy` separately from app build or app deploy.
+- Use `DIRECT_URL` for Prisma migration commands. Do not use a pooled connection for migrations.
+- Do not reset or wipe a production database to satisfy Prisma migration history.
+
+---
+
 ## Data Model Summary
 
 | Model            | Purpose                                                         |

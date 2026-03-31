@@ -1,4 +1,5 @@
 import { xenditClient } from "@/lib/xendit";
+import { env } from "@/env";
 import {
   findPurchaseByUserAndResource,
   setPurchaseXenditInvoiceId,
@@ -9,6 +10,12 @@ import { findCheckoutUserById } from "@/repositories/users/user.repository";
 import { buildPurchaseSnapshot, PaymentServiceError } from "@/services/payments/payment.service";
 
 export async function createXenditCheckout(body: unknown, userId: string) {
+  if (!xenditClient) {
+    throw new PaymentServiceError(503, {
+      error: "Xendit is not configured.",
+    });
+  }
+
   const resourceId =
     typeof body === "object" && body !== null && "resourceId" in body
       ? (body as { resourceId?: string }).resourceId
@@ -42,7 +49,7 @@ export async function createXenditCheckout(body: unknown, userId: string) {
     throw new PaymentServiceError(404, { error: "User not found." });
   }
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = env.appBaseUrl;
 
   const purchase = await upsertPendingPurchase({
     userId,

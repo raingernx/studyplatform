@@ -130,6 +130,19 @@ export function findUserByEmail(email: string) {
   });
 }
 
+export function findUserAuthCandidateByEmail(email: string) {
+  return prisma.user.findUnique({
+    where: { email },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      hashedPassword: true,
+      emailVerified: true,
+    },
+  });
+}
+
 export function createRegisteredUser(input: {
   name: string;
   email: string;
@@ -142,5 +155,20 @@ export function createRegisteredUser(input: {
       hashedPassword: input.hashedPassword,
     },
     select: { id: true, name: true, email: true, createdAt: true },
+  });
+}
+
+export function updateUserPasswordByEmail(email: string, hashedPassword: string) {
+  return prisma.user.update({
+    where: { email },
+    data: { hashedPassword },
+    select: { id: true, email: true },
+  });
+}
+
+export function verifyUserEmailByEmail(email: string) {
+  return prisma.user.updateMany({
+    where: { email, emailVerified: null },
+    data: { emailVerified: new Date() },
   });
 }
