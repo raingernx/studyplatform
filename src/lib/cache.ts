@@ -84,6 +84,8 @@ export const CACHE_KEYS = {
     `user_learning_profile:${userId}:${take}`,
   searchResults: (query: string, category: string | null, limit: number) =>
     `search_results:${encodeURIComponent(query.toLowerCase())}:${category ?? "all"}:${limit}`,
+  searchSuggestions: (query: string, category: string | null, limit: number) =>
+    `search_suggestions:${encodeURIComponent(query.toLowerCase())}:${category ?? "all"}:${limit}`,
   searchRecovery: (query: string) =>
     `search_recovery:${encodeURIComponent(query.toLowerCase())}`,
 } as const;

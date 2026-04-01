@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSearchRecoveryData } from "@/services/search-recovery.service";
-import { searchResources } from "@/services/search.service";
+import {
+  searchResources,
+  searchSuggestions,
+} from "@/services/search.service";
 
 const SEARCH_RESPONSE_HEADERS = {
   "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
@@ -17,6 +20,7 @@ const SEARCH_RESPONSE_HEADERS = {
  *   q        Required. Search query string (min 1 char after trim).
  *   category Optional. Category slug to restrict results.
  *   limit    Optional. Max results to return (default 20, max 50).
+ *   view     Optional. `suggestions` returns the lighter typeahead payload.
  *
  * Responses:
  *   200  { data: SearchResult[], recovery?: SearchRecoveryData }
@@ -29,6 +33,7 @@ export async function GET(req: Request) {
 
     const query    = searchParams.get("q")        ?? "";
     const category = searchParams.get("category") ?? undefined;
+    const view = searchParams.get("view");
     const includeRecovery = searchParams.get("recovery") === "1";
     const rawLimit = parseInt(searchParams.get("limit") ?? "20", 10);
     const limit    = isNaN(rawLimit) ? 20 : Math.min(Math.max(rawLimit, 1), 50);
@@ -40,7 +45,10 @@ export async function GET(req: Request) {
       );
     }
 
-    const results = await searchResources({ query, category, limit });
+    const results =
+      view === "suggestions"
+        ? await searchSuggestions({ query, category, limit })
+        : await searchResources({ query, category, limit });
     const recovery =
       includeRecovery && results.length === 0
         ? await getSearchRecoveryData(query)

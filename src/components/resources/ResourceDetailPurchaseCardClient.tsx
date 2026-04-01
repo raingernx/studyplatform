@@ -71,6 +71,20 @@ function getRecentActivityLabel(meta: PurchaseMeta) {
   return null;
 }
 
+function PurchaseActionPlaceholder() {
+  return (
+    <div className="space-y-3">
+      <div
+        aria-hidden="true"
+        className="h-12 w-full animate-pulse rounded-xl bg-surface-100 motion-reduce:animate-none"
+      />
+      <p className="text-center text-caption leading-5 text-zinc-400">
+        Checking your library…
+      </p>
+    </div>
+  );
+}
+
 export function ResourceDetailPurchaseCardClient({
   resource,
   purchaseMeta,
@@ -146,6 +160,8 @@ export function ResourceDetailPurchaseCardClient({
               resourceTitle={resource.title}
               onRefresh={viewer.refresh}
             />
+          ) : !viewer.isReady ? (
+            <PurchaseActionPlaceholder />
           ) : isOwned ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">

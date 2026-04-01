@@ -34,7 +34,7 @@ export function ResourcesViewerStateProvider({
 }: {
   children: ReactNode;
 }) {
-  const authViewer = useAuthViewer();
+  const authViewer = useAuthViewer({ strategy: "idle", idleTimeoutMs: 800 });
   const shouldLoadOwnedState = authViewer.isReady && authViewer.authenticated;
   const viewerCacheKey =
     authViewer.user?.id

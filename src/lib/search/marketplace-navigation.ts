@@ -80,6 +80,7 @@ export function buildMarketplaceSuggestionsHref({
   }
 
   params.set("q", trimmedQuery);
+  params.set("view", "suggestions");
   params.set("limit", "6");
 
   return `/api/search?${params.toString()}`;

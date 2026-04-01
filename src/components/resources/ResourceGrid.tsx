@@ -4,7 +4,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -113,6 +112,8 @@ function ResourceGridBody({
     isLoadingMore: false,
   }));
   const [deferredOwnedIds, setDeferredOwnedIds] = useState<string[] | null>(null);
+  const effectiveOwnedIds = deferredOwnedIds ?? ownedIds;
+  const ownedIdSet = new Set(effectiveOwnedIds);
 
   // ── Loading skeleton ────────────────────────────────────────────────────────
   if (loading) {
@@ -182,8 +183,6 @@ function ResourceGridBody({
   const appendedResources = isSameQuery ? loadState.appendedResources : [];
   const nextPage = isSameQuery ? loadState.nextPage : page + 1;
   const isLoadingMore = isSameQuery ? loadState.isLoadingMore : false;
-  const effectiveOwnedIds = deferredOwnedIds ?? ownedIds;
-  const ownedIdSet = useMemo(() => new Set(effectiveOwnedIds), [effectiveOwnedIds]);
   const displayedResources = progressiveLoad
     ? [...resources, ...appendedResources]
     : resources;

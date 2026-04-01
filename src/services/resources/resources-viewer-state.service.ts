@@ -1,14 +1,10 @@
 import { unstable_cache } from "next/cache";
 import { Prisma } from "@prisma/client";
-import { recordAnalyticsEvents } from "@/analytics/event.service";
 import type { ResourceCardData } from "@/components/resources/ResourceCard";
 import { rememberJson, runSingleFlight } from "@/lib/cache";
 import { recordCacheCall, recordCacheMiss } from "@/lib/performance/observability";
 import { isMissingTableError } from "@/lib/prismaErrors";
-import {
-  assignRecommendationVariant,
-  RECOMMENDATION_EXPERIMENT_ID,
-} from "@/lib/recommendations/experiment";
+import { assignRecommendationVariant } from "@/lib/recommendations/experiment";
 import type {
   ResourcesViewerBaseState,
   ResourcesViewerDiscoverState,
@@ -171,23 +167,6 @@ export async function getResourcesViewerDiscoverState(input: {
                       5,
                     )
               )) as ResourceCardData[];
-
-              if (recommendedForYou.length > 0) {
-                void recordAnalyticsEvents(
-                  recommendedForYou.map((resource, position) => ({
-                    eventType: "RESOURCE_VIEW" as const,
-                    userId,
-                    resourceId: resource.id,
-                    metadata: {
-                      source: "recommendation_impression",
-                      experiment: RECOMMENDATION_EXPERIMENT_ID,
-                      variant: recommendationVariant,
-                      section: "recommended_for_you",
-                      position,
-                    },
-                  })),
-                ).catch(() => undefined);
-              }
 
               const recentCategoryId = learningProfile.recentCategoryId ?? null;
               const preferredLevels = learningProfile.preferredLevels;

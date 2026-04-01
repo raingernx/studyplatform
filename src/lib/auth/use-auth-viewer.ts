@@ -19,6 +19,11 @@ type AuthViewerState = AuthViewerPayload & {
   isReady: boolean;
 };
 
+type UseAuthViewerOptions = {
+  strategy?: "eager" | "idle";
+  idleTimeoutMs?: number;
+};
+
 const EMPTY_AUTH_VIEWER: AuthViewerPayload = {
   authenticated: false,
   user: null,
@@ -26,6 +31,20 @@ const EMPTY_AUTH_VIEWER: AuthViewerPayload = {
 
 let cachedViewer: AuthViewerPayload | null = null;
 let inFlightViewer: Promise<AuthViewerPayload> | null = null;
+
+type IdleCallbackHandle = number;
+type IdleCallbackDeadline = {
+  didTimeout: boolean;
+  timeRemaining: () => number;
+};
+
+type IdleCallbackScheduler = typeof window & {
+  requestIdleCallback?: (
+    callback: (deadline: IdleCallbackDeadline) => void,
+    options?: { timeout: number },
+  ) => IdleCallbackHandle;
+  cancelIdleCallback?: (handle: IdleCallbackHandle) => void;
+};
 
 async function fetchAuthViewer() {
   const response = await fetch("/api/auth/viewer", {
@@ -63,13 +82,47 @@ function loadAuthViewer() {
   return inFlightViewer;
 }
 
+function scheduleIdleLoad(
+  callback: () => void,
+  timeoutMs: number,
+) {
+  const scheduler = window as IdleCallbackScheduler;
+
+  if (typeof scheduler.requestIdleCallback === "function") {
+    const handle = scheduler.requestIdleCallback(
+      () => callback(),
+      { timeout: timeoutMs },
+    );
+
+    return () => {
+      scheduler.cancelIdleCallback?.(handle);
+    };
+  }
+
+  const handle = window.setTimeout(callback, timeoutMs);
+  return () => {
+    window.clearTimeout(handle);
+  };
+}
+
 export function clearCachedAuthViewer() {
   cachedViewer = null;
   inFlightViewer = null;
   clearFetchJsonCache();
 }
 
-export function useAuthViewer(): AuthViewerState {
+export function primeAuthViewer() {
+  return loadAuthViewer().catch((error) => {
+    console.error("[AUTH_VIEWER_HOOK]", error);
+    return EMPTY_AUTH_VIEWER;
+  });
+}
+
+export function useAuthViewer(options: UseAuthViewerOptions = {}): AuthViewerState {
+  const {
+    strategy = "eager",
+    idleTimeoutMs = 800,
+  } = options;
   const [state, setState] = useState<AuthViewerState>(() => ({
     ...EMPTY_AUTH_VIEWER,
     isReady: false,
@@ -88,33 +141,41 @@ export function useAuthViewer(): AuthViewerState {
       };
     }
 
-    void loadAuthViewer()
-      .then((viewer) => {
-        if (cancelled) {
-          return;
-        }
+    const runLoad = () => {
+      void loadAuthViewer()
+        .then((viewer) => {
+          if (cancelled) {
+            return;
+          }
 
-        setState({
-          ...viewer,
-          isReady: true,
-        });
-      })
-      .catch((error) => {
-        if (cancelled) {
-          return;
-        }
+          setState({
+            ...viewer,
+            isReady: true,
+          });
+        })
+        .catch((error) => {
+          if (cancelled) {
+            return;
+          }
 
-        console.error("[AUTH_VIEWER_HOOK]", error);
-        setState({
-          ...EMPTY_AUTH_VIEWER,
-          isReady: true,
+          console.error("[AUTH_VIEWER_HOOK]", error);
+          setState({
+            ...EMPTY_AUTH_VIEWER,
+            isReady: true,
+          });
         });
-      });
+    };
+
+    const cancelScheduledLoad =
+      strategy === "idle"
+        ? scheduleIdleLoad(runLoad, idleTimeoutMs)
+        : (runLoad(), null);
 
     return () => {
       cancelled = true;
+      cancelScheduledLoad?.();
     };
-  }, []);
+  }, [idleTimeoutMs, strategy]);
 
   return state;
 }

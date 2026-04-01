@@ -101,6 +101,7 @@ export function ResourcesDiscoverPersonalizedSection({
             <RecommendationSection
               variant={recommendationVariant}
               section="recommended_for_you"
+              resourceIds={recommendedForYou.map((resource) => resource.id)}
             >
               <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
                 {recommendedForYou.map((resource) => (

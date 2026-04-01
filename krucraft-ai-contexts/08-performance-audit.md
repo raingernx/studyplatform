@@ -29,29 +29,43 @@ Primary bottleneck class is now:
 - root layout stopped SSR-seeding `SessionProvider` from `getServerSession`, which restores a cleaner caching baseline for public routes
 - the root client provider tree no longer mounts `SessionProvider`; auth-aware navbar/pricing/checkout UI now use a smaller `/api/auth/viewer` fetch instead of the global NextAuth client-session baseline
 - the auth-viewer hook no longer hydrates from module cache during the initial render, which avoids navbar server/client drift; navbar auth controls now hold their footprint with lightweight loading placeholders until the viewer request settles
+- public navbar auth resolution now defers to browser idle time and warms on interaction, which trims eager auth fetch pressure on public routes while keeping auth-aware chrome responsive when users engage it
+- `/resources` and `/resources/[slug]` viewer-state providers now also defer auth-viewer resolution to idle time, so the two main public content routes no longer eagerly call `/api/auth/viewer` on first hydration
 - `/resources` stopped reading cookies/session at the page level; auth-aware owned badges and signed-in discover sections now hydrate from `/api/resources/viewer-state`
 - `/resources` marketplace viewer-state is now split into `scope=base` and `scope=discover` so owned badges can hydrate before heavier recommendation payloads
 - `/resources` base viewer-state now uses a short-lived browser cache keyed by viewer id, reducing repeat owned-badge fetches on quick signed-in marketplace navigations without risking cross-user bleed
 - `/resources` signed-in discover payloads now use short-lived private Redis + `unstable_cache` reuse so repeat navigations do not recompute the full recommendation state every time
 - purchase-derived learning profiles used by signed-in discover hydration now also go through Redis + single-flight, reducing cross-instance rebuilds of the same viewer profile
 - personalized discover now also pushes user-interest profiles and shared Phase 2 candidate pools through Redis + single-flight, which cuts cross-instance recomputation when recommendation requests fan out
+- recommendation impressions are no longer written from the cached discover miss path; they now fire from a client-side section exposure tracker through `/api/recommendations/impression`, which keeps the cached discover loader read-only and aligns analytics with actual viewport exposure
 - repeat personalized client JSON fetches now use a small browser-side TTL/dedupe cache, reducing quick remount/refetch churn for discover and owner-review sections
 - discover hero anonymous selection now uses a static seed instead of request cookie/header inputs on the marketplace route, and anonymous callers now default to that static seed unless they explicitly opt into request-bound behavior
 - trigram index coverage now extends beyond `Resource.title/description` to `Category.name`, `Tag.name`, `User.name`, and `User.email` so marketplace search and admin user lookup avoid the remaining text-search scan hotspots
 - marketplace search and live search now share a broader weighted relevance query across title, slug, description, category, tag, and creator fields instead of using narrower title/description-only listing filters
 - search now tokenizes multi-word queries and expands a small synonym/alias set for common study terms, which improves recall without adding a separate search engine
+- synonym groups, recovery fallback terms, relevance boosts, and match-reason copy now live in a shared config module, which makes search tuning cheaper and less error-prone than editing multiple code paths
+- the search config is now driven by typed term rules plus shared weight/copy maps, which lowers the risk of helper/repository drift when tuning synonyms, fallbacks, or ranking behavior
 - search result pages default to `Best match` when a query is present, while still allowing alternate marketplace sort orders for the matched set
 - shared public search bars now debounce suggestion fetches and always route full-result queries back to canonical `/resources` results, avoiding the old pattern of appending `?search=` to unrelated public routes
+- typeahead suggestions now use an explicit lightweight `/api/search?view=suggestions` mode, which trims the ranked-search result shape for dropdowns and avoids extra review-count work that live suggestions never display
 - typeahead search now reuses a short-lived browser-side suggestion cache, and no-result dropdown recovery now calls a dedicated `/api/search/recovery` endpoint so the ranked search query is not executed twice for the same miss
 - ranked search results and recovery payloads now sit behind short-lived `unstable_cache` plus Redis + single-flight layers on the backend, cutting duplicate work both on warm instances and across repeated public queries
-- the same public search endpoints now send short-lived shared cache headers, giving CDN/edge layers a response-cache path on top of the service-level cache
+- the shared ranked-search SQL no longer couples every result page to `COUNT(*) OVER()`; live search now reads ranked rows only, and marketplace search computes totals in a separate path when needed, which reduces unnecessary window-count work on the hottest search requests
+- the ranked-search SQL now stages a cheaper candidate-resource filter before it computes `tag_metrics` via lateral aggregation, which removes one of the biggest remaining per-query costs from obvious title/category/creator matches
+- trigram index coverage now also includes `Resource.slug`, `Category.slug`, and `Tag.slug`, so the ranked query's slug-based `ILIKE` and similarity branches are no longer leaning only on btree uniqueness indexes
+- the same public search endpoints now declare short-lived shared cache headers in source, but production verification on 2026-04-01 only surfaced `Cache-Control: public`, so CDN/edge response caching is still an open follow-up rather than a verified gain
 - no-result search UX now recovers with alternate query suggestions plus category/tag browse links, reducing dead-end searches without adding a separate search backend
 - `/resources` search headings now render search-specific copy instead of falling back to browse headings on uncategorized searches
+- local verification now has a repo-owned `npm run smoke:local:search` path that checks the search results page, no-results recovery page, `/api/search`, search recovery, and `/api/auth/viewer` sequentially with retries, avoiding the flakiness of ad-hoc localhost curls in constrained environments
+- the shared smoke path now gates on `/api/internal/ready` before deeper route/API assertions, which separates server-readiness problems from search/auth regressions and makes local verification more stable
+- `npm run smoke:prod:search` now reuses the same verification flow against `https://krucrafts.com`, while preview deployments can use `BASE_URL=<preview-url> npm run smoke:search`
 - `/resources/[slug]` stopped reading cookies/session at the page level; ownership, payment-success recovery, and owner-review UI now hydrate from `/api/resources/[id]/viewer-state`
 - `/resources/[slug]` detail viewer-state is now split into `scope=base` and `scope=review` so purchase/success/ownership UI does not wait on the owner-review query
 - anonymous `/resources/[slug]` visits now skip the private detail viewer-state API entirely until the lightweight auth viewer confirms the user is signed in
 - viewer-state hydration now starts without waiting for NextAuth client-session readiness to settle first
-- repeated signed-in ownership reads now use short-lived private `unstable_cache` entries, and detail refresh can bypass them after checkout
+- repeated signed-in ownership reads now use short-lived private `unstable_cache` entries, detail refresh can bypass them after checkout, and detail base viewer-state now also has a short-lived browser cache to smooth remounts/revisits
+- the detail purchase rail now shows a structural "Checking your library…" placeholder while deferred ownership state resolves, preventing buy-CTA flicker for signed-in owners after auth probing moved to idle
+- pricing and buy-button CTA components now reuse idle auth-viewer resolution and explicitly prime on user intent, which removes the remaining eager auth probe from those public CTAs without making first interaction feel dead
 - category smoke route now matches its actual page intent and is warmed explicitly
 - `/resources` discover fallback no longer swaps in fake CTA content while data resolves
 - discover hero loading now falls back to a plain blue banner shell; discover sections fall back to section/card skeletons that match final geometry

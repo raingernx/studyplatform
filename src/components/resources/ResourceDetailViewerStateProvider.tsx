@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuthViewer } from "@/lib/auth/use-auth-viewer";
+import { fetchJson } from "@/lib/use-fetch-json";
 import type { ResourceDetailViewerBaseState } from "@/lib/resources/resource-detail-viewer-state";
 
 type ResourceDetailViewerContextValue = ResourceDetailViewerBaseState & {
@@ -17,17 +18,23 @@ type ResourceDetailViewerContextValue = ResourceDetailViewerBaseState & {
   refresh: () => Promise<void>;
 };
 
-const EMPTY_VIEWER_STATE: ResourceDetailViewerContextValue = {
+const EMPTY_RESOURCE_DETAIL_VIEWER_BASE_STATE: ResourceDetailViewerBaseState = {
   authenticated: false,
   userId: null,
   subscriptionStatus: null,
   isOwned: false,
+};
+
+const EMPTY_VIEWER_STATE: ResourceDetailViewerContextValue = {
+  ...EMPTY_RESOURCE_DETAIL_VIEWER_BASE_STATE,
   isReady: false,
   refresh: async () => {},
 };
 
 const ResourceDetailViewerStateContext =
   createContext<ResourceDetailViewerContextValue>(EMPTY_VIEWER_STATE);
+
+const RESOURCE_DETAIL_VIEWER_BASE_TTL_MS = 15_000;
 
 export function ResourceDetailViewerStateProvider({
   children,
@@ -36,17 +43,23 @@ export function ResourceDetailViewerStateProvider({
   children: ReactNode;
   resourceId: string;
 }) {
-  const authViewer = useAuthViewer();
-  const [viewerState, setViewerState] = useState<ResourceDetailViewerBaseState>({
-    authenticated: false,
-    userId: null,
-    subscriptionStatus: null,
-    isOwned: false,
-  });
+  const authViewer = useAuthViewer({ strategy: "idle", idleTimeoutMs: 800 });
+  const [viewerState, setViewerState] = useState<ResourceDetailViewerBaseState>(
+    EMPTY_RESOURCE_DETAIL_VIEWER_BASE_STATE,
+  );
   const [isReady, setIsReady] = useState(false);
   const shouldLoadViewerState = authViewer.isReady && authViewer.authenticated;
+  const viewerCacheKey =
+    authViewer.user?.id
+      ? `resource-detail-viewer-base:${resourceId}:${authViewer.user.id}`
+      : null;
 
   const load = useCallback(async (options?: { fresh?: boolean }) => {
+    if (!viewerCacheKey) {
+      setViewerState(EMPTY_RESOURCE_DETAIL_VIEWER_BASE_STATE);
+      return;
+    }
+
     const params = new URLSearchParams();
     params.set("scope", "base");
     if (options?.fresh) {
@@ -54,20 +67,14 @@ export function ResourceDetailViewerStateProvider({
     }
 
     const query = params.size > 0 ? `?${params.toString()}` : "";
-    const response = await fetch(`/api/resources/${resourceId}/viewer-state${query}`, {
-      cache: "no-store",
-      credentials: "same-origin",
+    const data = await fetchJson<ResourceDetailViewerBaseState>({
+      url: `/api/resources/${resourceId}/viewer-state${query}`,
+      cacheKey: viewerCacheKey,
+      ttlMs: RESOURCE_DETAIL_VIEWER_BASE_TTL_MS,
+      fresh: options?.fresh,
     });
-
-    if (!response.ok) {
-      throw new Error("Failed to load resource detail viewer state");
-    }
-
-    const json = (await response.json()) as { data?: ResourceDetailViewerBaseState };
-    if (json.data) {
-      setViewerState(json.data);
-    }
-  }, [resourceId]);
+    setViewerState(data ?? EMPTY_RESOURCE_DETAIL_VIEWER_BASE_STATE);
+  }, [resourceId, viewerCacheKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,12 +82,7 @@ export function ResourceDetailViewerStateProvider({
     setIsReady(false);
 
     if (authViewer.isReady && !authViewer.authenticated) {
-      setViewerState({
-        authenticated: false,
-        userId: null,
-        subscriptionStatus: null,
-        isOwned: false,
-      });
+      setViewerState(EMPTY_RESOURCE_DETAIL_VIEWER_BASE_STATE);
       setIsReady(true);
       return () => {
         cancelled = true;
@@ -100,12 +102,7 @@ export function ResourceDetailViewerStateProvider({
         }
 
         console.error("[RESOURCE_DETAIL_VIEWER_STATE]", error);
-        setViewerState({
-          authenticated: false,
-          userId: null,
-          subscriptionStatus: null,
-          isOwned: false,
-        });
+        setViewerState(EMPTY_RESOURCE_DETAIL_VIEWER_BASE_STATE);
       })
       .finally(() => {
         if (!cancelled) {
@@ -120,12 +117,7 @@ export function ResourceDetailViewerStateProvider({
 
   const refresh = useCallback(async () => {
     if (!authViewer.authenticated) {
-      setViewerState({
-        authenticated: false,
-        userId: null,
-        subscriptionStatus: null,
-        isOwned: false,
-      });
+      setViewerState(EMPTY_RESOURCE_DETAIL_VIEWER_BASE_STATE);
       setIsReady(true);
       return;
     }

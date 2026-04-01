@@ -1,16 +1,11 @@
-const SYNONYM_GROUPS = [
-  ["worksheet", "worksheets", "ใบงาน", "แบบฝึกหัด", "แบบฝึก"],
-  ["flashcard", "flashcards", "แฟลชการ์ด", "บัตรคำ"],
-  ["note", "notes", "โน้ต", "สรุป", "สรุปบทเรียน"],
-  ["template", "templates", "เทมเพลต", "แม่แบบ"],
-  ["guide", "guides", "study-guide", "study-guides", "คู่มือ", "แนวทาง"],
-  ["lesson-plan", "lesson-plans", "lesson", "แผนการสอน"],
-  ["exam", "test", "tests", "quiz", "quizzes", "ข้อสอบ", "แบบทดสอบ", "แนวข้อสอบ"],
-] as const;
+import {
+  SEARCH_RECOVERY_FALLBACK_QUERIES,
+  SEARCH_SYNONYM_GROUPS,
+} from "@/config/search";
 
 const synonymIndex = new Map<string, string[]>();
 
-for (const group of SYNONYM_GROUPS) {
+for (const group of SEARCH_SYNONYM_GROUPS) {
   const normalizedGroup = Array.from(
     new Set(group.map((term) => term.trim().toLowerCase()).filter(Boolean)),
   );
@@ -76,14 +71,6 @@ function pickPreferredAlias(aliases: string[], preferThai: boolean) {
   return aliases.find((alias) => !hasThaiCharacters(alias)) ?? aliases[0];
 }
 
-const FALLBACK_RECOVERY_QUERIES = [
-  "ใบงาน",
-  "แฟลชการ์ด",
-  "โน้ตสรุป",
-  "แนวข้อสอบ",
-  "แผนการสอน",
-] as const;
-
 export function buildSearchRecoveryQueries(
   query: string,
   extraTerms: string[] = [],
@@ -125,7 +112,7 @@ export function buildSearchRecoveryQueries(
     });
 
   if (suggestions.size === 0) {
-    for (const fallback of FALLBACK_RECOVERY_QUERIES) {
+    for (const fallback of SEARCH_RECOVERY_FALLBACK_QUERIES) {
       if (fallback.toLowerCase() !== intent.loweredQuery) {
         suggestions.add(fallback);
       }

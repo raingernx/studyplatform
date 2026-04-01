@@ -4,7 +4,7 @@ import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useId, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import {
   LogOut,
   LayoutDashboard,
@@ -20,7 +20,11 @@ import { NavbarBrand } from "@/components/layout/NavbarBrand";
 import { NavbarItem } from "@/components/layout/navbar/NavbarItem";
 import { Container } from "@/components/layout/container";
 import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
-import { clearCachedAuthViewer, useAuthViewer } from "@/lib/auth/use-auth-viewer";
+import {
+  clearCachedAuthViewer,
+  primeAuthViewer,
+  useAuthViewer,
+} from "@/lib/auth/use-auth-viewer";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
@@ -187,7 +191,7 @@ function NavbarInner({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const authViewer = useAuthViewer();
+  const authViewer = useAuthViewer({ strategy: "idle", idleTimeoutMs: 800 });
   const authUser = authViewer.user;
   const isMarketplaceNavbar = Boolean(headerSearch);
   const currentCategory = searchParams.get("category");
@@ -197,6 +201,9 @@ function NavbarInner({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const warmAuthViewer = useCallback(() => {
+    void primeAuthViewer();
+  }, []);
 
   const visibleMobileCategoryItems = MARKETPLACE_CATEGORY_ITEMS.slice(0, MOBILE_VISIBLE_CATEGORY_COUNT);
   const overflowMobileCategoryItems = MARKETPLACE_CATEGORY_ITEMS.slice(MOBILE_VISIBLE_CATEGORY_COUNT);
@@ -349,7 +356,11 @@ function NavbarInner({
                 {headerSearch}
               </div>
 
-              <div className="ml-auto hidden items-center gap-2.5 lg:flex">
+              <div
+                className="ml-auto hidden items-center gap-2.5 lg:flex"
+                onPointerEnter={warmAuthViewer}
+                onFocusCapture={warmAuthViewer}
+              >
                 {authUser ? (
                   <>
                     <Link href={routes.library} className={MARKETPLACE_ACTION_LINK_CLASS_NAME}>
@@ -391,7 +402,11 @@ function NavbarInner({
 
               {/* Scrollable links — overflow-x-auto would clip an absolute
                   dropdown, so the avatar button lives outside this div. */}
-              <div className={cn("ml-auto flex min-w-0 max-w-[68vw] items-center gap-1.5 lg:hidden", HORIZONTAL_SCROLL_CLASS_NAME)}>
+              <div
+                className={cn("ml-auto flex min-w-0 max-w-[68vw] items-center gap-1.5 lg:hidden", HORIZONTAL_SCROLL_CLASS_NAME)}
+                onPointerEnter={warmAuthViewer}
+                onFocusCapture={warmAuthViewer}
+              >
                 {authUser ? (
                   <Link href={routes.library} className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] leading-[22px] font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
                     คลังของฉัน
@@ -539,7 +554,11 @@ function NavbarInner({
         ) : null}
 
         <div className={headerSearch ? "order-2 ml-auto lg:order-3 lg:ml-0" : "ml-auto"}>
-          <div className="hidden shrink-0 items-center gap-3.5 lg:flex">
+          <div
+            className="hidden shrink-0 items-center gap-3.5 lg:flex"
+            onPointerEnter={warmAuthViewer}
+            onFocusCapture={warmAuthViewer}
+          >
             <nav className="hidden items-center gap-2 lg:flex" aria-label="เมนูหลัก">
               {NAV_LINKS.filter(({ href }) => href !== routes.library || Boolean(authUser)).map(({ href, label }) => (
                 <NavbarItem
@@ -590,7 +609,10 @@ function NavbarInner({
           <button
             type="button"
             className="ml-auto rounded-lg p-1.5 text-text-secondary hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 lg:hidden"
-            onClick={() => setMobileOpen((open) => !open)}
+            onClick={() => {
+              warmAuthViewer();
+              setMobileOpen((open) => !open);
+            }}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
           >

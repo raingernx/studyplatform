@@ -5,7 +5,7 @@ import { Button } from "./Button";
 import { Check, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthViewer } from "@/lib/auth/use-auth-viewer";
+import { primeAuthViewer, useAuthViewer } from "@/lib/auth/use-auth-viewer";
 import { routes } from "@/lib/routes";
 
 export interface PricingTier {
@@ -27,7 +27,8 @@ interface PricingCardProps {
 
 export function PricingCard({ tier, billing }: PricingCardProps) {
   const [loading, setLoading] = useState(false);
-  const authViewer = useAuthViewer();
+  const [isCheckingAccount, setIsCheckingAccount] = useState(false);
+  const authViewer = useAuthViewer({ strategy: "idle", idleTimeoutMs: 800 });
   const router = useRouter();
 
   const price = billing === "annual" ? tier.price.annual : tier.price.monthly;
@@ -41,8 +42,17 @@ export function PricingCard({ tier, billing }: PricingCardProps) {
 
   async function handleSubscribe() {
     if (!tier.stripePlan) return;
-    if (!authViewer.isReady) return;
-    if (!authViewer.authenticated) {
+    const viewer = authViewer.isReady
+      ? authViewer
+      : await (async () => {
+          setIsCheckingAccount(true);
+          try {
+            return await primeAuthViewer();
+          } finally {
+            setIsCheckingAccount(false);
+          }
+        })();
+    if (!viewer.authenticated) {
       router.push(`${routes.login}?next=${encodeURIComponent(routes.membership)}`);
       return;
     }
@@ -124,14 +134,16 @@ export function PricingCard({ tier, billing }: PricingCardProps) {
             <div className="mt-8">
               <Button
                 onClick={tier.stripePlan ? handleSubscribe : undefined}
-                loading={loading || (Boolean(tier.stripePlan) && !authViewer.isReady)}
+                onPointerEnter={tier.stripePlan ? () => void primeAuthViewer() : undefined}
+                onFocus={tier.stripePlan ? () => void primeAuthViewer() : undefined}
+                loading={loading || isCheckingAccount}
                 variant="accent"
                 fullWidth
                 size="lg"
                 className="shadow-glow-orange"
-                disabled={Boolean(tier.stripePlan) && !authViewer.isReady}
+                disabled={loading || isCheckingAccount}
               >
-                {tier.stripePlan && !authViewer.isReady ? "Checking account…" : tier.cta}
+                {isCheckingAccount ? "Checking account…" : tier.cta}
               </Button>
             </div>
           </div>
@@ -187,13 +199,15 @@ export function PricingCard({ tier, billing }: PricingCardProps) {
       <div className="mt-8">
         <Button
           onClick={tier.stripePlan ? handleSubscribe : undefined}
-          loading={loading || (Boolean(tier.stripePlan) && !authViewer.isReady)}
+          onPointerEnter={tier.stripePlan ? () => void primeAuthViewer() : undefined}
+          onFocus={tier.stripePlan ? () => void primeAuthViewer() : undefined}
+          loading={loading || isCheckingAccount}
           variant="outline"
           fullWidth
           size="lg"
-          disabled={Boolean(tier.stripePlan) && !authViewer.isReady}
+          disabled={loading || isCheckingAccount}
         >
-          {tier.stripePlan && !authViewer.isReady ? "Checking account…" : tier.cta}
+          {isCheckingAccount ? "Checking account…" : tier.cta}
         </Button>
       </div>
     </div>

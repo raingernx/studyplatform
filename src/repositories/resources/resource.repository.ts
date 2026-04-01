@@ -1,4 +1,8 @@
 import { Prisma } from "@prisma/client";
+import {
+  SEARCH_MATCH_REASON_LABELS,
+  SEARCH_RELEVANCE_WEIGHTS,
+} from "@/config/search";
 import { buildSearchQueryIntent } from "@/lib/search/query-intent";
 import { prisma } from "@/lib/prisma";
 import { LISTED_RESOURCE_WHERE, PUBLIC_RESOURCE_WHERE } from "@/lib/query/resourceFilters";
@@ -223,7 +227,19 @@ export interface RankedSearchResourceRow {
   reviewCount: number;
   matchReason: string | null;
   score: number;
-  totalCount: number;
+  totalCount?: number;
+}
+
+export interface RankedSearchSuggestionRow {
+  id: string;
+  title: string;
+  slug: string;
+  price: number;
+  isFree: boolean;
+  authorName: string | null;
+  categoryName: string | null;
+  previewImageUrl: string | null;
+  matchReason: string | null;
 }
 
 export interface SearchRecoveryTaxonomyMatch {
@@ -258,7 +274,7 @@ function buildContainsMatchSql(fieldSql: Prisma.Sql, variants: string[]) {
   );
 }
 
-function buildTokenFieldMatchSql(variants: string[]) {
+function buildBaseTokenFieldMatchSql(variants: string[]) {
   return buildOrSql([
     buildContainsMatchSql(Prisma.sql`r."title"`, variants),
     buildContainsMatchSql(Prisma.sql`r."slug"`, variants),
@@ -266,22 +282,56 @@ function buildTokenFieldMatchSql(variants: string[]) {
     buildContainsMatchSql(Prisma.sql`COALESCE(c."name", '')`, variants),
     buildContainsMatchSql(Prisma.sql`COALESCE(c."slug", '')`, variants),
     buildContainsMatchSql(Prisma.sql`COALESCE(u."name", '')`, variants),
-    buildOrSql(
-      variants.map((variant) =>
-        Prisma.sql`EXISTS (
-          SELECT 1
-          FROM "ResourceTag" rt_term
-          INNER JOIN "Tag" t_term
-            ON t_term."id" = rt_term."tagId"
-          WHERE rt_term."resourceId" = r."id"
-            AND (
-              t_term."name" ILIKE ${`%${variant}%`}
-              OR t_term."slug" ILIKE ${`%${variant}%`}
-            )
-        )`,
-      ),
-    ),
   ]);
+}
+
+function buildTagVariantExistsSql(variants: string[]) {
+  return Prisma.sql`EXISTS (
+    SELECT 1
+    FROM "ResourceTag" rt_term
+    INNER JOIN "Tag" t_term
+      ON t_term."id" = rt_term."tagId"
+    WHERE rt_term."resourceId" = r."id"
+      AND ${buildOrSql([
+        buildContainsMatchSql(Prisma.sql`t_term."name"`, variants),
+        buildContainsMatchSql(Prisma.sql`t_term."slug"`, variants),
+      ])}
+  )`;
+}
+
+function buildTokenFieldMatchSql(variants: string[]) {
+  return buildOrSql([
+    buildBaseTokenFieldMatchSql(variants),
+    buildTagVariantExistsSql(variants),
+  ]);
+}
+
+function buildTagSearchExistsSql(params: {
+  query: string;
+  queryLower: string;
+  prefixPattern: string;
+  containsPattern: string;
+  threshold: number;
+}) {
+  return Prisma.sql`EXISTS (
+    SELECT 1
+    FROM "ResourceTag" rt_filter
+    INNER JOIN "Tag" t_filter
+      ON t_filter."id" = rt_filter."tagId"
+    WHERE rt_filter."resourceId" = r."id"
+      AND (
+        t_filter."name" ILIKE ${params.containsPattern}
+        OR t_filter."slug" ILIKE ${params.containsPattern}
+        OR lower(t_filter."name") = ${params.queryLower}
+        OR lower(t_filter."slug") = ${params.queryLower}
+        OR lower(t_filter."name") LIKE ${params.prefixPattern}
+        OR lower(t_filter."slug") LIKE ${params.prefixPattern}
+        OR GREATEST(
+          similarity(t_filter."name", ${params.query}),
+          similarity(t_filter."slug", ${params.query})
+        ) >= ${params.threshold}
+      )
+  )`;
 }
 
 function getSearchSimilarityThreshold(query: string) {
@@ -318,10 +368,8 @@ function getSearchOrderBySql(sort?: string) {
   }
 }
 
-function buildRankedSearchQuery(params: {
+function buildRankedSearchMatchedResourcesSql(params: {
   query: string;
-  limit: number;
-  offset: number;
   category?: string;
   sort?: string;
 }) {
@@ -332,6 +380,15 @@ function buildRankedSearchQuery(params: {
   const prefixPattern = `${queryLower}%`;
   const threshold = getSearchSimilarityThreshold(query);
   const orderBy = getSearchOrderBySql(params.sort);
+  const weights = SEARCH_RELEVANCE_WEIGHTS;
+  const labels = SEARCH_MATCH_REASON_LABELS;
+  const tagSearchExistsSql = buildTagSearchExistsSql({
+    query,
+    queryLower,
+    prefixPattern,
+    containsPattern,
+    threshold,
+  });
   const tokenMatchScoreSql =
     intent.tokenGroups.length > 0
       ? buildSumSql(
@@ -349,90 +406,136 @@ function buildRankedSearchQuery(params: {
       ? Prisma.sql`AND c."slug" = ${params.category}`
       : Prisma.empty;
 
-  return Prisma.sql`
-    WITH matched_resources AS (
+  return {
+    orderBy,
+    matchedResourcesSql: Prisma.sql`
+      WITH candidate_resources AS (
+        SELECT
+          r."id",
+          r."title",
+          r."slug",
+          r."price",
+          r."isFree",
+          r."featured",
+          r."downloadCount",
+          r."createdAt",
+          c."id" AS "categoryId",
+          c."name" AS "categoryName",
+          c."slug" AS "categorySlug",
+          u."name" AS "authorName",
+          COALESCE(rs."trendingScore", 0)::double precision AS "trendingScore",
+          COALESCE(rs."purchases", 0)::int AS "purchaseCount",
+          COALESCE(rs."downloads", r."downloadCount", 0)::int AS "rankedDownloads",
+          (r."description" ILIKE ${containsPattern}) AS "descriptionContains",
+          (${tokenMatchScoreSql})::int AS "matchedTokenCount",
+          (
+            (${tokenMatchScoreSql})::double precision * ${weights.tokenMatch} +
+            CASE WHEN lower(r."title") = ${queryLower} THEN ${weights.exactTitle} ELSE 0 END +
+            CASE WHEN lower(r."slug") = ${queryLower} THEN ${weights.exactSlug} ELSE 0 END +
+            CASE
+              WHEN lower(COALESCE(c."name", '')) = ${queryLower}
+                OR lower(COALESCE(c."slug", '')) = ${queryLower}
+              THEN ${weights.exactCategory}
+              ELSE 0
+            END +
+            CASE WHEN lower(COALESCE(u."name", '')) = ${queryLower} THEN ${weights.exactCreator} ELSE 0 END +
+            CASE WHEN lower(r."title") LIKE ${prefixPattern} THEN ${weights.prefixTitle} ELSE 0 END +
+            CASE WHEN lower(r."slug") LIKE ${prefixPattern} THEN ${weights.prefixSlug} ELSE 0 END +
+            CASE
+              WHEN lower(COALESCE(c."name", '')) LIKE ${prefixPattern}
+                OR lower(COALESCE(c."slug", '')) LIKE ${prefixPattern}
+              THEN ${weights.prefixCategory}
+              ELSE 0
+            END +
+            CASE WHEN lower(COALESCE(u."name", '')) LIKE ${prefixPattern} THEN ${weights.prefixCreator} ELSE 0 END +
+            CASE WHEN r."title" ILIKE ${containsPattern} THEN ${weights.containsTitle} ELSE 0 END +
+            CASE WHEN r."slug" ILIKE ${containsPattern} THEN ${weights.containsSlug} ELSE 0 END +
+            CASE
+              WHEN COALESCE(c."name", '') ILIKE ${containsPattern}
+                OR COALESCE(c."slug", '') ILIKE ${containsPattern}
+              THEN ${weights.containsCategory}
+              ELSE 0
+            END +
+            CASE WHEN COALESCE(u."name", '') ILIKE ${containsPattern} THEN ${weights.containsCreator} ELSE 0 END +
+            CASE WHEN r."description" ILIKE ${containsPattern} THEN ${weights.containsDescription} ELSE 0 END +
+            GREATEST(similarity(r."title", ${query}), similarity(r."slug", ${query}), 0) * ${weights.similarityTitleOrSlug} +
+            GREATEST(
+              similarity(COALESCE(c."name", ''), ${query}),
+              similarity(COALESCE(c."slug", ''), ${query}),
+              0
+            ) * ${weights.similarityCategory} +
+            GREATEST(similarity(COALESCE(u."name", ''), ${query}), 0) * ${weights.similarityCreator}
+          )::double precision AS "baseScore"
+        FROM "Resource" r
+        LEFT JOIN "Category" c
+          ON c."id" = r."categoryId"
+        LEFT JOIN "User" u
+          ON u."id" = r."authorId"
+        LEFT JOIN "resource_stats" rs
+          ON rs."resourceId" = r."id"
+        WHERE r."status" = 'PUBLISHED'
+          AND r."deletedAt" IS NULL
+          AND (r."visibility" IS NULL OR r."visibility" = 'PUBLIC')
+          ${categoryFilter}
+          AND (
+            r."title" ILIKE ${containsPattern}
+            OR r."slug" ILIKE ${containsPattern}
+            OR r."description" ILIKE ${containsPattern}
+            OR COALESCE(c."name", '') ILIKE ${containsPattern}
+            OR COALESCE(c."slug", '') ILIKE ${containsPattern}
+            OR COALESCE(u."name", '') ILIKE ${containsPattern}
+            OR ${tagSearchExistsSql}
+            OR ${tokenAnyMatchSql}
+            OR similarity(r."title", ${query}) >= ${threshold}
+            OR similarity(r."slug", ${query}) >= ${threshold}
+            OR GREATEST(
+              similarity(COALESCE(c."name", ''), ${query}),
+              similarity(COALESCE(c."slug", ''), ${query})
+            ) >= ${threshold}
+            OR similarity(COALESCE(u."name", ''), ${query}) >= ${threshold}
+          )
+      )
       SELECT
-        r."id",
-        r."title",
-        r."slug",
-        r."price",
-        r."isFree",
-        r."featured",
-        r."downloadCount",
-        r."createdAt",
-        c."id" AS "categoryId",
-        c."name" AS "categoryName",
-        c."slug" AS "categorySlug",
-        u."name" AS "authorName",
-        COALESCE(rs."trendingScore", 0)::double precision AS "trendingScore",
-        COALESCE(rs."purchases", 0)::int AS "purchaseCount",
-        COALESCE(rs."downloads", r."downloadCount", 0)::int AS "rankedDownloads",
-        (${tokenMatchScoreSql})::int AS "matchedTokenCount",
+        cr."id",
+        cr."title",
+        cr."slug",
+        cr."price",
+        cr."isFree",
+        cr."featured",
+        cr."downloadCount",
+        cr."createdAt",
+        cr."categoryId",
+        cr."categoryName",
+        cr."categorySlug",
+        cr."authorName",
+        cr."purchaseCount",
+        cr."rankedDownloads",
+        cr."trendingScore",
+        cr."matchedTokenCount",
         tag_metrics."bestTagName",
         (
-          (${tokenMatchScoreSql})::double precision * 18 +
-          CASE WHEN lower(r."title") = ${queryLower} THEN 140 ELSE 0 END +
-          CASE WHEN lower(r."slug") = ${queryLower} THEN 120 ELSE 0 END +
-          CASE WHEN COALESCE(tag_metrics."tagExact", false) THEN 95 ELSE 0 END +
-          CASE
-            WHEN lower(COALESCE(c."name", '')) = ${queryLower}
-              OR lower(COALESCE(c."slug", '')) = ${queryLower}
-            THEN 88
-            ELSE 0
-          END +
-          CASE WHEN lower(COALESCE(u."name", '')) = ${queryLower} THEN 76 ELSE 0 END +
-          CASE WHEN lower(r."title") LIKE ${prefixPattern} THEN 52 ELSE 0 END +
-          CASE WHEN lower(r."slug") LIKE ${prefixPattern} THEN 44 ELSE 0 END +
-          CASE WHEN COALESCE(tag_metrics."tagPrefix", false) THEN 32 ELSE 0 END +
-          CASE
-            WHEN lower(COALESCE(c."name", '')) LIKE ${prefixPattern}
-              OR lower(COALESCE(c."slug", '')) LIKE ${prefixPattern}
-            THEN 28
-            ELSE 0
-          END +
-          CASE WHEN lower(COALESCE(u."name", '')) LIKE ${prefixPattern} THEN 20 ELSE 0 END +
-          CASE WHEN r."title" ILIKE ${containsPattern} THEN 18 ELSE 0 END +
-          CASE WHEN r."slug" ILIKE ${containsPattern} THEN 16 ELSE 0 END +
-          CASE WHEN COALESCE(tag_metrics."tagContains", false) THEN 12 ELSE 0 END +
-          CASE
-            WHEN COALESCE(c."name", '') ILIKE ${containsPattern}
-              OR COALESCE(c."slug", '') ILIKE ${containsPattern}
-            THEN 10
-            ELSE 0
-          END +
-          CASE WHEN COALESCE(u."name", '') ILIKE ${containsPattern} THEN 8 ELSE 0 END +
-          CASE WHEN r."description" ILIKE ${containsPattern} THEN 4 ELSE 0 END +
-          GREATEST(similarity(r."title", ${query}), similarity(r."slug", ${query}), 0) * 28 +
-          GREATEST(tag_metrics."tagSimilarity", 0) * 20 +
-          GREATEST(
-            similarity(COALESCE(c."name", ''), ${query}),
-            similarity(COALESCE(c."slug", ''), ${query}),
-            0
-          ) * 16 +
-          GREATEST(similarity(COALESCE(u."name", ''), ${query}), 0) * 12
+          cr."baseScore" +
+          CASE WHEN COALESCE(tag_metrics."tagExact", false) THEN ${weights.exactTag} ELSE 0 END +
+          CASE WHEN COALESCE(tag_metrics."tagPrefix", false) THEN ${weights.prefixTag} ELSE 0 END +
+          CASE WHEN COALESCE(tag_metrics."tagContains", false) THEN ${weights.containsTag} ELSE 0 END +
+          GREATEST(tag_metrics."tagSimilarity", 0) * ${weights.similarityTag}
         )::double precision AS "score",
         CASE
-          WHEN lower(r."title") = ${queryLower} THEN 'Exact title match'
-          WHEN lower(r."slug") = ${queryLower} THEN 'Exact keyword match'
-          WHEN COALESCE(tag_metrics."tagExact", false) THEN CONCAT('Tag: ', COALESCE(tag_metrics."bestTagName", 'match'))
-          WHEN lower(COALESCE(c."name", '')) = ${queryLower}
-            OR lower(COALESCE(c."slug", '')) = ${queryLower}
-            THEN CONCAT('Category: ', COALESCE(c."name", 'match'))
-          WHEN lower(COALESCE(u."name", '')) = ${queryLower} THEN CONCAT('Creator: ', COALESCE(u."name", 'match'))
-          WHEN lower(r."title") LIKE ${prefixPattern} THEN 'Title starts with your search'
-          WHEN COALESCE(tag_metrics."tagPrefix", false) THEN CONCAT('Related tag: ', COALESCE(tag_metrics."bestTagName", 'match'))
-          WHEN COALESCE(c."name", '') ILIKE ${containsPattern} THEN CONCAT('In ', c."name")
-          WHEN COALESCE(u."name", '') ILIKE ${containsPattern} THEN CONCAT('By ', u."name")
-          WHEN r."description" ILIKE ${containsPattern} THEN 'Matched in description'
-          ELSE 'Related result'
+          WHEN lower(cr."title") = ${queryLower} THEN ${labels.exactTitle}
+          WHEN lower(cr."slug") = ${queryLower} THEN ${labels.exactKeyword}
+          WHEN COALESCE(tag_metrics."tagExact", false) THEN CONCAT(${labels.tagPrefix}, COALESCE(tag_metrics."bestTagName", ${labels.fallbackMatch}))
+          WHEN lower(COALESCE(cr."categoryName", '')) = ${queryLower}
+            OR lower(COALESCE(cr."categorySlug", '')) = ${queryLower}
+            THEN CONCAT(${labels.categoryPrefix}, COALESCE(cr."categoryName", ${labels.fallbackMatch}))
+          WHEN lower(COALESCE(cr."authorName", '')) = ${queryLower} THEN CONCAT(${labels.creatorPrefix}, COALESCE(cr."authorName", ${labels.fallbackMatch}))
+          WHEN lower(cr."title") LIKE ${prefixPattern} THEN ${labels.titleStartsWithSearch}
+          WHEN COALESCE(tag_metrics."tagPrefix", false) THEN CONCAT(${labels.relatedTagPrefix}, COALESCE(tag_metrics."bestTagName", ${labels.fallbackMatch}))
+          WHEN COALESCE(cr."categoryName", '') ILIKE ${containsPattern} THEN CONCAT(${labels.inPrefix}, cr."categoryName")
+          WHEN COALESCE(cr."authorName", '') ILIKE ${containsPattern} THEN CONCAT(${labels.byPrefix}, cr."authorName")
+          WHEN cr."descriptionContains" THEN ${labels.matchedDescription}
+          ELSE ${labels.relatedResult}
         END AS "matchReason"
-      FROM "Resource" r
-      LEFT JOIN "Category" c
-        ON c."id" = r."categoryId"
-      LEFT JOIN "User" u
-        ON u."id" = r."authorId"
-      LEFT JOIN "resource_stats" rs
-        ON rs."resourceId" = r."id"
+      FROM candidate_resources cr
       LEFT JOIN LATERAL (
         SELECT
           MAX(GREATEST(similarity(t."name", ${query}), similarity(t."slug", ${query})))::double precision AS "tagSimilarity",
@@ -448,36 +551,29 @@ function buildRankedSearchQuery(params: {
         FROM "ResourceTag" rt
         INNER JOIN "Tag" t
           ON t."id" = rt."tagId"
-        WHERE rt."resourceId" = r."id"
+        WHERE rt."resourceId" = cr."id"
       ) AS tag_metrics
         ON TRUE
-      WHERE r."status" = 'PUBLISHED'
-        AND r."deletedAt" IS NULL
-        AND (r."visibility" IS NULL OR r."visibility" = 'PUBLIC')
-        ${categoryFilter}
-        AND (
-          r."title" ILIKE ${containsPattern}
-          OR r."slug" ILIKE ${containsPattern}
-          OR r."description" ILIKE ${containsPattern}
-          OR COALESCE(c."name", '') ILIKE ${containsPattern}
-          OR COALESCE(c."slug", '') ILIKE ${containsPattern}
-          OR COALESCE(u."name", '') ILIKE ${containsPattern}
-          OR COALESCE(tag_metrics."tagContains", false)
-          OR ${tokenAnyMatchSql}
-          OR similarity(r."title", ${query}) >= ${threshold}
-          OR similarity(r."slug", ${query}) >= ${threshold}
-          OR GREATEST(
-            similarity(COALESCE(c."name", ''), ${query}),
-            similarity(COALESCE(c."slug", ''), ${query})
-          ) >= ${threshold}
-          OR similarity(COALESCE(u."name", ''), ${query}) >= ${threshold}
-          OR COALESCE(tag_metrics."tagSimilarity", 0) >= ${threshold}
-        )
+    `,
+  };
+}
+
+function buildRankedSearchRowsQuery(params: {
+  query: string;
+  limit: number;
+  offset: number;
+  category?: string;
+  sort?: string;
+}) {
+  const { matchedResourcesSql, orderBy } = buildRankedSearchMatchedResourcesSql(params);
+
+  return Prisma.sql`
+    WITH matched_resources AS (
+      ${matchedResourcesSql}
     ),
     ranked_resources AS (
       SELECT
-        matched_resources.*,
-        COUNT(*) OVER()::int AS "totalCount"
+        matched_resources.*
       FROM matched_resources
       ORDER BY ${Prisma.raw(orderBy)}
       LIMIT ${params.limit}
@@ -499,7 +595,6 @@ function buildRankedSearchQuery(params: {
       ranked_resources."score",
       ranked_resources."matchReason",
       ranked_resources."purchaseCount",
-      ranked_resources."totalCount",
       p."imageUrl" AS "previewImageUrl",
       COALESCE(rv."reviewCount", 0)::int AS "reviewCount"
     FROM ranked_resources
@@ -517,6 +612,128 @@ function buildRankedSearchQuery(params: {
         AND "isVisible" = TRUE
     ) rv ON TRUE
     ORDER BY ${Prisma.raw(orderBy)}
+  `;
+}
+
+function buildRankedSearchSuggestionRowsQuery(params: {
+  query: string;
+  limit: number;
+  category?: string;
+}) {
+  const { matchedResourcesSql, orderBy } = buildRankedSearchMatchedResourcesSql({
+    ...params,
+    sort: "relevance",
+  });
+
+  return Prisma.sql`
+    WITH matched_resources AS (
+      ${matchedResourcesSql}
+    ),
+    ranked_resources AS (
+      SELECT
+        matched_resources.*
+      FROM matched_resources
+      ORDER BY ${Prisma.raw(orderBy)}
+      LIMIT ${params.limit}
+    )
+    SELECT
+      ranked_resources."id",
+      ranked_resources."title",
+      ranked_resources."slug",
+      ranked_resources."price",
+      ranked_resources."isFree",
+      ranked_resources."authorName",
+      ranked_resources."categoryName",
+      ranked_resources."matchReason",
+      p."imageUrl" AS "previewImageUrl"
+    FROM ranked_resources
+    LEFT JOIN LATERAL (
+      SELECT "imageUrl"
+      FROM "ResourcePreview"
+      WHERE "resourceId" = ranked_resources."id"
+      ORDER BY "order" ASC
+      LIMIT 1
+    ) p ON TRUE
+    ORDER BY ${Prisma.raw(orderBy)}
+  `;
+}
+
+function buildRankedSearchRowsWithTotalQuery(params: {
+  query: string;
+  limit: number;
+  offset: number;
+  category?: string;
+  sort?: string;
+}) {
+  const { matchedResourcesSql, orderBy } = buildRankedSearchMatchedResourcesSql(params);
+
+  return Prisma.sql`
+    WITH matched_resources AS (
+      ${matchedResourcesSql}
+    ),
+    totals AS (
+      SELECT COUNT(*)::int AS "totalCount"
+      FROM matched_resources
+    ),
+    ranked_resources AS (
+      SELECT
+        matched_resources.*
+      FROM matched_resources
+      ORDER BY ${Prisma.raw(orderBy)}
+      LIMIT ${params.limit}
+      OFFSET ${params.offset}
+    )
+    SELECT
+      ranked_resources."id",
+      ranked_resources."title",
+      ranked_resources."slug",
+      ranked_resources."price",
+      ranked_resources."isFree",
+      ranked_resources."featured",
+      ranked_resources."downloadCount",
+      ranked_resources."createdAt",
+      ranked_resources."categoryId",
+      ranked_resources."categoryName",
+      ranked_resources."categorySlug",
+      ranked_resources."authorName",
+      ranked_resources."score",
+      ranked_resources."matchReason",
+      ranked_resources."purchaseCount",
+      totals."totalCount",
+      p."imageUrl" AS "previewImageUrl",
+      COALESCE(rv."reviewCount", 0)::int AS "reviewCount"
+    FROM ranked_resources
+    CROSS JOIN totals
+    LEFT JOIN LATERAL (
+      SELECT "imageUrl"
+      FROM "ResourcePreview"
+      WHERE "resourceId" = ranked_resources."id"
+      ORDER BY "order" ASC
+      LIMIT 1
+    ) p ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT COUNT(*)::int AS "reviewCount"
+      FROM "Review"
+      WHERE "resourceId" = ranked_resources."id"
+        AND "isVisible" = TRUE
+    ) rv ON TRUE
+    ORDER BY ${Prisma.raw(orderBy)}
+  `;
+}
+
+function buildRankedSearchTotalCountQuery(params: {
+  query: string;
+  category?: string;
+  sort?: string;
+}) {
+  const { matchedResourcesSql } = buildRankedSearchMatchedResourcesSql(params);
+
+  return Prisma.sql`
+    WITH matched_resources AS (
+      ${matchedResourcesSql}
+    )
+    SELECT COUNT(*)::int AS "totalCount"
+    FROM matched_resources
   `;
 }
 
@@ -1242,12 +1459,26 @@ export async function findSearchResources(params: {
   category?: string;
 }) {
   return prisma.$queryRaw<RankedSearchResourceRow[]>(
-    buildRankedSearchQuery({
+    buildRankedSearchRowsQuery({
       query: params.query,
       limit: params.limit,
       offset: 0,
       category: params.category,
       sort: "relevance",
+    }),
+  );
+}
+
+export async function findSearchSuggestionResources(params: {
+  query: string;
+  limit: number;
+  category?: string;
+}) {
+  return prisma.$queryRaw<RankedSearchSuggestionRow[]>(
+    buildRankedSearchSuggestionRowsQuery({
+      query: params.query,
+      limit: params.limit,
+      category: params.category,
     }),
   );
 }
@@ -1361,7 +1592,7 @@ export async function findMarketplaceSearchResources(params: {
 }) {
   const offset = (params.page - 1) * params.pageSize;
   const rows = await prisma.$queryRaw<RankedSearchResourceRow[]>(
-    buildRankedSearchQuery({
+    buildRankedSearchRowsWithTotalQuery({
       query: params.query,
       limit: params.pageSize,
       offset,
@@ -1370,10 +1601,20 @@ export async function findMarketplaceSearchResources(params: {
     }),
   );
 
-  return {
-    rows,
-    total: rows[0]?.totalCount ?? 0,
-  };
+  let total = rows[0]?.totalCount ?? 0;
+
+  if (rows.length === 0 && offset > 0) {
+    const countRows = await prisma.$queryRaw<Array<{ totalCount: number }>>(
+      buildRankedSearchTotalCountQuery({
+        query: params.query,
+        category: params.category,
+        sort: params.sort,
+      }),
+    );
+    total = countRows[0]?.totalCount ?? 0;
+  }
+
+  return { rows, total };
 }
 
 export async function findTagBySlug(slug: string) {

@@ -18,13 +18,18 @@ import { unstable_cache } from "next/cache";
  */
 
 import { CACHE_KEYS, CACHE_TTLS, rememberJson, runSingleFlight } from "@/lib/cache";
-import { findSearchResources } from "@/repositories/resources/resource.repository";
+import {
+  findSearchResources,
+  findSearchSuggestionResources,
+} from "@/repositories/resources/resource.repository";
 import { withPreview } from "@/services/discover.service";
 
 type CachedFn<T> = () => Promise<T>;
 type SearchRows = Awaited<ReturnType<typeof findSearchResources>>;
+type SearchSuggestionRows = Awaited<ReturnType<typeof findSearchSuggestionResources>>;
 
 const _searchResultsCacheMap = new Map<string, CachedFn<SearchRows>>();
+const _searchSuggestionsCacheMap = new Map<string, CachedFn<SearchSuggestionRows>>();
 
 export interface SearchFilters {
   query:    string;
@@ -44,6 +49,18 @@ export interface SearchResult {
   author:        { name: string | null } | null;
   _count:        { purchases: number; reviews: number };
   matchReason?:  string | null;
+}
+
+export interface SearchSuggestionResult {
+  id: string;
+  title: string;
+  slug: string;
+  price: number;
+  isFree: boolean;
+  previewUrl: string | null;
+  category: { name: string } | null;
+  author: { name: string | null } | null;
+  matchReason?: string | null;
 }
 
 /**
@@ -127,4 +144,59 @@ export async function searchResources(filters: SearchFilters): Promise<SearchRes
       matchReason: row.matchReason,
     }),
   ) as SearchResult[];
+}
+
+export async function searchSuggestions(
+  filters: SearchFilters,
+): Promise<SearchSuggestionResult[]> {
+  const { query, limit = 6, category } = filters;
+
+  const trimmed = query.trim().replace(/\s+/g, " ");
+  if (!trimmed) return [];
+
+  const cacheKey = CACHE_KEYS.searchSuggestions(trimmed, category ?? null, limit);
+  let cachedReader = _searchSuggestionsCacheMap.get(cacheKey);
+
+  if (!cachedReader) {
+    cachedReader = unstable_cache(
+      () =>
+        rememberJson(
+          cacheKey,
+          CACHE_TTLS.publicPage,
+          () =>
+            runSingleFlight(cacheKey, () =>
+              findSearchSuggestionResources({
+                query: trimmed,
+                limit,
+                category,
+              }),
+            ),
+          {
+            metricName: "searchSuggestions",
+            details: {
+              query: trimmed,
+              category: category ?? null,
+              limit,
+            },
+          },
+        ),
+      ["search-suggestions", cacheKey],
+      { revalidate: CACHE_TTLS.publicPage },
+    );
+    _searchSuggestionsCacheMap.set(cacheKey, cachedReader);
+  }
+
+  const raw = await cachedReader();
+
+  return raw.map((row) => ({
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      price: row.price,
+      isFree: row.isFree,
+      author: { name: row.authorName ?? null },
+      category: row.categoryName ? { name: row.categoryName } : null,
+      previewUrl: row.previewImageUrl ?? null,
+      matchReason: row.matchReason,
+    }));
 }

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/design-system";
 import { AlertCircle, CreditCard, QrCode, Download, Lock, CheckCircle } from "lucide-react";
-import { useAuthViewer } from "@/lib/auth/use-auth-viewer";
+import { primeAuthViewer, useAuthViewer } from "@/lib/auth/use-auth-viewer";
 import { formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -67,6 +67,7 @@ export function BuyButton({
   const [isPreparingDownload, setIsPreparingDownload] = useState(false);
   const [libraryError, setLibraryError] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [isCheckingAccount, setIsCheckingAccount] = useState(false);
   const [authRedirectProvider, setAuthRedirectProvider] = useState<"free" | "stripe" | "xendit" | null>(
     null,
   );
@@ -79,8 +80,25 @@ export function BuyButton({
   const redirectingRef = useRef(false);
   const downloadResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const authViewer = useAuthViewer();
+  const authViewer = useAuthViewer({ strategy: "idle", idleTimeoutMs: 800 });
   const router = useRouter();
+
+  async function resolveAuthViewer() {
+    if (authViewer.isReady) {
+      return authViewer;
+    }
+
+    setIsCheckingAccount(true);
+    try {
+      return await primeAuthViewer();
+    } finally {
+      setIsCheckingAccount(false);
+    }
+  }
+
+  const warmAuthViewer = () => {
+    void primeAuthViewer();
+  };
 
   function redirectToLogin(provider: "free" | "stripe" | "xendit") {
     setAuthRedirectProvider(provider);
@@ -152,11 +170,9 @@ export function BuyButton({
     const isRedirectingToLogin = authRedirectProvider === "free";
 
     const handleAddToLibrary = async () => {
-      if (!authViewer.isReady) {
-        return;
-      }
+      const viewer = await resolveAuthViewer();
 
-      if (!authViewer.authenticated) {
+      if (!viewer.authenticated) {
         redirectToLogin("free");
         return;
       }
@@ -192,15 +208,17 @@ export function BuyButton({
       <div className="space-y-3">
         <Button
           onClick={handleAddToLibrary}
-          loading={loadingLibrary || isRedirectingToLogin || !authViewer.isReady}
+          onPointerEnter={warmAuthViewer}
+          onFocus={warmAuthViewer}
+          loading={loadingLibrary || isRedirectingToLogin || isCheckingAccount}
           variant="primary"
           size="lg"
           fullWidth
-          disabled={isRedirectingToLogin || !authViewer.isReady}
+          disabled={loadingLibrary || isRedirectingToLogin || isCheckingAccount}
           className="gap-2"
         >
           <Download className="h-4 w-4" />
-          {!authViewer.isReady
+          {isCheckingAccount
             ? "Checking account…"
             : isRedirectingToLogin
               ? "Redirecting to login…"
@@ -218,11 +236,9 @@ export function BuyButton({
 
   // ── Paid resource — show Stripe / Xendit checkout buttons ────────────────
   const handleStripe = async () => {
-    if (!authViewer.isReady) {
-      return;
-    }
+    const viewer = await resolveAuthViewer();
 
-    if (!authViewer.authenticated) {
+    if (!viewer.authenticated) {
       redirectToLogin("stripe");
       return;
     }
@@ -264,11 +280,9 @@ export function BuyButton({
   };
 
   const handleXendit = async () => {
-    if (!authViewer.isReady) {
-      return;
-    }
+    const viewer = await resolveAuthViewer();
 
-    if (!authViewer.authenticated) {
+    if (!viewer.authenticated) {
       redirectToLogin("xendit");
       return;
     }
@@ -318,15 +332,17 @@ export function BuyButton({
     <div className="space-y-3">
       <Button
         onClick={handleStripe}
-        loading={isStripeBusy || !authViewer.isReady}
-        disabled={isAnyLoading || !authViewer.isReady}
+        onPointerEnter={warmAuthViewer}
+        onFocus={warmAuthViewer}
+        loading={isStripeBusy || isCheckingAccount}
+        disabled={isAnyLoading || isCheckingAccount}
         variant="primary"
         size="lg"
         fullWidth
         className={cn("gap-2 shadow-md", buyButtonToneClassName.accent)}
       >
         <CreditCard className="h-4 w-4" />
-        {!authViewer.isReady
+        {isCheckingAccount
           ? "Checking account…"
           : isStripeRedirectingToLogin
             ? "Redirecting to login…"
@@ -336,15 +352,17 @@ export function BuyButton({
       </Button>
       <Button
         onClick={handleXendit}
-        loading={isXenditBusy || !authViewer.isReady}
-        disabled={isAnyLoading || !authViewer.isReady}
+        onPointerEnter={warmAuthViewer}
+        onFocus={warmAuthViewer}
+        loading={isXenditBusy || isCheckingAccount}
+        disabled={isAnyLoading || isCheckingAccount}
         variant="outline"
         size="lg"
         fullWidth
         className="gap-2"
       >
         <QrCode className="h-4 w-4" />
-        {!authViewer.isReady
+        {isCheckingAccount
           ? "Checking account…"
           : isXenditRedirectingToLogin
             ? "Redirecting to login…"

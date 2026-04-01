@@ -484,6 +484,8 @@ When editing public routes with streaming or personalization:
 - verify `typecheck` and `lint`
 - verify the changed route, API, or user flow actually works at runtime when practical, not just at compile time
 - for route and API work, prefer a local smoke check against the real path or endpoint before declaring the task done
+- for local search/auth verification, prefer `npm run smoke:local:search` over ad-hoc `curl` because it runs sequentially, retries through first-compile delays, and avoids shell/sandbox quirks around local URLs
+- the shared search/auth smoke path now expects `/api/internal/ready` to go green first; if that route is not healthy, treat deeper smoke failures as readiness issues before debugging search/auth behavior
 - if runtime verification is blocked, state that explicitly instead of assuming success
 - if a streamed UI changed, its matching `loading.tsx`, Suspense fallback, skeleton, empty state, and error state must be reviewed and updated in the same patch when needed
 - treat loading/fallback UI as part of the feature, not optional polish

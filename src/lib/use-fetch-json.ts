@@ -9,6 +9,13 @@ type UseFetchJsonOptions = {
   cacheKey?: string;
 };
 
+type FetchJsonOptions = {
+  url: string;
+  ttlMs?: number;
+  cacheKey?: string;
+  fresh?: boolean;
+};
+
 type UseFetchJsonState<T> = {
   data: T | null;
   isReady: boolean;
@@ -43,49 +50,83 @@ function getCacheEntry<T>(key: string, ttlMs: number): { hit: boolean; data: T |
   };
 }
 
-async function loadFetchJson<T>(url: string, cacheKey: string, ttlMs: number): Promise<T | null> {
-  const cached = getCacheEntry<T>(cacheKey, ttlMs);
-  if (cached.hit) {
-    return cached.data;
+function writeCacheEntry<T>(cacheKey: string, data: T | null, ttlMs: number) {
+  if (ttlMs <= 0) {
+    fetchJsonCache.delete(cacheKey);
+    return;
   }
 
-  const existing = fetchJsonInFlight.get(cacheKey) as Promise<T | null> | undefined;
-  if (existing) {
-    return existing;
-  }
+  fetchJsonCache.set(cacheKey, {
+    data,
+    expiresAt: Date.now() + ttlMs,
+  });
+}
 
-  const promise = fetch(url, {
+async function requestJson<T>(url: string): Promise<T | null> {
+  const response = await fetch(url, {
     cache: "no-store",
     credentials: "same-origin",
-  })
-    .then(async (response) => {
-      if (!response.ok) {
-        throw new Error(`Failed to load ${url}`);
-      }
+  });
 
-      const json = (await response.json()) as { data?: T | null };
-      const data = json.data ?? null;
+  if (!response.ok) {
+    throw new Error(`Failed to load ${url}`);
+  }
 
-      if (ttlMs > 0) {
-        fetchJsonCache.set(cacheKey, {
-          data,
-          expiresAt: Date.now() + ttlMs,
-        });
-      }
+  const json = (await response.json()) as { data?: T | null };
+  return json.data ?? null;
+}
 
+async function loadFetchJson<T>(
+  url: string,
+  cacheKey: string,
+  ttlMs: number,
+  options?: { fresh?: boolean },
+): Promise<T | null> {
+  const fresh = options?.fresh ?? false;
+
+  if (!fresh) {
+    const cached = getCacheEntry<T>(cacheKey, ttlMs);
+    if (cached.hit) {
+      return cached.data;
+    }
+
+    const existing = fetchJsonInFlight.get(cacheKey) as Promise<T | null> | undefined;
+    if (existing) {
+      return existing;
+    }
+  }
+
+  const promise = requestJson<T>(url)
+    .then((data) => {
+      writeCacheEntry(cacheKey, data, ttlMs);
       return data;
     })
     .finally(() => {
-      fetchJsonInFlight.delete(cacheKey);
+      if (!fresh) {
+        fetchJsonInFlight.delete(cacheKey);
+      }
     });
 
-  fetchJsonInFlight.set(cacheKey, promise);
+  if (!fresh) {
+    fetchJsonInFlight.set(cacheKey, promise);
+  }
+
   return promise;
 }
 
 export function clearFetchJsonCache() {
   fetchJsonCache.clear();
   fetchJsonInFlight.clear();
+}
+
+export async function fetchJson<T>({
+  url,
+  ttlMs = 0,
+  cacheKey,
+  fresh = false,
+}: FetchJsonOptions): Promise<T | null> {
+  const resolvedCacheKey = cacheKey ?? url;
+  return loadFetchJson<T>(url, resolvedCacheKey, ttlMs, { fresh });
 }
 
 export function useFetchJson<T>({
