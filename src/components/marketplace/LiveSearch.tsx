@@ -13,11 +13,24 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search, FileText } from "lucide-react";
 import Image from "next/image";
 import { SearchInput } from "@/design-system";
+import {
+  beginResourcesNavigation,
+  inferResourcesNavigationMode,
+} from "@/components/marketplace/resourcesNavigationState";
 import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
+import {
+  buildMarketplaceSearchRecoveryHref,
+  buildMarketplaceSearchHref,
+  buildMarketplaceSuggestionsHref,
+} from "@/lib/search/marketplace-navigation";
+import {
+  fetchSearchRecovery,
+  fetchSearchSuggestions,
+} from "@/lib/search/search-suggestions";
 import { routes } from "@/lib/routes";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -31,6 +44,11 @@ interface SearchResult {
   downloadCount: number;
   previewUrl:    string | null;
   category:      { name: string } | null;
+  matchReason?:  string | null;
+}
+
+interface SearchRecoveryData {
+  suggestedQueries: string[];
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -57,16 +75,28 @@ export function LiveSearch({
   autoFocus   = false,
 }: LiveSearchProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [query,   setQuery]   = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [open,    setOpen]    = useState(false);
   const [active,  setActive]  = useState(-1); // keyboard-selected index
+  const [recovery, setRecovery] = useState<SearchRecoveryData | null>(null);
 
   const inputRef    = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const loadSearchRecovery = useCallback(async (query: string) => {
+    const endpoint = buildMarketplaceSearchRecoveryHref(query);
+    if (!endpoint) {
+      return null;
+    }
+
+    return fetchSearchRecovery<SearchRecoveryData>(endpoint);
+  }, []);
 
   // ── Debounced fetch ───────────────────────────────────────────────────────
 
@@ -79,22 +109,43 @@ export function LiveSearch({
 
     setLoading(true);
     try {
-      const res  = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=8`);
-      const json = await res.json() as { data?: SearchResult[] };
-      setResults(json.data ?? []);
+      const endpoint = buildMarketplaceSuggestionsHref({
+        pathname,
+        searchParams,
+        query: q,
+      });
+
+      if (!endpoint) {
+        setResults([]);
+        setRecovery(null);
+        setOpen(false);
+        return;
+      }
+
+      const payload = await fetchSearchSuggestions<SearchResult, SearchRecoveryData>(
+        endpoint,
+      );
+      const nextRecovery =
+        payload.data.length === 0
+          ? await loadSearchRecovery(q)
+          : null;
+      setResults(payload.data ?? []);
+      setRecovery(nextRecovery);
       setOpen(true);
       setActive(-1);
     } catch {
       setResults([]);
+      setRecovery(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadSearchRecovery, pathname, searchParams]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!query.trim()) {
       setResults([]);
+      setRecovery(null);
       setOpen(false);
       setLoading(false);
       return;
@@ -138,7 +189,16 @@ export function LiveSearch({
         navigate(results[active].slug);
       } else if (query.trim()) {
         // Fall back to marketplace filter search
-        router.push(routes.marketplaceSearch(query.trim()));
+        const href = buildMarketplaceSearchHref({
+          pathname,
+          searchParams,
+          query,
+        });
+        const mode = inferResourcesNavigationMode(href);
+        if (mode) {
+          beginResourcesNavigation(mode, href);
+        }
+        router.push(href);
         setOpen(false);
       }
     } else if (e.key === "Escape") {
@@ -149,12 +209,15 @@ export function LiveSearch({
   function navigate(slug: string) {
     setOpen(false);
     setQuery("");
-    router.push(routes.resource(slug));
+    const href = routes.resource(slug);
+    beginResourcesNavigation("detail", href);
+    router.push(href);
   }
 
   function handleClear() {
     setQuery("");
     setResults([]);
+    setRecovery(null);
     setOpen(false);
     inputRef.current?.focus();
   }
@@ -218,11 +281,11 @@ export function LiveSearch({
                 <p className="truncate text-[13px] font-semibold text-text-primary">
                   {r.title}
                 </p>
-                {r.category && (
+                {r.category || r.matchReason ? (
                   <p className="mt-0.5 text-[11px] text-text-muted">
-                    {r.category.name}
+                    {[r.category?.name ?? null, r.matchReason ?? null].filter(Boolean).join(" • ")}
                   </p>
-                )}
+                ) : null}
               </div>
 
               {/* Price */}
@@ -239,7 +302,16 @@ export function LiveSearch({
           {/* "See all results" footer */}
           <button
             onClick={() => {
-              router.push(routes.marketplaceSearch(query.trim()));
+              const href = buildMarketplaceSearchHref({
+                pathname,
+                searchParams,
+                query,
+              });
+              const mode = inferResourcesNavigationMode(href);
+              if (mode) {
+                beginResourcesNavigation(mode, href);
+              }
+              router.push(href);
               setOpen(false);
             }}
             className="flex w-full items-center justify-center gap-1.5 border-t border-border-subtle px-4 py-2.5 text-[12px] font-medium text-blue-600 transition hover:bg-blue-50"
@@ -256,6 +328,22 @@ export function LiveSearch({
           <p className="text-center text-[13px] text-text-muted">
             No resources found for &ldquo;{query}&rdquo;
           </p>
+          {recovery?.suggestedQueries?.length ? (
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {recovery.suggestedQueries.slice(0, 4).map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => {
+                    setQuery(suggestion);
+                  }}
+                  className="rounded-full border border-border-subtle bg-neutral-50 px-3 py-1.5 text-[11px] font-medium text-text-primary transition hover:bg-white"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       )}
     </div>

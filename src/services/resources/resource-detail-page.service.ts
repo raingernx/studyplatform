@@ -45,6 +45,7 @@ export async function getResourceDetailPagePurchaseMeta(slug: string) {
 }
 
 export async function getResourceDetailPageExtras(input: {
+  fresh?: boolean;
   resourceId: string;
   userId: string;
 }) {

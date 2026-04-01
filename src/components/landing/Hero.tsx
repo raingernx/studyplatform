@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { Button } from "@/design-system";
+import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
 import { ResourceCard, type ResourceCardResource } from "@/components/resources/ResourceCard";
 import { routes } from "@/lib/routes";
 
@@ -68,7 +69,11 @@ export function Hero({ heroResources }: HeroProps) {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     const q = query.trim();
-    if (q) router.push(routes.marketplaceSearch(q));
+    if (q) {
+      const href = routes.marketplaceSearch(q);
+      beginResourcesNavigation("listing", href);
+      router.push(href);
+    }
   }
 
   const cards = heroResources?.length ? heroResources.slice(0, 3) : FALLBACK_RESOURCES;

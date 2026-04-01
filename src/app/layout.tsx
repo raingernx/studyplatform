@@ -8,25 +8,21 @@ import { PlatformConfigProvider } from "@/components/providers/PlatformConfigPro
 import { PublicSiteFooter } from "@/components/layout/PublicSiteFooter";
 import { Footer } from "@/components/layout/Footer";
 import { fontVariables } from "@/lib/fonts";
-import { getCachedServerSession } from "@/lib/auth";
 import { getBuildSafePublicPlatformConfig } from "@/services/platform.service";
 import { buildPlatformMetadata } from "@/lib/platform/platform-metadata";
 import { Providers } from "./providers";
 
-export async function generateMetadata(): Promise<Metadata> {
+export function generateMetadata(): Metadata {
   const platform = getBuildSafePublicPlatformConfig();
   return buildPlatformMetadata(platform);
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [platform, session] = await Promise.all([
-    getBuildSafePublicPlatformConfig(),
-    getCachedServerSession(),
-  ]);
+  const platform = getBuildSafePublicPlatformConfig();
   const htmlLang = platform.defaultLanguage.trim() || "th";
 
   return (
@@ -36,7 +32,7 @@ export default async function RootLayout({
       >
         <PlatformConfigProvider initialConfig={platform}>
           <ThemeProvider>
-            <Providers session={session}>
+            <Providers>
               <div className="flex min-h-screen flex-col bg-white">
                 <div className="flex-1 min-h-0">{children}</div>
                 <PublicSiteFooter>

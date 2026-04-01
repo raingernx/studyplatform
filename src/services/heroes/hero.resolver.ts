@@ -34,6 +34,7 @@ import type {
 
 export interface HomepageHeroSelectionContext {
   userId?: string | null;
+  staticAnonSeed?: boolean;
 }
 
 export interface ResolvedHomepageHeroConfig extends HeroStyleFields {
@@ -206,10 +207,24 @@ function hashString(input: string) {
 }
 
 const getHeroRequestContext = cache(
-  async (userId?: string | null): Promise<HeroRequestContextData> => {
+  async (
+    userId?: string | null,
+    staticAnonSeed: boolean = false,
+  ): Promise<HeroRequestContextData> => {
     if (userId) {
       return {
         seed: `user:${userId}`,
+        localeHints: {
+          userAgent: "",
+          language: "",
+        },
+        experimentVariants: {},
+      };
+    }
+
+    if (staticAnonSeed) {
+      return {
+        seed: "anon:static",
         localeHints: {
           userAgent: "",
           language: "",
@@ -373,7 +388,10 @@ function applyExperimentAssignments(
 }
 
 const resolveHomepageHeroCached = cache(
-  async (userId?: string | null): Promise<ResolvedHomepageHeroConfig | null> => {
+  async (
+    userId?: string | null,
+    staticAnonSeed: boolean = false,
+  ): Promise<ResolvedHomepageHeroConfig | null> => {
     try {
       const eligibleHeroes = await getCachedEligibleHomepageHeroes();
 
@@ -383,7 +401,10 @@ const resolveHomepageHeroCached = cache(
           (candidate) => candidate.priority === topPriority,
         );
 
-        const requestContext = await getHeroRequestContext(userId);
+        const requestContext = await getHeroRequestContext(
+          userId,
+          staticAnonSeed,
+        );
         const experimentCandidates = applyExperimentAssignments(
           priorityBucket,
           requestContext.seed,
@@ -419,5 +440,11 @@ const resolveHomepageHeroCached = cache(
 export async function resolveHomepageHero(
   context: HomepageHeroSelectionContext = {},
 ): Promise<ResolvedHomepageHeroConfig | null> {
-  return resolveHomepageHeroCached(context.userId ?? null);
+  const useStaticAnonSeed =
+    context.userId == null ? context.staticAnonSeed !== false : false;
+
+  return resolveHomepageHeroCached(
+    context.userId ?? null,
+    useStaticAnonSeed,
+  );
 }

@@ -29,11 +29,12 @@ import {
   traceServerStep,
 } from "@/lib/performance/observability";
 import { MARKETPLACE_LISTING_PAGE_SIZE } from "@/config/marketplace";
-import { DEFAULT_SORT, normaliseSortParam } from "@/config/sortOptions";
+import { getEffectiveMarketplaceSort } from "@/config/sortOptions";
 import {
   countMarketplaceResources,
   findActivationRankedResources,
   findCategoriesOrderedByName,
+  findMarketplaceSearchResources,
   findPublicResourceDetailBodyContentBySlug,
   findMarketplaceResourceCards,
   findPublicResourceDetailFooterContentBySlug,
@@ -41,6 +42,7 @@ import {
   findPublicResourceDetailBySlug,
   findRelatedListedResources,
   type FindActivationRankedResourcesRow,
+  type RankedSearchResourceRow,
 } from "@/repositories/resources/resource.repository";
 import { withPreview } from "@/services/discover.service";
 
@@ -84,6 +86,33 @@ function toActivationRankedCardShape(row: FindActivationRankedResourcesRow) {
       ? { id: row.categoryId, name: row.categoryName ?? "", slug: row.categorySlug ?? "" }
       : null,
     previews: row.previewImageUrl ? [{ imageUrl: row.previewImageUrl }] : [],
+  };
+}
+
+function toRankedSearchCardShape(row: RankedSearchResourceRow) {
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    price: row.price,
+    isFree: row.isFree,
+    featured: row.featured,
+    downloadCount: row.downloadCount,
+    createdAt: row.createdAt,
+    author: { name: row.authorName ?? null },
+    category: row.categoryId !== null
+      ? {
+          id: row.categoryId,
+          name: row.categoryName ?? "",
+          slug: row.categorySlug ?? "",
+        }
+      : null,
+    previews: row.previewImageUrl ? [{ imageUrl: row.previewImageUrl }] : [],
+    _count: {
+      purchases: row.purchaseCount,
+      reviews: row.reviewCount,
+    },
+    socialProofLabel: row.matchReason ?? null,
   };
 }
 
@@ -154,7 +183,7 @@ export function normalizeMarketplaceFilters(
     price: rawPrice === "free" || rawPrice === "paid" ? rawPrice : null,
     featured: filters.featured === true,
     tag: normalizeOptionalMarketplaceText(filters.tag),
-    sort: normaliseSortParam(filters.sort ?? DEFAULT_SORT),
+    sort: getEffectiveMarketplaceSort(filters.sort, Boolean(filters.search?.trim())),
     page: normalizeMarketplacePage(filters.page),
     pageSize: normalizeMarketplacePageSize(filters.pageSize),
   };
@@ -209,6 +238,7 @@ export function buildOrderBy(sort: string) {
     case "price_asc":  return { price: "asc" }          as const;
     case "price_desc": return { price: "desc" }         as const;
     case "trending":
+    case "relevance":
       return [
         { resourceStat: { trendingScore: "desc" } },
         { resourceStat: { purchases: "desc" } },
@@ -288,6 +318,34 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
       resources: [],
       total: 0,
       totalPages: 1,
+      categories,
+    };
+  }
+
+  if (search) {
+    const { rows, total } = await traceServerStep(
+      "marketplace.findRankedSearchResources",
+      () =>
+        findMarketplaceSearchResources({
+          query: search,
+          page,
+          pageSize,
+          category: category ?? undefined,
+          sort,
+        }),
+      {
+        page,
+        pageSize,
+        sort,
+        category: category ?? "all",
+      },
+    );
+
+    const resources = rows.map((row) => withPreview(toRankedSearchCardShape(row)));
+    return {
+      resources,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
       categories,
     };
   }

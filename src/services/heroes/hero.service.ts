@@ -358,7 +358,7 @@ export async function getActiveHero(now = new Date()) {
     return toHeroConfig(legacyFallbackHero);
   }
 
-  return resolveHomepageHero();
+  return resolveHomepageHero({ staticAnonSeed: true });
 }
 
 export async function getHeroList(

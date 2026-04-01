@@ -21,7 +21,6 @@ import {
   withRequestPerformanceTrace,
 } from "@/lib/performance/observability";
 import { routes } from "@/lib/routes";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Analytics – Admin",
@@ -98,11 +97,6 @@ export default async function AdminAnalyticsPage() {
       routeKind: "overview",
     },
     async () => {
-      await traceServerStep(
-        "admin_analytics.requireAdminSession",
-        () => requireAdminSession(routes.adminAnalytics),
-      );
-
       const metrics = await traceServerStep(
         "admin_analytics.getPlatformMetrics",
         () => getPlatformMetrics(),

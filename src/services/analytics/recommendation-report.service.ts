@@ -21,7 +21,7 @@ import {
   getRecommendationPurchases,
   type DateFilter,
 } from "@/repositories/analytics/recommendation-report.repository";
-import { CACHE_TTLS } from "@/lib/cache";
+import { CACHE_TTLS, rememberJson, runSingleFlight } from "@/lib/cache";
 import { recordCacheCall, recordCacheMiss } from "@/lib/performance/observability";
 import { RECOMMENDATION_EXPERIMENT_ID } from "@/lib/recommendations/experiment";
 
@@ -178,23 +178,46 @@ export async function getRecommendationReport(
         cacheMode,
       });
       const filter: DateFilter = { start: startDate, end: endDate };
-
-      const [impressions, clicks, users, purchases] = await Promise.all([
-        getRecommendationImpressions(experimentId, filter),
-        getRecommendationClicks(experimentId, filter),
-        getRecommendationUniqueUsers(experimentId, filter),
-        getRecommendationPurchases(experimentId, filter),
-      ]);
-
-      return {
+      const cacheKey = [
+        "admin-recommendation-report",
         experimentId,
-        generatedAt: new Date().toISOString(),
         filterStart,
         filterEnd,
-        isDefaultRange,
-        phase1: variantMetrics("phase1", impressions, clicks, users, purchases),
-        phase2: variantMetrics("phase2", impressions, clicks, users, purchases),
-      };
+        cacheMode,
+      ].join(":");
+
+      return rememberJson(
+        cacheKey,
+        CACHE_TTLS.publicPage,
+        () =>
+          runSingleFlight(cacheKey, async () => {
+            const [impressions, clicks, users, purchases] = await Promise.all([
+              getRecommendationImpressions(experimentId, filter),
+              getRecommendationClicks(experimentId, filter),
+              getRecommendationUniqueUsers(experimentId, filter),
+              getRecommendationPurchases(experimentId, filter),
+            ]);
+
+            return {
+              experimentId,
+              generatedAt: new Date().toISOString(),
+              filterStart,
+              filterEnd,
+              isDefaultRange,
+              phase1: variantMetrics("phase1", impressions, clicks, users, purchases),
+              phase2: variantMetrics("phase2", impressions, clicks, users, purchases),
+            };
+          }),
+        {
+          metricName: "getRecommendationReport",
+          details: {
+            cacheMode,
+            experimentId,
+            filterEnd,
+            filterStart,
+          },
+        },
+      );
     },
     [
       "admin-recommendation-report",

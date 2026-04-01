@@ -27,7 +27,7 @@ import {
   fetchActivityFunnelCounts,
   type PurchaseDateFilter,
 } from "@/repositories/analytics/purchase-analytics.repository";
-import { CACHE_TTLS } from "@/lib/cache";
+import { CACHE_TTLS, rememberJson, runSingleFlight } from "@/lib/cache";
 import { recordCacheCall, recordCacheMiss } from "@/lib/performance/observability";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -221,133 +221,152 @@ export async function getPurchaseAnalytics(
         filterEnd,
         cacheMode,
       });
-      // All six queries run in parallel — no inter-dependency.
-      const [
-        funnel,
-        activityFunnel,
-        revenue,
-        providerBreakdown,
-        topResources,
-        dailySeries,
-      ] = await Promise.all([
-        fetchPurchaseFunnelCounts(filter),
-        fetchActivityFunnelCounts(filter),
-        fetchRevenueSummary(filter),
-        fetchProviderBreakdown(filter),
-        fetchTopPurchasedResources(filter, 10),
-        fetchDailyPurchaseSeries(filter),
-      ]);
-
-      const sessionsAbandoned = Math.max(
-        0,
-        funnel.sessionsStarted - funnel.sessionsCompleted - funnel.sessionsFailed,
-      );
-
-      // ── ActivityLog funnel rates ──────────────────────────────────────────
-      const redirectRate = pct(
-        activityFunnel.checkoutRedirected,
-        activityFunnel.checkoutStarted,
-      );
-      const completionRate = pct(
-        activityFunnel.purchaseCompletedWebhook,
-        activityFunnel.checkoutRedirected,
-      );
-      const returnRate = pct(
-        activityFunnel.checkoutSuccessPageViewed,
-        activityFunnel.purchaseCompletedWebhook,
-      );
-      const activationRate = pct(
-        activityFunnel.downloadStarted,
-        activityFunnel.checkoutSuccessPageViewed,
-      );
-      const paidActivationRate = pct(
-        activityFunnel.firstPaidDownload,
-        activityFunnel.purchaseCompletedWebhook,
-      );
-
-      const funnelSteps: FunnelStep[] = [
-        {
-          label: "Checkout started",
-          action: "CHECKOUT_STARTED",
-          count: activityFunnel.checkoutStarted,
-          rateFromPrev: null,
-          rateLabel: "",
-        },
-        {
-          label: "Redirected to provider",
-          action: "CHECKOUT_REDIRECTED",
-          count: activityFunnel.checkoutRedirected,
-          rateFromPrev: redirectRate,
-          rateLabel: "redirect rate",
-        },
-        {
-          label: "Payment confirmed",
-          action: "PURCHASE_COMPLETED_WEBHOOK",
-          count: activityFunnel.purchaseCompletedWebhook,
-          rateFromPrev: completionRate,
-          rateLabel: "completion rate",
-        },
-        {
-          label: "Success page viewed",
-          action: "CHECKOUT_SUCCESS_PAGE_VIEWED",
-          count: activityFunnel.checkoutSuccessPageViewed,
-          rateFromPrev: returnRate,
-          rateLabel: "return rate",
-        },
-        {
-          label: "Download started",
-          action: "DOWNLOAD_STARTED",
-          count: activityFunnel.downloadStarted,
-          rateFromPrev: activationRate,
-          rateLabel: "activation rate",
-        },
-        {
-          label: "Paid activation",
-          action: "FIRST_PAID_DOWNLOAD",
-          count: activityFunnel.firstPaidDownload,
-          rateFromPrev: paidActivationRate,
-          rateLabel: "paid activation rate",
-        },
-      ];
-
-      return {
-        sessionsStarted: funnel.sessionsStarted,
-        sessionsCompleted: funnel.sessionsCompleted,
-        sessionsFailed: funnel.sessionsFailed,
-        sessionsAbandoned,
-        paidConversionRate: pct(funnel.sessionsCompleted, funnel.sessionsStarted),
-        freeClaims: funnel.freeClaims,
-        totalAcquisitions: funnel.sessionsCompleted + funnel.freeClaims,
-
-        funnelSteps,
-        downloadsStarted: activityFunnel.downloadStarted,
-        firstPaidDownload: activityFunnel.firstPaidDownload,
-        redirectRate,
-        completionRate,
-        returnRate,
-        activationRate,
-        paidActivationRate,
-
-        totalRevenue: revenue.totalRevenue,
-        platformFee: revenue.platformFee,
-        creatorShare: revenue.creatorShare,
-
-        providerBreakdown,
-        topResources,
-
-        dailySeries: dailySeries.map((row) => ({
-          date: new Date(row.date).toISOString().slice(0, 10),
-          paidCount: row.paidCount,
-          freeCount: row.freeCount,
-          revenue: row.revenue,
-        })),
-
-        generatedAt:
-          new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+      const cacheKey = [
+        "admin-purchase-analytics",
         filterStart,
         filterEnd,
-        isDefaultRange,
-      };
+        cacheMode,
+      ].join(":");
+
+      return rememberJson(
+        cacheKey,
+        CACHE_TTLS.publicPage,
+        () =>
+          runSingleFlight(cacheKey, async () => {
+            const [
+              funnel,
+              activityFunnel,
+              revenue,
+              providerBreakdown,
+              topResources,
+              dailySeries,
+            ] = await Promise.all([
+              fetchPurchaseFunnelCounts(filter),
+              fetchActivityFunnelCounts(filter),
+              fetchRevenueSummary(filter),
+              fetchProviderBreakdown(filter),
+              fetchTopPurchasedResources(filter, 10),
+              fetchDailyPurchaseSeries(filter),
+            ]);
+
+            const sessionsAbandoned = Math.max(
+              0,
+              funnel.sessionsStarted - funnel.sessionsCompleted - funnel.sessionsFailed,
+            );
+            const redirectRate = pct(
+              activityFunnel.checkoutRedirected,
+              activityFunnel.checkoutStarted,
+            );
+            const completionRate = pct(
+              activityFunnel.purchaseCompletedWebhook,
+              activityFunnel.checkoutRedirected,
+            );
+            const returnRate = pct(
+              activityFunnel.checkoutSuccessPageViewed,
+              activityFunnel.purchaseCompletedWebhook,
+            );
+            const activationRate = pct(
+              activityFunnel.downloadStarted,
+              activityFunnel.checkoutSuccessPageViewed,
+            );
+            const paidActivationRate = pct(
+              activityFunnel.firstPaidDownload,
+              activityFunnel.purchaseCompletedWebhook,
+            );
+
+            const funnelSteps: FunnelStep[] = [
+              {
+                label: "Checkout started",
+                action: "CHECKOUT_STARTED",
+                count: activityFunnel.checkoutStarted,
+                rateFromPrev: null,
+                rateLabel: "",
+              },
+              {
+                label: "Redirected to provider",
+                action: "CHECKOUT_REDIRECTED",
+                count: activityFunnel.checkoutRedirected,
+                rateFromPrev: redirectRate,
+                rateLabel: "redirect rate",
+              },
+              {
+                label: "Payment confirmed",
+                action: "PURCHASE_COMPLETED_WEBHOOK",
+                count: activityFunnel.purchaseCompletedWebhook,
+                rateFromPrev: completionRate,
+                rateLabel: "completion rate",
+              },
+              {
+                label: "Success page viewed",
+                action: "CHECKOUT_SUCCESS_PAGE_VIEWED",
+                count: activityFunnel.checkoutSuccessPageViewed,
+                rateFromPrev: returnRate,
+                rateLabel: "return rate",
+              },
+              {
+                label: "Download started",
+                action: "DOWNLOAD_STARTED",
+                count: activityFunnel.downloadStarted,
+                rateFromPrev: activationRate,
+                rateLabel: "activation rate",
+              },
+              {
+                label: "Paid activation",
+                action: "FIRST_PAID_DOWNLOAD",
+                count: activityFunnel.firstPaidDownload,
+                rateFromPrev: paidActivationRate,
+                rateLabel: "paid activation rate",
+              },
+            ];
+
+            return {
+              sessionsStarted: funnel.sessionsStarted,
+              sessionsCompleted: funnel.sessionsCompleted,
+              sessionsFailed: funnel.sessionsFailed,
+              sessionsAbandoned,
+              paidConversionRate: pct(funnel.sessionsCompleted, funnel.sessionsStarted),
+              freeClaims: funnel.freeClaims,
+              totalAcquisitions: funnel.sessionsCompleted + funnel.freeClaims,
+
+              funnelSteps,
+              downloadsStarted: activityFunnel.downloadStarted,
+              firstPaidDownload: activityFunnel.firstPaidDownload,
+              redirectRate,
+              completionRate,
+              returnRate,
+              activationRate,
+              paidActivationRate,
+
+              totalRevenue: revenue.totalRevenue,
+              platformFee: revenue.platformFee,
+              creatorShare: revenue.creatorShare,
+
+              providerBreakdown,
+              topResources,
+
+              dailySeries: dailySeries.map((row) => ({
+                date: new Date(row.date).toISOString().slice(0, 10),
+                paidCount: row.paidCount,
+                freeCount: row.freeCount,
+                revenue: row.revenue,
+              })),
+
+              generatedAt:
+                new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+              filterStart,
+              filterEnd,
+              isDefaultRange,
+            };
+          }),
+        {
+          metricName: "getPurchaseAnalytics",
+          details: {
+            cacheMode,
+            filterEnd,
+            filterStart,
+          },
+        },
+      );
     },
     [
       "admin-purchase-analytics",

@@ -1,15 +1,12 @@
 import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
 import { Suspense } from "react";
-import { getCachedServerSession } from "@/lib/auth";
 import { isMissingTableError } from "@/lib/prismaErrors";
-import { logActivity } from "@/lib/activity";
-import { AlertCircle, BookOpen, CheckCircle, Download } from "lucide-react";
-import Link from "next/link";
+import { AlertCircle, BookOpen } from "lucide-react";
 import { ResourceHeader } from "@/components/resource/ResourceHeader";
 import { ResourceGallery } from "@/components/resource/ResourceGallery";
 import { PurchaseCardSkeleton } from "@/components/resource/PurchaseCardSkeleton";
 import { ResourceDetailShell } from "@/components/resources/ResourceDetailShell";
+import { ResourceDetailViewerStateProvider } from "@/components/resources/ResourceDetailViewerStateProvider";
 import {
   ResourceDetailBodyFallback,
   ResourceDetailBodySection,
@@ -29,20 +26,17 @@ import {
 import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import {
   getResourceDetailPageBodyContent,
-  getResourceDetailPageExtras,
   getResourceDetailPageFooterContent,
   getResourceDetailPagePurchaseMeta,
-  getResourceDetailPageRelatedSection,
   getResourceDetailPageResource,
   getResourceDetailPageReviewList,
-  getResourceDetailPageReviewSection,
   getResourceDetailPageTrustSummary,
 } from "@/services/resources/resource-detail-page.service";
 import {
   logResourceDetailFailure,
   runNonCriticalResourceDetailTask,
 } from "@/services/resources/resource-detail-resilience";
-import { traceServerStep, updateRequestPerformanceDetails, withRequestPerformanceTrace } from "@/lib/performance/observability";
+import { traceServerStep, withRequestPerformanceTrace } from "@/lib/performance/observability";
 import { routes } from "@/lib/routes";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -51,41 +45,6 @@ type Props = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
-
-function hasSessionTokenCookie(
-  cookieStore: Awaited<ReturnType<typeof cookies>>,
-) {
-  return (
-    cookieStore.has("next-auth.session-token") ||
-    cookieStore.has("__Secure-next-auth.session-token") ||
-    cookieStore.has("authjs.session-token") ||
-    cookieStore.has("__Secure-authjs.session-token")
-  );
-}
-
-async function getOptionalSession() {
-  let cookieStore: Awaited<ReturnType<typeof cookies>> | null = null;
-
-  try {
-    cookieStore = await cookies();
-  } catch {
-    cookieStore = null;
-  }
-
-  if (!cookieStore || !hasSessionTokenCookie(cookieStore)) {
-    return null;
-  }
-
-  try {
-    return await getCachedServerSession();
-  } catch (error) {
-    if (!isMissingTableError(error)) {
-      throw error;
-    }
-
-    return null;
-  }
-}
 
 function formatLevel(level?: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | null) {
   if (!level) return null;
@@ -191,22 +150,6 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
       slug,
     },
     async () => {
-      const sessionPromise = runNonCriticalResourceDetailTask(
-        () =>
-          traceServerStep(
-            "resource_detail.optional_session",
-            () => getOptionalSession(),
-            { slug },
-          ),
-        {
-          fallback: null,
-          context: {
-            section: "optional-session",
-            slug,
-          },
-        },
-      );
-
       const resourceSettled = await Promise.allSettled([
         traceServerStep(
           "resource_detail.getResourceBySlug",
@@ -266,37 +209,6 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
           },
         },
       );
-      const ownershipPromise = sessionPromise.then((session) => {
-        const userId = session?.user?.id;
-
-        if (!userId) {
-          return { isOwned: false };
-        }
-
-        return runNonCriticalResourceDetailTask(
-          () =>
-            traceServerStep(
-              "resource_detail.getResourceDetailOwnership",
-              () =>
-                getResourceDetailPageExtras({
-                  resourceId: resource.id,
-                  userId,
-                }),
-              {
-                personalized: true,
-                slug,
-              },
-            ),
-          {
-            fallback: { isOwned: false },
-            context: {
-              resourceId: resource.id,
-              section: "ownership",
-              slug,
-            },
-          },
-        );
-      });
       const bodyContentPromise = runNonCriticalResourceDetailTask(
         () =>
           traceServerStep(
@@ -377,30 +289,8 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
   const levelLabel = formatLevel(resource.level);
   const outcomeHint = buildOutcomeHint(resource);
 
-  sessionPromise
-    .then((session) => {
-      updateRequestPerformanceDetails({
-        hasSession: Boolean(session?.user?.id),
-      });
-
-      return logActivity({
-        userId: session?.user?.id,
-        action: "RESOURCE_VIEW",
-        entity: "Resource",
-        entityId: resource.id,
-        metadata: {
-          slug: resource.slug,
-          title: resource.title,
-          categoryId: resource.categoryId,
-          isFree: resource.isFree || resource.price === 0,
-        },
-      });
-    })
-    .catch((error) => {
-      console.error("[RESOURCE_PAGE] Failed to resolve session or log resource detail view activity:", error);
-    });
-
   return (
+    <ResourceDetailViewerStateProvider resourceId={resource.id}>
     <ResourceDetailShell>
       <div className="space-y-6 lg:space-y-9">
 
@@ -428,9 +318,9 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
             {isReturningFromCheckout && (
               <Suspense fallback={<ResourceDetailSuccessSkeleton hasFile={hasFile} />}>
                 <ResourceDetailSuccessShell
-                  ownershipPromise={ownershipPromise}
                   hasFile={hasFile}
                   resourceId={resource.id}
+                  resourceTitle={resource.title}
                 />
               </Suspense>
             )}
@@ -483,8 +373,6 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
 
                 <Suspense fallback={<ResourceDetailOwnerReviewFallback />}>
                   <ResourceDetailOwnerReviewSection
-                    sessionPromise={sessionPromise}
-                    ownershipPromise={ownershipPromise}
                     resourceId={resource.id}
                     resourceTitle={resource.title}
                   />
@@ -504,9 +392,7 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                 <Suspense fallback={<PurchaseCardSkeleton />}>
                   <ResourceDetailPurchaseCard
                     resource={resource}
-                    sessionPromise={sessionPromise}
                     purchaseMetaPromise={purchaseMetaPromise}
-                    ownershipPromise={ownershipPromise}
                     trustSummaryPromise={trustSummaryPromise}
                     isReturningFromCheckout={isReturningFromCheckout}
                     hasFile={hasFile}
@@ -602,6 +488,7 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
 
       </div>
     </ResourceDetailShell>
+    </ResourceDetailViewerStateProvider>
   );
     },
   );

@@ -1,11 +1,13 @@
-import { Suspense, type ReactNode } from "react";
-import { Prisma } from "@prisma/client";
+import { Suspense } from "react";
 import { ArrowRight } from "lucide-react";
 import { isMissingTableError } from "@/lib/prismaErrors";
-import { ResourceGrid } from "@/components/resources/ResourceGrid";
-import { ResourceGridOwnedIdsHydrator } from "@/components/resources/ResourceGrid";
-import { ResourceCard, type ResourceCardData } from "@/components/resources/ResourceCard";
+import { ResourcesDiscoverPersonalizedSection } from "@/components/resources/ResourcesDiscoverPersonalizedSection";
+import { ResourcesViewerStateProvider } from "@/components/resources/ResourcesViewerStateProvider";
+import type { ResourceCardData } from "@/components/resources/ResourceCard";
 import { ResourceCardSkeleton } from "@/components/resources/ResourceCardSkeleton";
+import { ViewerAwareResourceCard } from "@/components/resources/ViewerAwareResourceCard";
+import { ViewerAwareResourceGrid } from "@/components/resources/ViewerAwareResourceGrid";
+import { SearchRecoveryPanel } from "@/components/resources/SearchRecoveryPanel";
 import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import { HeroBanner } from "@/components/marketplace/HeroBanner";
 import { FilterBar } from "@/components/marketplace/FilterBar";
@@ -21,23 +23,15 @@ import {
   getHeroConfig,
   type DiscoverData,
 } from "@/services/discover.service";
-import { DEFAULT_SORT, SORT_OPTIONS } from "@/config/sortOptions";
+import { getSearchRecoveryData } from "@/services/search-recovery.service";
+import {
+  DEFAULT_SORT,
+  getMarketplaceSortOptions,
+  SEARCH_SORT_OPTION,
+} from "@/config/sortOptions";
 import { MARKETPLACE_LISTING_PAGE_SIZE } from "@/config/marketplace";
-import { getOwnedResourceIds, getUserLearningProfile } from "@/services/purchase.service";
-import {
-  getCachedNewResourcesInCategories,
-  getCachedRecommendedResourcesByLevels,
-  getMarketplaceResources,
-} from "@/services/resources/public-resource-read.service";
-import { getBehaviorBasedRecommendations, getPhase1Recommendations } from "@/services/recommendations/behavior-profile.service";
-import {
-  assignRecommendationVariant,
-  RECOMMENDATION_EXPERIMENT_ID,
-  type RecommendationVariant,
-} from "@/lib/recommendations/experiment";
-import { RecommendationSection } from "@/components/recommendations/RecommendationSection";
+import { getMarketplaceResources } from "@/services/resources/public-resource-read.service";
 import { ResourcesIntroSectionSkeleton } from "@/components/skeletons/ResourcesIntroSectionSkeleton";
-import { recordAnalyticsEvents } from "@/analytics/event.service";
 import {
   trackRequestWork,
   traceServerStep,
@@ -55,167 +49,7 @@ type ResourcesPageContentProps = {
   sort: string;
   effectiveSort: string;
   currentPage: number;
-  userIdPromise?: Promise<string | undefined> | null;
 };
-
-type DiscoverFallbackLink = {
-  eyebrow: string;
-  title: string;
-  description: string;
-  href: string;
-  prefetchScope: string;
-};
-
-const DISCOVER_FALLBACK_PRIMARY_LINKS: DiscoverFallbackLink[] = [
-  {
-    eyebrow: "Trending",
-    title: "Open the fastest-moving resources",
-    description: "Jump straight into the picks with the strongest current sales and review momentum.",
-    href: routes.marketplaceQuery("sort=trending&category=all"),
-    prefetchScope: "discover-fallback-trending",
-  },
-  {
-    eyebrow: "Newest",
-    title: "See the latest uploads first",
-    description: "Browse fresh releases while the discover feed finishes loading in the background.",
-    href: routes.marketplaceQuery("sort=newest&category=all"),
-    prefetchScope: "discover-fallback-newest",
-  },
-  {
-    eyebrow: "Free",
-    title: "Start with free resources",
-    description: "Open zero-cost worksheets, flashcards, and guides without waiting for tailored ranking.",
-    href: routes.marketplaceQuery("price=free&category=all"),
-    prefetchScope: "discover-fallback-free",
-  },
-  {
-    eyebrow: "Popular",
-    title: "Browse the most-downloaded picks",
-    description: "Use download volume as a shortcut when you want reliable marketplace winners quickly.",
-    href: routes.marketplaceQuery("sort=downloads&category=all"),
-    prefetchScope: "discover-fallback-downloads",
-  },
-];
-
-function isNewCardBadge(createdAt?: Date | string) {
-  if (!createdAt) return false;
-  const date = new Date(createdAt);
-  return (Date.now() - date.getTime()) / 86_400_000 < 14;
-}
-
-function DefaultCardBadge({
-  createdAt,
-  featured,
-}: {
-  createdAt?: Date | string;
-  featured?: boolean;
-}) {
-  const base =
-    "absolute left-3 top-3 rounded-full border px-2.5 py-1 text-caption font-medium backdrop-blur-sm";
-
-  if (featured) {
-    return <span className={`${base} border-amber-100 bg-amber-50/95 text-amber-700`}>Featured</span>;
-  }
-
-  if (isNewCardBadge(createdAt)) {
-    return <span className={`${base} border-info-100 bg-info-50/95 text-info-700`}>New</span>;
-  }
-
-  return null;
-}
-
-async function ResolvedOwnedCardBadge({
-  ownedIdsPromise,
-  resourceId,
-  createdAt,
-  featured,
-}: {
-  ownedIdsPromise: Promise<Set<string>>;
-  resourceId: string;
-  createdAt?: Date | string;
-  featured?: boolean;
-}) {
-  const ownedIds = await ownedIdsPromise;
-
-  if (ownedIds.has(resourceId)) {
-    return (
-      <span className="absolute left-3 top-3 rounded-full border border-primary-100 bg-primary-50/95 px-2.5 py-1 text-caption font-medium text-primary-700 backdrop-blur-sm">
-        Owned
-      </span>
-    );
-  }
-
-  return <DefaultCardBadge createdAt={createdAt} featured={featured} />;
-}
-
-async function ResolvedOwnedIdsHydrator({
-  ownedIdsPromise,
-}: {
-  ownedIdsPromise: Promise<Set<string>>;
-}) {
-  const ownedIds = await ownedIdsPromise;
-
-  return <ResourceGridOwnedIdsHydrator ownedIds={[...ownedIds]} />;
-}
-
-function DeferredOwnedIdsHydrator({
-  ownedIdsPromise,
-}: {
-  ownedIdsPromise: Promise<Set<string>>;
-}) {
-  return (
-    <Suspense fallback={null}>
-      <ResolvedOwnedIdsHydrator ownedIdsPromise={ownedIdsPromise} />
-    </Suspense>
-  );
-}
-
-function DeferredOwnedCardBadge({
-  ownedIdsPromise,
-  resource,
-}: {
-  ownedIdsPromise: Promise<Set<string>>;
-  resource: Pick<ResourceCardData, "id" | "createdAt" | "featured">;
-}) {
-  return (
-    <Suspense
-      fallback={<DefaultCardBadge createdAt={resource.createdAt} featured={resource.featured} />}
-    >
-      <ResolvedOwnedCardBadge
-        ownedIdsPromise={ownedIdsPromise}
-        resourceId={resource.id}
-        createdAt={resource.createdAt}
-        featured={resource.featured}
-      />
-    </Suspense>
-  );
-}
-
-function ResourceCardWithDeferredOwnedBadge({
-  resource,
-  ownedIdsPromise,
-  variant = "marketplace",
-  linkPrefetchMode = "intent",
-}: {
-  resource: ResourceCardData;
-  ownedIdsPromise: Promise<Set<string>> | null;
-  variant?: "marketplace" | "hero";
-  linkPrefetchMode?: "intent" | "viewport" | "none";
-}) {
-  return (
-    <ResourceCard
-      resource={resource}
-      variant={variant}
-      owned={false}
-      linkPrefetchMode={linkPrefetchMode}
-      badge={
-        ownedIdsPromise ? (
-          <DeferredOwnedCardBadge ownedIdsPromise={ownedIdsPromise} resource={resource} />
-        ) : undefined
-      }
-    />
-  );
-}
 
 export async function ResourcesDiscoverHero({
   className,
@@ -227,7 +61,7 @@ export async function ResourcesDiscoverHero({
   try {
     heroConfig = await traceServerStep(
       "resources.getHeroConfig",
-      () => getHeroConfig(),
+      () => getHeroConfig({ staticAnonSeed: true }),
       { personalized: false },
     );
   } catch (error) {
@@ -249,21 +83,42 @@ export async function ResourcesPageContent({
   sort,
   effectiveSort,
   currentPage,
-  userIdPromise,
 }: ResourcesPageContentProps) {
-  if (isDiscoverMode) {
-    return ResourcesDiscoverContent({ userIdPromise });
-  }
+  return (
+    <ResourcesViewerStateProvider>
+      {isDiscoverMode
+        ? <ResourcesDiscoverContent />
+        : await ResourcesListingContent({
+            search,
+            category,
+            price,
+            featured,
+            tag,
+            sort,
+            effectiveSort,
+            currentPage,
+          })}
+    </ResourcesViewerStateProvider>
+  );
+}
 
-  const ownedIdsPromise = userIdPromise
-    ? trackRequestWork(loadOwnedIdsFromPromiseSafe(userIdPromise))
-    : null;
-
+async function ResourcesListingContent({
+  search,
+  category,
+  price,
+  featured,
+  tag,
+  sort,
+  effectiveSort,
+  currentPage,
+}: Omit<ResourcesPageContentProps, "isDiscoverMode">) {
+  const normalizedSearch = search?.trim() ?? "";
   let categories: { id: string; name: string; slug: string }[] = [];
   let resources: ResourceCardData[] = [];
   let total = 0;
   let totalPages = 1;
   let safePage = 1;
+  let searchRecovery = null as Awaited<ReturnType<typeof getSearchRecoveryData>> | null;
 
   try {
     const data = await traceServerStep(
@@ -296,13 +151,28 @@ export async function ResourcesPageContent({
     }
   }
 
+  if (normalizedSearch && total === 0) {
+    searchRecovery = await traceServerStep(
+      "resources.getSearchRecoveryData",
+      () => getSearchRecoveryData(normalizedSearch),
+      { query: normalizedSearch },
+    );
+  }
+
   const activeCategoryName =
     category === "all"
       ? "All categories"
-      : categories.find((item) => item.slug === category)?.name ?? "Browse resources";
+      : categories.find((item) => item.slug === category)?.name ?? null;
+  const isSearchResults = Boolean(normalizedSearch);
+  const pageTitle = buildListingPageTitle({
+    search,
+    activeCategoryName,
+    category,
+  });
   const sortLabel =
-    SORT_OPTIONS.find((option) => option.value === sort)?.label ??
-    SORT_OPTIONS.find((option) => option.value === DEFAULT_SORT)?.label ??
+    getMarketplaceSortOptions(Boolean(search?.trim())).find((option) => option.value === effectiveSort)?.label ??
+    (Boolean(search?.trim()) ? SEARCH_SORT_OPTION.label : null) ??
+    getMarketplaceSortOptions(false).find((option) => option.value === DEFAULT_SORT)?.label ??
     "Trending";
   const hasActiveFilters = !!(
     search?.trim() ||
@@ -312,7 +182,7 @@ export async function ResourcesPageContent({
     featured === "true"
   );
   const resourceGridParams = new URLSearchParams();
-  if (search?.trim()) resourceGridParams.set("search", search.trim());
+  if (normalizedSearch) resourceGridParams.set("search", normalizedSearch);
   if (category) resourceGridParams.set("category", category);
   if (price) resourceGridParams.set("price", price);
   if (featured === "true") resourceGridParams.set("featured", "true");
@@ -324,13 +194,19 @@ export async function ResourcesPageContent({
   const clearFiltersParams = new URLSearchParams();
   if (category) clearFiltersParams.set("category", category);
   const clearFiltersHref = routes.marketplaceQuery(clearFiltersParams);
-  const resultsContext = buildResultsContext(total, activeCategoryName, category, search, price, formatNumber);
+  const resultsContext = buildResultsContext(
+    total,
+    activeCategoryName,
+    category,
+    search,
+    price,
+    formatNumber,
+  );
   const spotlightCandidate = resources[0] ?? null;
   const spotlightResource =
-    !isDiscoverMode &&
     spotlightCandidate !== null &&
     !!spotlightCandidate.previewUrl &&
-    !search?.trim() &&
+    !normalizedSearch &&
     ["trending", "downloads", "newest"].includes(sort)
       ? spotlightCandidate
       : null;
@@ -339,14 +215,13 @@ export async function ResourcesPageContent({
       ? "Trending this week"
       : sort === "downloads"
         ? "Popular right now"
-        : activeCategoryName !== "Browse resources"
+        : activeCategoryName
           ? `Top in ${activeCategoryName}`
           : "Spotlight pick";
   const canShowCategoryRanks =
-    !isDiscoverMode &&
     category &&
     category !== "all" &&
-    !search?.trim() &&
+    !normalizedSearch &&
     !tag &&
     !price &&
     featured !== "true" &&
@@ -370,15 +245,6 @@ export async function ResourcesPageContent({
               : resource.socialProofLabel ?? null,
       }))
     : resources;
-  const resourceGridBadgeNodes = ownedIdsPromise
-    ? rankedResources.map((resource) => (
-        <DeferredOwnedCardBadge
-          key={`owned-grid:${resource.id}`}
-          ownedIdsPromise={ownedIdsPromise}
-          resource={resource}
-        />
-      ))
-    : undefined;
 
   return (
     <>
@@ -389,7 +255,7 @@ export async function ResourcesPageContent({
               Browse
             </p>
             <h1 className="max-w-3xl font-display text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl">
-              {`Explore ${activeCategoryName}`}
+              {pageTitle}
             </h1>
             {resultsContext ? (
               <p className="max-w-2xl text-small leading-6 text-text-secondary">
@@ -417,7 +283,7 @@ export async function ResourcesPageContent({
             </Suspense>
           </div>
 
-            <div className="min-w-0 flex-1 space-y-6">
+          <div className="min-w-0 flex-1 space-y-6">
             <Suspense fallback={<FilterBarFallback />}>
               <FilterBar total={total} />
             </Suspense>
@@ -430,7 +296,7 @@ export async function ResourcesPageContent({
                       {spotlightLabel}
                     </p>
                     <p className="max-w-2xl text-small leading-6 text-text-secondary">
-                      Start with the clearest signal in {activeCategoryName.toLowerCase()} before
+                      Start with the clearest signal in {(activeCategoryName ?? "the marketplace").toLowerCase()} before
                       you scan the rest of the collection.
                     </p>
                   </div>
@@ -446,55 +312,47 @@ export async function ResourcesPageContent({
                     <ArrowRight className="h-4 w-4" />
                   </IntentPrefetchLink>
                 </div>
-                <ResourceCard
+                <ViewerAwareResourceCard
                   resource={{
                     ...spotlightResource,
                     highlightBadge: spotlightLabel,
                   }}
                   variant="hero"
-                  owned={false}
                   linkPrefetchMode="viewport"
-                  badge={
-                    ownedIdsPromise ? (
-                      <DeferredOwnedCardBadge
-                        ownedIdsPromise={ownedIdsPromise}
-                        resource={spotlightResource}
-                      />
-                    ) : undefined
-                  }
                 />
               </div>
             ) : null}
 
-            {search?.trim() ? (
+            {isSearchResults ? (
               <p className="text-small text-text-secondary">
                 {total === 0 ? (
                   <>
                     No results for{" "}
-                    <strong className="text-text-primary">&ldquo;{search.trim()}&rdquo;</strong>.
+                    <strong className="text-text-primary">&ldquo;{normalizedSearch}&rdquo;</strong>.
                   </>
                 ) : (
                   <>
                     Showing results for{" "}
-                    <strong className="text-text-primary">&ldquo;{search.trim()}&rdquo;</strong>.
+                    <strong className="text-text-primary">&ldquo;{normalizedSearch}&rdquo;</strong>.
                   </>
                 )}
               </p>
             ) : null}
 
-            <ResourceGrid
+            <ViewerAwareResourceGrid
               resources={rankedResources}
-              ownedIds={[]}
               total={total}
               page={safePage}
               totalPages={totalPages}
               hasActiveFilters={hasActiveFilters}
               progressiveLoad
               cardPrefetchMode="viewport"
-              badgeNodes={resourceGridBadgeNodes}
-              deferredOwnedIdsHydrator={
-                ownedIdsPromise ? (
-                  <DeferredOwnedIdsHydrator ownedIdsPromise={ownedIdsPromise} />
+              emptyState={
+                normalizedSearch && searchRecovery ? (
+                  <SearchRecoveryPanel
+                    query={normalizedSearch}
+                    recovery={searchRecovery}
+                  />
                 ) : undefined
               }
               routeContext={{
@@ -511,86 +369,28 @@ export async function ResourcesPageContent({
   );
 }
 
-async function AwaitResolvedNode({
-  promise,
-}: {
-  promise: Promise<ReactNode>;
-}) {
-  return <>{await promise}</>;
-}
-
-async function ResourcesDiscoverContent({
-  userIdPromise,
-}: {
-  userIdPromise?: Promise<string | undefined> | null;
-}) {
+async function ResourcesDiscoverContent() {
   const discoverDataPromise = trackRequestWork(loadDiscoverDataSafe());
-  const ownedIdsPromise = userIdPromise
-    ? trackRequestWork(loadOwnedIdsFromPromiseSafe(userIdPromise))
-    : null;
-  const learningProfilePromise = userIdPromise
-    ? trackRequestWork(loadLearningProfileFromPromiseSafe(userIdPromise))
-    : null;
 
   return (
     <Suspense fallback={<DiscoverSectionsSkeleton />}>
-      <ResourcesDiscoverDeferredSections
-        discoverDataPromise={discoverDataPromise}
-        ownedIdsPromise={ownedIdsPromise}
-        learningProfilePromise={learningProfilePromise}
-        userIdPromise={userIdPromise}
-      />
+      <ResourcesDiscoverDeferredSections discoverDataPromise={discoverDataPromise} />
     </Suspense>
   );
 }
 
 async function ResourcesDiscoverDeferredSections({
   discoverDataPromise,
-  ownedIdsPromise,
-  learningProfilePromise,
-  userIdPromise,
 }: {
   discoverDataPromise: Promise<DiscoverData | null>;
-  ownedIdsPromise: Promise<Set<string>> | null;
-  learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null> | null;
-  userIdPromise?: Promise<string | undefined> | null;
 }) {
   const discoverData = await discoverDataPromise;
-  const ownedIds = new Set<string>();
 
   if (!discoverData) {
     return null;
   }
 
-  const globalFiltered = (discoverData.recommended as ResourceCardData[]).filter(
-    (resource) => !ownedIds.has(resource.id),
-  );
-  // Two independent Suspense paths instead of one deeply nested chain:
-  //   A) RFY section — single Suspense, always resolves to exactly 5 cards
-  //   B) Extras (becauseYouStudied, recommendedForLevel) — separate Suspense,
-  //      placed after main sections so it extends below the fold rather than
-  //      expanding the middle of the page
-  const recommendedForYouFinalPromise = userIdPromise && learningProfilePromise
-    ? trackRequestWork(
-        ResourcesDiscoverRFYFinalSection({
-          learningProfilePromise,
-          ownedIds,
-          ownedIdsPromise,
-          globalFiltered,
-          userIdPromise,
-        }),
-      )
-    : null;
-  const personalisedExtrasPromise = userIdPromise && learningProfilePromise
-    ? trackRequestWork(
-        ResourcesDiscoverPersonalisedExtras({
-          learningProfilePromise,
-          ownedIds,
-          ownedIdsPromise,
-          globalFiltered,
-        }),
-      )
-    : null;
+  const globalFiltered = discoverData.recommended as ResourceCardData[];
 
   return (
     <div className="space-y-16 lg:space-y-20">
@@ -603,7 +403,7 @@ async function ResourcesDiscoverDeferredSections({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {(discoverData.trending as ResourceCardData[]).map((resource, index) => (
-              <ResourceCardWithDeferredOwnedBadge
+              <ViewerAwareResourceCard
                 key={resource.id}
                 resource={{
                   ...resource,
@@ -611,7 +411,6 @@ async function ResourcesDiscoverDeferredSections({
                   socialProofLabel: index < 2 ? "Trending fast this week" : null,
                 }}
                 variant="marketplace"
-                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="viewport"
               />
             ))}
@@ -642,7 +441,7 @@ async function ResourcesDiscoverDeferredSections({
                 </p>
               ) : null}
             </div>
-              <IntentPrefetchLink
+            <IntentPrefetchLink
               href={routes.creatorPublicProfile(discoverData.topCreator.creator.creatorSlug)}
               className="inline-flex items-center gap-2 self-start rounded-full border border-border-subtle bg-white px-4 py-2 text-sm font-semibold text-primary-700 transition hover:border-surface-300 hover:bg-white lg:self-auto"
               prefetchMode="intent"
@@ -656,30 +455,7 @@ async function ResourcesDiscoverDeferredSections({
         </section>
       ) : null}
 
-      {recommendedForYouFinalPromise ? (
-        <Suspense fallback={<RecommendedForYouFallbackSection />}>
-          <AwaitResolvedNode promise={recommendedForYouFinalPromise} />
-        </Suspense>
-      ) : globalFiltered.slice(0, 5).length > 0 ? (
-        <section className="space-y-5">
-          <SectionHeader
-            title="Popular right now"
-            description="Top resources other learners are exploring this week."
-            viewAllHref={routes.marketplaceQuery("sort=trending&category=all")}
-          />
-          <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-            {globalFiltered.slice(0, 5).map((resource) => (
-              <ResourceCardWithDeferredOwnedBadge
-                key={resource.id}
-                resource={resource}
-                variant="marketplace"
-                ownedIdsPromise={ownedIdsPromise}
-                linkPrefetchMode="viewport"
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <ResourcesDiscoverPersonalizedSection fallbackCards={globalFiltered.slice(0, 5)} />
 
       {discoverData.newReleases.length > 0 ? (
         <section className="space-y-5">
@@ -690,11 +466,10 @@ async function ResourcesDiscoverDeferredSections({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {(discoverData.newReleases as ResourceCardData[]).map((resource) => (
-              <ResourceCardWithDeferredOwnedBadge
+              <ViewerAwareResourceCard
                 key={resource.id}
                 resource={resource}
                 variant="marketplace"
-                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="viewport"
               />
             ))}
@@ -710,11 +485,10 @@ async function ResourcesDiscoverDeferredSections({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {(discoverData.featured as ResourceCardData[]).map((resource) => (
-              <ResourceCardWithDeferredOwnedBadge
+              <ViewerAwareResourceCard
                 key={resource.id}
                 resource={resource}
                 variant="marketplace"
-                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="viewport"
               />
             ))}
@@ -730,11 +504,10 @@ async function ResourcesDiscoverDeferredSections({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {(discoverData.freeResources as ResourceCardData[]).map((resource) => (
-              <ResourceCardWithDeferredOwnedBadge
+              <ViewerAwareResourceCard
                 key={resource.id}
                 resource={resource}
                 variant="marketplace"
-                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="viewport"
               />
             ))}
@@ -750,7 +523,7 @@ async function ResourcesDiscoverDeferredSections({
           />
           <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {(discoverData.mostDownloaded as ResourceCardData[]).map((resource, index) => (
-              <ResourceCardWithDeferredOwnedBadge
+              <ViewerAwareResourceCard
                 key={resource.id}
                 resource={{
                   ...resource,
@@ -758,20 +531,11 @@ async function ResourcesDiscoverDeferredSections({
                   socialProofLabel: index < 2 ? "High demand right now" : null,
                 }}
                 variant="marketplace"
-                ownedIdsPromise={ownedIdsPromise}
                 linkPrefetchMode="viewport"
               />
             ))}
           </div>
         </section>
-      ) : null}
-
-      {/* Extra personalised sections (becauseYouStudied, recommendedForLevel) appear
-          below the fold — they extend the page rather than disrupting the main layout */}
-      {personalisedExtrasPromise ? (
-        <Suspense fallback={null}>
-          <AwaitResolvedNode promise={personalisedExtrasPromise} />
-        </Suspense>
       ) : null}
 
       <CreatorCTA />
@@ -780,9 +544,6 @@ async function ResourcesDiscoverDeferredSections({
     </div>
   );
 }
-
-// ResourcesDiscoverPersonalisedSection removed — replaced by
-// ResourcesDiscoverRFYFinalSection + ResourcesDiscoverPersonalisedExtras below.
 
 async function loadDiscoverDataSafe(): Promise<DiscoverData | null> {
   try {
@@ -798,91 +559,9 @@ async function loadDiscoverDataSafe(): Promise<DiscoverData | null> {
   }
 }
 
-async function loadOwnedIdsSafe(userId?: string) {
-  if (!userId) {
-    return new Set<string>();
-  }
-
-  try {
-    return await traceServerStep(
-      "resources.getOwnedResourceIds",
-      () => getOwnedResourceIds(userId),
-      { personalized: true },
-    );
-  } catch (error) {
-    if (
-      !isMissingTableError(error) &&
-      !isDiscoverPersonalizationTransientError(error)
-    ) {
-      throw error;
-    }
-
-    return new Set<string>();
-  }
-}
-
-async function loadOwnedIdsFromPromiseSafe(
-  userIdPromise: Promise<string | undefined>,
-) {
-  return loadOwnedIdsSafe(await userIdPromise);
-}
-
-async function loadLearningProfileSafe(userId?: string) {
-  if (!userId) {
-    return null;
-  }
-
-  try {
-    return await traceServerStep(
-      "resources.getUserLearningProfile",
-      () => getUserLearningProfile(userId),
-      { personalized: true },
-    );
-  } catch (error) {
-    if (
-      !isMissingTableError(error) &&
-      !isDiscoverPersonalizationTransientError(error)
-    ) {
-      throw error;
-    }
-
-    return null;
-  }
-}
-
-async function loadLearningProfileFromPromiseSafe(
-  userIdPromise: Promise<string | undefined>,
-) {
-  return loadLearningProfileSafe(await userIdPromise);
-}
-
-function isDiscoverPersonalizationTransientError(error: unknown) {
-  if (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2024"
-  ) {
-    return true;
-  }
-
-  if (
-    error instanceof Prisma.PrismaClientInitializationError ||
-    error instanceof Prisma.PrismaClientUnknownRequestError
-  ) {
-    return true;
-  }
-
-  const message = error instanceof Error ? error.message : String(error);
-  return (
-    message.includes("Timed out fetching a new connection from the connection pool") ||
-    message.includes("Can't reach database server") ||
-    message.includes("Error in PostgreSQL connection") ||
-    message.includes("kind: Closed")
-  );
-}
-
 function buildResultsContext(
   total: number,
-  activeCategoryName: string,
+  activeCategoryName: string | null,
   category: string | undefined,
   search: string | undefined,
   price: string,
@@ -892,8 +571,8 @@ function buildResultsContext(
 
   const n = total === 1 ? "1 resource" : `${formatNum(total)} resources`;
   const inAll = "across all categories";
-  const inCat = `in ${activeCategoryName}`;
-  const scope = category === "all" ? inAll : inCat;
+  const inCat = activeCategoryName ? `in ${activeCategoryName}` : inAll;
+  const scope = category === "all" || !activeCategoryName ? inAll : inCat;
   const term = search?.trim();
 
   if (term) {
@@ -906,6 +585,34 @@ function buildResultsContext(
     return `${n} available ${scope}`;
   }
   return `${n} ${scope}`;
+}
+
+function buildListingPageTitle({
+  search,
+  activeCategoryName,
+  category,
+}: {
+  search: string | undefined;
+  activeCategoryName: string | null;
+  category: string | undefined;
+}) {
+  if (search?.trim()) {
+    if (category && category !== "all" && activeCategoryName) {
+      return `Search results in ${activeCategoryName}`;
+    }
+
+    return "Search results";
+  }
+
+  if (category === "all") {
+    return "Explore all categories";
+  }
+
+  if (activeCategoryName) {
+    return `Explore ${activeCategoryName}`;
+  }
+
+  return "Explore resources";
 }
 
 function SectionHeader({
@@ -1101,262 +808,5 @@ export function ResourcesContentFallback({ isDiscoverMode }: { isDiscoverMode: b
         </section>
       )}
     </>
-  );
-}
-
-// ── Recommended for you — single-Suspense path ────────────────────────────────
-//
-// Resolves to EXACTLY 5 cards in all cases:
-//   • No history → returns the same 5 globalFiltered cards as the fallback
-//     (swap is invisible — same data, same structure)
-//   • Has history + recs found → returns 5 personalized cards
-//   • Has history + no recs → falls back to 5 globalFiltered cards
-//
-// This eliminates the double-swap: the old chain resolved to extra sections +
-// an inner Suspense, causing two visible DOM replacements and layout growth.
-
-async function ResourcesDiscoverRFYFinalSection({
-  learningProfilePromise,
-  ownedIds,
-  ownedIdsPromise,
-  globalFiltered,
-  userIdPromise,
-}: {
-  learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null>;
-  ownedIds: Set<string>;
-  ownedIdsPromise: Promise<Set<string>> | null;
-  globalFiltered: ResourceCardData[];
-  userIdPromise: Promise<string | undefined>;
-}) {
-  const fallbackCards = globalFiltered.slice(0, 5);
-  const [learningProfile, userId] = await Promise.all([
-    learningProfilePromise,
-    userIdPromise,
-  ]);
-
-  // No purchase history — resolve to same 5 cards as fallback (invisible swap)
-  if (!learningProfile?.hasHistory) {
-    if (fallbackCards.length === 0) return null;
-    return (
-      <section className="space-y-5">
-        <SectionHeader
-          title="Recommended for you"
-          description="A focused set of picks to help you keep momentum without sorting through the whole library."
-          viewAllHref={routes.marketplaceQuery("sort=trending&category=all")}
-        />
-        <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-          {fallbackCards.map((resource, index) => (
-            <ResourceCardWithDeferredOwnedBadge
-              key={resource.id}
-              resource={resource}
-              variant="marketplace"
-              ownedIdsPromise={ownedIdsPromise}
-              linkPrefetchMode="viewport"
-            />
-          ))}
-        </div>
-      </section>
-    );
-  }
-
-  if (!userId) {
-    return null;
-  }
-
-  const recommendationVariant = assignRecommendationVariant(userId);
-  const topCategoryIds = learningProfile.topCategories.map((item) => item.id);
-  const recommendedForYou = (await (
-    recommendationVariant === "phase1"
-      ? getPhase1Recommendations(topCategoryIds, ownedIds, globalFiltered, 5)
-      : getBehaviorBasedRecommendations(userId, ownedIds, topCategoryIds, globalFiltered, 5)
-  )) as ResourceCardData[];
-
-  // Fire analytics impression events (non-blocking)
-  if (recommendationVariant && recommendedForYou.length > 0) {
-    void recordAnalyticsEvents(
-      recommendedForYou.map((resource, position) => ({
-        eventType: "RESOURCE_VIEW" as const,
-        userId,
-        resourceId: resource.id,
-        metadata: {
-          source: "recommendation_impression",
-          experiment: RECOMMENDATION_EXPERIMENT_ID,
-          variant: recommendationVariant,
-          section: "recommended_for_you",
-          position,
-        },
-      })),
-    ).catch(() => undefined);
-  }
-
-  // Personalized if available, fallback otherwise — always exactly 5 cards
-  const finalCards = (recommendedForYou.length > 0 ? recommendedForYou : globalFiltered).slice(0, 5);
-  if (finalCards.length === 0) return null;
-
-  return (
-    <section className="space-y-5">
-      <SectionHeader
-        title="Recommended for you"
-        description="A focused set of picks to help you keep momentum without sorting through the whole library."
-        viewAllHref={routes.marketplaceQuery("sort=trending&category=all")}
-      />
-      <RecommendationSection
-        variant={recommendationVariant}
-        section="recommended_for_you"
-      >
-        <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-          {finalCards.map((resource, index) => (
-            <div key={resource.id} data-resource-id={resource.id}>
-              <ResourceCardWithDeferredOwnedBadge
-                resource={resource}
-                variant="marketplace"
-                ownedIdsPromise={ownedIdsPromise}
-                linkPrefetchMode="viewport"
-              />
-            </div>
-          ))}
-        </div>
-      </RecommendationSection>
-    </section>
-  );
-}
-
-// ── Personalised extras — separate Suspense, placed after main sections ────────
-//
-// Because you studied + Recommended for your level.
-// Rendered below the fold (after mostDownloaded), so their late arrival
-// extends the page downward rather than shifting content in the visible area.
-
-async function ResourcesDiscoverPersonalisedExtras({
-  learningProfilePromise,
-  ownedIds,
-  ownedIdsPromise,
-  globalFiltered,
-}: {
-  learningProfilePromise: Promise<Awaited<ReturnType<typeof getUserLearningProfile>> | null>;
-  ownedIds: Set<string>;
-  ownedIdsPromise: Promise<Set<string>> | null;
-  globalFiltered: ResourceCardData[];
-}) {
-  const learningProfile = await learningProfilePromise;
-
-  if (!learningProfile?.hasHistory) {
-    return null;
-  }
-
-  const recentCategoryId = learningProfile.recentCategoryId ?? null;
-  const personalizedLevelIds = learningProfile.preferredLevels;
-  const recentStudyTitle = learningProfile.recentStudyTitle ?? null;
-  const recentCategoryName = learningProfile.recentCategoryName ?? null;
-
-  const becauseYouStudiedPromise = recentCategoryId
-    ? getCachedNewResourcesInCategories([recentCategoryId], 8).then((resources) =>
-        resources.filter((resource) => !ownedIds.has(resource.id)).slice(0, 5),
-      )
-    : Promise.resolve([] as ResourceCardData[]);
-  const recommendedForLevelPromise = personalizedLevelIds.length > 0
-    ? getCachedRecommendedResourcesByLevels(personalizedLevelIds, 6).then((resources) =>
-        resources.filter((resource) => !ownedIds.has(resource.id)).slice(0, 4),
-      )
-    : Promise.resolve([] as ResourceCardData[]);
-
-  const [becauseYouStudied, recommendedForLevel] = await Promise.all([
-    becauseYouStudiedPromise,
-    recommendedForLevelPromise,
-  ]);
-
-  if (
-    !((becauseYouStudied as ResourceCardData[]).length > 0 && recentStudyTitle && recentCategoryName) &&
-    !((recommendedForLevel as ResourceCardData[]).length > 0 && personalizedLevelIds.length > 0)
-  ) {
-    return null;
-  }
-
-  return (
-    <>
-      {(becauseYouStudied as ResourceCardData[]).length > 0 && recentStudyTitle && recentCategoryName ? (
-        <section className="space-y-5">
-          <SectionHeader
-            title={`Because you studied ${recentStudyTitle}`}
-            description={`More resources in ${recentCategoryName} you haven't tried yet.`}
-            viewAllHref={routes.marketplaceQuery("category=all&sort=newest")}
-          />
-          <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-            {(becauseYouStudied as ResourceCardData[]).map((resource) => (
-              <ResourceCardWithDeferredOwnedBadge
-                key={resource.id}
-                resource={{
-                  ...resource,
-                  socialProofLabel: `More in ${recentCategoryName}`,
-                }}
-                variant="marketplace"
-                ownedIdsPromise={ownedIdsPromise}
-                linkPrefetchMode="viewport"
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {(recommendedForLevel as ResourceCardData[]).length > 0 && personalizedLevelIds.length > 0 ? (
-        <section className="space-y-5">
-          <SectionHeader
-            title="Recommended for your level"
-            description="Deterministic picks shaped by the difficulty level your recent purchases suggest."
-            viewAllHref={routes.marketplaceQuery("sort=trending&category=all")}
-          />
-          <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
-            {(recommendedForLevel as ResourceCardData[]).map((resource) => (
-              <ResourceCardWithDeferredOwnedBadge
-                key={resource.id}
-                resource={{
-                  ...resource,
-                  socialProofLabel: "Recommended for your current pace",
-                }}
-                variant="marketplace"
-                ownedIdsPromise={ownedIdsPromise}
-                linkPrefetchMode="viewport"
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-    </>
-  );
-}
-
-function RecommendedForYouFallbackSection() {
-  return (
-    <section className="space-y-5">
-      <SectionHeader
-        title="Recommended for you"
-        description="A focused set of picks to help you keep momentum without sorting through the whole library."
-        viewAllHref={routes.marketplaceQuery("sort=trending&category=all")}
-      />
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-text-secondary">
-          Tailored picks are still loading.
-        </span>
-        {DISCOVER_FALLBACK_PRIMARY_LINKS.slice(0, 3).map((link) => (
-          <IntentPrefetchLink
-            key={link.title}
-            href={link.href}
-            prefetchMode="intent"
-            prefetchScope={`recommended-fallback-${link.prefetchScope}`}
-            prefetchLimit={1}
-            resourcesNavigationMode="listing"
-            className="inline-flex items-center gap-1 rounded-full border border-surface-200 bg-white px-3 py-1.5 text-xs font-medium text-primary-700 transition hover:border-primary-200 hover:bg-primary-50"
-          >
-            {link.eyebrow.toLowerCase()}
-            <ArrowRight className="h-3 w-3" />
-          </IntentPrefetchLink>
-        ))}
-      </div>
-      <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <ResourceCardSkeleton key={index} />
-        ))}
-      </div>
-    </section>
   );
 }

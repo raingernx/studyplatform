@@ -16,10 +16,18 @@ export const SORT_OPTIONS = [
   { value: "price_desc",  label: "Price: High → Low" },
 ] as const;
 
-export type SortValue = (typeof SORT_OPTIONS)[number]["value"];
+export const SEARCH_SORT_OPTION = { value: "relevance", label: "Best match" } as const;
+
+export type SortValue =
+  | (typeof SORT_OPTIONS)[number]["value"]
+  | typeof SEARCH_SORT_OPTION.value;
 
 /** Default sort applied when the ?sort= param is absent. */
 export const DEFAULT_SORT: SortValue = "trending";
+
+export function getMarketplaceSortOptions(hasSearch: boolean) {
+  return hasSearch ? [SEARCH_SORT_OPTION, ...SORT_OPTIONS] : SORT_OPTIONS;
+}
 
 /**
  * Maps legacy or non-standard sort param values to a canonical SortValue.
@@ -40,5 +48,14 @@ export function normaliseSortParam(raw: string | null | undefined): SortValue {
   if (LEGACY[raw]) return LEGACY[raw];
 
   const valid = SORT_OPTIONS.map((o) => o.value) as string[];
+  valid.push(SEARCH_SORT_OPTION.value);
   return valid.includes(raw) ? (raw as SortValue) : DEFAULT_SORT;
+}
+
+export function getEffectiveMarketplaceSort(raw: string | null | undefined, hasSearch: boolean) {
+  if (hasSearch && !raw) {
+    return SEARCH_SORT_OPTION.value;
+  }
+
+  return normaliseSortParam(raw);
 }

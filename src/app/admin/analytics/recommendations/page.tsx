@@ -12,7 +12,6 @@ import {
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { TableToolbar } from "@/components/admin/table";
 import { routes } from "@/lib/routes";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import {
   traceServerStep,
   withRequestPerformanceTrace,
@@ -183,11 +182,6 @@ export default async function RecommendationExperimentPage({
       end: end ?? "",
     },
     async () => {
-      await traceServerStep(
-        "admin_analytics_recommendations.requireAdminSession",
-        () => requireAdminSession(routes.adminRecommendationReport),
-      );
-
       const report = await traceServerStep(
         "admin_analytics_recommendations.getRecommendationReport",
         () => getRecommendationReport({ start, end }),

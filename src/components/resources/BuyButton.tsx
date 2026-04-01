@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/design-system";
 import { AlertCircle, CreditCard, QrCode, Download, Lock, CheckCircle } from "lucide-react";
+import { useAuthViewer } from "@/lib/auth/use-auth-viewer";
 import { formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -79,7 +79,7 @@ export function BuyButton({
   const redirectingRef = useRef(false);
   const downloadResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { data: session } = useSession();
+  const authViewer = useAuthViewer();
   const router = useRouter();
 
   function redirectToLogin(provider: "free" | "stripe" | "xendit") {
@@ -152,7 +152,11 @@ export function BuyButton({
     const isRedirectingToLogin = authRedirectProvider === "free";
 
     const handleAddToLibrary = async () => {
-      if (!session?.user) {
+      if (!authViewer.isReady) {
+        return;
+      }
+
+      if (!authViewer.authenticated) {
         redirectToLogin("free");
         return;
       }
@@ -188,15 +192,19 @@ export function BuyButton({
       <div className="space-y-3">
         <Button
           onClick={handleAddToLibrary}
-          loading={loadingLibrary || isRedirectingToLogin}
+          loading={loadingLibrary || isRedirectingToLogin || !authViewer.isReady}
           variant="primary"
           size="lg"
           fullWidth
-          disabled={isRedirectingToLogin}
+          disabled={isRedirectingToLogin || !authViewer.isReady}
           className="gap-2"
         >
           <Download className="h-4 w-4" />
-          {isRedirectingToLogin ? "Redirecting to login…" : "Get for free"}
+          {!authViewer.isReady
+            ? "Checking account…"
+            : isRedirectingToLogin
+              ? "Redirecting to login…"
+              : "Get for free"}
         </Button>
 
         {libraryError && <InlineError message={libraryError} />}
@@ -210,7 +218,11 @@ export function BuyButton({
 
   // ── Paid resource — show Stripe / Xendit checkout buttons ────────────────
   const handleStripe = async () => {
-    if (!session?.user) {
+    if (!authViewer.isReady) {
+      return;
+    }
+
+    if (!authViewer.authenticated) {
       redirectToLogin("stripe");
       return;
     }
@@ -252,7 +264,11 @@ export function BuyButton({
   };
 
   const handleXendit = async () => {
-    if (!session?.user) {
+    if (!authViewer.isReady) {
+      return;
+    }
+
+    if (!authViewer.authenticated) {
       redirectToLogin("xendit");
       return;
     }
@@ -302,35 +318,39 @@ export function BuyButton({
     <div className="space-y-3">
       <Button
         onClick={handleStripe}
-        loading={isStripeBusy}
-        disabled={isAnyLoading}
+        loading={isStripeBusy || !authViewer.isReady}
+        disabled={isAnyLoading || !authViewer.isReady}
         variant="primary"
         size="lg"
         fullWidth
         className={cn("gap-2 shadow-md", buyButtonToneClassName.accent)}
       >
         <CreditCard className="h-4 w-4" />
-        {isStripeRedirectingToLogin
-          ? "Redirecting to login…"
-          : isRedirecting
-          ? "Taking you to checkout…"
-          : `Get instant access — ${formatPrice(price)}`}
+        {!authViewer.isReady
+          ? "Checking account…"
+          : isStripeRedirectingToLogin
+            ? "Redirecting to login…"
+            : isRedirecting
+              ? "Taking you to checkout…"
+              : `Get instant access — ${formatPrice(price)}`}
       </Button>
       <Button
         onClick={handleXendit}
-        loading={isXenditBusy}
-        disabled={isAnyLoading}
+        loading={isXenditBusy || !authViewer.isReady}
+        disabled={isAnyLoading || !authViewer.isReady}
         variant="outline"
         size="lg"
         fullWidth
         className="gap-2"
       >
         <QrCode className="h-4 w-4" />
-        {isXenditRedirectingToLogin
-          ? "Redirecting to login…"
-          : isRedirecting
-            ? "Redirecting…"
-            : `Pay via QR / Bank · ${formatPrice(price)}`}
+        {!authViewer.isReady
+          ? "Checking account…"
+          : isXenditRedirectingToLogin
+            ? "Redirecting to login…"
+            : isRedirecting
+              ? "Redirecting…"
+              : `Pay via QR / Bank · ${formatPrice(price)}`}
       </Button>
 
       {checkoutError && <InlineError message={checkoutError} />}

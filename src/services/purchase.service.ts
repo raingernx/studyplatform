@@ -11,7 +11,53 @@ import {
   findPurchaseByUserAndResource,
   findPurchaseHistoryByUser,
 } from "@/repositories/purchases/purchase.repository";
-import { CACHE_TTLS } from "@/lib/cache";
+import { CACHE_KEYS, CACHE_TTLS, rememberJson, runSingleFlight } from "@/lib/cache";
+
+type CachedFn<T> = () => Promise<T>;
+
+// Private ownership state should be warm across repeated signed-in navigations,
+// but fresh purchase confirmation must still break through quickly.
+const OWNERSHIP_REVALIDATE_SECONDS = 10;
+
+const _hasPurchasedCacheMap = new Map<string, CachedFn<boolean>>();
+const _ownedResourceIdsCacheMap = new Map<string, CachedFn<string[]>>();
+
+function getHasPurchasedCachedReader(userId: string, resourceId: string) {
+  const key = `${userId}:${resourceId}`;
+  let cachedFn = _hasPurchasedCacheMap.get(key);
+
+  if (!cachedFn) {
+    cachedFn = unstable_cache(
+      async () => {
+        const purchase = await findCompletedPurchaseByUserAndResource(userId, resourceId);
+        return purchase !== null;
+      },
+      ["owned-resource", userId, resourceId],
+      { revalidate: OWNERSHIP_REVALIDATE_SECONDS },
+    );
+    _hasPurchasedCacheMap.set(key, cachedFn);
+  }
+
+  return cachedFn;
+}
+
+function getOwnedResourceIdsCachedReader(userId: string) {
+  let cachedFn = _ownedResourceIdsCacheMap.get(userId);
+
+  if (!cachedFn) {
+    cachedFn = unstable_cache(
+      async () => {
+        const purchases = await findCompletedResourceIdsByUser(userId);
+        return purchases.map((purchase) => purchase.resourceId);
+      },
+      ["owned-resource-ids", userId],
+      { revalidate: OWNERSHIP_REVALIDATE_SECONDS },
+    );
+    _ownedResourceIdsCacheMap.set(userId, cachedFn);
+  }
+
+  return cachedFn;
+}
 
 // ── Ownership checks ──────────────────────────────────────────────────────────
 
@@ -19,9 +65,17 @@ import { CACHE_TTLS } from "@/lib/cache";
  * Returns true when the given user has a COMPLETED purchase for resourceId.
  * Used by the download route and resource detail page.
  */
-export async function hasPurchased(userId: string, resourceId: string): Promise<boolean> {
-  const purchase = await findCompletedPurchaseByUserAndResource(userId, resourceId);
-  return purchase !== null;
+export async function hasPurchased(
+  userId: string,
+  resourceId: string,
+  options?: { fresh?: boolean },
+): Promise<boolean> {
+  if (options?.fresh) {
+    const purchase = await findCompletedPurchaseByUserAndResource(userId, resourceId);
+    return purchase !== null;
+  }
+
+  return getHasPurchasedCachedReader(userId, resourceId)();
 }
 
 /**
@@ -29,8 +83,8 @@ export async function hasPurchased(userId: string, resourceId: string): Promise<
  * Used by listing pages to mark owned cards.
  */
 export async function getOwnedResourceIds(userId: string): Promise<Set<string>> {
-  const purchases = await findCompletedResourceIdsByUser(userId);
-  return new Set(purchases.map((p) => p.resourceId));
+  const ownedIds = await getOwnedResourceIdsCachedReader(userId)();
+  return new Set(ownedIds);
 }
 
 /**
@@ -50,10 +104,18 @@ export async function getOwnedDetailState(
   userId: string | undefined,
   resourceId: string,
   relatedResourceIds: string[],
+  options?: { fresh?: boolean },
 ) {
   if (!userId) {
     return {
       isOwned: false,
+      ownedRelatedIds: [] as string[],
+    };
+  }
+
+  if (relatedResourceIds.length === 0) {
+    return {
+      isOwned: await hasPurchased(userId, resourceId, options),
       ownedRelatedIds: [] as string[],
     };
   }
@@ -189,64 +251,73 @@ export const getUserLearningProfile = unstable_cache(
     userId: string,
     take: number = 24,
   ): Promise<UserLearningProfile> {
-    const rows = await findRecentPurchasePreferenceSignalsByUser(userId, take);
+    const cacheKey = CACHE_KEYS.userLearningProfile(userId, take);
 
-    if (rows.length === 0) {
-      return {
-        hasHistory: false,
-        recentStudyTitle: null,
-        recentCategoryId: null,
-        recentCategoryName: null,
-        topCategories: [],
-        preferredLevels: [],
-      };
-    }
+    return rememberJson(
+      cacheKey,
+      CACHE_TTLS.publicPage,
+      () =>
+        runSingleFlight(cacheKey, async () => {
+          const rows = await findRecentPurchasePreferenceSignalsByUser(userId, take);
 
-    const categoryScores = new Map<
-      string,
-      { id: string; name: string; slug: string; score: number }
-    >();
-    const levelScores = new Map<"BEGINNER" | "INTERMEDIATE" | "ADVANCED", number>();
+          if (rows.length === 0) {
+            return {
+              hasHistory: false,
+              recentStudyTitle: null,
+              recentCategoryId: null,
+              recentCategoryName: null,
+              topCategories: [],
+              preferredLevels: [],
+            };
+          }
 
-    rows.forEach((row, index) => {
-      const weight = Math.max(1, 4 - Math.floor(index / 4));
-      const category = row.resource.category;
+          const categoryScores = new Map<
+            string,
+            { id: string; name: string; slug: string; score: number }
+          >();
+          const levelScores = new Map<"BEGINNER" | "INTERMEDIATE" | "ADVANCED", number>();
 
-      if (category) {
-        const existing = categoryScores.get(category.id);
-        if (existing) {
-          existing.score += weight;
-        } else {
-          categoryScores.set(category.id, {
-            id: category.id,
-            name: category.name,
-            slug: category.slug,
-            score: weight,
+          rows.forEach((row, index) => {
+            const weight = Math.max(1, 4 - Math.floor(index / 4));
+            const category = row.resource.category;
+
+            if (category) {
+              const existing = categoryScores.get(category.id);
+              if (existing) {
+                existing.score += weight;
+              } else {
+                categoryScores.set(category.id, {
+                  id: category.id,
+                  name: category.name,
+                  slug: category.slug,
+                  score: weight,
+                });
+              }
+            }
+
+            if (row.resource.level) {
+              levelScores.set(
+                row.resource.level,
+                (levelScores.get(row.resource.level) ?? 0) + weight,
+              );
+            }
           });
-        }
-      }
 
-      if (row.resource.level) {
-        levelScores.set(
-          row.resource.level,
-          (levelScores.get(row.resource.level) ?? 0) + weight,
-        );
-      }
-    });
-
-    return {
-      hasHistory: true,
-      recentStudyTitle: rows[0]?.resource.title ?? null,
-      recentCategoryId: rows[0]?.resource.category?.id ?? null,
-      recentCategoryName: rows[0]?.resource.category?.name ?? null,
-      topCategories: Array.from(categoryScores.values())
-        .sort((left, right) => right.score - left.score)
-        .slice(0, 3),
-      preferredLevels: Array.from(levelScores.entries())
-        .sort((left, right) => right[1] - left[1])
-        .map(([level]) => level)
-        .slice(0, 2),
-    };
+          return {
+            hasHistory: true,
+            recentStudyTitle: rows[0]?.resource.title ?? null,
+            recentCategoryId: rows[0]?.resource.category?.id ?? null,
+            recentCategoryName: rows[0]?.resource.category?.name ?? null,
+            topCategories: Array.from(categoryScores.values())
+              .sort((left, right) => right.score - left.score)
+              .slice(0, 3),
+            preferredLevels: Array.from(levelScores.entries())
+              .sort((left, right) => right[1] - left[1])
+              .map(([level]) => level)
+              .slice(0, 2),
+          };
+        }),
+    );
   },
   ["user-learning-profile"],
   { revalidate: CACHE_TTLS.publicPage },

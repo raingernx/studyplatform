@@ -4,8 +4,9 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ArrowUpDown } from "lucide-react";
 import {
   DEFAULT_SORT,
-  SORT_OPTIONS,
-  normaliseSortParam,
+  getEffectiveMarketplaceSort,
+  getMarketplaceSortOptions,
+  SEARCH_SORT_OPTION,
   type SortValue,
 } from "@/config/sortOptions";
 
@@ -16,13 +17,15 @@ export function ResourceSort() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const hasSearch = Boolean(searchParams.get("search")?.trim());
 
   // Mirror the active sort from the URL; normalise legacy values and fall back to the canonical default sort.
-  const current = normaliseSortParam(searchParams.get("sort"));
+  const current = getEffectiveMarketplaceSort(searchParams.get("sort"), hasSearch);
+  const options = getMarketplaceSortOptions(hasSearch);
 
   function handleChange(value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value === DEFAULT_SORT) {
+    if ((hasSearch && value === SEARCH_SORT_OPTION.value) || (!hasSearch && value === DEFAULT_SORT)) {
       // Keep the URL clean by omitting the param when the user picks the default sort.
       params.delete("sort");
     } else {
@@ -45,7 +48,7 @@ export function ResourceSort() {
                      focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
           aria-label="Sort resources"
         >
-          {SORT_OPTIONS.map((opt) => (
+          {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>

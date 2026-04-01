@@ -41,6 +41,8 @@ const DEFAULT_MAX_ATTEMPTS = 10; // 1 s + 9 × 3 s ≈ 28 s total
 interface PendingPurchasePollerProps {
   /** Resource title — shown in the confirmation message. */
   resourceTitle: string;
+  /** Optional refresh callback for client-owned state polling. */
+  onRefresh?: () => void | Promise<void>;
   /**
    * Maximum number of refresh attempts before giving up.
    * Defaults to DEFAULT_MAX_ATTEMPTS (10).
@@ -50,6 +52,7 @@ interface PendingPurchasePollerProps {
 
 export function PendingPurchasePoller({
   resourceTitle,
+  onRefresh,
   maxAttempts = DEFAULT_MAX_ATTEMPTS,
 }: PendingPurchasePollerProps) {
   const router = useRouter();
@@ -83,7 +86,11 @@ export function PendingPurchasePoller({
 
       // Trigger a Server Component re-fetch. If hasPurchased() now returns
       // true, the parent will swap this component out for <PurchaseCard>.
-      router.refresh();
+      if (onRefresh) {
+        void onRefresh();
+      } else {
+        router.refresh();
+      }
 
       // Arm the recurring interval only once, immediately after the first tick.
       if (current === 1) {

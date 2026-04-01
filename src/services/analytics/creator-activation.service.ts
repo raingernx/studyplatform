@@ -12,6 +12,7 @@
  *                              whole calendar day is included
  */
 
+import { unstable_cache } from "next/cache";
 import {
   countFirstRunViews,
   countCreateFirstResourceClicks,
@@ -19,6 +20,8 @@ import {
   countFirstPublished,
   type DateFilter,
 } from "@/repositories/analytics/creator-activation.repository";
+import { CACHE_TTLS, rememberJson, runSingleFlight } from "@/lib/cache";
+import { recordCacheCall, recordCacheMiss } from "@/lib/performance/observability";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -100,35 +103,83 @@ export async function getCreatorActivationFunnel(
     [startDate, endDate] = [endDate, startDate];
   }
 
-  const filter: DateFilter = {
-    ...(startDate ? { start: startDate } : {}),
-    ...(endDate ? { end: endOfDay(endDate) } : {}),
-  };
-
-  const [firstRunViews, createClicks, draftCreated, firstPublished] = await Promise.all([
-    countFirstRunViews(filter),
-    countCreateFirstResourceClicks(filter),
-    countFirstDraftCreated(filter),
-    countFirstPublished(filter),
-  ]);
-
   const effectiveStart = startDate ?? new Date(0);
   const effectiveEnd = endDate ?? new Date();
+  const filterStart = toDateString(effectiveStart);
+  const filterEnd = toDateString(effectiveEnd);
+  const cacheMode = isDefaultRange ? "default" : "explicit";
 
-  return {
-    firstRunViews,
-    createClicks,
-    draftCreated,
-    firstPublished,
+  recordCacheCall("getCreatorActivationFunnel", {
+    cacheMode,
+    filterEnd,
+    filterStart,
+  });
 
-    clickRate: pct(createClicks, firstRunViews),
-    draftRate: pct(draftCreated, createClicks),
-    publishRate: pct(firstPublished, draftCreated),
-    overallRate: pct(firstPublished, firstRunViews),
+  return unstable_cache(
+    async function _getCreatorActivationFunnel() {
+      recordCacheMiss("getCreatorActivationFunnel", {
+        cacheMode,
+        filterEnd,
+        filterStart,
+      });
 
-    generatedAt: new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
-    filterStart: toDateString(effectiveStart),
-    filterEnd: toDateString(effectiveEnd),
-    isDefaultRange,
-  };
+      const filter: DateFilter = {
+        ...(startDate ? { start: startDate } : {}),
+        ...(endDate ? { end: endOfDay(endDate) } : {}),
+      };
+      const cacheKey = [
+        "admin-creator-activation",
+        filterStart,
+        filterEnd,
+        cacheMode,
+      ].join(":");
+
+      return rememberJson(
+        cacheKey,
+        CACHE_TTLS.stats,
+        () =>
+          runSingleFlight(cacheKey, async () => {
+            const [firstRunViews, createClicks, draftCreated, firstPublished] =
+              await Promise.all([
+                countFirstRunViews(filter),
+                countCreateFirstResourceClicks(filter),
+                countFirstDraftCreated(filter),
+                countFirstPublished(filter),
+              ]);
+
+            return {
+              firstRunViews,
+              createClicks,
+              draftCreated,
+              firstPublished,
+
+              clickRate: pct(createClicks, firstRunViews),
+              draftRate: pct(draftCreated, createClicks),
+              publishRate: pct(firstPublished, draftCreated),
+              overallRate: pct(firstPublished, firstRunViews),
+
+              generatedAt: new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+              filterStart,
+              filterEnd,
+              isDefaultRange,
+            };
+          }),
+        {
+          metricName: "getCreatorActivationFunnel",
+          details: {
+            cacheMode,
+            filterEnd,
+            filterStart,
+          },
+        },
+      );
+    },
+    [
+      "admin-creator-activation",
+      filterStart,
+      filterEnd,
+      cacheMode,
+    ],
+    { revalidate: CACHE_TTLS.stats },
+  )();
 }

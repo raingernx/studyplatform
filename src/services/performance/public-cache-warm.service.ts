@@ -297,7 +297,7 @@ export async function warmPublicCaches(
       let marketplaceWarmVariants: MarketplaceFilters[] = [];
 
       await Promise.all([
-        getHeroConfig(),
+        getHeroConfig({ staticAnonSeed: true }),
         getDiscoverCategories().then((categories) => {
           discoverCategories = categories;
           marketplaceWarmVariants = buildMarketplaceWarmVariants(

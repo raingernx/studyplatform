@@ -342,15 +342,17 @@ export async function getDashboardOverviewRecommendations(input: {
 }
 
 export async function getResourceDetailExtras(input: {
+  fresh?: boolean;
   resourceId: string;
   userId?: string;
 }) {
   const {
+    fresh,
     resourceId,
     userId,
   } = input;
 
-  const ownership = await getOwnedDetailState(userId, resourceId, []);
+  const ownership = await getOwnedDetailState(userId, resourceId, [], { fresh });
 
   return {
     isOwned: ownership.isOwned,

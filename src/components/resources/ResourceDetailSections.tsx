@@ -1,15 +1,12 @@
 import Link from "next/link";
-import { CheckCircle, Download } from "lucide-react";
-import { AutoScrollOnSuccess } from "@/components/resource/AutoScrollOnSuccess";
-import { PurchaseCard } from "@/components/resource/PurchaseCard";
 import { ResourceDescription } from "@/components/resource/ResourceDescription";
 import { ResourceFiles } from "@/components/resource/ResourceFiles";
 import { TagList } from "@/components/resource/TagList";
 import { CreatorCard } from "@/components/resource/CreatorCard";
 import { RelatedResources } from "@/components/resource/RelatedResources";
 import { ResourceReviews } from "@/components/resource/ResourceReviews";
-import { ResourceReviewForm } from "@/components/resource/ResourceReviewForm";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
+import { getBuildSafePlatformConfig } from "@/services/platform.service";
 import {
   getResourceDetailPageBodyContent,
   getResourceDetailPageFooterContent,
@@ -17,13 +14,11 @@ import {
   getResourceDetailPageRelatedSection,
   getResourceDetailPageResource,
   getResourceDetailPageReviewList,
-  getResourceDetailPageViewerReview,
 } from "@/services/resources/resource-detail-page.service";
 import { runNonCriticalResourceDetailTask } from "@/services/resources/resource-detail-resilience";
-
-type OptionalSession = {
-  user?: { id?: string; subscriptionStatus?: string };
-} | null;
+import { ResourceDetailOwnerReviewClient } from "@/components/resources/ResourceDetailOwnerReviewClient";
+import { ResourceDetailPurchaseCardClient } from "@/components/resources/ResourceDetailPurchaseCardClient";
+import { ResourceDetailSuccessClient } from "@/components/resources/ResourceDetailSuccessClient";
 
 export function ResourceDetailBodyFallback() {
   return (
@@ -183,34 +178,14 @@ export async function ResourceDetailPublicReviewsSection({
 export async function ResourceDetailOwnerReviewSection({
   resourceId,
   resourceTitle,
-  sessionPromise,
-  ownershipPromise,
 }: {
   resourceId: string;
   resourceTitle: string;
-  sessionPromise: Promise<OptionalSession>;
-  ownershipPromise: Promise<{ isOwned: boolean }>;
 }) {
-  const [{ isOwned }, session] = await Promise.all([ownershipPromise, sessionPromise]);
-  const userId = session?.user?.id;
-
-  if (!userId || !isOwned) {
-    return null;
-  }
-
-  const viewerReview = await runNonCriticalResourceDetailTask(
-    () => getResourceDetailPageViewerReview(userId, resourceId),
-    {
-      context: { resourceId, section: "viewer-review" },
-      fallback: null,
-    },
-  );
-
   return (
-    <ResourceReviewForm
+    <ResourceDetailOwnerReviewClient
       resourceId={resourceId}
       resourceTitle={resourceTitle}
-      existingReview={viewerReview}
     />
   );
 }
@@ -327,43 +302,20 @@ export async function ResourceDetailFooterSection({
 }
 
 export async function ResourceDetailSuccessShell({
-  ownershipPromise,
   hasFile,
   resourceId,
+  resourceTitle,
 }: {
-  ownershipPromise: Promise<{ isOwned: boolean }>;
   hasFile: boolean;
   resourceId: string;
+  resourceTitle: string;
 }) {
-  const { isOwned } = await ownershipPromise;
-  if (!isOwned) return null;
-
   return (
-    <>
-      <div className="flex items-center justify-between gap-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-5 py-4">
-        <div className="flex items-start gap-3">
-          <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
-          <div>
-            <p className="text-[14px] font-semibold text-emerald-800">
-              Payment confirmed — your file is ready.
-            </p>
-            <p className="mt-0.5 text-[13px] text-emerald-700">
-              Added to your library.
-            </p>
-          </div>
-        </div>
-        {hasFile ? (
-          <a
-            href={`/api/download/${resourceId}`}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Download instantly
-          </a>
-        ) : null}
-      </div>
-      <AutoScrollOnSuccess enabled />
-    </>
+    <ResourceDetailSuccessClient
+      resourceId={resourceId}
+      hasFile={hasFile}
+      resourceTitle={resourceTitle}
+    />
   );
 }
 
@@ -390,9 +342,7 @@ export function ResourceDetailSuccessSkeleton({
 
 export function ResourceDetailPurchaseCard({
   resource,
-  sessionPromise,
   purchaseMetaPromise,
-  ownershipPromise,
   trustSummaryPromise,
   isReturningFromCheckout,
   hasFile,
@@ -400,15 +350,14 @@ export function ResourceDetailPurchaseCard({
   outcomeHint,
 }: {
   resource: NonNullable<Awaited<ReturnType<typeof getResourceDetailPageResource>>>;
-  sessionPromise: Promise<OptionalSession>;
   purchaseMetaPromise: Promise<Awaited<ReturnType<typeof getResourceDetailPagePurchaseMeta>>>;
-  ownershipPromise: Promise<{ isOwned: boolean }>;
   trustSummaryPromise: Promise<{ averageRating: number | null; totalReviews: number; totalSales: number }>;
   isReturningFromCheckout: boolean;
   hasFile: boolean;
   levelLabel: string | null;
   outcomeHint: string;
 }) {
+  const platform = getBuildSafePlatformConfig();
   const purchaseCardResource = {
     id: resource.id,
     title: resource.title,
@@ -424,14 +373,60 @@ export function ResourceDetailPurchaseCard({
   };
 
   return (
-    <PurchaseCard
+    <ResourceDetailPurchaseCardAsync
       resource={purchaseCardResource}
-      sessionPromise={sessionPromise}
       purchaseMetaPromise={purchaseMetaPromise}
+      trustSummaryPromise={trustSummaryPromise}
       hasFile={hasFile}
       isReturningFromCheckout={isReturningFromCheckout}
-      ownershipPromise={ownershipPromise}
-      trustSummaryPromise={trustSummaryPromise}
+      platformShortName={platform.platformShortName}
+    />
+  );
+}
+
+async function ResourceDetailPurchaseCardAsync({
+  resource,
+  purchaseMetaPromise,
+  trustSummaryPromise,
+  hasFile,
+  isReturningFromCheckout,
+  platformShortName,
+}: {
+  resource: {
+    id: string;
+    title: string;
+    slug: string;
+    price: number;
+    isFree: boolean;
+    type: string;
+    downloadCount: number;
+    author: { id: string; name: string | null };
+    category: { id: string; name: string; slug: string } | null;
+    levelLabel: string | null;
+    outcomeHint: string;
+  };
+  purchaseMetaPromise: Promise<Awaited<ReturnType<typeof getResourceDetailPagePurchaseMeta>>>;
+  trustSummaryPromise: Promise<{ averageRating: number | null; totalReviews: number; totalSales: number }>;
+  hasFile: boolean;
+  isReturningFromCheckout: boolean;
+  platformShortName: string;
+}) {
+  const [purchaseMeta, trustSummary] = await Promise.all([
+    purchaseMetaPromise,
+    trustSummaryPromise,
+  ]);
+  const purchaseCardResource = {
+    ...resource,
+  };
+
+  return (
+    <ResourceDetailPurchaseCardClient
+      resource={purchaseCardResource}
+      purchaseMeta={purchaseMeta}
+      trustSummary={trustSummary}
+      hasFile={hasFile}
+      isReturningFromCheckout={isReturningFromCheckout}
+      platformShortName={platformShortName}
     />
   );
 }

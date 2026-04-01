@@ -34,7 +34,13 @@ import {
   findTopTrendingInCategoriesExcludingIds,
 } from "@/repositories/resources/resource.repository";
 import { unstable_cache } from "next/cache";
-import { CACHE_KEYS, CACHE_TAGS, CACHE_TTLS, rememberJson } from "@/lib/cache";
+import {
+  CACHE_KEYS,
+  CACHE_TAGS,
+  CACHE_TTLS,
+  rememberJson,
+  runSingleFlight,
+} from "@/lib/cache";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -323,21 +329,23 @@ async function getCachedUserInterestProfile(
   userId: string,
   since: Date,
 ): Promise<UserInterestProfile> {
+  const cacheKey = `${CACHE_KEYS.behaviorProfile(userId)}:${since.toISOString()}`;
   const serialized = await rememberJson<SerializedUserInterestProfile>(
-    CACHE_KEYS.behaviorProfile(userId),
+    cacheKey,
     CACHE_TTLS.stats,
-    async () => {
-      const p = await buildUserInterestProfile(userId, since);
-      return {
-        hasBehavior:               p.hasBehavior,
-        topCategoryIds:            p.topCategoryIds,
-        topTagIds:                 p.topTagIds,
-        categoryWeights:           Array.from(p.categoryWeights.entries()),
-        tagWeights:                Array.from(p.tagWeights.entries()),
-        heavyViewedResourceIds:    Array.from(p.heavyViewedResourceIds),
-        recentlyViewedResourceIds: Array.from(p.recentlyViewedResourceIds),
-      };
-    },
+    () =>
+      runSingleFlight(cacheKey, async () => {
+        const p = await buildUserInterestProfile(userId, since);
+        return {
+          hasBehavior:               p.hasBehavior,
+          topCategoryIds:            p.topCategoryIds,
+          topTagIds:                 p.topTagIds,
+          categoryWeights:           Array.from(p.categoryWeights.entries()),
+          tagWeights:                Array.from(p.tagWeights.entries()),
+          heavyViewedResourceIds:    Array.from(p.heavyViewedResourceIds),
+          recentlyViewedResourceIds: Array.from(p.recentlyViewedResourceIds),
+        };
+      }),
   );
 
   return {
@@ -374,7 +382,23 @@ const getCachedPhase2CandidatePool = unstable_cache(
     topTagIds: string[],
     limit: number,
   ): Promise<Phase2Candidate[]> {
-    return findPhase2CandidateResources(topCategoryIds, topTagIds, [], limit) as Promise<Phase2Candidate[]>;
+    const categoryKey = topCategoryIds.length > 0 ? topCategoryIds.join(",") : "none";
+    const tagKey = topTagIds.length > 0 ? topTagIds.join(",") : "none";
+    const cacheKey = `phase2_candidate_pool:${categoryKey}:${tagKey}:${limit}`;
+
+    return rememberJson<Phase2Candidate[]>(
+      cacheKey,
+      CACHE_TTLS.publicPage,
+      () =>
+        runSingleFlight(cacheKey, () =>
+          findPhase2CandidateResources(
+            topCategoryIds,
+            topTagIds,
+            [],
+            limit,
+          ) as Promise<Phase2Candidate[]>,
+        ),
+    );
   },
   ["phase2-candidate-pool"],
   { revalidate: CACHE_TTLS.publicPage, tags: [CACHE_TAGS.discover] },

@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
+import { getSearchRecoveryData } from "@/services/search-recovery.service";
 import { searchResources } from "@/services/search.service";
+
+const SEARCH_RESPONSE_HEADERS = {
+  "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+} as const;
 
 /**
  * GET /api/search?q=<query>[&category=<slug>][&limit=<n>]
  *
  * Public search endpoint — no authentication required.
- * Results are scoped to published, non-deleted resources.
+ * Results are scoped to published, non-deleted resources and ranked by the
+ * same weighted relevance strategy used by marketplace search pages.
  *
  * Query params:
  *   q        Required. Search query string (min 1 char after trim).
@@ -13,7 +19,7 @@ import { searchResources } from "@/services/search.service";
  *   limit    Optional. Max results to return (default 20, max 50).
  *
  * Responses:
- *   200  { data: SearchResult[] }
+ *   200  { data: SearchResult[], recovery?: SearchRecoveryData }
  *   400  Missing or empty query
  *   500  Unexpected server error
  */
@@ -23,6 +29,7 @@ export async function GET(req: Request) {
 
     const query    = searchParams.get("q")        ?? "";
     const category = searchParams.get("category") ?? undefined;
+    const includeRecovery = searchParams.get("recovery") === "1";
     const rawLimit = parseInt(searchParams.get("limit") ?? "20", 10);
     const limit    = isNaN(rawLimit) ? 20 : Math.min(Math.max(rawLimit, 1), 50);
 
@@ -34,13 +41,30 @@ export async function GET(req: Request) {
     }
 
     const results = await searchResources({ query, category, limit });
+    const recovery =
+      includeRecovery && results.length === 0
+        ? await getSearchRecoveryData(query)
+        : null;
 
-    return NextResponse.json({ data: results });
+    return NextResponse.json(
+      {
+        data: results,
+        ...(recovery ? { recovery } : {}),
+      },
+      {
+        headers: SEARCH_RESPONSE_HEADERS,
+      },
+    );
   } catch (err) {
     console.error("[SEARCH_GET]", err);
     return NextResponse.json(
       { error: "Internal server error." },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      },
     );
   }
 }

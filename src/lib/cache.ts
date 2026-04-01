@@ -80,6 +80,12 @@ export const CACHE_KEYS = {
   resourceTrust: (resourceId: string) => `resource_trust:${resourceId}`,
   creatorStats: (creatorId: string) => `creator_stats:${creatorId}`,
   behaviorProfile: (userId: string) => `behavior_profile:${userId}`,
+  userLearningProfile: (userId: string, take: number) =>
+    `user_learning_profile:${userId}:${take}`,
+  searchResults: (query: string, category: string | null, limit: number) =>
+    `search_results:${encodeURIComponent(query.toLowerCase())}:${category ?? "all"}:${limit}`,
+  searchRecovery: (query: string) =>
+    `search_recovery:${encodeURIComponent(query.toLowerCase())}`,
 } as const;
 
 export async function getCachedJson<T>(key: string): Promise<T | null> {

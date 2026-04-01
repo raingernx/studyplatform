@@ -442,6 +442,29 @@ duplicate `FormSection` / `PageContainer` aliases, and if a needed primitive is
 missing, add it to `src/design-system` first. Treat remaining legacy backbone
 files as implementation details only.
 
+## UI Loading And Streaming Rules
+
+When editing any UI that has loading, streaming, or deferred states:
+
+- changing the final UI means changing the related skeleton/fallback/loading UI in the same patch
+- skeletons must match the final layout closely in structure, spacing, hierarchy, and approximate height
+- generic skeletons must not replace feature-specific loading states when the final UI has a distinctive layout
+- every affected `loading.tsx`, `Suspense fallback`, empty state, and error fallback must be reviewed when the final UI changes
+- `fallback={null}` is allowed only for intentionally invisible or non-structural subtrees where reserving space is unnecessary and layout shift risk is negligible
+- a UI change is incomplete if the streamed/loading state still reflects the old layout
+
+## Viewer-State And Personalization Rules
+
+For public or high-traffic routes:
+
+- do not read session, cookies, or headers at the page level just to support personalized UI if that would make the whole route request-bound
+- keep the public shell on the server path and move viewer-specific state behind a client hydration boundary when practical
+- treat viewer-state as a data contract for auth/ownership/personalization, not as a dump of presentation-specific values
+- only add fields to viewer-state when the UI truly needs new viewer-specific data
+- shared cache keys must never include per-user state
+- per-user state must never be stored in shared cache layers
+- after performance-sensitive route changes, verify that public routes did not accidentally regain `cookies()`, `headers()`, or server-session reads at the page level
+
 ---
 
 # Performance Guidelines
@@ -455,6 +478,21 @@ Use Prisma relations efficiently.
 Paginate resource queries when returning lists.
 
 Optimize expensive queries.
+
+When editing public routes with streaming or personalization:
+
+- verify `typecheck` and `lint`
+- verify the changed route, API, or user flow actually works at runtime when practical, not just at compile time
+- for route and API work, prefer a local smoke check against the real path or endpoint before declaring the task done
+- if runtime verification is blocked, state that explicitly instead of assuming success
+- if a streamed UI changed, its matching `loading.tsx`, Suspense fallback, skeleton, empty state, and error state must be reviewed and updated in the same patch when needed
+- treat loading/fallback UI as part of the feature, not optional polish
+- `fallback={null}` is only acceptable for non-structural UI that does not need reserved layout space
+- verify the relevant loading/skeleton UI still matches the final rendered UI
+- grep for accidental page-level `cookies()`, `headers()`, `getServerSession`, or equivalent request-bound auth reads on public routes
+- after search, filter, sort, auth, or cache changes, look for regressions and repeated errors in logs, response payloads, or rendered output instead of relying on happy-path reasoning only
+- after changes to search, auth, cache, or other runtime-sensitive flows, scan recent logs after the smoke test to check for repeated errors, hidden runtime failures, and hydration issues
+- when scanning logs, distinguish between historical errors and errors reproduced after the latest change; do not claim success if the latest smoke test still produces matching log failures
 
 ---
 
@@ -479,6 +517,10 @@ When implementing features:
 3. Use existing patterns for API routes.
 4. Ensure database consistency via Prisma.
 5. Maintain security for downloads and admin routes.
+6. Do not mark work complete until the changed flow has been checked for obvious errors and regressions at a level proportional to the change.
+7. Prefer proof over assumption: if a route, API, cache, or search flow was changed, verify that the specific thing works.
+8. If runtime verification disproves an earlier assumption or summary, correct the record explicitly instead of quietly proceeding.
+9. When multiple follow-up improvements are possible, prefer the highest-impact safe pass before deeper or riskier refactors.
 
 AI agents should avoid large architectural changes unless explicitly requested.
 
@@ -494,6 +536,12 @@ krucraft-ai-contexts/
 
 Agents should treat that directory as a maintained reference for current
 project truth, not a frozen export.
+
+Updating `krucraft-ai-contexts/` after system-level changes is not optional housekeeping.
+It is part of completing the task whenever shared understanding of the system changed.
+If the implementation changes architecture, rendering, caching, routing, auth behavior,
+major UX flows, or operational expectations, the relevant context files must be updated
+in the same work session before the task is considered complete.
 
 ## When context updates are required
 
@@ -546,3 +594,15 @@ To run the blocking version manually:
 ```bash
 npm run context:check:staged:strict
 ```
+
+## Verification expectation
+
+For non-trivial changes, agents should usually finish by reporting:
+
+- what was changed
+- what checks were run
+- which route, API, or user flow was verified
+- whether the flow was verified at runtime
+- any remaining uncertainty or blocked verification
+
+Do not report success based only on static analysis when a runtime check was practical and relevant.

@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 /**
  * Search Service
  *
@@ -9,14 +10,21 @@
  * higher-conversion resources float to the top.
  *
  * This intentionally uses simple Postgres ILIKE (via Prisma's `insensitive`
- * mode) rather than a dedicated search index.  It is fast enough for typical
- * catalogue sizes (<50k rows) and requires no extra infrastructure.
+ * mode) plus trigram indexes on the searched columns rather than a dedicated
+ * search engine. It stays fast for typical catalogue sizes without adding
+ * extra infrastructure.
  * If the catalogue grows, this function can be replaced with a full-text or
  * vector search backend without touching the API or UI layers.
  */
 
+import { CACHE_KEYS, CACHE_TTLS, rememberJson, runSingleFlight } from "@/lib/cache";
 import { findSearchResources } from "@/repositories/resources/resource.repository";
 import { withPreview } from "@/services/discover.service";
+
+type CachedFn<T> = () => Promise<T>;
+type SearchRows = Awaited<ReturnType<typeof findSearchResources>>;
+
+const _searchResultsCacheMap = new Map<string, CachedFn<SearchRows>>();
 
 export interface SearchFilters {
   query:    string;
@@ -35,32 +43,88 @@ export interface SearchResult {
   category:      { id: string; name: string; slug: string } | null;
   author:        { name: string | null } | null;
   _count:        { purchases: number; reviews: number };
+  matchReason?:  string | null;
 }
 
 /**
  * Searches published resources matching `query`.
  *
  * Matches against:
- *   - resource title  (ILIKE)
- *   - resource description (ILIKE)
- *   - category name (ILIKE)
- *   - any tag name  (ILIKE)
+ *   - resource title / slug
+ *   - resource description
+ *   - category name / slug
+ *   - tag name / slug
+ *   - creator name
+ *   - tokenized query aliases such as worksheet/ใบงาน, flashcard/แฟลชการ์ด, and note/โน้ต
  *
- * Returns at most `limit` results (default 20), ordered by cached ranking
- * signals before falling back to recency.
+ * Returns at most `limit` results (default 20), ordered by a weighted
+ * relevance score with marketplace ranking signals as tie-breakers.
  * Returns an empty array when `query` is blank.
  */
 export async function searchResources(filters: SearchFilters): Promise<SearchResult[]> {
   const { query, limit = 20, category } = filters;
 
-  const trimmed = query.trim();
+  const trimmed = query.trim().replace(/\s+/g, " ");
   if (!trimmed) return [];
 
-  const raw = await findSearchResources({
-    query: trimmed,
-    limit,
-    category,
-  });
+  const cacheKey = CACHE_KEYS.searchResults(trimmed, category ?? null, limit);
+  let cachedReader = _searchResultsCacheMap.get(cacheKey);
 
-  return raw.map(withPreview) as SearchResult[];
+  if (!cachedReader) {
+    cachedReader = unstable_cache(
+      () =>
+        rememberJson(
+          cacheKey,
+          CACHE_TTLS.publicPage,
+          () =>
+            runSingleFlight(cacheKey, () =>
+              findSearchResources({
+                query: trimmed,
+                limit,
+                category,
+              }),
+            ),
+          {
+            metricName: "searchResources",
+            details: {
+              query: trimmed,
+              category: category ?? null,
+              limit,
+            },
+          },
+        ),
+      ["search-results", cacheKey],
+      { revalidate: CACHE_TTLS.publicPage },
+    );
+    _searchResultsCacheMap.set(cacheKey, cachedReader);
+  }
+
+  const raw = await cachedReader();
+
+  return raw.map((row) =>
+    withPreview({
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      price: row.price,
+      isFree: row.isFree,
+      featured: row.featured,
+      downloadCount: row.downloadCount,
+      createdAt: row.createdAt,
+      author: { name: row.authorName ?? null },
+      category: row.categoryId
+        ? {
+            id: row.categoryId,
+            name: row.categoryName ?? "",
+            slug: row.categorySlug ?? "",
+          }
+        : null,
+      previews: row.previewImageUrl ? [{ imageUrl: row.previewImageUrl }] : [],
+      _count: {
+        purchases: row.purchaseCount,
+        reviews: row.reviewCount,
+      },
+      matchReason: row.matchReason,
+    }),
+  ) as SearchResult[];
 }

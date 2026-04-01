@@ -42,6 +42,7 @@ interface ResourceGridProps {
   cardPrefetchMode?: "intent" | "viewport" | "none";
   badgeNodes?: Array<ReactNode | null>;
   deferredOwnedIdsHydrator?: ReactNode;
+  emptyState?: ReactNode;
   routeContext?: {
     queryKey: string;
     clearFiltersHref: string;
@@ -96,6 +97,7 @@ function ResourceGridBody({
   cardPrefetchMode = "viewport",
   badgeNodes,
   deferredOwnedIdsHydrator,
+  emptyState,
   routeContext,
 }: ResourceGridProps) {
   const {
@@ -128,6 +130,10 @@ function ResourceGridBody({
 
   // ── Empty state ─────────────────────────────────────────────────────────────
   if (resources.length === 0) {
+    if (emptyState) {
+      return emptyState;
+    }
+
     if (hasActiveFilters) {
       return (
         <div className="rounded-2xl border border-border-subtle bg-white px-6 py-14 text-center sm:px-8 sm:py-16">

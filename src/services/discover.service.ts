@@ -488,6 +488,9 @@ export async function getDiscoverCategories() {
  * Returns the hero config used in discover mode.
  * Falls back to HomepageHero when no active CMS hero exists.
  */
-export async function getHeroConfig(context?: { userId?: string | null }) {
+export async function getHeroConfig(context?: {
+  userId?: string | null;
+  staticAnonSeed?: boolean;
+}) {
   return resolveHomepageHero(context);
 }

@@ -3,7 +3,7 @@
 import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { useId, useRef, useState } from "react";
 import {
   LogOut,
@@ -20,6 +20,7 @@ import { NavbarBrand } from "@/components/layout/NavbarBrand";
 import { NavbarItem } from "@/components/layout/navbar/NavbarItem";
 import { Container } from "@/components/layout/container";
 import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
+import { clearCachedAuthViewer, useAuthViewer } from "@/lib/auth/use-auth-viewer";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
@@ -135,6 +136,48 @@ function NavbarFallback({
   );
 }
 
+function NavbarAuthPlaceholder({
+  marketplace = false,
+  mobile = false,
+}: {
+  marketplace?: boolean;
+  mobile?: boolean;
+}) {
+  if (mobile) {
+    return (
+      <div className="flex items-center gap-2">
+        <div
+          aria-hidden="true"
+          className="h-10 w-24 animate-pulse rounded-full bg-surface-100 motion-reduce:animate-none"
+        />
+        <div
+          aria-hidden="true"
+          className="h-10 w-10 animate-pulse rounded-full bg-surface-100 motion-reduce:animate-none"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("flex items-center gap-2.5", marketplace ? "" : "gap-2")}>
+      <div
+        aria-hidden="true"
+        className={cn(
+          "animate-pulse rounded-full bg-surface-100 motion-reduce:animate-none",
+          marketplace ? "h-10 w-28" : "h-10 w-24",
+        )}
+      />
+      <div
+        aria-hidden="true"
+        className={cn(
+          "animate-pulse rounded-full bg-surface-100 motion-reduce:animate-none",
+          marketplace ? "h-10 w-10" : "h-10 w-28",
+        )}
+      />
+    </div>
+  );
+}
+
 function NavbarInner({
   secondaryRow,
   headerSearch,
@@ -144,8 +187,8 @@ function NavbarInner({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
-  const authUser = session?.user;
+  const authViewer = useAuthViewer();
+  const authUser = authViewer.user;
   const isMarketplaceNavbar = Boolean(headerSearch);
   const currentCategory = searchParams.get("category");
   const userMenuId = useId();
@@ -189,6 +232,7 @@ function NavbarInner({
 
     setIsSigningOut(true);
     closeAll();
+    clearCachedAuthViewer();
 
     try {
       await signOut({ callbackUrl: routes.home });
@@ -331,7 +375,7 @@ function NavbarInner({
                       {userMenuOpen ? renderUserMenu() : null}
                     </div>
                   </>
-                ) : (
+                ) : authViewer.isReady ? (
                   <>
                     <Link href={routes.login} className={cn(MARKETPLACE_CATEGORY_ITEM_CLASS_NAME, "border-surface-200 bg-surface-100 text-text-primary")}>
                       เข้าสู่ระบบ
@@ -340,6 +384,8 @@ function NavbarInner({
                       เริ่มต้นใช้งาน
                     </Link>
                   </>
+                ) : (
+                  <NavbarAuthPlaceholder marketplace />
                 )}
               </div>
 
@@ -350,7 +396,7 @@ function NavbarInner({
                   <Link href={routes.library} className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] leading-[22px] font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
                     คลังของฉัน
                   </Link>
-                ) : (
+                ) : authViewer.isReady ? (
                   <>
                     <Link href={routes.login} className={cn(MARKETPLACE_CATEGORY_ITEM_CLASS_NAME, "border-surface-200 bg-surface-100 px-3 text-text-primary")}>
                       เข้าสู่ระบบ
@@ -359,6 +405,8 @@ function NavbarInner({
                       เริ่มต้นใช้งาน
                     </Link>
                   </>
+                ) : (
+                  <NavbarAuthPlaceholder mobile />
                 )}
               </div>
 
@@ -527,13 +575,15 @@ function NavbarInner({
 
                 {userMenuOpen ? renderUserMenu() : null}
               </div>
-            ) : (
+            ) : authViewer.isReady ? (
               <div className="flex items-center gap-2">
                 <NavbarItem href={routes.login} variant="active" className="rounded-full">เข้าสู่ระบบ</NavbarItem>
                 <NavbarItem href={routes.register} variant="secondary">
                   เริ่มต้นใช้งาน
                 </NavbarItem>
               </div>
+            ) : (
+              <NavbarAuthPlaceholder />
             )}
           </div>
 
@@ -615,7 +665,7 @@ function NavbarInner({
                   {isSigningOut ? "Signing out…" : "Sign out"}
                 </button>
               </>
-            ) : (
+            ) : authViewer.isReady ? (
               <>
                 <Link
                   href={routes.login}
@@ -632,6 +682,17 @@ function NavbarInner({
                   เริ่มต้นใช้งาน
                 </Link>
               </>
+            ) : (
+              <div className="grid gap-2">
+                <div
+                  aria-hidden="true"
+                  className="h-10 w-full animate-pulse rounded-lg bg-surface-100 motion-reduce:animate-none"
+                />
+                <div
+                  aria-hidden="true"
+                  className="h-10 w-full animate-pulse rounded-lg bg-surface-100 motion-reduce:animate-none"
+                />
+              </div>
             )}
           </div>
         </div>
