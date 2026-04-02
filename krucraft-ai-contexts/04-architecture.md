@@ -95,6 +95,7 @@ Database search note:
     → post-deploy warm + smoke perf workflow (`deployment_status` + manual `workflow_dispatch` fallback for CLI deploys)
     → warm workflow install now retries and uploads npm install logs when it fails before warm artifacts exist
     → post-deploy warm/perf jobs now run `setup-node` on Node 24 to match the current lockfile/npm resolver behavior used locally
+    → the same workflow now also uses `checkout@v6` / `setup-node@v6` / `upload-artifact@v6`, aligning the GitHub-maintained actions in that flow with upstream `node24` runtimes
     → selective usable fallbacks where they match final section intent
 ```
 

@@ -11,6 +11,7 @@ The public paths now have deliberate performance engineering in place:
 - Post-deploy warm-cache + smoke perf workflow, with a manual `workflow_dispatch` fallback for CLI-driven deploys
 - Warm workflow installs now retry `npm ci` and preserve install logs as artifacts, which makes failed warm runs debuggable even when the job dies before `warm-cache.log` exists
 - The same post-deploy workflow now installs on Node 24 instead of Node 20 so GitHub Actions uses the same lockfile/npm resolution behavior that currently passes locally
+- GitHub-maintained actions inside that workflow are now on `checkout@v6`, `setup-node@v6`, and `upload-artifact@v6`; the remaining Node 20 deprecation warning surface is expected to come from `grafana/setup-k6-action@v1` until Grafana publishes an explicitly updated action/runtime line
 - Optimizer-compatible preview images now stay on Next Image by default, with selective bypass only for sources that are not safely optimizable
 - Above-the-fold marketplace hero, spotlight, and card images now use targeted eager loading instead of blanket eager behavior
 - Build-safe platform config on branding-only build paths
