@@ -112,7 +112,7 @@ export function DashboardSidebar({
       </SidebarNav>
 
       {footer ? (
-        <div className="mt-auto flex-shrink-0 border-t border-border px-5 py-4">
+        <div className="mt-auto flex-shrink-0 border-t border-border-subtle px-5 py-4">
           {footer}
         </div>
       ) : null}

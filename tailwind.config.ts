@@ -28,7 +28,8 @@ const config: Config = {
         // shadcn/ui design tokens
         border: {
           DEFAULT: "hsl(var(--border))",
-          subtle: "hsl(var(--border))",
+          subtle: "hsl(var(--border-subtle))",
+          strong: "hsl(var(--border-strong))",
         },
         input: {
           DEFAULT: "hsl(var(--input))",

@@ -43,7 +43,7 @@ export function PaginationButton({
           : "min-w-[36px] rounded-lg px-3 py-2 text-sm",
         active
           ? "border-brand-600 bg-brand-600 text-white"
-          : "border-border bg-card text-muted-foreground hover:border-primary/20 hover:bg-muted hover:text-brand-600",
+          : "border-border-strong bg-card text-muted-foreground hover:border-border hover:bg-muted hover:text-brand-600",
         className,
       )}
       {...props}

@@ -89,6 +89,15 @@
 - `LoadingSkeleton` is the canonical DS loading primitive. New loading work should reference it instead of adding ad-hoc placeholder blocks or reviving `src/components/shared/LoadingSkeleton` as an implementation owner.
 - `boneyard-js` is available as an optional DOM-capture skeleton workflow, but it complements the DS loading system rather than replacing route-level loading/error/empty-state design. Generated bones are expected under `src/bones`.
 - `PriceLabel` is now theme-aware at the DS level (`text-foreground` for paid prices, `text-success-600` for free) so product surfaces can reuse it on both light and dark shells without local color patches.
+- Dark theme border tokens now carry a three-step hierarchy:
+  - `border-border-subtle` for passive card shells, dashed states, and soft dividers
+  - `border-border` for structural chrome such as shell rails, navbars, sidebars, and key panels
+  - `border-border-strong` plus `border-input` for interactive controls that need stronger affordance on dark backgrounds
+- Marketplace listing active states should no longer depend on light-only
+  `primary-50` or white shells in dark mode. Current `/resources` filter rows,
+  pills, select controls, and spotlight chips/panels use primary tint overlays
+  (`bg-primary/12`, `border-primary/20-30`, `text-primary`) on top of dark
+  shells instead of swapping back to white surfaces.
 - `src/design-system/tokens/hero.ts` now holds the current marketplace hero support layer for the Figma-led split banner: badge/chip spacing, 16px panel radii, a 56px desktop headline, a 36px mobile/tablet headline, and the premium-panel title/CTA typography. Hero color decisions still come from `src/design-system/tokens/colors.ts`, but the shared semantic layer now includes a thin hero surface contract (`heroBackground`, `heroBackgroundSubtle`, `heroPanel`, `heroPanelForeground`, `heroPanelBorder`, `heroChip`, `heroChipForeground`) so hero UI does not have to masquerade as generic `card` chrome or rely on raw primitives everywhere.
 - The live Figma `Krukraft / Colors / Semantic` collection is no longer the old
   19-variable starter set. It now carries a broader alias layer for

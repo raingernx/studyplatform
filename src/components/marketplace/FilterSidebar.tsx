@@ -22,6 +22,11 @@ interface FilterSidebarProps {
   onNavigate?: () => void;
 }
 
+const ACTIVE_ROW_CLASS = "bg-primary/12 font-medium text-primary";
+const ACTIVE_PILL_CLASS = "border border-primary/30 bg-primary/12 text-primary";
+const INACTIVE_PILL_CLASS =
+  "border border-border-strong bg-card text-muted-foreground hover:border-border hover:bg-muted";
+
 // ── Static filter options ─────────────────────────────────────────────────────
 
 const RESOURCE_TYPES = [
@@ -182,7 +187,7 @@ export function FilterSidebar({
                     className={cn(
                       "w-full rounded-xl px-3 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                       active
-                        ? "bg-primary-50 font-medium text-primary-700"
+                        ? ACTIVE_ROW_CLASS
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
                       optimistic && "cursor-wait"
                     )}
@@ -210,7 +215,7 @@ export function FilterSidebar({
                 className={cn(
                   "w-full rounded-xl px-3 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                   isAllCategories || isOptimistic("category", "all")
-                    ? "bg-primary-50 font-medium text-primary-700"
+                    ? ACTIVE_ROW_CLASS
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   isOptimistic("category", "all") && "cursor-wait"
                 )}
@@ -232,7 +237,7 @@ export function FilterSidebar({
                     className={cn(
                       "w-full rounded-xl px-3 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                       active
-                        ? "bg-primary-50 font-medium text-primary-700"
+                        ? ACTIVE_ROW_CLASS
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
                       optimistic && "cursor-wait"
                     )}
@@ -264,7 +269,7 @@ export function FilterSidebar({
                     className={cn(
                       "w-full rounded-xl px-3 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                       active
-                        ? "bg-primary-50 font-medium text-primary-700"
+                        ? ACTIVE_ROW_CLASS
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
                       optimistic && "cursor-wait"
                     )}
@@ -300,8 +305,8 @@ export function FilterSidebar({
                 className={cn(
                   "rounded-full px-3 py-1.5 text-caption transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                   active
-                    ? "border border-primary-200 bg-primary-50 text-primary-700"
-                    : "border border-border bg-card text-muted-foreground hover:border-primary/20 hover:bg-muted",
+                    ? ACTIVE_PILL_CLASS
+                    : INACTIVE_PILL_CLASS,
                   optimistic && "cursor-wait"
                 )}
               >
@@ -334,8 +339,8 @@ export function FilterSidebar({
                 className={cn(
                   "rounded-full px-3 py-1.5 text-caption transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                   active
-                    ? "border border-primary-200 bg-primary-50 text-primary-700"
-                    : "border border-border bg-card text-muted-foreground hover:border-primary/20 hover:bg-muted",
+                    ? ACTIVE_PILL_CLASS
+                    : INACTIVE_PILL_CLASS,
                   optimistic && "cursor-wait"
                 )}
               >

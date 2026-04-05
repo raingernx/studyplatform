@@ -99,7 +99,7 @@ function ModalHeader({ className, ...props }: ModalHeaderProps) {
   return (
     <div
       data-slot="modal-header"
-      className={cn("flex flex-col gap-1 border-b border-border/70 px-5 py-4", className)}
+      className={cn("flex flex-col gap-1 border-b border-border-subtle px-5 py-4", className)}
       {...props}
     />
   );
@@ -148,7 +148,7 @@ function ModalFooter({ className, ...props }: ModalFooterProps) {
     <div
       data-slot="modal-footer"
       className={cn(
-        "flex items-center justify-end gap-2 border-t border-border/70 bg-muted/60 px-5 py-3",
+        "flex items-center justify-end gap-2 border-t border-border-subtle bg-muted/60 px-5 py-3",
         className,
       )}
       {...props}

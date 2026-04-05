@@ -86,7 +86,7 @@ export function PickerIconButton({
 export type PreviewCardTone = "neutral" | "info";
 
 const previewCardToneClasses: Record<PreviewCardTone, string> = {
-  neutral: "border-border bg-muted",
+  neutral: "border-border-subtle bg-muted",
   info: "border-blue-100 bg-blue-50",
 };
 
@@ -117,7 +117,7 @@ export function MediaPreview({ className, ...props }: MediaPreviewProps) {
   return (
     <div
       className={cn(
-        "relative inline-block overflow-hidden rounded-lg border border-border bg-muted",
+        "relative inline-block overflow-hidden rounded-lg border border-border-subtle bg-muted",
         className,
       )}
       {...props}
@@ -146,7 +146,7 @@ export function PickerDropzoneShell({
           ? "border-red-300"
           : active
             ? "border-brand-400 bg-muted"
-            : "border-border bg-card",
+            : "border-border-subtle bg-card",
         disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-brand-400 hover:bg-muted",
         className,
       )}

@@ -127,6 +127,9 @@ function FilterSelect({
   "aria-label"?: string;
 }) {
   const isActive = value !== "" && value !== DEFAULT_SORT;
+  const selectStateClass = isActive
+    ? "border-primary/30 bg-primary/12 text-primary hover:border-primary/40 hover:bg-primary/16"
+    : "border-border-strong bg-background text-muted-foreground hover:border-border hover:bg-muted hover:text-foreground";
 
   return (
     <div className="relative min-w-0">
@@ -141,9 +144,7 @@ function FilterSelect({
           "focus:border-primary-300 focus:ring-2 focus:ring-primary-500/12",
           "focus-visible:border-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500/12",
           "disabled:cursor-not-allowed disabled:opacity-60",
-          isActive
-            ? "border-primary-200 bg-primary-50 text-primary-700"
-            : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+          selectStateClass,
         )}
       >
         {options.map((opt) => (

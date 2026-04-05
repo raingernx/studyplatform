@@ -214,7 +214,7 @@ export interface DividerProps {
 }
 
 export function Divider({ className }: DividerProps) {
-  return <div className={cn("border-t border-border", className)} />;
+  return <div className={cn("border-t border-border-subtle", className)} />;
 }
 
 export interface NavGroupProps {

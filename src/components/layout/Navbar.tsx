@@ -103,7 +103,7 @@ function marketplaceCategoryClassName(active: boolean) {
   return cn(
     MARKETPLACE_CATEGORY_ITEM_CLASS_NAME,
     active
-      ? "border-border bg-secondary text-secondary-foreground"
+      ? "border-border-strong bg-secondary text-secondary-foreground"
       : "border-transparent bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
   );
 }
@@ -119,7 +119,7 @@ function marketplaceCategoryItemClassName(
   return cn(
     MARKETPLACE_CATEGORY_ITEM_CLASS_NAME,
     active
-      ? "border-border bg-secondary text-secondary-foreground"
+      ? "border-border-strong bg-secondary text-secondary-foreground"
       : "border-transparent bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
   );
 }
@@ -264,7 +264,7 @@ function NavbarInner({
           id={userMenuId}
           className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-lg border border-border bg-card"
         >
-          <div className="border-b border-border px-4 py-3">
+          <div className="border-b border-border-subtle px-4 py-3">
             <div className="min-w-0">
               <p className="truncate text-[13px] font-semibold text-foreground">
                 {authUser.name}
@@ -283,7 +283,7 @@ function NavbarInner({
             >
               KC Premium
             </Link>
-            <div className="my-1 border-t border-border" />
+            <div className="my-1 border-t border-border-subtle" />
             <Link
               href={routes.dashboard}
               onClick={() => setUserMenuOpen(false)}
@@ -315,7 +315,7 @@ function NavbarInner({
               </span>
             </Link>
 
-            <div className="my-1.5 border-t border-border" />
+            <div className="my-1.5 border-t border-border-subtle" />
 
             <Link
               href={routes.settings}
@@ -388,7 +388,7 @@ function NavbarInner({
                   </>
                 ) : authViewer.isReady ? (
                   <>
-                    <Link href={routes.login} className={cn(MARKETPLACE_CATEGORY_ITEM_CLASS_NAME, "border-border bg-secondary text-secondary-foreground hover:bg-accent")}>
+                    <Link href={routes.login} className={cn(MARKETPLACE_CATEGORY_ITEM_CLASS_NAME, "border-border-strong bg-secondary text-secondary-foreground hover:border-border hover:bg-accent")}>
                       เข้าสู่ระบบ
                     </Link>
                     <Link href={routes.register} className={MARKETPLACE_PRIMARY_ACTION_CLASS_NAME}>
@@ -413,7 +413,7 @@ function NavbarInner({
                   </Link>
                 ) : authViewer.isReady ? (
                   <>
-                    <Link href={routes.login} className={cn(MARKETPLACE_CATEGORY_ITEM_CLASS_NAME, "border-border bg-secondary px-3 text-secondary-foreground hover:bg-accent")}>
+                    <Link href={routes.login} className={cn(MARKETPLACE_CATEGORY_ITEM_CLASS_NAME, "border-border-strong bg-secondary px-3 text-secondary-foreground hover:border-border hover:bg-accent")}>
                       เข้าสู่ระบบ
                     </Link>
                     <Link href={routes.register} className="inline-flex h-10 shrink-0 items-center rounded-full bg-brand-600 px-3 text-[14px] leading-[22px] font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
@@ -640,7 +640,7 @@ function NavbarInner({
             ))}
           </nav>
 
-          <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
+          <div className="mt-4 flex flex-col gap-2 border-t border-border-subtle pt-4">
             {authUser ? (
               <>
                 <div className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2.5">
@@ -669,7 +669,7 @@ function NavbarInner({
                 <Link
                   href={routes.dashboard}
                   onClick={closeAll}
-                  className="flex items-center gap-2.5 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+                  className="flex items-center gap-2.5 rounded-lg border border-border-strong px-4 py-2.5 text-sm font-medium text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
                 >
                   <span className="inline-flex items-center gap-2.5">
                     <LayoutDashboard className="h-4 w-4 text-muted-foreground" aria-hidden />
@@ -692,7 +692,7 @@ function NavbarInner({
                 <Link
                   href={routes.login}
                   onClick={closeAll}
-                  className="rounded-lg border border-border bg-card px-4 py-2.5 text-center font-thai text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+                  className="rounded-lg border border-border-strong bg-card px-4 py-2.5 text-center font-thai text-sm font-medium text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
                 >
                   เข้าสู่ระบบ
                 </Link>

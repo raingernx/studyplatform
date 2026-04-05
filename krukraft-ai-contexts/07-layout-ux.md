@@ -21,6 +21,11 @@
   root layout, public navbar/footer, marketplace controls, and dashboard topbars
   should use `bg-background` / `bg-card` / `border-border` style tokens instead
   of hardcoded white or the light-only semantic text/surface aliases.
+- In dark mode, border usage should now preserve three distinct levels instead
+  of flattening every edge to the same bright line:
+  `border-border-subtle` for passive shells/dividers,
+  `border-border` for chrome boundaries,
+  and `border-border-strong` / `border-input` for controls.
 - Root layout now injects a pre-hydration theme bootstrap script that sets
   `document.documentElement.dataset.theme` before React hydration, which avoids
   the previous white-first flash when a returning `dark` or `system -> dark`
@@ -89,6 +94,10 @@
 - canonical results grid
 - no-result recovery panel when a search miss occurs
 - public activation-weighted `sort=recommended` remains the canonical query value for backward compatibility, but UI copy now labels it as `Top picks` so it is not mistaken for personalized recommendations
+- active listing controls and spotlight treatments should stay dark-aware on
+  dark shells: use primary tint (`bg-primary/12`, `border-primary/20-30`,
+  `text-primary`) rather than light-only `primary-50` / `white` surfaces for
+  selected filter rows, selected pills, select controls, and spotlight chips
 
 **Marketplace search UX**
 - focusing/clicking the empty navbar search input now opens a quick-browse dropdown with recent searches plus curated browse shortcuts
@@ -105,6 +114,9 @@
 - the browse index loading UI now lives under `src/app/resources/(browse)/loading.tsx`, which keeps the discover/listing skeleton scoped to `/resources` and prevents it from flashing before `/resources/[slug]` loading states on cold detail navigations
 - route-level browse loading and the in-page discover Suspense fallback now share the same discover skeleton source so layout changes do not require maintaining two divergent skeleton implementations
 - listing mode uses structural content fallbacks instead of a generic card wall
+- listing mode fallback now includes the optional spotlight geometry as part of
+  the shared `ResourcesContentFallback` contract, so the live listing and
+  loading states do not diverge when spotlight styling/layout changes
 - route files under `src/app/**` should not declare local `*Skeleton` or `*Fallback` components inline; shared loading/fallback UI now lives under `src/components/skeletons/*`, and `npm run lint` enforces that contract with `npm run skeleton:check`
 - `boneyard-js` is now installed as an optional skeleton-capture workflow.
   Its config lives in `boneyard.config.json`, it writes generated bones under

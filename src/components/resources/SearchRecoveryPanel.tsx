@@ -17,7 +17,7 @@ export function SearchRecoveryPanel({
   return (
     <div className="space-y-5 rounded-[28px] border border-border bg-card p-6 shadow-card sm:p-7">
       <div className="flex flex-col items-center justify-center py-1 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-muted">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-border-subtle bg-muted">
           <Search className="h-6 w-6 text-muted-foreground" />
         </div>
         <p className="mt-4 text-base font-semibold text-foreground">
@@ -38,7 +38,7 @@ export function SearchRecoveryPanel({
               <Link
                 key={suggestion}
                 href={routes.marketplaceSearch(suggestion)}
-                className="inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground transition hover:bg-accent hover:text-foreground"
+                className="inline-flex items-center rounded-full border border-border-strong bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground transition hover:border-border hover:bg-accent hover:text-foreground"
               >
                 {suggestion}
               </Link>
@@ -57,7 +57,7 @@ export function SearchRecoveryPanel({
               <Link
                 key={match.slug}
                 href={routes.marketplaceCategory(match.slug)}
-                className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition hover:bg-muted"
+                className="inline-flex items-center rounded-full border border-border-strong bg-background px-3 py-1.5 text-sm font-medium text-foreground transition hover:border-border hover:bg-muted"
               >
                 {match.name}
               </Link>
@@ -76,7 +76,7 @@ export function SearchRecoveryPanel({
               <Link
                 key={match.slug}
                 href={routes.marketplaceTag(match.slug)}
-                className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition hover:bg-muted"
+                className="inline-flex items-center rounded-full border border-border-strong bg-background px-3 py-1.5 text-sm font-medium text-foreground transition hover:border-border hover:bg-muted"
               >
                 #{match.name}
               </Link>
@@ -85,24 +85,24 @@ export function SearchRecoveryPanel({
         </section>
       ) : null}
 
-      <section className="grid gap-3 border-t border-border pt-4 sm:grid-cols-3">
+      <section className="grid gap-3 border-t border-border-subtle pt-4 sm:grid-cols-3">
         <Link
           href={routes.marketplaceQuery("sort=trending&category=all")}
-          className="flex items-center gap-3 rounded-2xl border border-border bg-muted px-4 py-3 transition hover:bg-background"
+          className="flex items-center gap-3 rounded-2xl border border-border-subtle bg-muted px-4 py-3 transition hover:border-border hover:bg-background"
         >
           <Sparkles className="h-4 w-4 text-brand-600" />
           <span className="text-sm font-medium text-foreground">Trending now</span>
         </Link>
         <Link
           href={routes.marketplaceQuery("price=free&category=all")}
-          className="flex items-center gap-3 rounded-2xl border border-border bg-muted px-4 py-3 transition hover:bg-background"
+          className="flex items-center gap-3 rounded-2xl border border-border-subtle bg-muted px-4 py-3 transition hover:border-border hover:bg-background"
         >
           <Compass className="h-4 w-4 text-brand-600" />
           <span className="text-sm font-medium text-foreground">Browse free resources</span>
         </Link>
         <Link
           href={routes.marketplace}
-          className="flex items-center gap-3 rounded-2xl border border-border bg-muted px-4 py-3 transition hover:bg-background"
+          className="flex items-center gap-3 rounded-2xl border border-border-subtle bg-muted px-4 py-3 transition hover:border-border hover:bg-background"
         >
           <Search className="h-4 w-4 text-brand-600" />
           <span className="text-sm font-medium text-foreground">Return to discover</span>

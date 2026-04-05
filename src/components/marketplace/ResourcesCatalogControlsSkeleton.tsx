@@ -33,7 +33,7 @@ export function ResourcesCatalogSearchSkeleton() {
 
 export function DiscoverFallback() {
   return (
-    <div className="inline-flex h-10 items-center rounded-full border border-border bg-muted px-4 text-base font-medium text-muted-foreground shadow-sm">
+    <div className="inline-flex h-10 items-center rounded-full border border-border-strong bg-muted px-4 text-base font-medium text-muted-foreground shadow-sm">
       <span>กำลังโหลด</span>
     </div>
   );
@@ -41,7 +41,7 @@ export function DiscoverFallback() {
 
 function SearchFallback() {
   return (
-    <div className="flex h-10 w-full items-center gap-3 rounded-xl border border-border bg-card px-4 text-base text-muted-foreground shadow-sm sm:rounded-2xl">
+    <div className="flex h-10 w-full items-center gap-3 rounded-xl border border-border-strong bg-card px-4 text-base text-muted-foreground shadow-sm sm:rounded-2xl">
       <LoadingSkeleton className="h-2.5 w-2.5 rounded-full bg-muted-foreground/25" />
       <span>กำลังค้นหา...</span>
     </div>
@@ -54,7 +54,7 @@ export function ChipsFallback() {
       {["ทั้งหมด", "คณิตศาสตร์", "วิทยาศาสตร์", "ภาษา", "มนุษยศาสตร์", "ปฐมวัย"].map((label, index) => (
         <div
           key={label}
-          className={`inline-flex h-10 shrink-0 items-center rounded-full border border-border bg-muted px-4 text-base text-muted-foreground ${
+          className={`inline-flex h-10 shrink-0 items-center rounded-full border border-border-strong bg-muted px-4 text-base text-muted-foreground ${
             index === 0 ? "gap-2 pr-4" : ""
           }`}
         >

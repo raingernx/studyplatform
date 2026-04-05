@@ -213,10 +213,10 @@ function CardBody({
 
   const articleClass = cn(
     isMarketplace
-      ? "relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-[transform,box-shadow,border-color,opacity] duration-150 sm:hover:border-border"
+      ? "relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-card transition-[transform,box-shadow,border-color,opacity] duration-150 sm:hover:border-border"
       : isHero
-        ? "relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-[transform,box-shadow,border-color,opacity] duration-150"
-        : "relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-[transform,box-shadow,border-color,opacity] duration-150",
+        ? "relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-card transition-[transform,box-shadow,border-color,opacity] duration-150"
+        : "relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-card transition-[transform,box-shadow,border-color,opacity] duration-150",
     isNavigating &&
       "scale-[0.985] border-primary-300 shadow-card-lg ring-2 ring-primary-200/80 ring-offset-2 ring-offset-background",
   );
@@ -280,7 +280,7 @@ function CardBody({
         ) : null}
 
         {resource.highlightBadge ? (
-          <span className="absolute right-3 top-3 rounded-full border border-border/80 bg-[hsl(var(--card)/0.92)] px-2.5 py-1 text-caption font-medium text-foreground backdrop-blur-sm">
+          <span className="absolute right-3 top-3 rounded-full border border-border-strong/80 bg-[hsl(var(--card)/0.92)] px-2.5 py-1 text-caption font-medium text-foreground backdrop-blur-sm">
             {resource.highlightBadge}
           </span>
         ) : null}
@@ -297,7 +297,7 @@ function CardBody({
           </p>
         </div>
 
-        <div className="mt-auto space-y-2 border-t border-border pt-3">
+        <div className="mt-auto space-y-2 border-t border-border-subtle pt-3">
           {showPrice ? (
             <div className="flex items-end justify-between gap-3">
               <p

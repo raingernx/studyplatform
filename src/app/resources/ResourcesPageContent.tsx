@@ -279,11 +279,11 @@ async function ResourcesListingContent({
             </Suspense>
 
             {spotlightResource ? (
-              <div className="rounded-2xl border border-primary-100 bg-gradient-to-br from-primary-50/80 via-white to-white p-4 sm:p-5">
+              <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/12 via-card to-card p-4 shadow-sm sm:p-5">
                 <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:items-start">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <p className="font-ui text-caption tracking-[0.12em] text-primary-700">
+                      <p className="font-ui text-caption tracking-[0.12em] text-primary">
                         {spotlightLabel}
                       </p>
                       <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
@@ -296,11 +296,11 @@ async function ResourcesListingContent({
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <span className="inline-flex items-center rounded-full border border-primary-100 bg-white/85 px-3 py-1 text-xs font-medium text-primary-700">
+                      <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/12 px-3 py-1 text-xs font-medium text-primary">
                         {sortLabel}
                       </span>
                       {activeCategoryName ? (
-                        <span className="inline-flex items-center rounded-full border border-border/80 bg-card/85 px-3 py-1 text-xs font-medium text-muted-foreground">
+                        <span className="inline-flex items-center rounded-full border border-border-strong bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground">
                           {activeCategoryName}
                         </span>
                       ) : null}
@@ -312,7 +312,7 @@ async function ResourcesListingContent({
                       prefetchScope="spotlight-resource"
                       prefetchLimit={1}
                       resourcesNavigationMode="detail"
-                      className="inline-flex items-center gap-1 text-small font-medium text-primary-700 transition hover:text-primary-800"
+                      className="inline-flex items-center gap-1 text-small font-medium text-primary transition hover:text-primary"
                     >
                       View resource
                       <ArrowRight className="h-4 w-4" />
@@ -320,7 +320,7 @@ async function ResourcesListingContent({
                   </div>
 
                   <div className="w-full max-w-[320px] justify-self-start lg:justify-self-end">
-                    <div className="rounded-[1.35rem] border border-primary-100/80 bg-white/90 p-2 shadow-[0_18px_40px_-28px_rgba(59,91,219,0.45)]">
+                    <div className="rounded-[1.35rem] border border-border-strong bg-background/85 p-2 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.48)]">
                       <ViewerAwareResourceCard
                         resource={{
                           ...spotlightResource,
@@ -678,7 +678,7 @@ function SectionHeader({
         prefetchScope="resources-section-view-all"
         prefetchLimit={2}
         resourcesNavigationMode="listing"
-        className="group inline-flex items-center gap-1 self-start rounded-full px-2.5 py-1 text-small font-medium text-primary-700 transition-colors hover:bg-primary-50 hover:text-primary-800 sm:self-auto"
+        className="group inline-flex items-center gap-1 self-start rounded-full px-2.5 py-1 text-small font-medium text-primary transition-colors hover:bg-primary/12 hover:text-primary sm:self-auto"
       >
         <span className="inline-flex items-center gap-1">
           <span>{viewAllLabel}</span>
@@ -703,15 +703,15 @@ function DiscoverBrowseCard({
   return (
     <CategoryBrowseCardLink
       href={href}
-      className="group rounded-[24px] border border-border bg-card p-5 shadow-sm transition hover:border-primary-200 hover:bg-primary-50/30 hover:shadow-card"
+      className="group rounded-[24px] border border-border-subtle bg-card p-5 shadow-sm transition hover:border-primary/25 hover:bg-primary/10 hover:shadow-card"
     >
       <div className="flex h-full flex-col gap-4">
         <div className="space-y-2">
-          <p className="font-ui text-caption tracking-[0.12em] text-primary-700">{eyebrow}</p>
+          <p className="font-ui text-caption tracking-[0.12em] text-primary">{eyebrow}</p>
           <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
           <p className="text-sm leading-6 text-muted-foreground">{description}</p>
         </div>
-        <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary-700 transition group-hover:text-primary-800">
+        <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary transition group-hover:text-primary">
           Explore
           <ArrowRight className="h-4 w-4" />
         </span>
@@ -742,7 +742,7 @@ function DiscoverCollectionCard({
       prefetchScope="discover-collection-card"
       prefetchLimit={4}
       resourcesNavigationMode="listing"
-      className="group overflow-hidden rounded-[24px] border border-border bg-card shadow-sm transition hover:border-primary-200 hover:shadow-card"
+      className="group overflow-hidden rounded-[24px] border border-border-subtle bg-card shadow-sm transition hover:border-primary/25 hover:shadow-card"
     >
       <div className="flex h-full flex-col">
         <div className="relative aspect-[5/3] overflow-hidden border-b border-border bg-muted">
@@ -756,7 +756,7 @@ function DiscoverCollectionCard({
             />
           ) : null}
           {badge ? (
-            <span className="absolute left-3 top-3 inline-flex items-center rounded-full border border-white/80 bg-white/90 px-2.5 py-1 text-[11px] font-medium text-primary-700 shadow-sm">
+            <span className="absolute left-3 top-3 inline-flex items-center rounded-full border border-border-strong/90 bg-background/92 px-2.5 py-1 text-[11px] font-medium text-primary shadow-sm backdrop-blur-sm">
               {badge}
             </span>
           ) : null}
@@ -767,7 +767,7 @@ function DiscoverCollectionCard({
             <p className="text-sm leading-6 text-muted-foreground">{description}</p>
           </div>
           <p className="line-clamp-2 text-sm font-medium text-foreground">{resource.title}</p>
-          <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary-700 transition group-hover:text-primary-800">
+          <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary transition group-hover:text-primary">
             Open collection
             <ArrowRight className="h-4 w-4" />
           </span>
@@ -794,16 +794,16 @@ function TopCreatorSpotlightCard({
       prefetchMode="intent"
       prefetchScope="top-creator-spotlight"
       prefetchLimit={1}
-      className="group rounded-[24px] border border-border bg-muted/80 p-5 shadow-sm transition hover:border-primary-200 hover:bg-card hover:shadow-card"
+      className="group rounded-[24px] border border-border-subtle bg-muted/80 p-5 shadow-sm transition hover:border-primary/25 hover:bg-card hover:shadow-card"
     >
       <div className="flex h-full flex-col gap-4">
         <div className="space-y-2">
-          <p className="font-ui text-caption tracking-[0.12em] text-primary-700">Creator spotlight</p>
+          <p className="font-ui text-caption tracking-[0.12em] text-primary">Creator spotlight</p>
           <h3 className="text-lg font-semibold tracking-tight text-foreground">{name}</h3>
           <p className="text-sm leading-6 text-muted-foreground">{description}</p>
           {bio ? <p className="line-clamp-3 text-sm text-muted-foreground">{bio}</p> : null}
         </div>
-        <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary-700 transition group-hover:text-primary-800">
+        <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary transition group-hover:text-primary">
           Explore creator
           <ArrowRight className="h-4 w-4" />
         </span>

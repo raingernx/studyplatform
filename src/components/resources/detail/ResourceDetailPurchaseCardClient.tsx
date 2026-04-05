@@ -137,7 +137,7 @@ export function ResourceDetailPurchaseCardClient({
         </p>
 
         <div className="space-y-3">
-          <span className="inline-flex items-center rounded-full border border-border bg-secondary px-2.5 py-1 text-caption font-semibold text-secondary-foreground">
+          <span className="inline-flex items-center rounded-full border border-border-strong bg-secondary px-2.5 py-1 text-caption font-semibold text-secondary-foreground">
             {isOwned ? "In your library" : isFree ? "Free to keep" : "One-time purchase"}
           </span>
           <p className="max-w-sm text-small leading-6 text-muted-foreground">
@@ -154,7 +154,7 @@ export function ResourceDetailPurchaseCardClient({
           )}
         </div>
 
-        <div className="space-y-3 border-t border-border py-5">
+        <div className="space-y-3 border-t border-border-subtle py-5">
           {isPendingPurchase ? (
             <PendingPurchasePoller
               resourceTitle={resource.title}
@@ -184,7 +184,7 @@ export function ResourceDetailPurchaseCardClient({
                       href={`/api/preview/${resource.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 py-2.5 text-[13px] font-medium text-foreground transition hover:bg-muted"
+                      className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border-strong bg-background px-5 py-2.5 text-[13px] font-medium text-foreground transition hover:border-border hover:bg-muted"
                     >
                       <Eye className="h-3.5 w-3.5" />
                       Preview
@@ -195,7 +195,7 @@ export function ResourceDetailPurchaseCardClient({
                   </p>
                 </div>
               ) : (
-                <div className="rounded-xl border border-border bg-muted px-4 py-3">
+                <div className="rounded-xl border border-border-subtle bg-muted px-4 py-3">
                   <p className="text-center text-caption leading-5 text-muted-foreground">
                     File not yet available — check back soon.
                   </p>
@@ -215,7 +215,7 @@ export function ResourceDetailPurchaseCardClient({
         </div>
 
         {!isPendingPurchase && (hasReviews || trustSummary.totalSales > 0 || recentActivityLabel) ? (
-          <div className="space-y-5 border-t border-border pt-5">
+          <div className="space-y-5 border-t border-border-subtle pt-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
               {hasReviews ? (
                 <div className="space-y-1.5">
@@ -273,7 +273,7 @@ export function ResourceDetailPurchaseCardClient({
         ) : null}
       </div>
 
-      <div className="mt-5 space-y-5 border-t border-border pt-5">
+      <div className="mt-5 space-y-5 border-t border-border-subtle pt-5">
         <dl className="space-y-3 text-small">
           <div className="flex items-start justify-between gap-4">
             <dt className="text-muted-foreground">Format</dt>

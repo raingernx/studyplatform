@@ -102,6 +102,15 @@ surfaces.
   `src/bones`, and the current convenience commands are
   `npm run skeleton:boneyard:build` and
   `npm run skeleton:boneyard:build:force`.
+- Dark-theme borders now use a three-step hierarchy instead of one shared
+  bright stroke:
+  - `border-border-subtle` for passive card shells, dashed placeholders, and soft dividers
+  - `border-border` for structural chrome like navbar/sidebar/purchase rails
+  - `border-border-strong` and `border-input` for interactive controls
+- Dark-shell marketplace listing active states should use primary tint overlays
+  (`bg-primary/12`, `border-primary/20-30`, `text-primary`) rather than
+  reintroducing light-only `primary-50` or white shells for selected filter
+  rows, selected pills, sort/price selects, or spotlight chips/panels.
 - Hero surfaces are not treated as generic `card` surfaces. Use the shared
   semantic color layer for hero-specific outer background/panel/chip roles
   (`heroBackground`, `heroBackgroundSubtle`, `heroPanel`,

@@ -118,6 +118,28 @@ export function ResourcesContentFallback({
 
             <div className="min-w-0 flex-1 space-y-5">
               <FilterBarFallback />
+              <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/12 via-card to-card p-4 shadow-sm sm:p-5">
+                <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:items-start">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <LoadingSkeleton className="h-4 w-28 rounded" />
+                      <LoadingSkeleton className="h-10 w-full max-w-md rounded-lg" />
+                      <LoadingSkeleton className="h-4 w-full max-w-2xl rounded" />
+                      <LoadingSkeleton className="h-4 w-11/12 max-w-xl rounded" />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <LoadingSkeleton className="h-7 w-24 rounded-full border border-primary/20 bg-primary/10" />
+                      <LoadingSkeleton className="h-7 w-28 rounded-full border border-border-strong bg-background/80" />
+                    </div>
+                    <LoadingSkeleton className="h-5 w-32 rounded" />
+                  </div>
+                  <div className="w-full max-w-[320px] justify-self-start lg:justify-self-end">
+                    <div className="rounded-[1.35rem] border border-border-strong bg-background/85 p-2 shadow-sm">
+                      <ResourceCardSkeleton />
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
                 {Array.from({ length: 8 }).map((_, index) => (
                   <ResourceCardSkeleton key={index} />

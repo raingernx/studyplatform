@@ -150,6 +150,16 @@ across files is available, prefer building the exemplar on the owning product
 page inside the DS file itself rather than drawing a detached mockup in a
 separate exploration file.
 
+Dark-theme border usage should preserve hierarchy instead of flattening every
+edge to one bright line:
+
+- `border-border-subtle` for passive card shells and interior dividers
+- `border-border` for shell chrome and key structural boundaries
+- `border-border-strong` / `border-input` for controls that need clearer affordance
+- dark-shell marketplace listing active states should use primary tint overlays
+  (`bg-primary/12`, `border-primary/20-30`, `text-primary`) instead of
+  reverting selected rows/pills/spotlight chips to white or `primary-50`
+
 ### Do not model as library source of truth
 
 - `src/components/ui/*`
