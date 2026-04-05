@@ -33,7 +33,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input({
       {leftAdornment || rightAdornment ? (
         <div className="relative">
           {leftAdornment ? (
-            <span className="pointer-events-none absolute inset-y-0 left-0 flex w-11 items-center justify-center text-text-muted">
+            <span className="pointer-events-none absolute inset-y-0 left-0 flex w-11 items-center justify-center text-muted-foreground">
               {leftAdornment}
             </span>
           ) : null}
@@ -53,7 +53,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input({
             {...props}
           />
           {rightAdornment ? (
-            <span className="pointer-events-none absolute inset-y-0 right-0 flex w-11 items-center justify-center text-text-muted">
+            <span className="pointer-events-none absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground">
               {rightAdornment}
             </span>
           ) : null}
@@ -78,7 +78,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input({
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className={cn("text-caption text-text-muted")}>
+        <p id={hintId} className={cn("text-caption text-muted-foreground")}>
           {hint}
         </p>
       ) : null}

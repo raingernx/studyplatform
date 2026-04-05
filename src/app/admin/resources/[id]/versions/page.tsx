@@ -24,20 +24,20 @@ export default async function ResourceVersionsPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-h2 font-semibold tracking-tight text-text-primary">
+        <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
           Versions
         </h1>
-        <p className="mt-1 text-sm text-text-secondary">
+        <p className="mt-1 text-sm text-muted-foreground">
           View and manage file versions for this resource.
         </p>
       </div>
 
       <Card>
-        <CardHeader className="border-b border-border-subtle">
+        <CardHeader className="border-b border-border">
           <CardTitle>{resource.title}</CardTitle>
-          <CardDescription className="flex flex-wrap gap-2 text-sm text-text-secondary">
+          <CardDescription className="flex flex-wrap gap-2 text-sm text-muted-foreground">
             <span>Slug: {resource.slug}</span>
-            <span className="text-border-subtle">•</span>
+            <span className="text-border">•</span>
             <span>Status: {resource.status}</span>
           </CardDescription>
         </CardHeader>

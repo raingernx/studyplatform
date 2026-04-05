@@ -50,7 +50,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
   const footer = (
     <a
       href={`mailto:${platform.supportEmail}`}
-      className="flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-medium text-neutral-400 transition hover:bg-neutral-50 hover:text-neutral-600"
+      className="flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
     >
       <HelpCircle className="h-4 w-4" />
       Help &amp; Support

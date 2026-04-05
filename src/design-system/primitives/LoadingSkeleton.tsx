@@ -11,7 +11,7 @@ export function LoadingSkeleton({ className, style }: LoadingSkeletonProps) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded bg-surface-100 motion-reduce:animate-none",
+        "animate-pulse rounded bg-muted motion-reduce:animate-none",
         className,
       )}
       style={style}

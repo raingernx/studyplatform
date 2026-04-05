@@ -39,16 +39,16 @@ export function FormSection({
     return (
       <section
         className={cn(
-          "space-y-5 border-b border-border-subtle pb-6 last:border-b-0 last:pb-0",
+          "space-y-5 border-b border-border pb-6 last:border-b-0 last:pb-0",
           className,
         )}
       >
         <div className={cn("space-y-1.5", headerClassName)}>
-          <h2 className="text-base font-semibold leading-snug text-text-primary">
+          <h2 className="text-base font-semibold leading-snug text-foreground">
             {title}
           </h2>
           {description ? (
-            <div className="max-w-2xl text-small text-text-secondary">
+            <div className="max-w-2xl text-small text-muted-foreground">
               {description}
             </div>
           ) : null}

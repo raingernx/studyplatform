@@ -66,12 +66,12 @@ export function SavedFiltersDropdown({
       </Button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-48 rounded-md border border-border-subtle bg-white py-1 text-xs shadow-lg">
+        <div className="absolute right-0 z-20 mt-1 w-48 rounded-md border border-border bg-popover py-1 text-xs shadow-lg">
           {(Object.keys(PRESET_LABELS) as SavedFilterPresetId[]).map((preset) => (
             <button
               key={preset}
               type="button"
-              className="flex w-full items-center px-3 py-1.5 text-left text-text-secondary hover:bg-surface-50"
+              className="flex w-full items-center px-3 py-1.5 text-left text-muted-foreground hover:bg-muted"
               onClick={() => {
                 onApplyPreset(preset);
                 setOpen(false);

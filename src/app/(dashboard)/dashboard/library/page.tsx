@@ -71,18 +71,18 @@ export default async function DashboardLibraryPage({
           <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
             <div className="space-y-2.5">
               <div>
-                <h1 className="font-display text-h2 font-semibold tracking-tight text-zinc-900">
+                <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
                   My Library
                 </h1>
-                <p className="mt-1 text-small leading-6 text-zinc-500">
+                <p className="mt-1 text-small leading-6 text-muted-foreground">
                   Open what you own, pick up where you left off, and find the right resource
                   quickly.
                 </p>
               </div>
 
               {resources.length > 0 && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-small text-zinc-500">
-                  <span className="font-medium text-zinc-700">{resources.length} resources</span>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-small text-muted-foreground">
+                  <span className="font-medium text-foreground">{resources.length} resources</span>
                   <span>{resources.length} downloads</span>
                   {lastDownload ? <span>Last added {lastDownload}</span> : null}
                 </div>
@@ -90,17 +90,17 @@ export default async function DashboardLibraryPage({
             </div>
 
             {lastOpened ? (
-              <div className="rounded-xl border border-surface-200 bg-white px-5 py-3.5">
-                <p className="text-caption font-semibold text-zinc-500">Continue</p>
-                <p className="mt-1 truncate text-small font-semibold text-zinc-900">
+              <div className="rounded-xl border border-border bg-card px-5 py-3.5">
+                <p className="text-caption font-semibold text-muted-foreground">Continue</p>
+                <p className="mt-1 truncate text-small font-semibold text-foreground">
                   {lastOpened.title}
                 </p>
-                <p className="mt-1 text-caption text-zinc-400">
+                <p className="mt-1 text-caption text-muted-foreground">
                   {lastOpened.authorName ?? "Unknown"}
                 </p>
                 <Link
                   href={routes.resource(lastOpened.slug)}
-                  className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-surface-200 bg-surface-50 px-4 py-2.5 text-small font-medium text-zinc-700 transition hover:bg-white"
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-muted px-4 py-2.5 text-small font-medium text-foreground transition hover:bg-card"
                 >
                   <BookOpen className="h-4 w-4" />
                   Open resource
@@ -136,20 +136,20 @@ export default async function DashboardLibraryPage({
           )}
 
           {resources.length === 0 && (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-surface-200 bg-white py-16 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-50">
-                <BookOpen className="h-6 w-6 text-zinc-300" />
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card py-16 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
+                <BookOpen className="h-6 w-6 text-muted-foreground" />
               </div>
-              <h2 className="mt-4 text-base font-semibold text-zinc-900">
+              <h2 className="mt-4 text-base font-semibold text-foreground">
                 Your library is empty
               </h2>
-              <p className="mt-1.5 max-w-sm text-small leading-6 text-zinc-500">
+              <p className="mt-1.5 max-w-sm text-small leading-6 text-muted-foreground">
                 Everything you get or purchase lands here. Find your first resource and start
                 building your collection.
               </p>
               <Link
                 href={routes.marketplace}
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-small font-semibold text-white hover:bg-zinc-700"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-small font-semibold text-background transition hover:opacity-90"
               >
                 <BookOpen className="h-4 w-4" />
                 Find your first resource

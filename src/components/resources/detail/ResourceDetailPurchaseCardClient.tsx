@@ -76,9 +76,9 @@ function PurchaseActionPlaceholder() {
     <div className="space-y-3">
       <div
         aria-hidden="true"
-        className="h-12 w-full animate-pulse rounded-xl bg-surface-100 motion-reduce:animate-none"
+        className="h-12 w-full animate-pulse rounded-xl bg-muted motion-reduce:animate-none"
       />
-      <p className="text-center text-caption leading-5 text-zinc-400">
+      <p className="text-center text-caption leading-5 text-muted-foreground">
         Checking your library…
       </p>
     </div>
@@ -116,13 +116,13 @@ export function ResourceDetailPurchaseCardClient({
     viewer.subscriptionStatus === "TRIALING";
 
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-xl border border-surface-200 bg-white p-5 sm:p-6">
+    <div className="flex h-full min-h-0 flex-col rounded-xl border border-border bg-card p-5 sm:p-6">
       <div className="space-y-5">
         {(resource.author.name || resource.category) && (
-          <p className="flex max-w-sm flex-wrap items-center gap-x-2 gap-y-1 text-caption leading-5 text-zinc-500">
+          <p className="flex max-w-sm flex-wrap items-center gap-x-2 gap-y-1 text-caption leading-5 text-muted-foreground">
             {resource.author.name ? `by ${resource.author.name}` : null}
             {resource.author.name && resource.category ? (
-              <span aria-hidden className="text-zinc-300">·</span>
+              <span aria-hidden className="text-muted-foreground/50">·</span>
             ) : null}
             {resource.category ? (
               <span className="font-medium text-primary-700">
@@ -132,15 +132,15 @@ export function ResourceDetailPurchaseCardClient({
           </p>
         )}
 
-        <p className="text-3xl font-bold tracking-tight text-zinc-900">
+        <p className="text-3xl font-bold tracking-tight text-foreground">
           <PriceLabel price={resource.price} isFree={isFree} />
         </p>
 
         <div className="space-y-3">
-          <span className="inline-flex items-center rounded-full border border-surface-200 bg-surface-50 px-2.5 py-1 text-caption font-semibold text-zinc-600">
+          <span className="inline-flex items-center rounded-full border border-border bg-secondary px-2.5 py-1 text-caption font-semibold text-secondary-foreground">
             {isOwned ? "In your library" : isFree ? "Free to keep" : "One-time purchase"}
           </span>
-          <p className="max-w-sm text-small leading-6 text-zinc-600">
+          <p className="max-w-sm text-small leading-6 text-muted-foreground">
             {isOwned
               ? "Your download is ready whenever you need it."
               : isFree
@@ -148,13 +148,13 @@ export function ResourceDetailPurchaseCardClient({
                 : "Pay once. Yours forever — re-download any time, no subscription needed."}
           </p>
           {(resource.levelLabel || resource.type) && (
-            <p className="max-w-sm text-caption font-medium leading-5 text-zinc-600">
+            <p className="max-w-sm text-caption font-medium leading-5 text-muted-foreground">
               {[resource.levelLabel ?? null, resource.type].filter(Boolean).join(" · ")}
             </p>
           )}
         </div>
 
-        <div className="space-y-3 border-t border-surface-200 py-5">
+        <div className="space-y-3 border-t border-border py-5">
           {isPendingPurchase ? (
             <PendingPurchasePoller
               resourceTitle={resource.title}
@@ -184,19 +184,19 @@ export function ResourceDetailPurchaseCardClient({
                       href={`/api/preview/${resource.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-surface-200 bg-white px-5 py-2.5 text-[13px] font-medium text-zinc-700 transition hover:bg-surface-50"
+                      className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 py-2.5 text-[13px] font-medium text-foreground transition hover:bg-muted"
                     >
                       <Eye className="h-3.5 w-3.5" />
                       Preview
                     </a>
                   ) : null}
-                  <p className="text-center text-caption leading-5 text-zinc-400">
+                  <p className="text-center text-caption leading-5 text-muted-foreground">
                     Secure, authenticated download
                   </p>
                 </div>
               ) : (
-                <div className="rounded-xl border border-surface-200 bg-surface-50 px-4 py-3">
-                  <p className="text-center text-caption leading-5 text-zinc-400">
+                <div className="rounded-xl border border-border bg-muted px-4 py-3">
+                  <p className="text-center text-caption leading-5 text-muted-foreground">
                     File not yet available — check back soon.
                   </p>
                 </div>
@@ -215,46 +215,46 @@ export function ResourceDetailPurchaseCardClient({
         </div>
 
         {!isPendingPurchase && (hasReviews || trustSummary.totalSales > 0 || recentActivityLabel) ? (
-          <div className="space-y-5 border-t border-surface-200 pt-5">
+          <div className="space-y-5 border-t border-border pt-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
               {hasReviews ? (
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-caption font-medium text-zinc-500">
+                  <div className="flex items-center gap-2 text-caption font-medium text-muted-foreground">
                     <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                     <span>Rating</span>
                   </div>
-                  <p className="text-lg font-semibold tracking-tight text-zinc-900">
+                  <p className="text-lg font-semibold tracking-tight text-foreground">
                     {trustSummary.averageRating!.toFixed(1)}
                   </p>
-                  <p className="text-caption text-zinc-500">
+                  <p className="text-caption text-muted-foreground">
                     {formatNumber(trustSummary.totalReviews)} reviews
                   </p>
                 </div>
               ) : null}
               {trustSummary.totalSales > 0 ? (
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-caption font-medium text-zinc-500">
+                  <div className="flex items-center gap-2 text-caption font-medium text-muted-foreground">
                     <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
                     <span>Sales</span>
                   </div>
-                  <p className="text-lg font-semibold tracking-tight text-zinc-900">
+                  <p className="text-lg font-semibold tracking-tight text-foreground">
                     {formatNumber(trustSummary.totalSales)}
                   </p>
-                  <p className="text-caption text-zinc-500">
+                  <p className="text-caption text-muted-foreground">
                     {trustSummary.totalSales === 1 ? "verified purchase" : "verified purchases"}
                   </p>
                 </div>
               ) : null}
               {resource.downloadCount > 0 ? (
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-caption font-medium text-zinc-500">
-                    <Download className="h-3.5 w-3.5 text-zinc-500" />
+                  <div className="flex items-center gap-2 text-caption font-medium text-muted-foreground">
+                    <Download className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>Downloads</span>
                   </div>
-                  <p className="text-lg font-semibold tracking-tight text-zinc-900">
+                  <p className="text-lg font-semibold tracking-tight text-foreground">
                     {formatNumber(resource.downloadCount)}
                   </p>
-                  <p className="text-caption text-zinc-500">library unlocks</p>
+                  <p className="text-caption text-muted-foreground">library unlocks</p>
                 </div>
               ) : null}
             </div>
@@ -273,40 +273,40 @@ export function ResourceDetailPurchaseCardClient({
         ) : null}
       </div>
 
-      <div className="mt-5 space-y-5 border-t border-surface-200 pt-5">
+      <div className="mt-5 space-y-5 border-t border-border pt-5">
         <dl className="space-y-3 text-small">
           <div className="flex items-start justify-between gap-4">
-            <dt className="text-zinc-500">Format</dt>
-            <dd className="text-right font-medium leading-5 text-zinc-900">
+            <dt className="text-muted-foreground">Format</dt>
+            <dd className="text-right font-medium leading-5 text-foreground">
               {resource.type}
             </dd>
           </div>
           {resource.category ? (
             <div className="flex items-start justify-between gap-4">
-              <dt className="text-zinc-500">Category</dt>
-              <dd className="text-right font-medium leading-5 text-zinc-900">
+              <dt className="text-muted-foreground">Category</dt>
+              <dd className="text-right font-medium leading-5 text-foreground">
                 {resource.category.name}
               </dd>
             </div>
           ) : null}
           <div className="flex items-start justify-between gap-4">
-            <dt className="text-zinc-500">Downloads</dt>
-            <dd className="text-right font-medium leading-5 text-zinc-900">
+            <dt className="text-muted-foreground">Downloads</dt>
+            <dd className="text-right font-medium leading-5 text-foreground">
               {formatNumber(resource.downloadCount)}
             </dd>
           </div>
           {purchaseMeta?.fileSize ? (
             <div className="flex items-start justify-between gap-4">
-              <dt className="text-zinc-500">File size</dt>
-              <dd className="text-right font-medium leading-5 text-zinc-900">
+              <dt className="text-muted-foreground">File size</dt>
+              <dd className="text-right font-medium leading-5 text-foreground">
                 {formatFileSize(purchaseMeta.fileSize)}
               </dd>
             </div>
           ) : null}
           {purchaseMeta?.updatedAt ? (
             <div className="flex items-start justify-between gap-4">
-              <dt className="text-zinc-500">Updated</dt>
-              <dd className="text-right font-medium leading-5 text-zinc-900">
+              <dt className="text-muted-foreground">Updated</dt>
+              <dd className="text-right font-medium leading-5 text-foreground">
                 {formatUpdated(purchaseMeta.updatedAt)}
               </dd>
             </div>
@@ -320,15 +320,15 @@ export function ResourceDetailPurchaseCardClient({
             </p>
           ) : (
             <>
-              <p className="text-small font-medium text-zinc-900">
+              <p className="text-small font-medium text-foreground">
                 Save more with {platformShortName} Plus
               </p>
-              <p className="text-small leading-6 text-zinc-500">
+              <p className="text-small leading-6 text-muted-foreground">
                 Members unlock discounted pricing and a faster path to repeat downloads.
               </p>
               <Link
                 href={routes.membership}
-                className="inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-surface-200 bg-primary-50 px-4 py-2.5 text-small font-semibold text-primary-800 transition hover:border-primary-200 hover:bg-primary-100"
+                className="inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-primary-200 bg-primary-50 px-4 py-2.5 text-small font-semibold text-primary-800 transition hover:border-primary-300 hover:bg-primary-100"
               >
                 <span className="inline-flex items-center gap-2">
                   <Sparkles className="h-4 w-4 shrink-0" />

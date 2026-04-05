@@ -20,7 +20,7 @@ export default async function BulkUploadPage() {
     <div className="flex min-h-screen flex-col">
       <Navbar />
 
-      <main className="flex-1 bg-surface-50">
+      <main className="flex-1 bg-background">
         <PageContainer className="py-10">
           <PageContent className="space-y-8">
             <AdminPageHeader
@@ -38,7 +38,7 @@ export default async function BulkUploadPage() {
               }
             />
 
-            <div className="inline-flex items-center gap-2 rounded-full border border-surface-200 bg-white px-3 py-1.5 text-caption text-text-secondary shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-caption text-muted-foreground shadow-sm">
               <Layers className="h-4 w-4 text-brand-600" />
               Admin · Resources
             </div>

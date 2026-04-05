@@ -423,20 +423,20 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
               />
             </Suspense>
 
-            <section className="space-y-4 border-t border-surface-200 pt-6">
+            <section className="space-y-4 border-t border-border pt-6">
               <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <p className="text-caption font-semibold text-primary-700">
                       What you&apos;ll achieve
                     </p>
-                    <h2 className="font-display text-xl font-semibold text-zinc-900">
+                    <h2 className="font-display text-xl font-semibold text-foreground">
                       Move faster with a clearer study path
                     </h2>
                   </div>
                   <ul className="space-y-3">
                     {outcomePoints.map((point) => (
-                      <li key={point} className="flex gap-3 text-body leading-7 text-zinc-600">
+                      <li key={point} className="flex gap-3 text-body leading-7 text-muted-foreground">
                         <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary-500" />
                         <span>{point}</span>
                       </li>
@@ -444,12 +444,12 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                   </ul>
                 </div>
 
-                <div className="space-y-4 border-t border-surface-200 pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                <div className="space-y-4 border-t border-border pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
                   <div className="space-y-1.5">
                     <p className="text-caption font-semibold text-primary-700">
                       Best for
                     </p>
-                    <h2 className="font-display text-xl font-semibold text-zinc-900">
+                    <h2 className="font-display text-xl font-semibold text-foreground">
                       Learners who want a stronger starting point
                     </h2>
                   </div>
@@ -457,13 +457,13 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                     {identityTargets.map((target) => (
                       <span
                         key={target}
-                        className="inline-flex rounded-full border border-surface-200 bg-surface-50 px-3 py-1.5 text-small font-medium text-zinc-700"
+                        className="inline-flex rounded-full border border-border bg-muted px-3 py-1.5 text-small font-medium text-foreground"
                       >
                         {target}
                       </span>
                     ))}
                   </div>
-                  <p className="text-small leading-6 text-zinc-500">
+                  <p className="text-small leading-6 text-muted-foreground">
                     A good fit if you want less guesswork, a cleaner study workflow, and
                     something you can revisit when it matters.
                   </p>
@@ -472,14 +472,14 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
             </section>
 
             {/* Back link */}
-            <div className="border-t border-surface-200 pt-6">
+            <div className="border-t border-border pt-6">
               <IntentPrefetchLink
                 href={routes.marketplace}
                 prefetchMode="intent"
                 prefetchScope="resource-detail-back-link"
                 prefetchLimit={1}
                 resourcesNavigationMode="discover"
-                className="inline-flex items-center gap-1.5 text-small font-medium text-zinc-500 transition hover:text-zinc-800"
+                className="inline-flex items-center gap-1.5 text-small font-medium text-muted-foreground transition hover:text-foreground"
               >
                 <BookOpen className="h-3.5 w-3.5" />
                 Discover more resources

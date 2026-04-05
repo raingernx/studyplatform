@@ -143,7 +143,7 @@ function ToastItem({
   return (
     <div
       role="alert"
-      className={`pointer-events-auto flex max-w-md items-center gap-3 rounded-xl border border-border-subtle bg-white px-4 py-3 shadow-lg transition-opacity duration-200 ${
+      className={`pointer-events-auto flex max-w-md items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg transition-opacity duration-200 ${
         exiting ? "opacity-0" : "animate-[fade-up_0.25s_var(--ease-out)] opacity-100"
       }`}
     >
@@ -152,11 +152,11 @@ function ToastItem({
       >
         {ICON[type]}
       </div>
-      <p className="min-w-0 flex-1 text-small text-text-primary">{title}</p>
+      <p className="min-w-0 flex-1 text-small text-foreground">{title}</p>
       <button
         type="button"
         onClick={() => onDismiss(id)}
-        className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-md opacity-70 text-text-muted transition-opacity hover:bg-surface-100 hover:opacity-100"
+        className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-md opacity-70 text-muted-foreground transition-opacity hover:bg-muted hover:opacity-100"
         aria-label="Dismiss"
       >
         <span className="h-4 w-4 text-center text-sm leading-none">✕</span>

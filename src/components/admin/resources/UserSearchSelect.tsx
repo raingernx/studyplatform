@@ -95,23 +95,23 @@ export function UserSearchSelect({
         type="button"
         id={id}
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between rounded-xl border border-border-subtle bg-white px-3 py-2.5 text-left text-[13px] text-text-primary shadow-sm transition hover:border-zinc-300 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        className="flex w-full items-center justify-between rounded-xl border border-border bg-card px-3 py-2.5 text-left text-[13px] text-foreground shadow-sm transition hover:border-primary/20 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
         <span className="truncate">{displayLabel}</span>
-        <span className="ml-2 shrink-0 text-text-muted">▼</span>
+        <span className="ml-2 shrink-0 text-muted-foreground">▼</span>
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-60 overflow-y-auto rounded-xl border border-border-subtle bg-white py-1 shadow-lg">
-          <div className="border-b border-border-subtle px-2 pb-2">
+        <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-60 overflow-y-auto rounded-xl border border-border bg-popover py-1 shadow-lg">
+          <div className="border-b border-border px-2 pb-2">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={placeholder}
-              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-[13px] outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
               autoFocus
             />
           </div>
@@ -121,18 +121,18 @@ export function UserSearchSelect({
               type="button"
               onClick={handleSelectCurrentUser}
               className={`flex w-full flex-col items-start px-3 py-2 text-left text-[13px] transition ${
-                value === "" ? "bg-brand-50 text-brand-800" : "text-text-primary hover:bg-surface-100"
+                value === "" ? "bg-brand-50 text-brand-800" : "text-foreground hover:bg-muted"
               }`}
             >
               <span className="font-medium">Current user</span>
               {currentUserName && (
-                <span className="text-[11px] text-text-secondary">{currentUserName}</span>
+                <span className="text-[11px] text-muted-foreground">{currentUserName}</span>
               )}
             </button>
           )}
 
           {loading && (
-            <div className="px-3 py-2 text-[12px] text-text-secondary">Searching…</div>
+            <div className="px-3 py-2 text-[12px] text-muted-foreground">Searching…</div>
           )}
           {!loading && users.length > 0 && (
             <ul role="listbox" className="py-1">
@@ -143,12 +143,12 @@ export function UserSearchSelect({
                     role="option"
                     onClick={() => handleSelectUser(user)}
                     className={`flex w-full flex-col items-start px-3 py-2 text-left text-[13px] transition ${
-                      value === user.id ? "bg-brand-50 text-brand-800" : "hover:bg-surface-100"
+                      value === user.id ? "bg-brand-50 text-brand-800" : "text-foreground hover:bg-muted"
                     }`}
                   >
                     <span className="font-medium">{user.name || "No name"}</span>
                     {user.email && (
-                      <span className="text-[11px] text-text-secondary">{user.email}</span>
+                      <span className="text-[11px] text-muted-foreground">{user.email}</span>
                     )}
                   </button>
                 </li>
@@ -156,7 +156,7 @@ export function UserSearchSelect({
             </ul>
           )}
           {!loading && query.trim() && users.length === 0 && (
-            <div className="px-3 py-2 text-[12px] text-text-secondary">No users found.</div>
+            <div className="px-3 py-2 text-[12px] text-muted-foreground">No users found.</div>
           )}
         </div>
       )}

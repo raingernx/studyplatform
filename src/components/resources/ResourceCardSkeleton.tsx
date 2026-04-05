@@ -2,7 +2,7 @@ import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 
 export function ResourceCardSkeleton() {
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-surface-200 bg-white shadow-sm">
+    <div className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       {/* Image placeholder — 4:3 ratio, matches card */}
       <LoadingSkeleton className="aspect-[4/3] w-full rounded-t-xl rounded-b-none" />
 

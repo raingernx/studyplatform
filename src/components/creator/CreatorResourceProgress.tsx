@@ -47,7 +47,7 @@ export function CreatorResourceProgress({ activeStep = 1 }: CreatorResourceProgr
                     ? "bg-emerald-100 text-emerald-700"
                     : isActive
                       ? "bg-blue-600 text-white shadow-sm"
-                      : "bg-neutral-100 text-neutral-400"
+                      : "bg-muted text-muted-foreground"
                 }`}
               >
                 {isDone ? (
@@ -59,12 +59,12 @@ export function CreatorResourceProgress({ activeStep = 1 }: CreatorResourceProgr
               <div className="text-center">
                 <p
                   className={`text-[11px] font-semibold ${
-                    isActive ? "text-neutral-900" : isDone ? "text-emerald-600" : "text-neutral-400"
+                    isActive ? "text-foreground" : isDone ? "text-emerald-600" : "text-muted-foreground"
                   }`}
                 >
                   {step.label}
                 </p>
-                <p className="hidden text-[10px] text-neutral-400 sm:block">{step.description}</p>
+                <p className="hidden text-[10px] text-muted-foreground sm:block">{step.description}</p>
               </div>
             </div>
 
@@ -72,7 +72,7 @@ export function CreatorResourceProgress({ activeStep = 1 }: CreatorResourceProgr
             {!isLast && (
               <div
                 className={`mx-2 h-px flex-1 transition-colors ${
-                  isDone ? "bg-emerald-200" : "bg-neutral-150"
+                  isDone ? "bg-emerald-200" : "bg-border"
                 }`}
               />
             )}

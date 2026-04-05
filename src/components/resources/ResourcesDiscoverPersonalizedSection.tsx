@@ -24,11 +24,11 @@ function ResourcesSectionHeader({
   viewAllHref?: string;
 }) {
   return (
-    <div className="flex flex-col gap-3 border-b border-surface-200/80 pb-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-3 border-b border-border pb-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold tracking-tight text-text-primary">{title}</h2>
+        <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
         {description ? (
-          <p className="max-w-2xl text-sm leading-6 text-text-secondary">{description}</p>
+          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>
         ) : null}
       </div>
       {viewAllHref ? (
@@ -38,7 +38,7 @@ function ResourcesSectionHeader({
           prefetchScope="resources-section-view-all"
           prefetchLimit={2}
           resourcesNavigationMode="listing"
-          className="group inline-flex items-center gap-1 self-start rounded-full px-2.5 py-1 text-small font-medium text-primary-700 transition-colors hover:bg-primary-50 hover:text-primary-800 sm:self-auto"
+          className="group inline-flex items-center gap-1 self-start rounded-full px-2.5 py-1 text-small font-medium text-primary transition-colors hover:bg-accent hover:text-accent-foreground sm:self-auto"
         >
           <span className="inline-flex items-center gap-1">
             <span>View all</span>

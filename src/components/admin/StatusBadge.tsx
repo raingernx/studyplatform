@@ -23,7 +23,7 @@ const TONE_CLASSES: Record<StatusBadgeTone, string> = {
   success: "bg-success-50 text-success-700",
   warning: "bg-warning-50 text-warning-700",
   danger: "bg-danger-50 text-danger-700",
-  muted: "bg-surface-100 text-text-secondary",
+  muted: "bg-muted text-muted-foreground",
   info: "bg-info-50 text-info-700",
   accent: "bg-primary-50 text-primary-700",
 };

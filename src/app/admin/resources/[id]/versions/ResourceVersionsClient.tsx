@@ -110,7 +110,7 @@ export function ResourceVersionsClient({
           asChild
           variant="ghost"
           size="sm"
-          className="text-xs text-text-secondary hover:text-text-primary"
+          className="text-xs text-muted-foreground hover:text-foreground"
         >
           <Link href={routes.adminResource(resourceId)} className="inline-flex items-center gap-1.5">
             <span className="inline-flex items-center gap-1.5">
@@ -120,18 +120,18 @@ export function ResourceVersionsClient({
           </Link>
         </Button>
         {latestVersionNumber > 0 && (
-          <div className="text-xs text-text-secondary">
+          <div className="text-xs text-muted-foreground">
             Latest version:{" "}
-            <span className="font-medium text-text-primary">
+            <span className="font-medium text-foreground">
               v{latestVersionNumber}
             </span>
           </div>
         )}
       </div>
       <div className="overflow-x-auto">
-        <table className="min-w-full border-t border-border-subtle/80 text-sm">
-          <thead className="bg-surface-50/80">
-            <tr className="text-left text-xs font-semibold uppercase tracking-wide text-text-muted">
+        <table className="min-w-full border-t border-border/80 text-sm">
+          <thead className="bg-muted/80">
+            <tr className="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <th className="px-5 py-3">Version</th>
               <th className="px-3 py-3">Uploaded By</th>
               <th className="px-3 py-3">Date</th>
@@ -140,12 +140,12 @@ export function ResourceVersionsClient({
               <th className="px-5 py-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border-subtle/60 bg-white">
+          <tbody className="divide-y divide-border/60 bg-card">
             {versions.length === 0 ? (
               <tr>
                 <td
                   colSpan={6}
-                  className="px-5 py-8 text-center text-sm text-text-secondary"
+                  className="px-5 py-8 text-center text-sm text-muted-foreground"
                 >
                   No versions yet. Upload a file to create the first version.
                 </td>
@@ -158,7 +158,7 @@ export function ResourceVersionsClient({
 
                 return (
                   <tr key={v.id} className="align-middle">
-                    <td className="whitespace-nowrap px-5 py-3 text-sm font-medium text-text-primary">
+                    <td className="whitespace-nowrap px-5 py-3 text-sm font-medium text-foreground">
                       <div className="inline-flex items-center gap-2">
                         <span>v{v.version}</span>
                         {isCurrent && (
@@ -168,22 +168,22 @@ export function ResourceVersionsClient({
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-sm text-text-primary">
+                    <td className="px-3 py-3 text-sm text-foreground">
                       {uploader}
                     </td>
-                    <td className="px-3 py-3 text-sm text-text-secondary">
+                    <td className="px-3 py-3 text-sm text-muted-foreground">
                       {format(v.createdAt, "PPpp")}
                     </td>
-                    <td className="px-3 py-3 text-sm text-text-secondary">
+                    <td className="px-3 py-3 text-sm text-muted-foreground">
                       {v.changelog ?? "—"}
                     </td>
-                    <td className="px-3 py-3 text-sm text-text-secondary">
+                    <td className="px-3 py-3 text-sm text-muted-foreground">
                       <div className="flex flex-col">
                         <span className="truncate max-w-[220px]">
                           {v.fileName ?? "—"}
                         </span>
                         {v.fileSize != null && (
-                          <span className="text-[11px] text-text-muted">
+                          <span className="text-[11px] text-muted-foreground">
                             {formatFileSize(v.fileSize)}{" "}
                             {v.mimeType &&
                               `· ${v.mimeType.split("/")[1]?.toUpperCase()}`}
@@ -206,7 +206,7 @@ export function ResourceVersionsClient({
                             type="button"
                             variant="ghost"
                             tone="muted"
-                            className={cn("text-text-secondary hover:text-text-primary")}
+                            className={cn("text-muted-foreground hover:text-foreground")}
                             loading={rollbackLoadingId === v.id}
                             onClick={() => handleRollback(v.id)}
                           >

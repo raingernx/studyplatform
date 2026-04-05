@@ -9,10 +9,10 @@ export default function AdminRouteNotFound() {
         <p className="text-caption font-semibold uppercase tracking-[0.18em] text-primary-700">
           Admin page missing
         </p>
-        <h1 className="font-display text-3xl font-semibold text-text-primary">
+        <h1 className="font-display text-3xl font-semibold text-foreground">
           This admin page could not be found.
         </h1>
-        <p className="text-body leading-7 text-text-secondary">
+        <p className="text-body leading-7 text-muted-foreground">
           Return to the admin dashboard or open the resources workspace.
         </p>
       </div>

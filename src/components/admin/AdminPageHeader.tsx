@@ -21,14 +21,14 @@ export function AdminPageHeader({
   actions,
 }: AdminPageHeaderProps) {
   return (
-    <div className="flex min-w-0 flex-wrap items-start justify-between gap-4 border-b border-border-subtle pb-4 sm:items-end">
+    <div className="flex min-w-0 flex-wrap items-start justify-between gap-4 border-b border-border pb-4 sm:items-end">
       <div className="min-w-0">
-        <p className="font-ui text-caption text-text-muted">Admin</p>
-        <h1 className="mt-1 font-display text-h2 font-semibold tracking-tight text-text-primary">
+        <p className="font-ui text-caption text-muted-foreground">Admin</p>
+        <h1 className="mt-1 font-display text-h2 font-semibold tracking-tight text-foreground">
           {title}
         </h1>
         {description && (
-          <p className="mt-1.5 max-w-2xl text-small text-text-secondary">
+          <p className="mt-1.5 max-w-2xl text-small text-muted-foreground">
             {description}
           </p>
         )}

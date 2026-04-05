@@ -79,11 +79,11 @@ function StatCard({
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      <p className="mt-3 text-xl font-semibold tracking-tight text-text-primary">
+      <p className="mt-3 text-xl font-semibold tracking-tight text-foreground">
         {value}
       </p>
-      <p className="mt-0.5 text-small text-text-secondary">{label}</p>
-      {sub && <p className="mt-1 text-caption text-text-muted">{sub}</p>}
+      <p className="mt-0.5 text-small text-muted-foreground">{label}</p>
+      {sub && <p className="mt-1 text-caption text-muted-foreground">{sub}</p>}
     </Card>
   );
 }
@@ -111,10 +111,10 @@ export default async function AdminAnalyticsPage() {
 
       <section className="space-y-2.5">
         <div>
-          <h2 className="font-display text-h3 font-semibold text-text-primary">
+          <h2 className="font-display text-h3 font-semibold text-foreground">
             All-time metrics
           </h2>
-          <p className="mt-1 text-small text-text-secondary">
+          <p className="mt-1 text-small text-muted-foreground">
             Core marketplace totals across revenue, usage, and catalog growth.
           </p>
         </div>
@@ -123,41 +123,41 @@ export default async function AdminAnalyticsPage() {
             label="Total revenue"
             value={formatPrice(metrics.totalRevenue / 100)}
             icon={DollarSign}
-            colorClass="bg-surface-100 text-success-700"
+            colorClass="bg-muted text-success-700"
           />
           <StatCard
             label="Total downloads"
             value={formatNumber(metrics.totalDownloads)}
             icon={Download}
-            colorClass="bg-surface-100 text-info-700"
+            colorClass="bg-muted text-info-700"
           />
           <StatCard
             label="Total purchases"
             value={formatNumber(metrics.totalPurchases)}
             icon={TrendingUp}
-            colorClass="bg-surface-100 text-primary-700"
+            colorClass="bg-muted text-primary-700"
           />
           <StatCard
             label="Total users"
             value={formatNumber(metrics.totalUsers)}
             icon={Users}
-            colorClass="bg-surface-100 text-warning-700"
+            colorClass="bg-muted text-warning-700"
           />
           <StatCard
             label="Total resources"
             value={formatNumber(metrics.totalResources)}
             icon={Package}
-            colorClass="bg-surface-100 text-text-secondary"
+            colorClass="bg-muted text-muted-foreground"
           />
         </div>
       </section>
 
       <section className="space-y-2.5">
         <div>
-          <h2 className="font-display text-h3 font-semibold text-text-primary">
+          <h2 className="font-display text-h3 font-semibold text-foreground">
             Last 30 days
           </h2>
-          <p className="mt-1 text-small text-text-secondary">
+          <p className="mt-1 text-small text-muted-foreground">
             Recent movement in demand, signups, and catalog activity.
           </p>
         </div>
@@ -167,35 +167,35 @@ export default async function AdminAnalyticsPage() {
             value={formatNumber(metrics.downloadsLast30Days)}
             sub="vs all-time"
             icon={Download}
-            colorClass="bg-surface-100 text-info-700"
+            colorClass="bg-muted text-info-700"
           />
           <StatCard
             label="Revenue"
             value={formatPrice(metrics.reveneuLast30Days / 100)}
             icon={DollarSign}
-            colorClass="bg-surface-100 text-success-700"
+            colorClass="bg-muted text-success-700"
           />
           <StatCard
             label="New users"
             value={formatNumber(metrics.newUsersLast30Days)}
             icon={Users}
-            colorClass="bg-surface-100 text-warning-700"
+            colorClass="bg-muted text-warning-700"
           />
           <StatCard
             label="New resources"
             value={formatNumber(metrics.newResourcesLast30Days)}
             icon={Package}
-            colorClass="bg-surface-100 text-primary-700"
+            colorClass="bg-muted text-primary-700"
           />
         </div>
       </section>
 
       <section className="space-y-2.5">
         <div>
-          <h2 className="font-display text-h3 font-semibold text-text-primary">
+          <h2 className="font-display text-h3 font-semibold text-foreground">
             Reporting
           </h2>
-          <p className="mt-1 text-small text-text-secondary">
+          <p className="mt-1 text-small text-muted-foreground">
             Trend snapshots and top-performing resources.
           </p>
         </div>
@@ -203,15 +203,15 @@ export default async function AdminAnalyticsPage() {
         {/* Daily downloads */}
         <Card className="rounded-xl p-4">
           <div className="mb-4">
-            <h2 className="text-sm font-semibold text-text-primary">
+            <h2 className="text-sm font-semibold text-foreground">
               Downloads (last 30 days)
             </h2>
-            <p className="mt-0.5 text-caption text-text-muted">
+            <p className="mt-0.5 text-caption text-muted-foreground">
               One bar per day — based on DownloadEvent rows.
             </p>
           </div>
           <SparkBar data={metrics.dailyDownloads} />
-          <div className="mt-2 flex items-center justify-between text-caption text-text-muted">
+          <div className="mt-2 flex items-center justify-between text-caption text-muted-foreground">
             <span>{metrics.dailyDownloads[0]?.date ?? ""}</span>
             <span>
               Total: {formatNumber(metrics.downloadsLast30Days)} downloads
@@ -225,10 +225,10 @@ export default async function AdminAnalyticsPage() {
         {/* Daily revenue */}
         <Card className="rounded-xl p-4">
           <div className="mb-4">
-            <h2 className="text-sm font-semibold text-text-primary">
+            <h2 className="text-sm font-semibold text-foreground">
               Revenue (last 30 days)
             </h2>
-            <p className="mt-0.5 text-caption text-text-muted">
+            <p className="mt-0.5 text-caption text-muted-foreground">
               Sum of completed purchase amounts per day.
             </p>
           </div>
@@ -239,7 +239,7 @@ export default async function AdminAnalyticsPage() {
               value: d.value,
             }))}
           />
-          <div className="mt-2 flex items-center justify-between text-caption text-text-muted">
+          <div className="mt-2 flex items-center justify-between text-caption text-muted-foreground">
             <span>{metrics.dailyRevenue[0]?.date ?? ""}</span>
             <span>
               Total: {formatPrice(metrics.reveneuLast30Days / 100)}
@@ -253,15 +253,15 @@ export default async function AdminAnalyticsPage() {
         {/* New users */}
         <Card className="rounded-xl p-4">
           <div className="mb-4">
-            <h2 className="text-sm font-semibold text-text-primary">
+            <h2 className="text-sm font-semibold text-foreground">
               New users (last 30 days)
             </h2>
-            <p className="mt-0.5 text-caption text-text-muted">
+            <p className="mt-0.5 text-caption text-muted-foreground">
               User registrations per day.
             </p>
           </div>
           <SparkBar data={metrics.dailyNewUsers} />
-          <div className="mt-2 flex items-center justify-between text-caption text-text-muted">
+          <div className="mt-2 flex items-center justify-between text-caption text-muted-foreground">
             <span>{metrics.dailyNewUsers[0]?.date ?? ""}</span>
             <span>Total: {formatNumber(metrics.newUsersLast30Days)} signups</span>
             <span>
@@ -273,31 +273,31 @@ export default async function AdminAnalyticsPage() {
         {/* Top resources */}
         <Card className="rounded-xl p-4">
           <div className="mb-4 flex items-center gap-2">
-            <BarChart2 className="h-4 w-4 text-text-muted" />
-            <h2 className="text-sm font-semibold text-text-primary">
+            <BarChart2 className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold text-foreground">
               Top resources
             </h2>
           </div>
 
           {metrics.topResources.length === 0 ? (
-            <p className="text-small text-text-muted">No data yet.</p>
+            <p className="text-small text-muted-foreground">No data yet.</p>
           ) : (
             <ul className="space-y-2">
               {metrics.topResources.map((r, i) => (
                 <li key={r.id} className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-caption font-semibold text-text-muted">
+                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-caption font-semibold text-muted-foreground">
                     {i + 1}
                   </span>
                   <Link
                     href={routes.resource(r.slug)}
-                    className="min-w-0 flex-1 truncate text-small font-medium text-text-primary hover:text-primary-700 hover:underline"
+                    className="min-w-0 flex-1 truncate text-small font-medium text-foreground hover:text-primary-700 hover:underline"
                   >
                     {r.title}
                   </Link>
-                  <span className="flex-shrink-0 text-caption text-text-muted">
+                  <span className="flex-shrink-0 text-caption text-muted-foreground">
                     {formatNumber(r.downloadCount)} dl
                   </span>
-                  <span className="flex-shrink-0 text-caption text-text-muted">
+                  <span className="flex-shrink-0 text-caption text-muted-foreground">
                     {formatPrice(r.revenue / 100)}
                   </span>
                 </li>
@@ -310,10 +310,10 @@ export default async function AdminAnalyticsPage() {
 
       <section className="space-y-2.5">
         <div>
-          <h2 className="font-display text-h3 font-semibold text-text-primary">
+          <h2 className="font-display text-h3 font-semibold text-foreground">
             Experiments
           </h2>
-          <p className="mt-1 text-small text-text-secondary">
+          <p className="mt-1 text-small text-muted-foreground">
             Debug views and funnel reports for recommendation, ranking, and purchase behavior.
           </p>
         </div>
@@ -322,17 +322,17 @@ export default async function AdminAnalyticsPage() {
             href={routes.adminRecommendationReport}
             className="group block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           >
-            <Card className="rounded-xl p-4 transition-colors group-hover:bg-surface-50">
+            <Card className="rounded-xl p-4 transition-colors group-hover:bg-muted">
               <div className="flex items-start justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-100 text-primary-700">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-primary-700">
                   <FlaskConical className="h-4 w-4" />
                 </span>
-                <ArrowRight className="h-4 w-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" />
+                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
               </div>
-              <p className="mt-3 text-sm font-semibold text-text-primary">
+              <p className="mt-3 text-sm font-semibold text-foreground">
                 Recommendation Experiment
               </p>
-              <p className="mt-0.5 text-caption text-text-secondary">
+              <p className="mt-0.5 text-caption text-muted-foreground">
                 Phase 1 vs Phase 2 · CTR, clicks, purchases
               </p>
             </Card>
@@ -342,17 +342,17 @@ export default async function AdminAnalyticsPage() {
             href={routes.adminCreatorActivation}
             className="group block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           >
-            <Card className="rounded-xl p-4 transition-colors group-hover:bg-surface-50">
+            <Card className="rounded-xl p-4 transition-colors group-hover:bg-muted">
               <div className="flex items-start justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-100 text-success-700">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-success-700">
                   <Rocket className="h-4 w-4" />
                 </span>
-                <ArrowRight className="h-4 w-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" />
+                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
               </div>
-              <p className="mt-3 text-sm font-semibold text-text-primary">
+              <p className="mt-3 text-sm font-semibold text-foreground">
                 Creator Activation Funnel
               </p>
-              <p className="mt-0.5 text-caption text-text-secondary">
+              <p className="mt-0.5 text-caption text-muted-foreground">
                 First-run view → click → draft → published
               </p>
             </Card>
@@ -362,17 +362,17 @@ export default async function AdminAnalyticsPage() {
             href={routes.adminPurchasesAnalytics}
             className="group block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           >
-            <Card className="rounded-xl p-4 transition-colors group-hover:bg-surface-50">
+            <Card className="rounded-xl p-4 transition-colors group-hover:bg-muted">
               <div className="flex items-start justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-100 text-primary-700">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-primary-700">
                   <ShoppingCart className="h-4 w-4" />
                 </span>
-                <ArrowRight className="h-4 w-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" />
+                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
               </div>
-              <p className="mt-3 text-sm font-semibold text-text-primary">
+              <p className="mt-3 text-sm font-semibold text-foreground">
                 Purchase Funnel
               </p>
-              <p className="mt-0.5 text-caption text-text-secondary">
+              <p className="mt-0.5 text-caption text-muted-foreground">
                 Sessions started → completed · free claims · revenue
               </p>
             </Card>
@@ -382,17 +382,17 @@ export default async function AdminAnalyticsPage() {
             href={routes.adminRankingDebug}
             className="group block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           >
-            <Card className="rounded-xl p-4 transition-colors group-hover:bg-surface-50">
+            <Card className="rounded-xl p-4 transition-colors group-hover:bg-muted">
               <div className="flex items-start justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-100 text-info-700">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-info-700">
                   <SlidersHorizontal className="h-4 w-4" />
                 </span>
-                <ArrowRight className="h-4 w-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" />
+                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
               </div>
-              <p className="mt-3 text-sm font-semibold text-text-primary">
+              <p className="mt-3 text-sm font-semibold text-foreground">
                 Ranking Debug
               </p>
-              <p className="mt-0.5 text-caption text-text-secondary">
+              <p className="mt-0.5 text-caption text-muted-foreground">
                 Score breakdown · purchases · activation · recency
               </p>
             </Card>
@@ -402,17 +402,17 @@ export default async function AdminAnalyticsPage() {
             href={routes.adminRankingExperiment}
             className="group block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           >
-            <Card className="rounded-xl p-4 transition-colors group-hover:bg-surface-50">
+            <Card className="rounded-xl p-4 transition-colors group-hover:bg-muted">
               <div className="flex items-start justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-100 text-info-700">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-info-700">
                   <BarChart2 className="h-4 w-4" />
                 </span>
-                <ArrowRight className="h-4 w-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" />
+                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
               </div>
-              <p className="mt-3 text-sm font-semibold text-text-primary">
+              <p className="mt-3 text-sm font-semibold text-foreground">
                 Ranking Experiment
               </p>
-              <p className="mt-0.5 text-caption text-text-secondary">
+              <p className="mt-0.5 text-caption text-muted-foreground">
                 A vs B · checkout starts · conversion · paid activation
               </p>
             </Card>

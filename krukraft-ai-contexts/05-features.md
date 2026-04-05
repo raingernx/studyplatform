@@ -43,7 +43,7 @@ The discover page now mixes:
 - warmed cache variants
 - lighter-weight fallbacks that match the final section intent
 - a route-level loading shell that mirrors the live discover shape:
-  - plain blue hero block
+  - lavender hero stage with the same split-banner footprint as the live route
   - section header + resource-card skeletons
   - no extra discover-meta strip above the hero while loading
 
@@ -78,27 +78,18 @@ Behavior notes:
 The marketplace route switches from discover mode into listing mode whenever
 search, filters, pagination, or a non-default sort are active.
 
-## Hero CMS System
-
-Admin-manageable hero system includes:
-
-- Featured resource hero
-- Search-focus hero
-- Collection / category hero
-- Promotion / seasonal hero
-- Fallback hero
-- A/B testing hero behavior
-- Admin live preview and hero analytics routes
-
 ## Admin Features
 
 - Analytics and activity views
-- Hero management
 - Resource moderation / trash / bulk operations
 - Category and tag management
 - Review moderation
 - User and order management
 - Platform settings including brand assets
+
+Marketplace hero note:
+- `/resources` discover hero is currently a fixed repo-owned design surface
+- legacy admin hero management, hero analytics, and hero impression/click endpoints are no longer part of the active app surface
 
 Platform settings notes:
 - Full, icon, OG, email, and favicon assets can be edited independently
@@ -135,6 +126,7 @@ Resource detail page
 - Password reset request + confirm flow
 - Email verification flow (soft verification approach)
 - Credentials + Google login
+- Theme selection still supports `light`, `dark`, and `system`, but new/no-preference users now start from `light` by default and newly created `UserPreference` rows now seed `light` at the data layer too
 - canonical seeded/local admin identity now uses `admin@krukraft.dev`
 
 ## Secure Download Endpoint
@@ -148,4 +140,4 @@ Resource detail page
 
 ---
 
-*Refreshed against the repo state on 2026-04-03.*
+*Refreshed against the repo state on 2026-04-05.*

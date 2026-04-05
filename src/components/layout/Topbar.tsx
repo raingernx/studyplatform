@@ -23,10 +23,10 @@ export function Topbar({
       onMenuToggle={onMenuToggle}
       left={
         <div className="min-w-0">
-          <p className="font-ui text-caption text-text-muted">
+          <p className="font-ui text-caption text-muted-foreground">
             {title}
           </p>
-          <p className="truncate text-small font-medium text-text-primary">
+          <p className="truncate text-small font-medium text-foreground">
             {subtitle}
           </p>
         </div>

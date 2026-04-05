@@ -28,6 +28,11 @@ type FetchJsonCacheEntry = {
 
 const fetchJsonCache = new Map<string, FetchJsonCacheEntry>();
 const fetchJsonInFlight = new Map<string, Promise<unknown>>();
+const DEV_TRANSIENT_FETCH_ERROR_PATTERNS = [
+  /failed to fetch/i,
+  /networkerror/i,
+  /load failed/i,
+];
 
 function getCacheEntry<T>(key: string, ttlMs: number): { hit: boolean; data: T | null } {
   if (ttlMs <= 0) {
@@ -74,6 +79,30 @@ async function requestJson<T>(url: string): Promise<T | null> {
 
   const json = (await response.json()) as { data?: T | null };
   return json.data ?? null;
+}
+
+function isTransientFetchJsonError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return (
+    error.name === "AbortError" ||
+    DEV_TRANSIENT_FETCH_ERROR_PATTERNS.some((pattern) =>
+      pattern.test(error.message),
+    )
+  );
+}
+
+function reportFetchJsonError(error: unknown) {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    isTransientFetchJsonError(error)
+  ) {
+    return;
+  }
+
+  console.error("[USE_FETCH_JSON]", error);
 }
 
 async function loadFetchJson<T>(
@@ -196,7 +225,7 @@ export function useFetchJson<T>({
           return;
         }
 
-        console.error("[USE_FETCH_JSON]", error);
+        reportFetchJsonError(error);
         setState({
           data: null,
           isReady: true,

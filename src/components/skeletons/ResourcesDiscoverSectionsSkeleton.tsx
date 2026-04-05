@@ -10,7 +10,7 @@ function DiscoverDeferredSectionFallback({
 }) {
   return (
     <section className="space-y-5">
-      <div className="flex flex-col gap-3 border-b border-surface-200/80 pb-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-border pb-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1.5">
           <LoadingSkeleton className={`h-6 ${titleWidth}`} />
           <LoadingSkeleton className="h-4 w-64" />
@@ -29,7 +29,7 @@ function DiscoverDeferredSectionFallback({
 function DiscoverBrowseTilesFallback() {
   return (
     <section className="space-y-5">
-      <div className="flex flex-col gap-3 border-b border-surface-200/80 pb-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-border pb-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1.5">
           <LoadingSkeleton className="h-6 w-56" />
           <LoadingSkeleton className="h-4 w-80" />
@@ -48,7 +48,7 @@ function DiscoverBrowseTilesFallback() {
 function DiscoverCollectionsFallback() {
   return (
     <section className="space-y-5">
-      <div className="flex flex-col gap-3 border-b border-surface-200/80 pb-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-border pb-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1.5">
           <LoadingSkeleton className="h-6 w-52" />
           <LoadingSkeleton className="h-4 w-72" />

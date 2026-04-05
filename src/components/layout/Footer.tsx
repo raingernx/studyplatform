@@ -27,20 +27,20 @@ interface FooterProps {
 
 export function Footer({ platformName }: FooterProps) {
   return (
-    <footer className="border-t border-zinc-100 bg-white">
+    <footer className="border-t border-border bg-background">
       <Container className="py-14">
         <div className="grid gap-10 md:grid-cols-4">
           {/* Brand */}
           <div>
             <Logo variant="full" size="sm" />
-            <p className="mt-3 max-w-[200px] text-[13px] leading-relaxed text-zinc-500 font-thai">
+            <p className="mt-3 max-w-[200px] text-[13px] leading-relaxed text-muted-foreground font-thai">
               มาร์เก็ตเพลสสำหรับสื่อการเรียนรู้แบบดาวน์โหลด
             </p>
           </div>
 
           {/* Creators */}
           <div>
-            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               Creators
             </h3>
             <ul className="mt-4 space-y-2.5">
@@ -48,7 +48,7 @@ export function Footer({ platformName }: FooterProps) {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-[13px] text-zinc-500 transition-colors hover:text-zinc-900"
+                    className="text-[13px] text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {link.label}
                   </Link>
@@ -59,7 +59,7 @@ export function Footer({ platformName }: FooterProps) {
 
           {/* Resources */}
           <div>
-            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               Resources
             </h3>
             <ul className="mt-4 space-y-2.5">
@@ -67,7 +67,7 @@ export function Footer({ platformName }: FooterProps) {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-[13px] text-zinc-500 transition-colors hover:text-zinc-900"
+                    className="text-[13px] text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {link.label}
                   </Link>
@@ -78,7 +78,7 @@ export function Footer({ platformName }: FooterProps) {
 
           {/* Legal */}
           <div>
-            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               Legal
             </h3>
             <ul className="mt-4 space-y-2.5">
@@ -86,7 +86,7 @@ export function Footer({ platformName }: FooterProps) {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-[13px] text-zinc-500 transition-colors hover:text-zinc-900"
+                    className="text-[13px] text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {link.label}
                   </Link>
@@ -97,26 +97,26 @@ export function Footer({ platformName }: FooterProps) {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-zinc-100 pt-6 sm:flex-row">
-          <p className="text-[12px] text-zinc-400 font-thai">
+        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 sm:flex-row">
+          <p className="text-[12px] text-muted-foreground font-thai">
             © {new Date().getFullYear()} {platformName}. สงวนลิขสิทธิ์ทั้งหมด
           </p>
           <div className="flex items-center gap-4">
             <Link
               href={routes.privacy}
-              className="text-[12px] text-zinc-400 transition-colors hover:text-zinc-600"
+              className="text-[12px] text-muted-foreground transition-colors hover:text-foreground"
             >
               Privacy Policy
             </Link>
             <Link
               href={routes.terms}
-              className="text-[12px] text-zinc-400 transition-colors hover:text-zinc-600"
+              className="text-[12px] text-muted-foreground transition-colors hover:text-foreground"
             >
               Terms
             </Link>
             <Link
               href={routes.cookies}
-              className="text-[12px] text-zinc-400 transition-colors hover:text-zinc-600"
+              className="text-[12px] text-muted-foreground transition-colors hover:text-foreground"
             >
               Cookie Policy
             </Link>

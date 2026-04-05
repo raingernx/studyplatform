@@ -58,13 +58,13 @@ export function CreatorPublishReadiness({
     <div
       className={`rounded-2xl px-4 py-3 ${
         subtle
-          ? "border border-neutral-200 bg-neutral-50"
+          ? "border border-border bg-muted"
           : "border border-amber-100 bg-amber-50"
       }`}
     >
       <p
         className={`text-sm font-semibold ${
-          subtle ? "text-neutral-600" : "text-amber-800"
+          subtle ? "text-muted-foreground" : "text-amber-800"
         }`}
       >
         Finish your resource ({completion}/4 complete)
@@ -77,8 +77,8 @@ export function CreatorPublishReadiness({
             onClick={() => onJumpToField?.(field)}
             className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
               subtle
-                ? "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-100"
-                : "border-amber-200 bg-white text-amber-800 hover:border-amber-300 hover:bg-amber-100"
+                ? "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+                : "border-amber-200 bg-background text-amber-800 hover:border-amber-300 hover:bg-amber-100"
             }`}
           >
             {FIELD_LABELS[field]}

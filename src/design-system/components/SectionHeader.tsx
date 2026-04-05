@@ -31,15 +31,15 @@ export function SectionHeader({
     >
       <div className={cn("flex flex-col gap-2", alignClass)}>
         {eyebrow ? (
-          <p className="font-ui text-caption tracking-[0.12em] text-text-muted">
+          <p className="font-ui text-caption tracking-[0.12em] text-muted-foreground">
             {eyebrow}
           </p>
         ) : null}
-        <h2 className="font-heading text-h2 font-semibold text-text-primary">
+        <h2 className="font-heading text-h2 font-semibold text-foreground">
           {title}
         </h2>
         {description ? (
-          <p className="max-w-xl text-small text-text-secondary">
+          <p className="max-w-xl text-small text-muted-foreground">
             {description}
           </p>
         ) : null}

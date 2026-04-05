@@ -52,7 +52,7 @@ export function DashboardShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-surface-50">
+    <div className="flex min-h-screen bg-background">
       <Suspense fallback={null}>
         <DashboardNavigationFeedback />
       </Suspense>

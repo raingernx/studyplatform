@@ -133,9 +133,9 @@ export function ImageDropzone({
     ? "border-red-300"
     : isDragActive
       ? "border-brand-400"
-      : "border-border-subtle";
+      : "border-border";
 
-  const bgColor = isDragActive ? "bg-surface-50" : "bg-white";
+  const bgColor = isDragActive ? "bg-muted" : "bg-card";
 
   return (
     <div className="w-full min-w-0 space-y-1.5">
@@ -172,17 +172,17 @@ export function ImageDropzone({
             event.target.value = "";
           }}
         />
-        <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-surface-100 text-brand-600">
+        <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-muted text-brand-600">
           {isDragActive ? (
             <UploadCloud className="h-5 w-5" />
           ) : (
             <ImagePlus className="h-5 w-5" />
           )}
         </div>
-        <p className="font-medium text-text-primary">
+        <p className="font-medium text-foreground">
           {isDragActive ? "Drop images to upload" : helpText}
         </p>
-        <p className="mt-1 text-[11px] text-text-secondary">
+        <p className="mt-1 text-[11px] text-muted-foreground">
           JPEG, PNG, WebP, or GIF — up to{" "}
           {Math.round(maxSizeBytes / (1024 * 1024))} MB each.
         </p>

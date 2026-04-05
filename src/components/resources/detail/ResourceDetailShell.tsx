@@ -8,7 +8,7 @@ export function ResourceDetailShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col">
       <Navbar headerSearch={<HeroSearch variant="listing" />} />
 
-      <main className="flex-1 bg-zinc-50">
+      <main className="flex-1 bg-background">
         <Container className="py-8 sm:py-10 lg:py-12">{children}</Container>
       </main>
     </div>

@@ -91,26 +91,26 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 text-center">
           <Logo variant="full" size="lg" />
-          <h1 className="mt-5 text-2xl font-bold tracking-tight text-zinc-900">
+          <h1 className="mt-5 text-2xl font-bold tracking-tight text-foreground">
             Welcome back
           </h1>
-          <p className="mt-1.5 text-sm text-zinc-500">Sign in to your account to continue</p>
+          <p className="mt-1.5 text-sm text-muted-foreground">Sign in to your account to continue</p>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-card">
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-card">
           {/* Google OAuth */}
           <button
             type="button"
             disabled={loading || googleLoading}
             onClick={() => void handleGoogleSignIn()}
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-200
-                       bg-white px-4 py-2.5 text-[13px] font-medium text-zinc-700 shadow-card
-                       transition-all hover:border-zinc-300 hover:shadow-card-md active:scale-[0.99]
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-border
+                       bg-card px-4 py-2.5 text-[13px] font-medium text-foreground shadow-card
+                       transition-all hover:border-border hover:bg-muted hover:shadow-card-md active:scale-[0.99]
                        disabled:cursor-not-allowed disabled:opacity-70"
           >
             {googleLoading ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <GoogleIcon />}
@@ -120,10 +120,10 @@ function LoginForm() {
           {/* Divider */}
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-zinc-100" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-[11px] font-medium text-zinc-400">
+              <span className="bg-card px-3 text-[11px] font-medium text-muted-foreground">
                 or continue with email
               </span>
             </div>
@@ -169,7 +169,7 @@ function LoginForm() {
             )}
 
             <div>
-              <label htmlFor="email" className="mb-1.5 block text-[13px] font-medium text-zinc-700">
+              <label htmlFor="email" className="mb-1.5 block text-[13px] font-medium text-foreground">
                 Email address
               </label>
               <input
@@ -180,19 +180,19 @@ function LoginForm() {
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-900
-                           placeholder-zinc-400 shadow-sm outline-none transition
-                           focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground
+                           placeholder:text-muted-foreground shadow-sm outline-none transition
+                           focus:border-primary/60 focus:ring-2 focus:ring-primary/15"
               />
             </div>
 
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label htmlFor="password" className="text-[13px] font-medium text-zinc-700">
+                <label htmlFor="password" className="text-[13px] font-medium text-foreground">
                   Password
                 </label>
                 <Link href={routes.resetPassword}
-                  className="text-[12px] text-blue-600 hover:text-blue-800 transition-colors">
+                  className="text-[12px] text-primary transition-colors hover:text-primary/80">
                   Forgot password?
                 </Link>
               </div>
@@ -204,9 +204,9 @@ function LoginForm() {
                 required
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-900
-                           placeholder-zinc-400 shadow-sm outline-none transition
-                           focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground
+                           placeholder:text-muted-foreground shadow-sm outline-none transition
+                           focus:border-primary/60 focus:ring-2 focus:ring-primary/15"
               />
             </div>
 
@@ -216,9 +216,9 @@ function LoginForm() {
           </form>
         </div>
 
-        <p className="mt-5 text-center text-[13px] text-zinc-500">
+        <p className="mt-5 text-center text-[13px] text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Link href={routes.register} className="font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+          <Link href={routes.register} className="font-semibold text-primary transition-colors hover:text-primary/80">
             Create one free
           </Link>
         </p>

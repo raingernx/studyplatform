@@ -90,7 +90,7 @@ export function Logo({
   const pathname = usePathname();
   const platform = usePlatformConfig();
   const platformName = platform.platformShortName;
-  const textColor = dark ? "text-white" : "text-zinc-900";
+  const textColor = dark ? "text-white" : "text-foreground";
   const fullLogoUrl = platform.logoFullUrl;
   const iconLogoUrl = platform.logoIconUrl;
   const emailLogoUrl = platform.logoEmailUrl;

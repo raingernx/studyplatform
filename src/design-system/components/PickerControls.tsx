@@ -16,9 +16,9 @@ export type PickerActionTone = "default" | "danger" | "muted";
 export type PickerActionStyle = "outline" | "dashed";
 
 const pickerActionToneClasses: Record<PickerActionTone, string> = {
-  default: "text-text-secondary hover:text-brand-600",
+  default: "text-muted-foreground hover:text-brand-600",
   danger: "text-danger-600 hover:text-danger-700 hover:border-danger-300 hover:bg-danger-50",
-  muted: "text-text-secondary hover:text-text-primary",
+  muted: "text-muted-foreground hover:text-foreground",
 };
 
 export interface PickerActionButtonProps extends ButtonProps {
@@ -55,8 +55,8 @@ export function PickerActionButton({
 export type PickerIconTone = "default" | "danger" | "info";
 
 const pickerIconToneClasses: Record<PickerIconTone, string> = {
-  default: "text-text-secondary hover:bg-surface-100 hover:text-text-primary",
-  danger: "text-text-secondary hover:bg-red-50 hover:text-red-500",
+  default: "text-muted-foreground hover:bg-muted hover:text-foreground",
+  danger: "text-muted-foreground hover:bg-red-50 hover:text-red-500",
   info: "text-blue-400 hover:bg-blue-100 hover:text-blue-600",
 };
 
@@ -86,7 +86,7 @@ export function PickerIconButton({
 export type PreviewCardTone = "neutral" | "info";
 
 const previewCardToneClasses: Record<PreviewCardTone, string> = {
-  neutral: "border-zinc-200 bg-zinc-50",
+  neutral: "border-border bg-muted",
   info: "border-blue-100 bg-blue-50",
 };
 
@@ -117,7 +117,7 @@ export function MediaPreview({ className, ...props }: MediaPreviewProps) {
   return (
     <div
       className={cn(
-        "relative inline-block overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50",
+        "relative inline-block overflow-hidden rounded-lg border border-border bg-muted",
         className,
       )}
       {...props}
@@ -145,9 +145,9 @@ export function PickerDropzoneShell({
         reject
           ? "border-red-300"
           : active
-            ? "border-brand-400 bg-surface-50"
-            : "border-border-subtle bg-white",
-        disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-brand-400 hover:bg-surface-50",
+            ? "border-brand-400 bg-muted"
+            : "border-border bg-card",
+        disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-brand-400 hover:bg-muted",
         className,
       )}
       {...props}

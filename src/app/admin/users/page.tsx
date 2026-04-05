@@ -58,12 +58,12 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
           <form>
             <TableToolbar className="gap-2.5">
               <div className="flex min-w-[220px] flex-1 flex-col gap-1">
-                <label htmlFor="q" className="font-ui text-caption text-text-muted">
+                <label htmlFor="q" className="font-ui text-caption text-muted-foreground">
                   Search
                 </label>
                 <div className="relative">
                   <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
-                    <Search className="h-4 w-4 text-text-muted" />
+                    <Search className="h-4 w-4 text-muted-foreground" />
                   </span>
                   <Input
                     id="q"
@@ -99,7 +99,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                 users.map((user) => (
                   <DataTableRow key={user.id}>
                     <DataTableCell className="font-medium">{user.name ?? "—"}</DataTableCell>
-                    <DataTableCell className="text-text-secondary">
+                    <DataTableCell className="text-muted-foreground">
                       {user.email ?? "—"}
                     </DataTableCell>
                     <DataTableCell>
@@ -121,10 +121,10 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                         }
                       />
                     </DataTableCell>
-                    <DataTableCell className="tabular-nums text-text-secondary">
+                    <DataTableCell className="tabular-nums text-muted-foreground">
                       {formatNumber(user._count.resources)}
                     </DataTableCell>
-                    <DataTableCell className="text-text-secondary">
+                    <DataTableCell className="text-muted-foreground">
                       {formatDate(user.createdAt)}
                     </DataTableCell>
                     <DataTableCell align="right">

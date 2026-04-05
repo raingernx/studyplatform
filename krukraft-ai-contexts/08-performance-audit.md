@@ -8,6 +8,8 @@ The public paths now have deliberate performance engineering in place:
 - Leaner select projections for listing/detail shells
 - RSC streaming decomposition on the resource detail page
 - Root layout no longer reads the authenticated server session on every request
+- Root theme bootstrap now paints `light` by default and applies stored dark/system overrides before hydration, which removes the previous white-first flash without waiting for the client theme effect
+- `UserPreference.theme` now defaults to `light` at the Prisma/database layer too, so runtime bootstrap and newly created stored preferences no longer disagree about the baseline theme
 - Post-deploy warm-cache + smoke perf workflow, with a manual `workflow_dispatch` fallback for CLI-driven deploys
 - Warm workflow installs now retry `npm ci` and preserve install logs as artifacts, which makes failed warm runs debuggable even when the job dies before `warm-cache.log` exists
 - The same post-deploy workflow now installs on Node 24 instead of Node 20 so GitHub Actions uses the same lockfile/npm resolution behavior that currently passes locally
@@ -48,8 +50,7 @@ Primary bottleneck class is now:
 - recommendation impressions are no longer written from the cached discover miss path; they now fire from a client-side section exposure tracker through `/api/recommendations/impression`, which keeps the cached discover loader read-only and aligns analytics with actual viewport exposure
 - marketplace discover personalization now also treats recommendation-path transient DB failures as best-effort and can return `null`/empty secondary personalized sections instead of failing the private viewer-state route under pool pressure
 - repeat personalized client JSON fetches now use a small browser-side TTL/dedupe cache, reducing quick remount/refetch churn for discover and owner-review sections
-- discover hero anonymous selection now uses a static seed instead of request cookie/header inputs on the marketplace route, and anonymous callers now default to that static seed unless they explicitly opt into request-bound behavior
-- hero cache fallback/legacy reads now also use process-level single-flight, and hero impression/click analytics writes are serialized instead of running two concurrent Prisma mutations per event to reduce public-route pool spikes
+- the discover hero is now a fixed repo-owned banner contract, which removes the older hero resolver/cache/analytics path from the public marketplace route entirely
 - `/brand-assets/*` runtime delivery now guards against self-referential alias values and falls back to concrete default assets instead of redirecting a logo/icon request back to the same runtime route
 - `/brand-assets/*` runtime alias routes now also bypass `src/proxy.ts`, removing unnecessary proxy/ranking-cookie overhead from logo/favicon requests
 - trigram index coverage now extends beyond `Resource.title/description` to `Category.name`, `Tag.name`, `User.name`, and `User.email` so marketplace search and admin user lookup avoid the remaining text-search scan hotspots
@@ -74,7 +75,7 @@ Primary bottleneck class is now:
 - local verification now has a repo-owned `npm run smoke:local:search` path that checks the search results page, no-results recovery page, `/api/search`, search recovery, and `/api/auth/viewer` sequentially with retries, avoiding the flakiness of ad-hoc localhost curls in constrained environments
 - the shared smoke path now gates on `/api/internal/ready` before deeper route/API assertions, which separates server-readiness problems from search/auth regressions and makes local verification more stable
 - `npm run smoke:prod:search` now reuses the same verification flow against `https://krukraft.com`, while preview deployments can use `BASE_URL=<preview-url> npm run smoke:search`
-- Playwright now provides a browser-level smoke layer (`npm run test:e2e`) for catching hydration/image regressions that route/API smokes and k6 cannot see; the local project still uses the `chromium` project name, but on this macOS setup it launches the locally installed Chrome stable binary via `channel: "chrome"` because Google Chrome for Testing was unstable
+- Playwright now provides a browser-level smoke layer (`npm run test:e2e`) for catching hydration/image regressions that route/API smokes and k6 cannot see; the local project still uses the `chromium` project name, but it now defaults to `channel: "chromium"` so local verification uses Playwright's bundled Chromium browser instead of the headless shell or installed Chrome stable. Use `PLAYWRIGHT_BROWSER_CHANNEL=chrome` only when you intentionally need installed-Chrome verification
 - browser-level coverage now includes `/resources`, top-bar search submit into canonical `/resources?search=...`, canonical search results, no-results recovery, resource detail image rendering, and authenticated preview-image uploader flows on `/admin/resources/new` plus `/dashboard/creator/resources/new`
 - `npm run smoke:local:browser` is now the repo-owned pre-merge Playwright smoke bundle for those key public/auth/uploader flows, and Playwright defaults its local base URL to `http://127.0.0.1:3000` so the smoke path can bring up the dev server itself
 - the repo now also has first-party hooks for accessibility and perf auditing at the browser layer: `@axe-core/playwright` can be used inside Playwright specs, `@lhci/cli` is configured through `.lighthouserc.json` for key `/resources` routes, and `@next/bundle-analyzer` is wired behind `npm run analyze`
@@ -92,9 +93,10 @@ Primary bottleneck class is now:
 - repeated signed-in ownership reads now use short-lived private `unstable_cache` entries, detail refresh can bypass them after checkout, and detail base viewer-state now also has a short-lived browser cache to smooth remounts/revisits
 - the detail purchase rail now shows a structural "Checking your library…" placeholder while deferred ownership state resolves, preventing buy-CTA flicker for signed-in owners after auth probing moved to idle
 - pricing and buy-button CTA components now reuse idle auth-viewer resolution and explicitly prime on user intent, which removes the remaining eager auth probe from those public CTAs without making first interaction feel dead
+- `PriceLabel` now resolves through theme-aware DS text tokens instead of hardcoded dark text, which removed the dark-detail purchase-rail price contrast regression without needing per-page overrides
 - category smoke route now matches its actual page intent and is warmed explicitly
 - `/resources` discover fallback no longer swaps in fake CTA content while data resolves
-- discover hero loading now falls back to a plain blue banner shell; discover sections fall back to section/card skeletons that match final geometry
+- discover hero loading now falls back to the same lavender stage and split-banner geometry as the live route; discover sections fall back to section/card skeletons that match final geometry
 - route-level `/resources/loading` now matches the discover UI more closely instead of showing a stale meta strip or a generic card wall
 - creator activation and ranking debug admin reports now use short-lived service-level caching instead of re-running the same read-heavy queries every request
 - platform metrics, purchase analytics, and recommendation report admin reads now use a Redis-backed cross-instance cache layer in addition to `unstable_cache`
@@ -162,4 +164,4 @@ Older assumptions that should not be treated as current truth:
 
 ---
 
-*Refreshed against the repo state on 2026-04-02.*
+*Refreshed against the repo state on 2026-04-05.*

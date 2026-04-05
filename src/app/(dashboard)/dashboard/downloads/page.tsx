@@ -30,17 +30,17 @@ export default async function DownloadsPage() {
         {/* Header */}
         <div className="mb-6 flex items-start justify-between">
           <div>
-            <h1 className="font-display text-h2 font-semibold tracking-tight text-zinc-900">
+            <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
               Download history
             </h1>
-            <p className="mt-1 text-[14px] text-zinc-500">
+            <p className="mt-1 text-[14px] text-muted-foreground">
               Files you&apos;ve actually downloaded. Re-download any owned resource from your library any time.
             </p>
           </div>
           {downloads.length > 0 && (
-            <div className="flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 shadow-sm">
-              <Download className="h-3.5 w-3.5 text-zinc-400" />
-              <span className="text-[12px] font-semibold text-zinc-700">
+            <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-sm">
+              <Download className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[12px] font-semibold text-foreground">
                 {downloads.length} download{downloads.length !== 1 ? "s" : ""}
               </span>
             </div>
@@ -49,10 +49,10 @@ export default async function DownloadsPage() {
 
         {downloads.length === 0 ? (
           <EmptyState
-            className="bg-white py-20"
+            className="bg-card py-20"
             icon={
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50">
-                <Download className="h-7 w-7 text-blue-400" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                <Download className="h-7 w-7 text-muted-foreground" />
               </div>
             }
             title="No downloads yet"
@@ -60,7 +60,7 @@ export default async function DownloadsPage() {
             action={
               <Link
                 href={routes.marketplace}
-                className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-zinc-700"
+                className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-[13px] font-semibold text-background transition hover:bg-foreground/90"
               >
                 <BookOpen className="h-4 w-4" />
                 Browse marketplace
@@ -68,34 +68,34 @@ export default async function DownloadsPage() {
             }
           />
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-card">
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
             {/* Table header */}
-            <div className="grid grid-cols-[2fr_1fr_140px_100px_100px] gap-4 border-b border-zinc-100 bg-zinc-50/60 px-6 py-3">
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+            <div className="grid grid-cols-[2fr_1fr_140px_100px_100px] gap-4 border-b border-border bg-muted/70 px-6 py-3">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Resource
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Creator
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Downloaded
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 File size
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Action
               </span>
             </div>
 
             {/* Rows */}
-            <ul className="divide-y divide-zinc-50">
+            <ul className="divide-y divide-border">
               {downloads.map((dl) => (
                 <li key={dl.id}>
                   <div className="grid grid-cols-[2fr_1fr_140px_100px_100px] items-center gap-4 px-6 py-4">
                     {/* Resource */}
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-50">
+                      <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted">
                         {dl.resource.previewUrl ? (
                           <Image
                             src={dl.resource.previewUrl}
@@ -106,41 +106,41 @@ export default async function DownloadsPage() {
                             className="rounded-xl object-cover"
                           />
                         ) : (
-                          <FileText className="h-4 w-4 text-zinc-300" />
+                          <FileText className="h-4 w-4 text-muted-foreground/50" />
                         )}
                       </div>
                       <div className="min-w-0">
                         <Link
                           href={routes.resource(dl.resource.slug)}
-                          className="block truncate text-[13px] font-medium text-zinc-900 hover:text-blue-600"
+                          className="block truncate text-[13px] font-medium text-foreground hover:text-primary-700"
                         >
                           {dl.resource.title}
                         </Link>
-                        <span className="mt-0.5 inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-500">
+                        <span className="mt-0.5 inline-block rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground">
                           {dl.resource.type}
                         </span>
                       </div>
                     </div>
 
                     {/* Creator */}
-                    <span className="truncate text-[13px] text-zinc-500">
+                    <span className="truncate text-[13px] text-muted-foreground">
                       {dl.resource.author?.name ?? "—"}
                     </span>
 
                     {/* Date */}
-                    <span className="text-[12px] text-zinc-500">
+                    <span className="text-[12px] text-muted-foreground">
                       {formatDate(dl.createdAt)}
                     </span>
 
                     {/* File size */}
-                    <span className="text-[12px] text-zinc-400">
+                    <span className="text-[12px] text-muted-foreground">
                       {safeFormatFileSize(dl.resource.fileSize)}
                     </span>
 
                     {/* Action */}
                     <Link
                       href={`/api/download/${dl.resource.id}`}
-                      className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-[12px] font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-100"
+                      className="flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
                     >
                       <Download className="h-3.5 w-3.5" />
                       Download

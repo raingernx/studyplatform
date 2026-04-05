@@ -46,12 +46,12 @@ function BrandAssetPreview({
   return (
     <div
       className={[
-        "relative overflow-hidden rounded-xl border border-border-subtle",
+        "relative overflow-hidden rounded-xl border border-border",
         "bg-[radial-gradient(circle_at_1px_1px,rgba(148,163,184,0.14)_1px,transparent_0)] [background-size:12px_12px]",
         isWide ? "h-16 w-full sm:h-20 lg:h-24" : "h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24",
       ].join(" ")}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-surface-50/95 via-white/90 to-surface-100/80" />
+      <div className="absolute inset-0 bg-gradient-to-br from-muted/95 via-card/90 to-muted/80" />
 
       <div className="relative flex h-full w-full items-center justify-center px-4 py-3">
         {hasAsset ? (
@@ -88,19 +88,19 @@ function BrandAssetPreview({
         ) : (
           <div
             className={[
-              "flex h-full w-full items-center justify-center text-text-muted",
+              "flex h-full w-full items-center justify-center text-muted-foreground",
               isWide ? "justify-start gap-3" : "gap-2",
             ].join(" ")}
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dashed border-border-subtle bg-white/80">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-card/80">
               <ImageIcon className="h-4 w-4" aria-hidden />
             </span>
             {isWide ? (
               <div className="min-w-0">
-                <p className="text-sm font-medium text-text-secondary">
+                <p className="text-sm font-medium text-foreground">
                   No asset uploaded
                 </p>
-                <p className="text-xs text-text-muted">
+                <p className="text-xs text-muted-foreground">
                   Upload an image to preview it here.
                 </p>
               </div>
@@ -110,8 +110,8 @@ function BrandAssetPreview({
       </div>
 
       {isUploading ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/75 backdrop-blur-[1px]">
-          <div className="rounded-lg border border-border-subtle bg-white/95 px-3 py-2 text-sm font-medium text-text-primary shadow-sm">
+        <div className="absolute inset-0 flex items-center justify-center bg-card/75 backdrop-blur-[1px]">
+          <div className="rounded-lg border border-border bg-card/95 px-3 py-2 text-sm font-medium text-foreground shadow-sm">
             {hasAsset ? "Replacing asset…" : "Uploading asset…"}
           </div>
         </div>
@@ -135,10 +135,10 @@ export function BrandAssetField({
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <div className="space-y-3 rounded-xl border border-border-subtle bg-surface-50 p-4 sm:p-5">
+    <div className="space-y-3 rounded-xl border border-border bg-muted p-4 sm:p-5">
       <div className="space-y-1">
-        <p className="text-sm font-medium text-text-primary">{label}</p>
-        <p className="text-xs text-text-secondary">{helperText}</p>
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground">{helperText}</p>
       </div>
 
       <div className={previewVariant === "wide" ? "w-full" : ""}>
@@ -185,13 +185,13 @@ export function BrandAssetField({
                 : "Upload asset"}
           </PickerActionButton>
           {value ? (
-            <span className="min-w-0 truncate text-xs text-text-muted">
+            <span className="min-w-0 truncate text-xs text-muted-foreground">
               {value}
             </span>
           ) : inheritedLabel ? (
-            <span className="text-xs text-text-muted">{inheritedLabel}</span>
+            <span className="text-xs text-muted-foreground">{inheritedLabel}</span>
           ) : (
-            <span className="text-xs text-text-muted">No asset uploaded yet.</span>
+            <span className="text-xs text-muted-foreground">No asset uploaded yet.</span>
           )}
         </PickerActions>
 

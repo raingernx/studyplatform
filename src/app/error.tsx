@@ -18,22 +18,22 @@ export default function RootError({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface-50">
+    <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
 
       <main className="flex flex-1 items-center justify-center">
         <Container className="py-16 text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-text-muted">
+          <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
             Something went wrong
           </p>
-          <h1 className="mt-3 text-3xl font-semibold text-text-primary">
+          <h1 className="mt-3 text-3xl font-semibold text-foreground">
             An unexpected error occurred
           </h1>
-          <p className="mt-3 text-base text-text-secondary">
+          <p className="mt-3 text-base text-muted-foreground">
             We have been notified and are looking into it. Please try again.
           </p>
           {error.digest ? (
-            <p className="mt-2 text-xs text-text-muted">
+            <p className="mt-2 text-xs text-muted-foreground">
               Error ID: {error.digest}
             </p>
           ) : null}
@@ -41,13 +41,13 @@ export default function RootError({
             <button
               type="button"
               onClick={reset}
-              className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+              className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
               Try again
             </button>
             <Link
               href={routes.home}
-              className="inline-flex items-center justify-center rounded-xl border border-surface-200 px-5 py-3 text-sm font-medium text-text-secondary transition hover:bg-surface-50"
+              className="inline-flex items-center justify-center rounded-xl border border-border px-5 py-3 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
             >
               Go home
             </Link>

@@ -1,5 +1,5 @@
 import { Navbar } from "@/components/layout/Navbar";
-import { Container } from "@/design-system";
+import { Container, colorScales } from "@/design-system";
 import { HeroBannerFallback } from "@/components/marketplace/HeroBanner";
 import {
   ResourcesCatalogControlsSkeleton,
@@ -15,13 +15,10 @@ import { ResourcesDiscoverSectionsSkeleton } from "@/components/skeletons/Resour
  * page renders above the fold.
  */
 export function ResourcesRouteSkeleton() {
-  const discoverHeroClassName =
-    "min-h-[440px] rounded-[26px] border-white/70 sm:min-h-[500px] lg:min-h-[540px]";
-
   return (
     <div
       data-loading-scope="resources-browse"
-      className="flex min-h-screen flex-col bg-surface-50"
+      className="flex min-h-screen flex-col bg-background"
     >
       <Navbar
         headerSearch={<ResourcesCatalogSearchSkeleton />}
@@ -29,9 +26,12 @@ export function ResourcesRouteSkeleton() {
       />
 
       <main className="flex-1">
-        <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(224,231,255,0.78),transparent_32%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
-          <Container className="py-4 sm:py-6 lg:py-7">
-            <HeroBannerFallback className={discoverHeroClassName} />
+        <section
+          className="relative overflow-hidden"
+          style={{ backgroundColor: colorScales.brand[300] }}
+        >
+          <Container className="py-5 sm:py-6 lg:py-8">
+            <HeroBannerFallback className="shadow-none" />
           </Container>
         </section>
 

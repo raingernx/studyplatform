@@ -49,10 +49,10 @@ export default async function CreatorSalesPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-500">
             Creator
           </p>
-          <h1 className="mt-2 font-display text-h2 font-semibold tracking-tight text-neutral-900">
+          <h1 className="mt-2 font-display text-h2 font-semibold tracking-tight text-foreground">
             Sales
           </h1>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Recent transactions and the gross revenue your resources have generated.
           </p>
         </div>
@@ -63,34 +63,34 @@ export default async function CreatorSalesPage() {
             return (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-neutral-100 bg-white p-5 shadow-card"
+                className="rounded-2xl border border-border bg-card p-5 shadow-card"
               >
                 <span
                   className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.colorClass}`}
                 >
                   <Icon className="h-4 w-4" />
                 </span>
-                <p className="mt-4 text-2xl font-bold tracking-tight text-neutral-900">
+                <p className="mt-4 text-2xl font-bold tracking-tight text-foreground">
                   {stat.value}
                 </p>
-                <p className="mt-1 text-sm font-medium text-neutral-700">{stat.label}</p>
+                <p className="mt-1 text-sm font-medium text-muted-foreground">{stat.label}</p>
               </div>
             );
           })}
         </div>
 
-        <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-card">
-          <div className="border-b border-neutral-100 px-6 py-4">
-            <h2 className="text-sm font-semibold text-neutral-900">Recent sales</h2>
+        <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+          <div className="border-b border-border/70 px-6 py-4">
+            <h2 className="text-sm font-semibold text-foreground">Recent sales</h2>
           </div>
 
           {salesData.sales.length === 0 ? (
-            <p className="px-6 py-14 text-sm text-neutral-500">No sales recorded yet.</p>
+            <p className="px-6 py-14 text-sm text-muted-foreground">No sales recorded yet.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-neutral-100 text-left text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                  <tr className="border-b border-border/70 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     <th className="px-6 py-3">Resource</th>
                     <th className="px-4 py-3">Buyer</th>
                     <th className="px-4 py-3 text-right">Gross</th>
@@ -99,38 +99,38 @@ export default async function CreatorSalesPage() {
                     <th className="px-6 py-3 text-right">Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-50">
+                <tbody className="divide-y divide-border/60">
                   {salesData.sales.map((sale) => (
                     <tr key={sale.id}>
                       <td className="px-6 py-4">
                         <div className="min-w-0">
                           <Link
                             href={routes.resource(sale.resourceSlug)}
-                            className="truncate font-medium text-neutral-900 hover:text-blue-600"
+                            className="truncate font-medium text-foreground hover:text-blue-600"
                           >
                             {sale.resourceTitle}
                           </Link>
-                          <p className="mt-1 text-xs text-neutral-400">{sale.resourceSlug}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{sale.resourceSlug}</p>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-neutral-700">
+                      <td className="px-4 py-4 text-muted-foreground">
                         <div>{sale.buyerName}</div>
                         {sale.buyerEmail && (
-                          <div className="mt-1 text-xs text-neutral-400">{sale.buyerEmail}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{sale.buyerEmail}</div>
                         )}
                       </td>
-                      <td className="px-4 py-4 text-right font-medium text-neutral-900">
+                      <td className="px-4 py-4 text-right font-medium text-foreground">
                         {formatPrice(sale.amount / 100)}
                       </td>
                       <td className="px-4 py-4 text-right font-medium text-blue-700">
                         {formatPrice(sale.creatorShare / 100)}
                       </td>
                       <td className="px-4 py-4">
-                        <span className="inline-flex rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-600">
+                        <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">
                           {sale.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right text-neutral-500">
+                      <td className="px-6 py-4 text-right text-muted-foreground">
                         {formatDate(sale.createdAt)}
                       </td>
                     </tr>

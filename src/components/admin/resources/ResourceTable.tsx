@@ -317,10 +317,10 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
   }
 
   return (
-    <div className="min-w-0 w-full overflow-hidden rounded-xl border border-border-subtle bg-white">
+    <div className="min-w-0 w-full overflow-hidden rounded-xl border border-border bg-card">
       {hasSelection && (
-        <div className="flex flex-col gap-2 border-b border-border-subtle bg-surface-50/80 px-4 py-2.5 text-small text-text-secondary sm:flex-row sm:items-center sm:justify-between">
-          <div className="font-medium text-text-secondary">
+        <div className="flex flex-col gap-2 border-b border-border bg-muted/80 px-4 py-2.5 text-small text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <div className="font-medium text-muted-foreground">
             {selectedCount} resource{selectedCount === 1 ? "" : "s"} selected
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
@@ -395,10 +395,10 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
           </div>
         </div>
       )}
-      <div className="overflow-x-auto bg-white">
-        <div className="min-w-[780px] bg-white">
+      <div className="overflow-x-auto bg-card">
+        <div className="min-w-[780px] bg-card">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-border-subtle bg-surface-50/80">
+          <thead className="border-b border-border bg-muted/80">
             <tr>
               <th className="px-4 py-2.5">
                 <input
@@ -408,24 +408,24 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                   onChange={toggleSelectAll}
                 />
               </th>
-              <th className="px-4 py-2.5 font-ui text-caption text-text-muted">
+              <th className="px-4 py-2.5 font-ui text-caption text-muted-foreground">
                 Resource
               </th>
-              <th className="px-4 py-2.5 font-ui text-caption text-text-muted">
+              <th className="px-4 py-2.5 font-ui text-caption text-muted-foreground">
                 Creator
               </th>
-              <th className="px-4 py-2.5 font-ui text-caption text-text-muted">
+              <th className="px-4 py-2.5 font-ui text-caption text-muted-foreground">
                 Listing
               </th>
-              <th className="px-4 py-2.5 font-ui text-caption text-text-muted">
+              <th className="px-4 py-2.5 font-ui text-caption text-muted-foreground">
                 Performance
               </th>
-              <th className="px-4 py-2.5 text-right font-ui text-caption text-text-muted">
+              <th className="px-4 py-2.5 text-right font-ui text-caption text-muted-foreground">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border-subtle/60">
+          <tbody className="divide-y divide-border/60">
             {resources.map((resource) => {
               const isDraft =
                 resource.status === "DRAFT" || resource.status === "draft";
@@ -444,7 +444,7 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
               return (
                 <tr
                   key={resource.id}
-                  className="bg-white transition-colors hover:bg-surface-50/55"
+                  className="bg-card transition-colors hover:bg-muted/55"
                 >
                   {/* Select checkbox */}
                   <td className="px-4 py-3 align-middle">
@@ -459,7 +459,7 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                   {/* Resource */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-surface-100">
+                      <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-muted">
                         {resource.previewUrl ? (
                           <Image
                             src={resource.previewUrl}
@@ -470,14 +470,14 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                             className="object-cover"
                           />
                         ) : (
-                          <FileText className="h-5 w-5 text-text-muted" />
+                          <FileText className="h-5 w-5 text-muted-foreground" />
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-text-primary">
+                        <p className="truncate text-sm font-medium text-foreground">
                           {displayTitle}
                         </p>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-text-muted">
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
                           <span className="truncate">/resources/{resource.slug}</span>
                           <span>•</span>
                           <span>{formatDate(resource.createdAt)}</span>
@@ -495,11 +495,11 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                   {/* Creator */}
                   <td className="px-4 py-3 align-middle">
                     <div className="min-w-0">
-                      <p className="truncate text-small text-text-secondary">
+                      <p className="truncate text-small text-muted-foreground">
                         {resource.author?.name ?? "Unknown"}
                       </p>
                       {resource.author?.email && (
-                        <p className="truncate text-caption text-text-muted">
+                        <p className="truncate text-caption text-muted-foreground">
                           {resource.author.email}
                         </p>
                       )}
@@ -509,7 +509,7 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                   {/* Listing */}
                   <td className="px-4 py-3 align-middle">
                     <div className="space-y-1.5">
-                      <span className="inline-flex h-6 items-center rounded-full bg-surface-100 px-2.5 font-ui text-caption text-text-secondary">
+                      <span className="inline-flex h-6 items-center rounded-full bg-muted px-2.5 font-ui text-caption text-muted-foreground">
                         {resource.isFree || resource.price === 0
                           ? "Free"
                           : formatPrice(resource.price / 100)}
@@ -522,18 +522,18 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
 
                   {/* Performance */}
                   <td className="px-4 py-3 align-middle">
-                    <div className="space-y-1 text-caption text-text-secondary">
+                    <div className="space-y-1 text-caption text-muted-foreground">
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-text-muted">Downloads</span>
-                        <span className="font-medium text-text-primary">{resource.downloads}</span>
+                        <span className="text-muted-foreground">Downloads</span>
+                        <span className="font-medium text-foreground">{resource.downloads}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-text-muted">Purchases</span>
-                        <span className="font-medium text-text-primary">{resource.purchases}</span>
+                        <span className="text-muted-foreground">Purchases</span>
+                        <span className="font-medium text-foreground">{resource.purchases}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-text-muted">Revenue</span>
-                        <span className="font-medium text-text-primary">
+                        <span className="text-muted-foreground">Revenue</span>
+                        <span className="font-medium text-foreground">
                           {resource.revenue > 0 ? formatPrice(resource.revenue / 100) : "—"}
                         </span>
                       </div>
@@ -704,11 +704,11 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
       </div>
       {showBulkDeleteConfirm && hasSelection && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-md rounded-xl border border-border-subtle bg-white p-6 shadow-card-lg">
-            <h2 className="text-base font-semibold text-text-primary">
+          <div className="mx-4 w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-card-lg">
+            <h2 className="text-base font-semibold text-foreground">
               Delete {selectedCount} resource{selectedCount === 1 ? "" : "s"}?
             </h2>
-            <p className="mt-2 text-sm text-text-secondary">
+            <p className="mt-2 text-sm text-muted-foreground">
               These resources will be permanently removed. Published resources may have downloads
               or purchases. This action cannot be undone.
             </p>
@@ -717,7 +717,7 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                 type="button"
                 variant="outline"
                 size="sm"
-                className="border-border-subtle text-text-secondary hover:bg-surface-50"
+                className="border-border text-muted-foreground hover:bg-muted"
                 disabled={!!bulkLoading}
                 onClick={() => setShowBulkDeleteConfirm(false)}
               >
@@ -742,11 +742,11 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
       )}
       {showMoveCategoryModal && hasSelection && categories && categories.length > 0 && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-md rounded-xl border border-border-subtle bg-white p-6 shadow-card-lg">
-            <h2 className="text-base font-semibold text-text-primary">
+          <div className="mx-4 w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-card-lg">
+            <h2 className="text-base font-semibold text-foreground">
               Move {selectedCount} resource{selectedCount === 1 ? "" : "s"} to category
             </h2>
-            <p className="mt-2 text-sm text-text-secondary">
+            <p className="mt-2 text-sm text-muted-foreground">
               Choose a destination category. This will update the category for all selected
               resources.
             </p>
@@ -754,7 +754,7 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
               <Select
                 value={moveCategoryId}
                 onChange={(e) => setMoveCategoryId(e.target.value)}
-                className="w-full rounded-lg border border-border-subtle bg-white px-3 py-2 text-sm text-text-primary"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
               >
                 <option value="">Select a category…</option>
                 {categories.map((category) => (
@@ -769,7 +769,7 @@ export function ResourceTable({ resources: initialResources, categories }: Resou
                 type="button"
                 variant="outline"
                 size="sm"
-                className="border-border-subtle text-text-secondary hover:bg-surface-50"
+                className="border-border text-muted-foreground hover:bg-muted"
                 disabled={bulkLoading === "moveToCategory"}
                 onClick={() => {
                   setShowMoveCategoryModal(false);

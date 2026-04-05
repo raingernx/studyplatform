@@ -127,7 +127,7 @@ export function RecommendationSection({
     <div ref={rootRef} onClick={handleClick}>
       {children}
       {process.env.NODE_ENV === "development" && variant && (
-        <p className="mt-1 text-[10px] text-zinc-400">
+        <p className="mt-1 text-[10px] text-muted-foreground">
           [dev] rec experiment: {RECOMMENDATION_EXPERIMENT_ID} · variant: {variant}
         </p>
       )}

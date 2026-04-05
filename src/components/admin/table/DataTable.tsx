@@ -22,7 +22,7 @@ export function DataTable({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-border-subtle bg-white",
+        "overflow-hidden rounded-xl border border-border bg-card",
         className
       )}
     >
@@ -44,7 +44,7 @@ export function DataTableHeader({ children, className }: DataTableHeaderProps) {
   return (
     <thead
       className={cn(
-        "border-b border-border-subtle bg-surface-50/80",
+        "border-b border-border bg-muted/80",
         className
       )}
     >
@@ -61,7 +61,7 @@ export interface DataTableBodyProps {
 export function DataTableBody({ children, className }: DataTableBodyProps) {
   return (
     <tbody
-      className={cn("divide-y divide-border-subtle/60", className)}
+      className={cn("divide-y divide-border/60", className)}
     >
       {children}
     </tbody>
@@ -82,7 +82,7 @@ export function DataTableRow({
   return (
     <tr
       className={cn(
-        "bg-white transition-colors hover:bg-surface-50/55",
+        "bg-card transition-colors hover:bg-muted/55",
         onClick && "cursor-pointer",
         className
       )}
@@ -113,7 +113,7 @@ export function DataTableCell({
   return (
     <td
       className={cn(
-        "px-4 py-3 align-middle text-text-primary",
+        "px-4 py-3 align-middle text-foreground",
         alignClass,
         className
       )}
@@ -143,7 +143,7 @@ export function DataTableHeadCell({
   return (
     <th
       className={cn(
-        "px-4 py-2.5 font-ui text-caption text-text-muted whitespace-nowrap",
+        "px-4 py-2.5 font-ui text-caption text-muted-foreground whitespace-nowrap",
         alignClass,
         className
       )}

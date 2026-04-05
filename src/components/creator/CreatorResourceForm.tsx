@@ -501,7 +501,7 @@ export function CreatorResourceForm({
     <form onSubmit={isCreateMode ? (e) => e.preventDefault() : handleSubmit}>
       {/* ── Mobile: preview above form content ───────────────────────────── */}
       <div className="mb-6 lg:hidden">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Marketplace preview
         </p>
         <CreatorResourcePreview
@@ -528,7 +528,7 @@ export function CreatorResourceForm({
       />
 
       {/* ── Section 1: Basic info ─────────────────────────────────────────── */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <div className="mb-5">
           <div className="flex items-center gap-2">
             {isCreateMode && (
@@ -536,11 +536,11 @@ export function CreatorResourceForm({
                 1
               </span>
             )}
-            <h2 className="text-lg font-semibold text-neutral-900">
+            <h2 className="text-lg font-semibold text-foreground">
               {isCreateMode ? "Basic info" : "Edit resource"}
             </h2>
           </div>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             {isCreateMode
               ? "The title and description are the most important parts of your listing."
               : "Manage the details learners will see in the marketplace."}
@@ -552,7 +552,7 @@ export function CreatorResourceForm({
             ref={titleRef}
             className={`space-y-1.5 rounded-xl p-1 -m-1 transition-all duration-300${highlightedField === "title" ? " ring-2 ring-inset ring-indigo-400/60 bg-indigo-50/60" : ""}`}
           >
-            <label className="text-sm font-medium text-neutral-700">
+            <label className="text-sm font-medium text-foreground">
               Title <span className="text-red-500">*</span>
             </label>
             <Input
@@ -574,9 +574,9 @@ export function CreatorResourceForm({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-neutral-700">
+            <label className="text-sm font-medium text-foreground">
               Slug{" "}
-              <span className="ml-1 text-xs font-normal text-neutral-400">(auto-generated if left blank)</span>
+              <span className="ml-1 text-xs font-normal text-muted-foreground">(auto-generated if left blank)</span>
             </label>
             <Input
               name="slug"
@@ -591,7 +591,7 @@ export function CreatorResourceForm({
             ref={descriptionRef}
             className={`space-y-1.5 rounded-xl p-1 -m-1 transition-all duration-300${highlightedField === "description" ? " ring-2 ring-inset ring-indigo-400/60 bg-indigo-50/60" : ""}`}
           >
-            <label className="text-sm font-medium text-neutral-700">
+            <label className="text-sm font-medium text-foreground">
               Description <span className="text-red-500">*</span>
             </label>
             <Textarea
@@ -616,26 +616,26 @@ export function CreatorResourceForm({
       </section>
 
       {/* ── Section 2: Pricing and visibility ────────────────────────────── */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <div className="mb-5 flex items-center gap-2">
           {isCreateMode && (
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-600">
               2
             </span>
           )}
-          <h2 className="text-lg font-semibold text-neutral-900">Pricing and visibility</h2>
+          <h2 className="text-lg font-semibold text-foreground">Pricing and visibility</h2>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           {/* Hide status select in create mode — sticky bar handles intent */}
           {!isCreateMode && (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-neutral-700">Status</label>
+              <label className="text-sm font-medium text-foreground">Status</label>
               <Select
                 name="status"
                 value={form.status}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
               >
                 <option value="DRAFT">Draft</option>
                 <option value="PUBLISHED">Published</option>
@@ -645,12 +645,12 @@ export function CreatorResourceForm({
           )}
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-neutral-700">Type</label>
+            <label className="text-sm font-medium text-foreground">Type</label>
             <Select
               name="type"
               value={form.type}
               onChange={handleChange}
-              className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             >
               <option value="PDF">PDF</option>
               <option value="DOCUMENT">Document</option>
@@ -658,12 +658,12 @@ export function CreatorResourceForm({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-neutral-700">Category</label>
+            <label className="text-sm font-medium text-foreground">Category</label>
             <Select
               name="categoryId"
               value={form.categoryId}
               onChange={handleChange}
-              className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             >
               <option value="">No category</option>
               {categories.map((category) => (
@@ -678,7 +678,7 @@ export function CreatorResourceForm({
             ref={priceRef}
             className={`space-y-1.5 rounded-xl p-1 -m-1 transition-all duration-300${highlightedField === "price" ? " ring-2 ring-inset ring-indigo-400/60 bg-indigo-50/60" : ""}`}
           >
-            <label className="text-sm font-medium text-neutral-700">Price (THB)</label>
+            <label className="text-sm font-medium text-foreground">Price (THB)</label>
             <Input
               name="price"
               type="number"
@@ -696,44 +696,44 @@ export function CreatorResourceForm({
           </div>
         </div>
 
-        <label className="mt-4 flex items-center gap-2 text-sm text-neutral-700">
+        <label className="mt-4 flex items-center gap-2 text-sm text-foreground">
           <input
             name="isFree"
             type="checkbox"
             checked={form.isFree}
             onChange={handleChange}
-            className="h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+            className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
           />
           Make this resource free
         </label>
       </section>
 
       {/* ── Section 3: Delivery and previews ─────────────────────────────── */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <div className="mb-5 flex items-center gap-2">
           {isCreateMode && (
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-600">
               3
             </span>
           )}
-          <h2 className="text-lg font-semibold text-neutral-900">Delivery and previews</h2>
+          <h2 className="text-lg font-semibold text-foreground">Delivery and previews</h2>
         </div>
 
         <div className="grid gap-5">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-neutral-700">
+            <label className="text-sm font-medium text-foreground">
               รูปปก (Cover){" "}
-              <span className="ml-1 text-xs font-normal text-neutral-400">(แนะนำ)</span>
+              <span className="ml-1 text-xs font-normal text-muted-foreground">(แนะนำ)</span>
             </label>
-            <div className="space-y-3 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-              <p className="text-xs text-neutral-500">
+            <div className="space-y-3 rounded-xl border border-border bg-muted p-4">
+              <p className="text-xs text-muted-foreground">
                 รูปแรกจะถูกใช้เป็นภาพหน้าปกของ resource ใน marketplace
               </p>
               <input
                 id="creator-cover-upload"
                 type="file"
                 accept="image/*"
-                className="block w-full rounded-xl border border-dashed border-blue-300 bg-white px-3 py-2.5 text-sm text-neutral-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700"
+                className="block w-full rounded-xl border border-dashed border-blue-300 bg-background px-3 py-2.5 text-sm text-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700"
                 disabled={imageUploading}
                 onChange={(event) => {
                   const file = event.target.files?.[0];
@@ -757,8 +757,8 @@ export function CreatorResourceForm({
             ref={fileRef}
             className={`space-y-1.5 rounded-xl p-1 -m-1 transition-all duration-300${highlightedField === "file" ? " ring-2 ring-inset ring-indigo-400/60 bg-indigo-50/60" : ""}`}
           >
-            <label className="text-sm font-medium text-neutral-700">ไฟล์สำหรับผู้ซื้อดาวน์โหลด</label>
-            <div className="space-y-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <label className="text-sm font-medium text-foreground">ไฟล์สำหรับผู้ซื้อดาวน์โหลด</label>
+            <div className="space-y-4 rounded-xl border border-border bg-muted p-4">
               <FileUploadWidget
                 resourceId={form.id}
                 initialFileName={form.fileName ?? null}
@@ -814,8 +814,8 @@ export function CreatorResourceForm({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-neutral-700">รูปภาพพรีวิว</label>
-            <div className="space-y-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <label className="text-sm font-medium text-foreground">รูปภาพพรีวิว</label>
+            <div className="space-y-4 rounded-xl border border-border bg-muted p-4">
               <LazyImageDropzone
                 rootTestId="preview-image-uploader"
                 disabled={imageUploading}
@@ -900,7 +900,7 @@ export function CreatorResourceForm({
       {/* ── Right column: sticky preview (desktop only) ───────────────────── */}
       <aside className="hidden lg:block">
         <div className="sticky top-6">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Marketplace preview
           </p>
           <CreatorResourcePreview

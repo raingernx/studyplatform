@@ -85,7 +85,7 @@ const MOBILE_VISIBLE_CATEGORY_COUNT = 2;
 const HORIZONTAL_SCROLL_CLASS_NAME =
   "overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden";
 const MARKETPLACE_ACTION_LINK_CLASS_NAME =
-  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-[14px] leading-[22px] font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
+  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-[14px] leading-[22px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
 const MARKETPLACE_PRIMARY_ACTION_CLASS_NAME =
   "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-brand-600 px-4 text-[14px] leading-[22px] font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
 const MARKETPLACE_CATEGORY_ITEM_CLASS_NAME =
@@ -103,8 +103,8 @@ function marketplaceCategoryClassName(active: boolean) {
   return cn(
     MARKETPLACE_CATEGORY_ITEM_CLASS_NAME,
     active
-      ? "border-surface-200 bg-surface-100 text-text-primary"
-      : "border-transparent bg-white text-text-secondary hover:bg-surface-50 hover:text-text-primary",
+      ? "border-border bg-secondary text-secondary-foreground"
+      : "border-transparent bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
   );
 }
 
@@ -119,8 +119,8 @@ function marketplaceCategoryItemClassName(
   return cn(
     MARKETPLACE_CATEGORY_ITEM_CLASS_NAME,
     active
-      ? "border-surface-200 bg-surface-100 text-text-primary"
-      : "border-transparent bg-white text-text-secondary hover:bg-surface-50 hover:text-text-primary",
+      ? "border-border bg-secondary text-secondary-foreground"
+      : "border-transparent bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
   );
 }
 
@@ -130,7 +130,7 @@ function NavbarFallback({
   hasMarketplaceShell: boolean;
 }) {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-surface-200 bg-white">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background">
       <Container className={hasMarketplaceShell ? "py-3 sm:py-4" : "h-16"}>
         <div className="flex h-10 items-center">
           <NavbarBrand />
@@ -152,11 +152,11 @@ function NavbarAuthPlaceholder({
       <div className="flex items-center gap-2">
         <div
           aria-hidden="true"
-          className="h-10 w-24 animate-pulse rounded-full bg-surface-100 motion-reduce:animate-none"
+          className="h-10 w-24 animate-pulse rounded-full bg-muted motion-reduce:animate-none"
         />
         <div
           aria-hidden="true"
-          className="h-10 w-10 animate-pulse rounded-full bg-surface-100 motion-reduce:animate-none"
+          className="h-10 w-10 animate-pulse rounded-full bg-muted motion-reduce:animate-none"
         />
       </div>
     );
@@ -167,14 +167,14 @@ function NavbarAuthPlaceholder({
       <div
         aria-hidden="true"
         className={cn(
-          "animate-pulse rounded-full bg-surface-100 motion-reduce:animate-none",
+          "animate-pulse rounded-full bg-muted motion-reduce:animate-none",
           marketplace ? "h-10 w-28" : "h-10 w-24",
         )}
       />
       <div
         aria-hidden="true"
         className={cn(
-          "animate-pulse rounded-full bg-surface-100 motion-reduce:animate-none",
+          "animate-pulse rounded-full bg-muted motion-reduce:animate-none",
           marketplace ? "h-10 w-10" : "h-10 w-28",
         )}
       />
@@ -262,14 +262,14 @@ function NavbarInner({
         />
         <div
           id={userMenuId}
-          className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-lg border border-surface-200 bg-white"
+          className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-lg border border-border bg-card"
         >
-          <div className="border-b border-surface-100 px-4 py-3">
+          <div className="border-b border-border px-4 py-3">
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-semibold text-text-primary">
+              <p className="truncate text-[13px] font-semibold text-foreground">
                 {authUser.name}
               </p>
-              <p className="mt-0.5 truncate text-[11px] text-text-muted">
+              <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                 {authUser.email}
               </p>
             </div>
@@ -283,47 +283,47 @@ function NavbarInner({
             >
               KC Premium
             </Link>
-            <div className="my-1 border-t border-surface-100" />
+            <div className="my-1 border-t border-border" />
             <Link
               href={routes.dashboard}
               onClick={() => setUserMenuOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <span className="inline-flex items-center gap-2.5">
-                <LayoutDashboard className="h-3.5 w-3.5 text-text-muted" aria-hidden />
+                <LayoutDashboard className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
                 <span>Dashboard</span>
               </span>
             </Link>
             <Link
               href={routes.library}
               onClick={() => setUserMenuOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <span className="inline-flex items-center gap-2.5">
-                <BookOpen className="h-3.5 w-3.5 text-text-muted" aria-hidden />
+                <BookOpen className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
                 <span>My Library</span>
               </span>
             </Link>
             <Link
               href={routes.purchases}
               onClick={() => setUserMenuOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <span className="inline-flex items-center gap-2.5">
-                <ShoppingBag className="h-3.5 w-3.5 text-text-muted" aria-hidden />
+                <ShoppingBag className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
                 <span>Purchases</span>
               </span>
             </Link>
 
-            <div className="my-1.5 border-t border-surface-100" />
+            <div className="my-1.5 border-t border-border" />
 
             <Link
               href={routes.settings}
               onClick={() => setUserMenuOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-primary"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <span className="inline-flex items-center gap-2.5">
-                <Settings className="h-3.5 w-3.5 text-text-muted" aria-hidden />
+                <Settings className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
                 <span>Settings</span>
               </span>
             </Link>
@@ -344,7 +344,7 @@ function NavbarInner({
 
   if (isMarketplaceNavbar) {
     return (
-      <header className="sticky top-0 z-40 w-full border-b border-surface-200 bg-white">
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-background">
         <Container className="py-3 sm:py-4">
           <div className="flex flex-col gap-3 sm:gap-4">
             <div className="flex items-center gap-3 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center lg:gap-6">
@@ -388,7 +388,7 @@ function NavbarInner({
                   </>
                 ) : authViewer.isReady ? (
                   <>
-                    <Link href={routes.login} className={cn(MARKETPLACE_CATEGORY_ITEM_CLASS_NAME, "border-surface-200 bg-surface-100 text-text-primary")}>
+                    <Link href={routes.login} className={cn(MARKETPLACE_CATEGORY_ITEM_CLASS_NAME, "border-border bg-secondary text-secondary-foreground hover:bg-accent")}>
                       เข้าสู่ระบบ
                     </Link>
                     <Link href={routes.register} className={MARKETPLACE_PRIMARY_ACTION_CLASS_NAME}>
@@ -408,12 +408,12 @@ function NavbarInner({
                 onFocusCapture={warmAuthViewer}
               >
                 {authUser ? (
-                  <Link href={routes.library} className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] leading-[22px] font-medium text-text-secondary transition-colors hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
+                  <Link href={routes.library} className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] leading-[22px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
                     คลังของฉัน
                   </Link>
                 ) : authViewer.isReady ? (
                   <>
-                    <Link href={routes.login} className={cn(MARKETPLACE_CATEGORY_ITEM_CLASS_NAME, "border-surface-200 bg-surface-100 px-3 text-text-primary")}>
+                    <Link href={routes.login} className={cn(MARKETPLACE_CATEGORY_ITEM_CLASS_NAME, "border-border bg-secondary px-3 text-secondary-foreground hover:bg-accent")}>
                       เข้าสู่ระบบ
                     </Link>
                     <Link href={routes.register} className="inline-flex h-10 shrink-0 items-center rounded-full bg-brand-600 px-3 text-[14px] leading-[22px] font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2">
@@ -431,7 +431,7 @@ function NavbarInner({
                   <button
                     type="button"
                     onClick={() => setUserMenuOpen((open) => !open)}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
                     aria-label="เปิดเมนูบัญชี"
                     aria-haspopup="menu"
                     aria-expanded={userMenuOpen}
@@ -501,7 +501,7 @@ function NavbarInner({
                   More
                 </summary>
 
-                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-72 rounded-xl border border-surface-200 bg-white p-1.5">
+                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-72 rounded-xl border border-border bg-card p-1.5">
                   <ul className="flex flex-col gap-1" aria-label="หมวดหมู่เพิ่มเติม">
                     {overflowMobileCategoryItems.map((item) => (
                       <li key={item.label}>
@@ -512,8 +512,8 @@ function NavbarInner({
                             "flex rounded-xl px-3 py-2.5 text-[14px] leading-[22px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                             pathname === routes.marketplace &&
                               isMarketplaceCategoryActive(currentCategory, item.category)
-                              ? "bg-surface-100 text-text-primary"
-                              : "text-text-secondary hover:bg-surface-50 hover:text-text-primary",
+                              ? "bg-secondary text-secondary-foreground"
+                              : "text-muted-foreground hover:bg-accent hover:text-foreground",
                           )}
                         >
                           {item.label}
@@ -532,8 +532,8 @@ function NavbarInner({
 
   return (
     <header
-      className={`sticky top-0 z-40 w-full bg-white ${
-        secondaryRow ? "" : "border-b border-surface-200"
+      className={`sticky top-0 z-40 w-full bg-background ${
+        secondaryRow ? "" : "border-b border-border"
       }`}
     >
       <Container
@@ -608,7 +608,7 @@ function NavbarInner({
 
           <button
             type="button"
-            className="ml-auto rounded-lg p-1.5 text-text-secondary hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 lg:hidden"
+            className="ml-auto rounded-lg p-1.5 text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 lg:hidden"
             onClick={() => {
               warmAuthViewer();
               setMobileOpen((open) => !open);
@@ -622,7 +622,7 @@ function NavbarInner({
       </Container>
 
       {mobileOpen ? (
-        <div className="border-b border-surface-200 bg-white px-4 pb-5 pt-3 lg:hidden">
+        <div className="border-b border-border bg-background px-4 pb-5 pt-3 lg:hidden">
           <nav className="flex flex-col gap-0.5" aria-label="Mobile navigation">
             {NAV_LINKS.filter(({ href }) => href !== routes.library || Boolean(authUser)).map(({ href, label }) => (
               <NavbarItem
@@ -640,10 +640,10 @@ function NavbarInner({
             ))}
           </nav>
 
-          <div className="mt-4 flex flex-col gap-2 border-t border-surface-100 pt-4">
+          <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
             {authUser ? (
               <>
-                <div className="flex items-center gap-3 rounded-lg bg-surface-50 px-3 py-2.5">
+                <div className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2.5">
                   <Avatar
                     src={authUser.image}
                     name={authUser.name}
@@ -651,10 +651,10 @@ function NavbarInner({
                     size={28}
                   />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-text-primary">
+                    <p className="truncate text-sm font-medium text-foreground">
                       {authUser.name}
                     </p>
-                    <p className="truncate text-xs text-text-muted">{authUser.email}</p>
+                    <p className="truncate text-xs text-muted-foreground">{authUser.email}</p>
                   </div>
                 </div>
 
@@ -669,10 +669,10 @@ function NavbarInner({
                 <Link
                   href={routes.dashboard}
                   onClick={closeAll}
-                  className="flex items-center gap-2.5 rounded-lg border border-surface-200 px-4 py-2.5 text-sm font-medium text-text-secondary hover:bg-surface-50"
+                  className="flex items-center gap-2.5 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
                 >
                   <span className="inline-flex items-center gap-2.5">
-                    <LayoutDashboard className="h-4 w-4 text-text-muted" aria-hidden />
+                    <LayoutDashboard className="h-4 w-4 text-muted-foreground" aria-hidden />
                     <span>Dashboard</span>
                   </span>
                 </Link>
@@ -692,7 +692,7 @@ function NavbarInner({
                 <Link
                   href={routes.login}
                   onClick={closeAll}
-                  className="rounded-lg border border-surface-200 px-4 py-2.5 text-center font-thai text-sm font-medium text-text-secondary hover:bg-surface-50"
+                  className="rounded-lg border border-border bg-card px-4 py-2.5 text-center font-thai text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
                 >
                   เข้าสู่ระบบ
                 </Link>
@@ -708,11 +708,11 @@ function NavbarInner({
               <div className="grid gap-2">
                 <div
                   aria-hidden="true"
-                  className="h-10 w-full animate-pulse rounded-lg bg-surface-100 motion-reduce:animate-none"
+                  className="h-10 w-full animate-pulse rounded-lg bg-muted motion-reduce:animate-none"
                 />
                 <div
                   aria-hidden="true"
-                  className="h-10 w-full animate-pulse rounded-lg bg-surface-100 motion-reduce:animate-none"
+                  className="h-10 w-full animate-pulse rounded-lg bg-muted motion-reduce:animate-none"
                 />
               </div>
             )}

@@ -39,16 +39,16 @@ export function ResourceHeader({
 
   return (
     <header className="space-y-4">
-      <nav className="flex flex-wrap items-center gap-2 text-caption text-zinc-400">
+      <nav className="flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
         {breadcrumb.map((item) => (
           <span key={item.href} className="flex items-center gap-2">
-            <Link href={item.href} className="transition hover:text-zinc-600">
+            <Link href={item.href} className="transition hover:text-foreground">
               {item.label}
             </Link>
             <span>/</span>
           </span>
         ))}
-        <span className="truncate text-zinc-600">{title}</span>
+        <span className="truncate text-foreground">{title}</span>
       </nav>
 
       <div className="space-y-2.5">
@@ -57,30 +57,30 @@ export function ResourceHeader({
             Featured
           </span>
         )}
-        <h1 className="max-w-3xl font-display text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+        <h1 className="max-w-3xl font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
           {title}
         </h1>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-small text-zinc-500">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-small text-muted-foreground">
         {creatorName && (
           <span className="inline-flex items-center gap-1.5">
             <span>Created by</span>
             {creatorHref ? (
               <Link
                 href={creatorHref}
-                className="font-medium text-zinc-700 transition hover:text-primary-700"
+                className="font-medium text-foreground transition hover:text-primary-700"
               >
                 {creatorName}
               </Link>
             ) : (
-              <span className="font-medium text-zinc-700">{creatorName}</span>
+              <span className="font-medium text-foreground">{creatorName}</span>
             )}
           </span>
         )}
 
         {(creatorName && (hasReviews || hasSales || hasDownloads)) && (
-          <span aria-hidden className="text-zinc-300">
+          <span aria-hidden className="text-muted-foreground/50">
             ·
           </span>
         )}
@@ -90,7 +90,7 @@ export function ResourceHeader({
             {hasReviews && (
               <span className="inline-flex items-center gap-1.5">
                 <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden />
-                <span className="font-medium text-zinc-700">{averageRating?.toFixed(1)}</span>
+                <span className="font-medium text-foreground">{averageRating?.toFixed(1)}</span>
                 <span>
                   {formatNumber(reviewCount)} {reviewCount === 1 ? "review" : "reviews"}
                 </span>

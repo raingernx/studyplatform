@@ -78,7 +78,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-50">
+    <div className="flex min-h-screen bg-background">
       {/* ── Left decorative panel (desktop only) ─────────────────────────── */}
       <div className="hidden flex-1 flex-col justify-between bg-zinc-950 px-10 py-12 lg:flex">
         <Logo variant="full" size="lg" dark />
@@ -89,13 +89,13 @@ export default function RegisterPage() {
           <h2 className="text-3xl font-bold tracking-tight text-white">
             Start learning<br />smarter today
           </h2>
-          <p className="mt-3 text-[14px] text-zinc-400 leading-relaxed">
+          <p className="mt-3 text-[14px] leading-relaxed text-white/72">
             Join 18,000+ students who use {platform.platformShortName} to access curated
             educational resources.
           </p>
           <ul className="mt-8 space-y-3">
             {PERKS.map((perk) => (
-              <li key={perk} className="flex items-center gap-3 text-[13px] text-zinc-400">
+              <li key={perk} className="flex items-center gap-3 text-[13px] text-white/72">
                 <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-500/20 ring-1 ring-blue-400/30">
                   <Check className="h-2.5 w-2.5 text-blue-400" strokeWidth={3} />
                 </span>
@@ -106,7 +106,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Bottom social proof */}
-        <p className="text-[12px] text-zinc-600">
+        <p className="text-[12px] text-white/40">
           © {new Date().getFullYear()} {platform.platformShortName}
         </p>
       </div>
@@ -119,22 +119,22 @@ export default function RegisterPage() {
             <Logo variant="full" size="md" />
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Create your account
           </h1>
-          <p className="mt-1.5 text-[13px] text-zinc-500">
+          <p className="mt-1.5 text-[13px] text-muted-foreground">
             Free to start — no credit card required
           </p>
 
-          <div className="mt-7 rounded-2xl border border-zinc-200 bg-white p-8 shadow-card">
+          <div className="mt-7 rounded-2xl border border-border bg-card p-8 shadow-card">
             {/* Google OAuth */}
             <button
               type="button"
               disabled={loading || googleLoading}
               onClick={() => void handleGoogleSignIn()}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-200
-                         bg-white px-4 py-2.5 text-[13px] font-medium text-zinc-700 shadow-card
-                         transition-all hover:border-zinc-300 hover:shadow-card-md active:scale-[0.99]
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-border
+                         bg-background px-4 py-2.5 text-[13px] font-medium text-foreground shadow-card
+                         transition-all hover:border-border hover:bg-muted hover:shadow-card-md active:scale-[0.99]
                          disabled:cursor-not-allowed disabled:opacity-70"
             >
               {googleLoading ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <GoogleIcon />}
@@ -144,10 +144,10 @@ export default function RegisterPage() {
             {/* Divider */}
             <div className="relative my-5">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-zinc-100" />
+                <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-white px-3 text-[11px] font-medium text-zinc-400">
+                <span className="bg-card px-3 text-[11px] font-medium text-muted-foreground">
                   or register with email
                 </span>
               </div>
@@ -163,7 +163,7 @@ export default function RegisterPage() {
               )}
 
               <div>
-                <label htmlFor="name" className="mb-1.5 block text-[13px] font-medium text-zinc-700">
+                <label htmlFor="name" className="mb-1.5 block text-[13px] font-medium text-foreground">
                   Full name
                 </label>
                 <input
@@ -174,14 +174,14 @@ export default function RegisterPage() {
                   required
                   autoComplete="name"
                   placeholder="Jane Smith"
-                  className="w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-900
-                             placeholder-zinc-400 shadow-sm outline-none transition
+                  className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground
+                             placeholder:text-muted-foreground shadow-sm outline-none transition
                              focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
               <div>
-                <label htmlFor="email" className="mb-1.5 block text-[13px] font-medium text-zinc-700">
+                <label htmlFor="email" className="mb-1.5 block text-[13px] font-medium text-foreground">
                   Email address
                 </label>
                 <input
@@ -192,14 +192,14 @@ export default function RegisterPage() {
                   required
                   autoComplete="email"
                   placeholder="you@example.com"
-                  className="w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-900
-                             placeholder-zinc-400 shadow-sm outline-none transition
+                  className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground
+                             placeholder:text-muted-foreground shadow-sm outline-none transition
                              focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
               <div>
-                <label htmlFor="password" className="mb-1.5 block text-[13px] font-medium text-zinc-700">
+                <label htmlFor="password" className="mb-1.5 block text-[13px] font-medium text-foreground">
                   Password
                 </label>
                 <input
@@ -211,8 +211,8 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   placeholder="Min. 8 characters"
                   minLength={8}
-                  className="w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-900
-                             placeholder-zinc-400 shadow-sm outline-none transition
+                  className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground
+                             placeholder:text-muted-foreground shadow-sm outline-none transition
                              focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
@@ -222,22 +222,22 @@ export default function RegisterPage() {
               </Button>
             </form>
 
-            <p className="mt-4 text-center text-[11px] text-zinc-400">
+            <p className="mt-4 text-center text-[11px] text-muted-foreground">
               By creating an account you agree to our{" "}
-              <Link href={routes.terms} className="underline underline-offset-2 hover:text-zinc-600 transition-colors">
+              <Link href={routes.terms} className="underline underline-offset-2 transition-colors hover:text-foreground">
                 Terms
               </Link>{" "}
               and{" "}
-              <Link href={routes.privacy} className="underline underline-offset-2 hover:text-zinc-600 transition-colors">
+              <Link href={routes.privacy} className="underline underline-offset-2 transition-colors hover:text-foreground">
                 Privacy Policy
               </Link>.
             </p>
           </div>
 
-          <p className="mt-5 text-center text-[13px] text-zinc-500">
+          <p className="mt-5 text-center text-[13px] text-muted-foreground">
             Already have an account?{" "}
             <Link href={routes.login}
-              className="font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+              className="font-semibold text-primary transition-colors hover:text-primary/80">
               Sign in
             </Link>
           </p>

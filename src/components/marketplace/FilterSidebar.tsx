@@ -147,15 +147,15 @@ export function FilterSidebar({
     >
       {/* Header + clear */}
       {showHeader && (
-        <div className="flex items-center justify-between border-b border-surface-200/80 pb-2">
-          <p className="font-ui text-caption tracking-[0.12em] text-text-muted">
+        <div className="flex items-center justify-between border-b border-border/80 pb-2">
+          <p className="font-ui text-caption tracking-[0.12em] text-muted-foreground">
             Filters
           </p>
           {showClearAll && (
             <button
               type="button"
               onClick={clearAll}
-              className="flex items-center gap-1 text-caption text-text-secondary transition hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
+              className="flex items-center gap-1 text-caption text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
             >
               <X className="h-3 w-3" />
               Clear all
@@ -183,7 +183,7 @@ export function FilterSidebar({
                       "w-full rounded-xl px-3 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                       active
                         ? "bg-primary-50 font-medium text-primary-700"
-                        : "text-text-secondary hover:bg-surface-50 hover:text-text-primary",
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
                       optimistic && "cursor-wait"
                     )}
                   >
@@ -211,7 +211,7 @@ export function FilterSidebar({
                   "w-full rounded-xl px-3 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                   isAllCategories || isOptimistic("category", "all")
                     ? "bg-primary-50 font-medium text-primary-700"
-                    : "text-text-secondary hover:bg-surface-50 hover:text-text-primary",
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   isOptimistic("category", "all") && "cursor-wait"
                 )}
               >
@@ -233,7 +233,7 @@ export function FilterSidebar({
                       "w-full rounded-xl px-3 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                       active
                         ? "bg-primary-50 font-medium text-primary-700"
-                        : "text-text-secondary hover:bg-surface-50 hover:text-text-primary",
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
                       optimistic && "cursor-wait"
                     )}
                   >
@@ -265,7 +265,7 @@ export function FilterSidebar({
                       "w-full rounded-xl px-3 py-2.5 text-left text-small transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                       active
                         ? "bg-primary-50 font-medium text-primary-700"
-                        : "text-text-secondary hover:bg-surface-50 hover:text-text-primary",
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
                       optimistic && "cursor-wait"
                     )}
                   >
@@ -301,7 +301,7 @@ export function FilterSidebar({
                   "rounded-full px-3 py-1.5 text-caption transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                   active
                     ? "border border-primary-200 bg-primary-50 text-primary-700"
-                    : "border border-border-subtle bg-white text-text-secondary hover:border-surface-300 hover:bg-surface-50",
+                    : "border border-border bg-card text-muted-foreground hover:border-primary/20 hover:bg-muted",
                   optimistic && "cursor-wait"
                 )}
               >
@@ -335,7 +335,7 @@ export function FilterSidebar({
                   "rounded-full px-3 py-1.5 text-caption transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2",
                   active
                     ? "border border-primary-200 bg-primary-50 text-primary-700"
-                    : "border border-border-subtle bg-white text-text-secondary hover:border-surface-300 hover:bg-surface-50",
+                    : "border border-border bg-card text-muted-foreground hover:border-primary/20 hover:bg-muted",
                   optimistic && "cursor-wait"
                 )}
               >
@@ -361,14 +361,14 @@ function FilterGroup({
   const [open, setOpen] = useState(true);
 
   return (
-    <div className="border-b border-surface-200/80 pb-4">
+    <div className="border-b border-border/80 pb-4">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="mb-3 flex w-full items-center justify-between text-caption text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
+        className="mb-3 flex w-full items-center justify-between text-caption text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
       >
         <span>{title}</span>
-        <span className="text-caption text-text-muted">{open ? "−" : "+"}</span>
+        <span className="text-caption text-muted-foreground">{open ? "−" : "+"}</span>
       </button>
       {open && children}
     </div>

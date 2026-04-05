@@ -1,7 +1,7 @@
 import { Container, LoadingSkeleton } from "@/design-system";
 import { ScrollableCategoryNav } from "@/components/marketplace/ScrollableCategoryNav";
 
-const CONTROLS_BAR_CLASS_NAME = "border-y border-surface-200 bg-white";
+const CONTROLS_BAR_CLASS_NAME = "border-y border-border bg-card";
 const CONTROLS_BAR_MAIN_CLASS_NAME = "flex min-w-0 items-center gap-2.5 overflow-hidden";
 const CONTROLS_BAR_GROUP_CLASS_NAME =
   "flex min-w-0 items-center gap-2.5 overflow-hidden";
@@ -33,7 +33,7 @@ export function ResourcesCatalogSearchSkeleton() {
 
 export function DiscoverFallback() {
   return (
-    <div className="inline-flex h-10 items-center rounded-full border border-surface-200 bg-surface-50 px-4 text-base font-medium text-text-secondary shadow-sm">
+    <div className="inline-flex h-10 items-center rounded-full border border-border bg-muted px-4 text-base font-medium text-muted-foreground shadow-sm">
       <span>กำลังโหลด</span>
     </div>
   );
@@ -41,8 +41,8 @@ export function DiscoverFallback() {
 
 function SearchFallback() {
   return (
-    <div className="flex h-10 w-full items-center gap-3 rounded-xl border border-border-subtle bg-white px-4 text-base text-text-muted shadow-sm sm:rounded-2xl">
-      <LoadingSkeleton className="h-2.5 w-2.5 rounded-full bg-surface-300" />
+    <div className="flex h-10 w-full items-center gap-3 rounded-xl border border-border bg-card px-4 text-base text-muted-foreground shadow-sm sm:rounded-2xl">
+      <LoadingSkeleton className="h-2.5 w-2.5 rounded-full bg-muted-foreground/25" />
       <span>กำลังค้นหา...</span>
     </div>
   );
@@ -54,7 +54,7 @@ export function ChipsFallback() {
       {["ทั้งหมด", "คณิตศาสตร์", "วิทยาศาสตร์", "ภาษา", "มนุษยศาสตร์", "ปฐมวัย"].map((label, index) => (
         <div
           key={label}
-          className={`inline-flex h-10 shrink-0 items-center rounded-full border border-surface-200 bg-surface-50 px-4 text-base text-text-muted ${
+          className={`inline-flex h-10 shrink-0 items-center rounded-full border border-border bg-muted px-4 text-base text-muted-foreground ${
             index === 0 ? "gap-2 pr-4" : ""
           }`}
         >

@@ -22,10 +22,10 @@ export default function DashboardRouteError({
         <p className="text-caption font-semibold uppercase tracking-[0.18em] text-primary-700">
           Dashboard error
         </p>
-        <h1 className="font-display text-3xl font-semibold text-text-primary">
+        <h1 className="font-display text-3xl font-semibold text-foreground">
           Your dashboard could not load.
         </h1>
-        <p className="text-body leading-7 text-text-secondary">
+        <p className="text-body leading-7 text-muted-foreground">
           Try again, or return to your library and reopen the dashboard.
         </p>
       </div>

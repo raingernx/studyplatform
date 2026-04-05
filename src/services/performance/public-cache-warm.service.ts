@@ -5,7 +5,6 @@ import { getCreatorPublicProfile } from "@/services/creator";
 import {
   getDiscoverCategories,
   getDiscoverData,
-  getHeroConfig,
   type DiscoverData,
 } from "@/services/discover";
 import {
@@ -45,7 +44,6 @@ interface WarmedTargetSummary {
 
 interface WarmCountSummary {
   discover: number;
-  hero: number;
   marketplaceVariants: number;
   resourceDetails: number;
   trustSummaries: number;
@@ -293,7 +291,6 @@ export async function warmPublicCaches(
       let marketplaceWarmVariants: MarketplaceFilters[] = [];
 
       await Promise.all([
-        getHeroConfig({ staticAnonSeed: true }),
         getDiscoverCategories().then((categories) => {
           discoverCategories = categories;
           marketplaceWarmVariants = buildMarketplaceWarmVariants(
@@ -345,7 +342,6 @@ export async function warmPublicCaches(
       const result = summarizeResult(
         {
           discover: 1,
-          hero: 1,
           marketplaceVariants: marketplaceResults.length,
           resourceDetails: headResourceTargets.length,
           trustSummaries: trustSummaryTargets.length,
@@ -444,7 +440,6 @@ export async function warmTargetedPublicCaches(
       const result = summarizeResult(
         {
           discover: includeListings ? 1 : 0,
-          hero: 0,
           marketplaceVariants: warmedMarketplaceVariants.length,
           resourceDetails: warmResourceTargets.length,
           trustSummaries: trustSummaryTargets.length,

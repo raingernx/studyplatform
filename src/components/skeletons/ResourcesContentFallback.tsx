@@ -5,11 +5,11 @@ import { ResourcesDiscoverSectionsSkeleton } from "@/components/skeletons/Resour
 
 export function FilterBarFallback() {
   return (
-    <div className="flex flex-col gap-3 border-b border-surface-200/80 pb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <LoadingSkeleton className="h-5 w-24 rounded-md" />
       <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:items-center">
-        <LoadingSkeleton className="h-11 w-full rounded-full border border-surface-200 bg-white sm:w-28" />
-        <LoadingSkeleton className="h-11 w-full rounded-full border border-surface-200 bg-surface-100 sm:w-36" />
+        <LoadingSkeleton className="h-11 w-full rounded-full border border-border bg-card sm:w-28" />
+        <LoadingSkeleton className="h-11 w-full rounded-full border border-border bg-muted sm:w-36" />
         <LoadingSkeleton className="h-11 w-16 rounded-full sm:w-20" />
       </div>
     </div>
@@ -26,7 +26,7 @@ function SidebarFallbackGroup({
   pillWidths?: string[];
 }) {
   return (
-    <div className="border-b border-surface-200/80 pb-4">
+    <div className="border-b border-border pb-4">
       <div className="mb-3 flex items-center justify-between">
         <LoadingSkeleton className={`h-4 rounded ${titleWidth}`} />
         <LoadingSkeleton className="h-4 w-4 rounded" />
@@ -48,7 +48,7 @@ function SidebarFallbackGroup({
           {pillWidths.map((width, index) => (
             <LoadingSkeleton
               key={`${titleWidth}-pill-${index}`}
-              className={`h-8 rounded-full border border-surface-200 bg-white ${width}`}
+              className={`h-8 rounded-full border border-border bg-card ${width}`}
             />
           ))}
         </div>
@@ -60,7 +60,7 @@ function SidebarFallbackGroup({
 export function SidebarFallback() {
   return (
     <div className="w-[260px] flex-shrink-0 space-y-5">
-      <div className="flex items-center justify-between border-b border-surface-200/80 pb-2">
+      <div className="flex items-center justify-between border-b border-border pb-2">
         <LoadingSkeleton className="h-4 w-12 rounded" />
         <LoadingSkeleton className="h-4 w-14 rounded" />
       </div>
@@ -105,7 +105,7 @@ export function ResourcesContentFallback({
             <LoadingSkeleton className="h-3 w-16" />
             <LoadingSkeleton className="h-8 w-56 rounded-lg" />
             <LoadingSkeleton className="h-4 w-72" />
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-text-secondary">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-muted-foreground">
               <LoadingSkeleton className="h-4 w-20" />
               <LoadingSkeleton className="h-4 w-24" />
             </div>

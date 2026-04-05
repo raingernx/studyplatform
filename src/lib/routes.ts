@@ -102,8 +102,6 @@ export const routes = {
   adminPurchasesAnalytics: "/admin/analytics/purchases",
   adminActivity: "/admin/activity",
   adminAudit: "/admin/audit",
-  adminHeroes: "/admin/heroes",
-  adminNewHero: "/admin/heroes/new",
   adminSettings: "/admin/settings",
   adminCreators: "/admin/creators",
 
@@ -116,7 +114,6 @@ export const routes = {
     `/admin/users?q=${encodeURIComponent(query)}`,
   adminOrdersOrder: (orderId: string) =>
     `/admin/orders?orderId=${encodeURIComponent(orderId)}`,
-  adminHero: (id: string) => `/admin/heroes/${id}`,
   adminRecommendationReportQuery: (params: URLSearchParams | string) => {
     const query = typeof params === "string" ? params : params.toString();
     return query ? `/admin/analytics/recommendations?${query}` : "/admin/analytics/recommendations";

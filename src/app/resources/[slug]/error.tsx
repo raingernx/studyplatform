@@ -17,15 +17,15 @@ export default function ResourceDetailError({
 
   return (
     <ResourceDetailShell>
-      <div className="mx-auto max-w-2xl rounded-[28px] border border-surface-200 bg-white px-6 py-10 text-center shadow-sm sm:px-8 sm:py-12">
+      <div className="mx-auto max-w-2xl rounded-[28px] border border-border bg-card px-6 py-10 text-center shadow-sm sm:px-8 sm:py-12">
         <div className="space-y-3">
           <p className="text-caption font-semibold uppercase tracking-[0.18em] text-primary-700">
             Resource error
           </p>
-          <h1 className="font-display text-3xl font-semibold text-zinc-950">
+          <h1 className="font-display text-3xl font-semibold text-foreground">
             This resource could not load right now.
           </h1>
-          <p className="text-body leading-7 text-zinc-600">
+          <p className="text-body leading-7 text-muted-foreground">
             Try the page again. If the problem continues, return to the library and reopen the
             resource.
           </p>
@@ -41,7 +41,7 @@ export default function ResourceDetailError({
           </button>
           <a
             href={routes.marketplace}
-            className="inline-flex items-center justify-center rounded-xl border border-surface-200 px-5 py-3 text-small font-medium text-zinc-700 transition hover:bg-surface-50"
+            className="inline-flex items-center justify-center rounded-xl border border-border px-5 py-3 text-small font-medium text-foreground transition hover:bg-muted"
           >
             Back to resources
           </a>

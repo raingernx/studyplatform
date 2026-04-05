@@ -52,35 +52,35 @@ export function CreatorSetupChecklist({ steps, canCreate }: CreatorSetupChecklis
   const completedCount = items.filter((s) => s.done).length;
 
   return (
-    <div className="rounded-2xl border border-neutral-100 bg-white shadow-card">
-      <div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
-        <h3 className="text-sm font-semibold text-neutral-900">Setup checklist</h3>
-        <span className="text-xs font-medium text-neutral-500">
+    <div className="rounded-2xl border border-border bg-card shadow-card">
+      <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <h3 className="text-sm font-semibold text-foreground">Setup checklist</h3>
+        <span className="text-xs font-medium text-muted-foreground">
           {completedCount} / {items.length} complete
         </span>
       </div>
 
-      <ul className="divide-y divide-neutral-50 px-6">
+      <ul className="divide-y divide-border/60 px-6">
         {items.map((item, index) => (
           <li key={index} className="flex items-start gap-4 py-4">
             <span className="mt-0.5 shrink-0">
               {item.done ? (
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
               ) : (
-                <Circle className="h-5 w-5 text-neutral-300" />
+                <Circle className="h-5 w-5 text-muted-foreground/50" />
               )}
             </span>
 
             <div className="min-w-0 flex-1">
               <p
                 className={`text-sm font-medium ${
-                  item.done ? "text-neutral-400 line-through" : "text-neutral-900"
+                  item.done ? "text-muted-foreground line-through" : "text-foreground"
                 }`}
               >
                 {item.label}
               </p>
               {!item.done && (
-                <p className="mt-0.5 text-xs text-neutral-500">{item.description}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p>
               )}
             </div>
 

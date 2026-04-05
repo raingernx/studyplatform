@@ -61,18 +61,18 @@ export function DashboardSidebar({
       className={cn(
         "h-full shrink-0",
         isDashboardVariant &&
-          "[&_a[aria-current='page']]:!bg-primary-50 [&_a[aria-current='page']]:!text-primary-800 [&_a[aria-current='page']]:!shadow-none [&_a[aria-current='page']]:!font-semibold [&_a[aria-current='page']_svg]:!text-primary-700 [&_a[aria-current='page']_span.ml-auto]:!bg-primary-100 [&_a[aria-current='page']_span.ml-auto]:!text-primary-700",
+          "[&_a[aria-current='page']]:!bg-accent [&_a[aria-current='page']]:!text-foreground [&_a[aria-current='page']]:!shadow-none [&_a[aria-current='page']]:!font-semibold [&_a[aria-current='page']_svg]:!text-primary-700 [&_a[aria-current='page']_span.ml-auto]:!bg-secondary [&_a[aria-current='page']_span.ml-auto]:!text-secondary-foreground",
         variant === "admin" &&
-          "[&_a]:min-h-10 [&_a]:rounded-lg [&_a]:px-3 [&_a]:py-2 [&_a]:text-sm [&_a]:text-text-secondary [&_a:hover]:bg-surface-50 [&_a:hover]:text-text-primary [&_a_svg]:text-text-muted [&_a[aria-current='page']]:!bg-surface-100 [&_a[aria-current='page']]:!text-text-primary [&_a[aria-current='page']]:!shadow-none [&_a[aria-current='page']]:!font-semibold [&_a[aria-current='page']_svg]:!text-primary-700 [&_a[aria-current='page']_span.ml-auto]:!bg-primary-100 [&_a[aria-current='page']_span.ml-auto]:!text-primary-700"
+          "[&_a]:min-h-10 [&_a]:rounded-lg [&_a]:px-3 [&_a]:py-2 [&_a]:text-sm [&_a]:text-muted-foreground [&_a:hover]:bg-accent [&_a:hover]:text-foreground [&_a_svg]:text-muted-foreground [&_a[aria-current='page']]:!bg-accent [&_a[aria-current='page']]:!text-foreground [&_a[aria-current='page']]:!shadow-none [&_a[aria-current='page']]:!font-semibold [&_a[aria-current='page']_svg]:!text-primary-700 [&_a[aria-current='page']_span.ml-auto]:!bg-secondary [&_a[aria-current='page']_span.ml-auto]:!text-secondary-foreground"
       )}
     >
-      <div className="flex h-14 flex-shrink-0 items-center justify-between border-b border-neutral-100 px-5 lg:px-6">
+      <div className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border px-5 lg:px-6">
         {resolvedHeader}
         <button
           type="button"
           onClick={onClose}
           aria-label="Close sidebar"
-          className="flex h-8 w-8 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 lg:hidden"
+          className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-accent hover:text-foreground lg:hidden"
         >
           <X className="h-4 w-4" />
         </button>
@@ -95,9 +95,9 @@ export function DashboardSidebar({
         className={cn(
           "pt-4",
           isDashboardVariant &&
-            "[&_p]:tracking-[0.08em] [&_p]:text-neutral-500 [&_ul]:space-y-1",
+            "[&_p]:tracking-[0.08em] [&_p]:text-muted-foreground [&_ul]:space-y-1",
           variant === "admin" &&
-            "pt-5 [&_p]:mb-2 [&_p]:mt-0 [&_p]:px-2 [&_p]:font-ui [&_p]:text-caption [&_p]:tracking-[0.08em] [&_p]:text-text-muted [&_ul]:space-y-1"
+            "pt-5 [&_p]:mb-2 [&_p]:mt-0 [&_p]:px-2 [&_p]:font-ui [&_p]:text-caption [&_p]:tracking-[0.08em] [&_p]:text-muted-foreground [&_ul]:space-y-1"
         )}
       >
         {sections.map((section, index) => (
@@ -112,7 +112,7 @@ export function DashboardSidebar({
       </SidebarNav>
 
       {footer ? (
-        <div className="mt-auto flex-shrink-0 border-t border-neutral-100 px-5 py-4">
+        <div className="mt-auto flex-shrink-0 border-t border-border px-5 py-4">
           {footer}
         </div>
       ) : null}

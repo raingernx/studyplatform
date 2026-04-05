@@ -69,12 +69,12 @@ export function FilterBar({ total }: Props) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 border-b border-surface-200/80 pb-4 transition-opacity sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
+        "flex flex-col gap-3 border-b border-border pb-4 transition-opacity sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
         isPending && "opacity-60"
       )}
     >
       {/* Result count */}
-      <p className="shrink-0 text-small text-text-secondary">
+      <p className="shrink-0 text-small text-muted-foreground">
         {total === 1 ? "1 resource" : `${formatNumber(total)} resources`}
       </p>
 
@@ -100,7 +100,7 @@ export function FilterBar({ total }: Props) {
             onClick={clearFilterControls}
             disabled={isPending}
             aria-label="Clear sort and price filters"
-            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-transparent px-3 py-2 text-caption text-text-secondary transition hover:bg-surface-100 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-transparent px-3 py-2 text-caption text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <X className="h-3.5 w-3.5" />
             Clear
@@ -143,7 +143,7 @@ function FilterSelect({
           "disabled:cursor-not-allowed disabled:opacity-60",
           isActive
             ? "border-primary-200 bg-primary-50 text-primary-700"
-            : "border-border-subtle bg-white text-text-secondary hover:border-surface-300 hover:text-text-primary",
+            : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
         )}
       >
         {options.map((opt) => (
@@ -153,7 +153,7 @@ function FilterSelect({
         ))}
       </select>
       <ChevronDown
-        className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted"
+        className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
         aria-hidden
       />
     </div>

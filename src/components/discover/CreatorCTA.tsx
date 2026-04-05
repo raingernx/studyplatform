@@ -10,16 +10,16 @@ export async function CreatorCTA() {
 
   return (
     <section className="py-10">
-      <div className="grid grid-cols-1 items-center gap-8 rounded-[32px] border border-surface-200 bg-gradient-to-br from-white via-white to-brand-50/60 p-6 shadow-card sm:p-8 lg:grid-cols-[1.15fr_1fr] lg:p-10">
+      <div className="grid grid-cols-1 items-center gap-8 rounded-[32px] border border-border bg-gradient-to-br from-background via-card to-muted p-6 shadow-card sm:p-8 lg:grid-cols-[1.15fr_1fr] lg:p-10">
         <div className="space-y-5">
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Creator marketplace
             </p>
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
-            Sell your study resources
+            <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              Sell your study resources
             </h2>
-            <p className="max-w-xl text-body leading-7 text-text-secondary">
+            <p className="max-w-xl text-body leading-7 text-muted-foreground">
               Reach students and educators worldwide. Upload worksheets, flashcards, and study guides, then price them your way with a storefront that feels built for thoughtful creators.
             </p>
           </div>
@@ -46,16 +46,16 @@ export async function CreatorCTA() {
             </Button>
           </div>
           <div className="flex flex-wrap gap-2 pt-1">
-            <span className="inline-flex items-center rounded-full border border-surface-200 bg-white px-3 py-1 text-xs font-medium text-text-secondary shadow-sm">
+            <span className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
               Trusted by 12,000+ educators
             </span>
-            <span className="inline-flex items-center rounded-full border border-surface-200 bg-white px-3 py-1 text-xs font-medium text-text-secondary shadow-sm">
+            <span className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
               Creator-first payouts
             </span>
           </div>
         </div>
         <div className="flex items-center justify-center">
-          <div className="relative aspect-[4/3] w-full max-w-md overflow-hidden rounded-[28px] border border-surface-200 bg-gradient-to-br from-white to-surface-100 p-6 shadow-card">
+          <div className="relative aspect-[4/3] w-full max-w-md overflow-hidden rounded-[28px] border border-border bg-gradient-to-br from-card to-muted p-6 shadow-card">
             <Image
               src="/brand/krukraft-mark.svg"
               alt={`Creators sharing study resources on ${platform.platformShortName}`}

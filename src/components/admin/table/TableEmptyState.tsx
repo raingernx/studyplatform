@@ -32,9 +32,9 @@ export function TableEmptyState({
         )}
       >
         <div className="mx-auto flex max-w-sm flex-col items-center gap-1.5">
-          <p className="text-small font-medium text-text-primary">{message}</p>
+          <p className="text-small font-medium text-foreground">{message}</p>
           {description && (
-            <p className="text-small text-text-secondary">{description}</p>
+            <p className="text-small text-muted-foreground">{description}</p>
           )}
           {action && <div className="mt-1.5">{action}</div>}
         </div>

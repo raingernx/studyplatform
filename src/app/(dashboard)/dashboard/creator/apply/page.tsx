@@ -71,13 +71,13 @@ export default async function CreatorApplyPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-500">
               Creator
             </p>
-            <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-neutral-900">
+            <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-foreground">
               Become a Creator
             </h1>
           </div>
         </div>
 
-        <p className="mt-5 max-w-3xl text-sm leading-6 text-neutral-600">
+        <p className="mt-5 max-w-3xl text-sm leading-6 text-muted-foreground">
           Unlock creator tools to upload marketplace resources, earn from every sale, and monitor
           downloads and analytics from one dashboard.
         </p>
@@ -88,13 +88,13 @@ export default async function CreatorApplyPage() {
             return (
               <div
                 key={benefit.title}
-                className="rounded-2xl border border-white/80 bg-white/90 p-5 shadow-sm"
+                className="rounded-2xl border border-border bg-card p-5 shadow-sm"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 text-neutral-700">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                   <Icon className="h-4 w-4" />
                 </span>
-                <h2 className="mt-4 text-sm font-semibold text-neutral-900">{benefit.title}</h2>
-                <p className="mt-2 text-sm text-neutral-500">{benefit.description}</p>
+                <h2 className="mt-4 text-sm font-semibold text-foreground">{benefit.title}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">{benefit.description}</p>
               </div>
             );
           })}
@@ -154,12 +154,12 @@ async function RejectedPanel({ userId }: { userId: string }) {
   const reason = record?.rejectionReason;
 
   return (
-    <div className="rounded-2xl border border-red-200 bg-white p-6 shadow-card space-y-5">
+    <div className="space-y-5 rounded-2xl border border-red-200 bg-card p-6 shadow-card">
       <div className="flex items-start gap-3">
         <XCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
         <div>
-          <h2 className="text-base font-semibold text-neutral-900">Application not approved</h2>
-          <p className="mt-1.5 text-sm text-neutral-600">
+          <h2 className="text-base font-semibold text-foreground">Application not approved</h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
             Unfortunately your application was not approved at this time.
             {reason ? " Please see the feedback below." : " You may reapply with updated information."}
           </p>
@@ -173,7 +173,7 @@ async function RejectedPanel({ userId }: { userId: string }) {
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-neutral-900 mb-4">Submit a new application</h3>
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Submit a new application</h3>
         <CreatorApplicationForm />
       </div>
     </div>
@@ -182,9 +182,9 @@ async function RejectedPanel({ userId }: { userId: string }) {
 
 function ApplyPanel() {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-card">
-      <h2 className="text-lg font-semibold text-neutral-900">Apply for creator access</h2>
-      <p className="mt-2 mb-6 text-sm text-neutral-500">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
+      <h2 className="text-lg font-semibold text-foreground">Apply for creator access</h2>
+      <p className="mb-6 mt-2 text-sm text-muted-foreground">
         Fill in the details below to submit your application. Our team reviews applications manually
         and will get back to you within 1–3 business days.
       </p>

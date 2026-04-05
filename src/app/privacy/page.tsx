@@ -13,14 +13,14 @@ export default function PrivacyPage() {
       <Navbar />
       <Container className="py-16">
         <div className="mx-auto max-w-2xl">
-          <h1 className="font-display text-h2 font-semibold tracking-tight text-text-primary">
+          <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
             Privacy Policy
           </h1>
-          <p className="mt-2 text-sm text-text-muted">Last updated: March 2026</p>
+          <p className="mt-2 text-sm text-muted-foreground">Last updated: March 2026</p>
 
-          <div className="mt-10 space-y-8 text-sm leading-relaxed text-text-secondary">
+          <div className="mt-10 space-y-8 text-sm leading-relaxed text-muted-foreground">
             <section>
-              <h2 className="mb-3 text-base font-semibold text-text-primary">
+              <h2 className="mb-3 text-base font-semibold text-foreground">
                 1. Information we collect
               </h2>
               <p>
@@ -31,7 +31,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="mb-3 text-base font-semibold text-text-primary">
+              <h2 className="mb-3 text-base font-semibold text-foreground">
                 2. How we use your information
               </h2>
               <p>
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="mb-3 text-base font-semibold text-text-primary">
+              <h2 className="mb-3 text-base font-semibold text-foreground">
                 3. Data retention
               </h2>
               <p>
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="mb-3 text-base font-semibold text-text-primary">
+              <h2 className="mb-3 text-base font-semibold text-foreground">
                 4. Cookies
               </h2>
               <p>
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
                 how you use our platform. See our{" "}
                 <a
                   href={routes.cookies}
-                  className="text-blue-600 underline hover:text-blue-700"
+                  className="text-primary underline hover:text-primary/80"
                 >
                   Cookie Policy
                 </a>{" "}
@@ -70,14 +70,14 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="mb-3 text-base font-semibold text-text-primary">
+              <h2 className="mb-3 text-base font-semibold text-foreground">
                 5. Contact
               </h2>
               <p>
                 If you have questions about this policy, please contact us at{" "}
                 <a
                   href="mailto:privacy@example.com"
-                  className="text-blue-600 underline hover:text-blue-700"
+                  className="text-primary underline hover:text-primary/80"
                 >
                   privacy@example.com
                 </a>

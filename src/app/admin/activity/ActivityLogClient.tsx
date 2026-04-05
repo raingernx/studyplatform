@@ -170,23 +170,23 @@ export function ActivityLogClient() {
   return (
     <div className="min-w-0 space-y-8">
       {/* Header */}
-      <div className="flex min-w-0 flex-wrap items-end justify-between gap-4 border-b border-surface-200 pb-4">
+      <div className="flex min-w-0 flex-wrap items-end justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="font-display text-h2 font-semibold tracking-tight text-text-primary">
+          <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
             Activity Log
           </h1>
-          <p className="mt-1 text-meta text-text-secondary">
+          <p className="mt-1 text-meta text-muted-foreground">
             Monitor important platform actions.
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex min-w-0 flex-wrap items-end gap-3 rounded-2xl border border-border-subtle bg-white px-4 py-3 shadow-card">
+      <div className="flex min-w-0 flex-wrap items-end gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-card">
         <div className="w-full max-w-xs space-y-1.5">
           <label
             htmlFor="actionFilter"
-            className="text-xs font-semibold uppercase tracking-tightest text-text-secondary"
+            className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground"
           >
             Action type
           </label>
@@ -209,7 +209,7 @@ export function ActivityLogClient() {
           <div className="space-y-1.5">
             <label
               htmlFor="dateFrom"
-              className="text-xs font-semibold uppercase tracking-tightest text-text-secondary"
+              className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground"
             >
               From
             </label>
@@ -224,7 +224,7 @@ export function ActivityLogClient() {
           <div className="space-y-1.5">
             <label
               htmlFor="dateTo"
-              className="text-xs font-semibold uppercase tracking-tightest text-text-secondary"
+              className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground"
             >
               To
             </label>
@@ -241,7 +241,7 @@ export function ActivityLogClient() {
         <div className="w-full max-w-xs space-y-1.5">
           <label
             htmlFor="userQuery"
-            className="text-xs font-semibold uppercase tracking-tightest text-text-secondary"
+            className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground"
           >
             User search
           </label>
@@ -255,50 +255,50 @@ export function ActivityLogClient() {
       </div>
 
       {/* Table */}
-      <div className="min-w-0 w-full overflow-hidden rounded-2xl border border-border-subtle bg-white shadow-card">
+      <div className="min-w-0 w-full overflow-hidden rounded-2xl border border-border bg-card shadow-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-b border-border-subtle bg-surface-50/80">
+            <thead className="border-b border-border bg-muted/80">
               <tr>
-                <th className="px-2 py-3 text-xs font-medium uppercase tracking-tightest text-text-secondary">
+                <th className="px-2 py-3 text-xs font-medium uppercase tracking-tightest text-muted-foreground">
                   User
                 </th>
-                <th className="px-3 py-3 text-xs font-medium uppercase tracking-tightest text-text-secondary">
+                <th className="px-3 py-3 text-xs font-medium uppercase tracking-tightest text-muted-foreground">
                   Action
                 </th>
-                <th className="px-3 py-3 text-xs font-medium uppercase tracking-tightest text-text-secondary">
+                <th className="px-3 py-3 text-xs font-medium uppercase tracking-tightest text-muted-foreground">
                   Target
                 </th>
-                <th className="px-3 py-3 text-xs font-medium uppercase tracking-tightest text-text-secondary">
+                <th className="px-3 py-3 text-xs font-medium uppercase tracking-tightest text-muted-foreground">
                   Date
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border-subtle/60">
+            <tbody className="divide-y divide-border/60">
               {pageRows.length === 0 ? (
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-5 py-6 text-center text-sm text-text-muted"
+                    className="px-5 py-6 text-center text-sm text-muted-foreground"
                   >
                     No activity found for the current filters.
                   </td>
                 </tr>
               ) : (
                 pageRows.map((row) => (
-                  <tr key={row.id} className="bg-white transition-colors hover:bg-surface-50">
-                    <td className="px-2 py-3 text-sm font-medium text-text-primary">
+                  <tr key={row.id} className="bg-card transition-colors hover:bg-muted">
+                    <td className="px-2 py-3 text-sm font-medium text-foreground">
                       {row.user}
                     </td>
-                    <td className="px-3 py-3 text-sm text-text-secondary">
+                    <td className="px-3 py-3 text-sm text-muted-foreground">
                       <Badge variant={badgeVariantForAction(row.action)}>
                         {formatActionLabel(row.action)}
                       </Badge>
                     </td>
-                    <td className="px-3 py-3 text-sm text-text-secondary">
+                    <td className="px-3 py-3 text-sm text-muted-foreground">
                       {row.target}
                     </td>
-                    <td className="px-3 py-3 text-sm text-text-secondary">
+                    <td className="px-3 py-3 text-sm text-muted-foreground">
                       {formatDate(row.date)}
                     </td>
                   </tr>
@@ -310,7 +310,7 @@ export function ActivityLogClient() {
       </div>
 
       {/* Pagination placeholder */}
-      <div className="mt-4 flex items-center justify-between text-xs text-text-secondary">
+      <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
         <span>
           Page {currentPage} of {totalPages}
         </span>

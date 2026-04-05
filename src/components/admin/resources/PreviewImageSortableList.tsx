@@ -56,10 +56,10 @@ function SortableItem({ id, index, url, onRemove, onSetCover }: SortableItemProp
       style={style}
       className={isDragging ? "ring-2 ring-brand-400 rounded-xl" : undefined}
     >
-      <PreviewCard className="flex items-center gap-3 border-border-subtle bg-white px-3 py-2 shadow-sm transition">
+      <PreviewCard className="flex items-center gap-3 border-border bg-card px-3 py-2 shadow-sm transition">
       <button
         type="button"
-        className="cursor-grab text-text-muted hover:text-text-secondary"
+        className="cursor-grab text-muted-foreground hover:text-foreground"
         {...attributes}
         {...listeners}
         aria-label="Reorder image"
@@ -79,7 +79,7 @@ function SortableItem({ id, index, url, onRemove, onSetCover }: SortableItemProp
       </MediaPreview>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[12px] text-text-primary">{url}</p>
+        <p className="truncate text-[12px] text-foreground">{url}</p>
         {index === 0 ? (
           <p className="text-[11px] font-medium text-brand-600">Cover</p>
         ) : onSetCover ? (

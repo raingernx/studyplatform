@@ -28,7 +28,6 @@ export const CACHE_TTLS = {
   // Resource detail pages are invalidated by revalidateTag on admin save,
   // so it is safe to cache them for much longer than the homepage lists.
   resourceDetail: 3600,
-  hero: 60,
   stats: 300,
   publicPage: 120,
   platform: 300,
@@ -53,7 +52,6 @@ export function getCreatorPublicCacheTag(identifier: string) {
 }
 
 export const CACHE_KEYS = {
-  activeHero: "active-hero",
   trendingResources: "trending_resources",
   popularResources: "popular_resources",
   newestResources: "newest_resources",

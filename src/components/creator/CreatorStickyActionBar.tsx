@@ -24,14 +24,14 @@ export function CreatorStickyActionBar({
   onPreview,
 }: CreatorStickyActionBarProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur-sm">
+    <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm">
       <div className="mx-auto flex max-w-screen-xl items-center justify-between gap-4">
         {/* Left — error or hint */}
         <div className="min-w-0 flex-1">
           {error ? (
             <p className="truncate text-sm text-red-600">{error}</p>
           ) : !canPublish ? (
-            <p className="hidden text-xs text-neutral-400 sm:block">
+            <p className="hidden text-xs text-muted-foreground sm:block">
               Fill in a title and description to enable publishing.
             </p>
           ) : (
@@ -47,7 +47,7 @@ export function CreatorStickyActionBar({
             type="button"
             onClick={onCancel}
             disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
           >
             <X className="h-4 w-4" />
             <span className="hidden sm:inline">Cancel</span>
@@ -57,7 +57,7 @@ export function CreatorStickyActionBar({
             type="button"
             onClick={onSaveDraft}
             disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm transition-colors hover:bg-neutral-50 disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
             {saving ? "Saving…" : "Save draft"}
@@ -68,7 +68,7 @@ export function CreatorStickyActionBar({
               type="button"
               onClick={onPreview}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm transition-colors hover:bg-neutral-50 disabled:pointer-events-none disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
             >
               <Eye className="h-4 w-4" />
               <span className="hidden sm:inline">Preview as buyer</span>
@@ -84,7 +84,7 @@ export function CreatorStickyActionBar({
                 ? "Add a title and description before publishing"
                 : "Publish this resource to the marketplace"
             }
-            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
           >
             <Rocket className="h-4 w-4" />
             {saving ? "Publishing…" : "Publish"}

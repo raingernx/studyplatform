@@ -71,10 +71,10 @@ export function ProfileSettings({ name, email, image }: ProfileSettingsProps) {
             name={displayName}
             email={displayEmail}
             size={56}
-            className="ring-2 ring-surface-100"
+            className="ring-2 ring-border"
           />
           <div>
-            <p className="text-small text-text-secondary">Avatar</p>
+            <p className="text-small text-muted-foreground">Avatar</p>
             <div className="mt-1 flex gap-2">
               <Button type="button" variant="secondary" size="sm">
                 <Camera className="h-3.5 w-3.5" />
@@ -88,9 +88,9 @@ export function ProfileSettings({ name, email, image }: ProfileSettingsProps) {
           <div className="space-y-1.5">
             <label
               htmlFor="profile-display-name"
-              className="flex items-center gap-1.5 text-caption font-medium text-text-secondary"
+              className="flex items-center gap-1.5 text-caption font-medium text-muted-foreground"
             >
-              <User className="h-3.5 w-3.5 text-text-muted" />
+              <User className="h-3.5 w-3.5 text-muted-foreground" />
               Name
             </label>
             <Input
@@ -104,9 +104,9 @@ export function ProfileSettings({ name, email, image }: ProfileSettingsProps) {
           <div className="space-y-1.5">
             <label
               htmlFor="profile-display-email"
-              className="flex items-center gap-1.5 text-caption font-medium text-text-secondary"
+              className="flex items-center gap-1.5 text-caption font-medium text-muted-foreground"
             >
-              <Mail className="h-3.5 w-3.5 text-text-muted" />
+              <Mail className="h-3.5 w-3.5 text-muted-foreground" />
               Email
             </label>
             <Input

@@ -23,14 +23,14 @@ export function ResourceDescription({
   const needsToggle = description.length > CLAMP_THRESHOLD;
 
   return (
-    <section id="description" className="space-y-3 border-t border-surface-200 pt-6">
+    <section id="description" className="space-y-3 border-t border-border pt-6">
       <div className="space-y-1.5">
-        <h2 className="font-display text-lg font-semibold text-zinc-900">{title}</h2>
-        <p className="text-small leading-6 text-zinc-500">
+        <h2 className="font-display text-lg font-semibold text-foreground">{title}</h2>
+        <p className="text-small leading-6 text-muted-foreground">
           Review the scope, study value, and what this resource is designed to help you do.
         </p>
       </div>
-      <p className={`text-body leading-7 text-zinc-600 ${!expanded ? "line-clamp-4" : ""}`}>
+      <p className={`text-body leading-7 text-muted-foreground ${!expanded ? "line-clamp-4" : ""}`}>
         {description}
       </p>
       {needsToggle && (

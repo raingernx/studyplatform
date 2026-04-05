@@ -30,28 +30,28 @@ export default async function CheckoutCancelPage({ searchParams }: Props) {
     <div className="flex min-h-screen flex-col">
       <Navbar />
 
-      <main className="flex flex-1 items-center bg-zinc-50">
+      <main className="flex flex-1 items-center bg-background">
         <Container className="py-16 sm:py-24">
           <div className="mx-auto max-w-md">
-            <div className="rounded-[28px] border border-surface-200 bg-white p-8 shadow-card sm:p-10">
+            <div className="rounded-[28px] border border-border bg-card p-8 shadow-card sm:p-10">
               {/* Icon */}
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-50">
-                <XCircle className="h-7 w-7 text-zinc-400" />
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                <XCircle className="h-7 w-7 text-muted-foreground" />
               </div>
 
               {/* Heading */}
-              <h1 className="mt-5 text-center font-display text-xl font-semibold tracking-tight text-zinc-900">
+              <h1 className="mt-5 text-center font-display text-xl font-semibold tracking-tight text-foreground">
                 No worries — nothing was charged
               </h1>
 
               {/* Body */}
-              <p className="mx-auto mt-3 max-w-sm text-center text-sm leading-6 text-zinc-500">
+              <p className="mx-auto mt-3 max-w-sm text-center text-sm leading-6 text-muted-foreground">
                 Your payment didn&apos;t complete. You haven&apos;t been
                 charged — the resource is still here whenever you&apos;re ready.
               </p>
 
               {/* Divider */}
-              <div className="my-6 border-t border-surface-200" />
+              <div className="my-6 border-t border-border" />
 
               {/* CTAs */}
               <div className="flex flex-col gap-3">
@@ -59,17 +59,17 @@ export default async function CheckoutCancelPage({ searchParams }: Props) {
                   <>
                     <Link
                       href={routes.resource(slug)}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                     >
                       <RotateCcw className="h-4 w-4" />
                       Try again
                     </Link>
-                    <p className="text-center text-[11px] text-zinc-400">
+                    <p className="text-center text-[11px] text-muted-foreground">
                       Takes you back to the same resource — pick up where you left off
                     </p>
                     <Link
                       href={routes.marketplace}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-surface-200 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-surface-50"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
                     >
                       <BookOpen className="h-4 w-4" />
                       Browse all resources
@@ -79,12 +79,12 @@ export default async function CheckoutCancelPage({ searchParams }: Props) {
                   <>
                     <Link
                       href={routes.marketplace}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                     >
                       <ArrowLeft className="h-4 w-4" />
                       Back to resources
                     </Link>
-                    <p className="text-center text-[11px] text-zinc-400">
+                    <p className="text-center text-[11px] text-muted-foreground">
                       Browse and pick up where you left off
                     </p>
                   </>

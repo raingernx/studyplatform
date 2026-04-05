@@ -85,8 +85,8 @@ Database search note:
 /resources
   public shell avoids page-level auth/cookie reads
     → the browse index now lives under a route group (`src/app/resources/(browse)/*`) so the discover/listing loading UI is scoped to `/resources` itself and does not flash during `/resources/[slug]` navigations
-    → discover hero uses a static anonymous seed
-    → the public discover hero and the admin hero editor preview now share the same browse-first stage component instead of maintaining a separate admin-only hero composition
+    → discover hero is now a fixed design-system-led surface in code instead of being resolved from the admin hero CMS
+    → the public discover hero no longer has a dedicated admin CMS, analytics write path, or hero-specific cache-selection layer
     → listing/discover content streamed separately
     → listing caches keyed by sort/category/page
     → client viewer-state hydration restores owned badges first
@@ -104,6 +104,9 @@ Database search note:
 
 Root rendering note:
 - the root app layout uses build-safe public platform config only and does not read the authenticated server session
+- the root layout now injects a pre-hydration theme bootstrap script that sets `data-theme` / `color-scheme` before React hydration, preventing the old white-first flash on returning dark sessions
+- the theme baseline for users with no stored preference is now `light`; `dark` and `system` remain opt-in user preferences rather than the default initial state
+- `UserPreference.theme` now also defaults to `light` at the Prisma/database layer, so new preference rows created outside the client bootstrap path cannot drift back to `system`
 - the root client provider tree no longer mounts `SessionProvider`; public routes avoid the NextAuth client-session baseline by using targeted auth-viewer fetches only where auth-aware UI is needed
 - `/api/auth/viewer` now resolves directly from the signed JWT token via `next-auth/jwt` instead of `getServerSession`, so lightweight auth chrome does not spend Prisma connections just to confirm the signed-in snapshot
 - `/api/resources/viewer-state` and `/api/resources/[id]/viewer-state` now resolve the same auth snapshot from the signed JWT token instead of calling `getServerSession`, so owned-state/detail-state hydration no longer burns Prisma connections on session reads before the feature-specific queries start
@@ -215,8 +218,7 @@ This separation exists to avoid Prisma build-time warnings and DB dependency in 
 - Next Image output now advertises both AVIF and WebP, which improves the chance of smaller payloads on supported browsers
 - above-the-fold marketplace hero, spotlight, and leading grid-card images can now opt into eager loading without changing the default lazy behavior for the rest of the catalog; discover sections now carry eager state forward for duplicate preview URLs, and search-result listings widen the eager window when a query is active so Lighthouse/browser runs do not keep flagging lower first-page cards as lazy LCP candidates
 - the detail preview gallery now marks both the main preview image and the currently active matching thumbnail as eager/high-priority so duplicate-src thumbnails do not re-trigger Next dev LCP warnings by overwriting the main priority image entry
-- homepage/discover hero resolution now defaults anonymous callers to a static seed unless request-bound behavior is explicitly requested
-- homepage hero cache reads now also use process-level single-flight, and hero impression/click analytics writes are serialized instead of running two concurrent Prisma mutations per event to reduce avoidable public-route pool spikes
+- `/resources` discover hero is now a fixed repo-owned banner contract, so the route no longer carries the older hero resolver/cache/analytics path at all
 - `/resources/[slug]` no longer reads session/cookies at the page level; ownership/success now hydrate ahead of owner-review state from the client-side detail viewer-state API, and post-checkout refresh can bypass the short-lived ownership cache
 - `/resources/[slug]` detail viewer-state now waits for the lightweight auth viewer before calling the private detail viewer-state API, so anonymous detail visits skip that extra request
 - `/resources/[slug]` detail purchase rail now holds a structural "Checking your library…" placeholder instead of flashing a buy CTA before deferred ownership state resolves
@@ -231,9 +233,8 @@ This separation exists to avoid Prisma build-time warnings and DB dependency in 
 - Post-deploy warm/perf workflow includes smoke coverage for resources home, listings, creator detail, resource detail, and category listing
 - search/auth verification now has repo-owned smoke commands: `npm run smoke:local:search` for localhost and `npm run smoke:prod:search` for the production alias; other environments can reuse the same script with `BASE_URL=... npm run smoke:search`
 - key browser verification now also has a repo-owned `npm run smoke:local:browser` path that exercises the main public search/detail/auth-guard flows plus authenticated admin/creator preview-image uploader flows before merge
-- Playwright browser automation is now scaffolded for local/CI use via `playwright.config.ts` and `npm run test:e2e`; the local project still uses the `chromium` project name, but on this macOS setup it launches the locally installed Chrome stable binary via `channel: "chrome"` because Google Chrome for Testing proved crash-prone
+- Playwright browser automation is now scaffolded for local/CI use via `playwright.config.ts` and `npm run test:e2e`; the local project still uses the `chromium` project name, but it now defaults to `channel: "chromium"` so local verification uses Playwright's bundled Chromium browser instead of the headless shell or installed Chrome stable. Use `PLAYWRIGHT_BROWSER_CHANNEL=chrome` only when you explicitly need installed-Chrome verification
 - browser-level route coverage now includes `/resources`, top-bar search submit into canonical `/resources?search=...`, canonical search results, no-results recovery, resource detail image rendering, and authenticated preview-image uploader flows on both `/admin/resources/new` and `/dashboard/creator/resources/new`
-- browser-level smoke coverage now also includes the admin hero editor preview, asserting that `/admin/heroes/new` renders the shared public hero surface while keeping advanced controls collapsed by default
 - browser-level search coverage now also verifies the empty-query quick-browse dropdown and recent-search chip behavior before the canonical search submit path
 - browser-level discover coverage now also verifies that the "Featured picks" `View all` CTA opens the featured listing filter instead of falling through a legacy sort alias, and that the seeded creator discover shell does not expose misleading personalized CTA affordances when no history-backed personalized slice exists
 - browser-level verification tooling now also includes `@axe-core/playwright` for in-test accessibility checks, `@lhci/cli` via `.lighthouserc.json` for Lighthouse route audits, and `@next/bundle-analyzer` behind `ANALYZE=true` / `npm run analyze` for bundle inspection
@@ -241,6 +242,7 @@ This separation exists to avoid Prisma build-time warnings and DB dependency in 
 - Chromatic CLI is also installed as an optional Storybook publish/review layer for visual regression work, but it is dormant until a `CHROMATIC_PROJECT_TOKEN` is configured
 - Repomix is also installed as a local AI-context export utility, with repo-owned `.repomixignore` rules to keep secrets, generated artifacts, and local tool state out of packed outputs
 - local browser automation against `http://127.0.0.1:3000` is now explicitly allowed through Next's `allowedDevOrigins`, so Playwright no longer depends on blocked dev-resource/HMR fallbacks when it uses that origin
+- optional skeleton generation can now be layered in via `boneyard-js` (`boneyard.config.json`, `src/bones`, `npm run skeleton:boneyard:build`), but the repo still treats route-level loading/fallback design as a first-class contract rather than replacing everything with generated bones
 - the global CSP header now explicitly allows `https://va.vercel-scripts.com`, matching the Vercel Analytics / Speed Insights scripts that the app mounts in runtime
 - root metadata now also serves `robots.txt` from `src/app/robots.ts`; the file is generated from build-safe public platform config so local/public crawlers stop seeing a 404 without reintroducing DB-backed metadata reads
 - `src/proxy.ts` no longer imports `next-auth/middleware`; request interception now uses direct JWT inspection via `next-auth/jwt`, which keeps the protected-route behavior explicit while trimming one middleware helper layer from the hot request path
@@ -254,4 +256,4 @@ This separation exists to avoid Prisma build-time warnings and DB dependency in 
 
 ---
 
-*Refreshed against the repo state on 2026-04-03.*
+*Refreshed against the repo state on 2026-04-05.*

@@ -8,7 +8,7 @@ export function ResourcesIntroSectionSkeleton({
   isDiscoverMode,
 }: ResourcesIntroSectionSkeletonProps) {
   return (
-    <section className="border-b border-surface-200/80 pb-7 sm:pb-8">
+    <section className="border-b border-border pb-7 sm:pb-8">
       {isDiscoverMode ? (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <LoadingSkeleton className="h-4 w-24" />

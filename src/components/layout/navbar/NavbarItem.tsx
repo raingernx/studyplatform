@@ -32,12 +32,12 @@ export function NavbarItem({
         variant === "primary"
           ? "bg-brand-600 text-white shadow-sm hover:bg-brand-700"
           : variant === "secondary"
-            ? "bg-white text-text-primary shadow-sm ring-1 ring-surface-200 hover:bg-surface-50"
+            ? "bg-card text-foreground shadow-sm ring-1 ring-border hover:bg-accent"
           : variant === "active"
             ? mobile
               ? "bg-brand-50 text-brand-600"
-              : "bg-surface-100 text-text-primary shadow-sm ring-1 ring-surface-200"
-            : "text-text-secondary hover:bg-surface-100 hover:text-text-primary",
+              : "bg-accent text-foreground shadow-sm ring-1 ring-border"
+            : "text-muted-foreground hover:bg-accent hover:text-foreground",
         className,
       )}
     >

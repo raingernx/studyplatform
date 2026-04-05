@@ -40,7 +40,7 @@ export function TablePagination({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle bg-surface-50/70 px-4 py-3 text-small text-text-secondary",
+        "flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/70 px-4 py-3 text-small text-muted-foreground",
         className
       )}
     >

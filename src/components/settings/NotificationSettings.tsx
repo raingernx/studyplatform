@@ -26,8 +26,8 @@ function ToggleRow({
   return (
     <div className="flex items-center justify-between gap-4 py-3">
       <div className="space-y-0.5">
-        <p className="text-sm font-medium text-text-primary">{label}</p>
-        <p className="mt-0.5 text-small text-text-secondary">{description}</p>
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="mt-0.5 text-small text-muted-foreground">{description}</p>
         {meta ? (
           <p
             id={`${id}-status`}
@@ -115,22 +115,22 @@ export function NotificationSettings({
       description="Control which emails and alerts you receive."
       contentClassName="space-y-4"
     >
-      <div className="flex items-center gap-2 text-caption text-text-secondary">
-        <Bell className="h-3.5 w-3.5 text-text-muted" />
+      <div className="flex items-center gap-2 text-caption text-muted-foreground">
+        <Bell className="h-3.5 w-3.5 text-muted-foreground" />
         Notification preferences are stored locally for now.
       </div>
       {status.message ? (
         <p
           className={[
             "text-caption font-medium",
-            status.tone === "error" ? "text-danger-600" : "text-text-secondary",
+            status.tone === "error" ? "text-danger-600" : "text-muted-foreground",
           ].join(" ")}
           aria-live="polite"
         >
           {status.message}
         </p>
       ) : null}
-      <div className="divide-y divide-zinc-100">
+      <div className="divide-y divide-border">
         <ToggleRow
           id="email-notifications"
           label="Email notifications"

@@ -149,7 +149,7 @@ export default function AdminCategoriesPage() {
                 <div className="space-y-1.5">
                   <label
                     htmlFor="category-name"
-                    className="text-sm font-medium text-text-primary"
+                    className="text-sm font-medium text-foreground"
                   >
                     Category Name
                   </label>
@@ -163,7 +163,7 @@ export default function AdminCategoriesPage() {
                 <div className="space-y-1.5">
                   <label
                     htmlFor="category-slug"
-                    className="text-sm font-medium text-text-primary"
+                    className="text-sm font-medium text-foreground"
                   >
                     Slug
                   </label>
@@ -173,7 +173,7 @@ export default function AdminCategoriesPage() {
                     onChange={(e) => setFormSlug(e.target.value)}
                     placeholder="e.g. math"
                   />
-                  <p className="text-xs text-text-muted">
+                  <p className="text-xs text-muted-foreground">
                     Used in URLs, lowercase with dashes.
                   </p>
                 </div>
@@ -219,21 +219,21 @@ export default function AdminCategoriesPage() {
           ) : (
             categories.map((category) => (
               <DataTableRow key={category.id}>
-                <DataTableCell className="px-2 font-medium text-text-primary">
+                <DataTableCell className="px-2 font-medium text-foreground">
                   {category.name}
                 </DataTableCell>
-                <DataTableCell className="px-3 text-text-secondary">
-                  <span className="inline-flex items-center rounded-full bg-surface-100 px-2.5 py-0.5 font-ui text-caption text-text-secondary">
+                <DataTableCell className="px-3 text-muted-foreground">
+                  <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 font-ui text-caption text-muted-foreground">
                     {category.slug}
                   </span>
                 </DataTableCell>
-                <DataTableCell className="px-3 text-text-secondary">
-                  <span className="text-small text-text-muted">
+                <DataTableCell className="px-3 text-muted-foreground">
+                  <span className="text-small text-muted-foreground">
                     {category.resources} resource
                     {category.resources === 1 ? "" : "s"}
                   </span>
                 </DataTableCell>
-                <DataTableCell className="px-3 text-text-secondary">
+                <DataTableCell className="px-3 text-muted-foreground">
                   {formatDate(category.createdAt)}
                 </DataTableCell>
                 <DataTableCell className="px-3" align="right">

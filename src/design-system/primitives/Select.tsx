@@ -46,7 +46,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function Select(
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className={cn("text-caption text-text-muted")}>
+        <p id={hintId} className={cn("text-caption text-muted-foreground")}>
           {hint}
         </p>
       ) : null}

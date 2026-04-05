@@ -263,14 +263,14 @@ export function CreatorAIDraftGenerator({
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="space-y-1">
           <p className="text-xs font-semibold tracking-[0.18em] text-blue-600">ตัวช่วยสร้างฉบับร่างด้วย AI</p>
-          <h2 className="text-lg font-semibold text-neutral-900">
+          <h2 className="text-lg font-semibold text-foreground">
             สร้างสรุปเนื้อหา ผลลัพธ์การเรียนรู้ และชุดคำถามเบื้องต้น
           </h2>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-muted-foreground">
             กรอกเฉพาะข้อมูลที่จำเป็น: วิชา ระดับชั้น จำนวนข้อ และเนื้อหาต้นฉบับ จากนั้น Krukraft จะสร้างฉบับร่างให้แก้ไขต่อได้ทันที
           </p>
         </div>
-        <div className="rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs text-neutral-600">
+        <div className="rounded-xl border border-blue-200 bg-card px-3 py-2 text-xs text-muted-foreground">
           {mode === "create"
             ? "ครั้งแรกระบบจะสร้าง resource ฉบับร่างให้ก่อนอัตโนมัติ"
             : "ฟีเจอร์นี้ออกแบบมาสำหรับเนื้อหาภาษาไทยในเวอร์ชันแรก"}
@@ -281,7 +281,7 @@ export function CreatorAIDraftGenerator({
         <div className="space-y-5">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-neutral-700">วิชา / หัวข้อ</label>
+              <label className="text-sm font-medium text-foreground">วิชา / หัวข้อ</label>
               <Input
                 name="subject"
                 value={draftState.subject}
@@ -291,7 +291,7 @@ export function CreatorAIDraftGenerator({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-neutral-700">ระดับชั้น</label>
+              <label className="text-sm font-medium text-foreground">ระดับชั้น</label>
               <Input
                 name="grade"
                 value={draftState.grade}
@@ -301,7 +301,7 @@ export function CreatorAIDraftGenerator({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-neutral-700">จำนวนข้อคำถาม</label>
+              <label className="text-sm font-medium text-foreground">จำนวนข้อคำถาม</label>
               <Input
                 name="quizCount"
                 type="number"
@@ -315,10 +315,10 @@ export function CreatorAIDraftGenerator({
 
           <div className="space-y-2">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <label className="text-sm font-medium text-neutral-700" htmlFor={fileInputId}>
+              <label className="text-sm font-medium text-foreground" htmlFor={fileInputId}>
                 อัปโหลดไฟล์ข้อความต้นฉบับ
               </label>
-              <span className="text-xs text-neutral-500">
+              <span className="text-xs text-muted-foreground">
                 รองรับ `.txt`, `.md` หรือวางข้อความโดยตรง
               </span>
             </div>
@@ -327,17 +327,17 @@ export function CreatorAIDraftGenerator({
               type="file"
               accept=".txt,.md,text/plain,text/markdown,application/json"
               onChange={handlePlainTextUpload}
-              className="block w-full rounded-xl border border-dashed border-blue-300 bg-white px-3 py-2.5 text-sm text-neutral-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700"
+              className="block w-full rounded-xl border border-dashed border-blue-300 bg-card px-3 py-2.5 text-sm text-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700"
             />
             {draftState.sourceFileName && (
-              <p className="text-xs text-neutral-500">
-                ใช้ไฟล์: <span className="font-medium text-neutral-700">{draftState.sourceFileName}</span>
+              <p className="text-xs text-muted-foreground">
+                ใช้ไฟล์: <span className="font-medium text-foreground">{draftState.sourceFileName}</span>
               </p>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-neutral-700">เนื้อหาต้นฉบับ</label>
+            <label className="text-sm font-medium text-foreground">เนื้อหาต้นฉบับ</label>
             <Textarea
               name="sourceText"
               value={draftState.sourceText}
@@ -352,7 +352,7 @@ export function CreatorAIDraftGenerator({
             <Button type="button" onClick={handleGenerate} loading={generating} disabled={!canGenerate}>
               สร้างฉบับร่างด้วย AI
             </Button>
-            <span className="text-xs text-neutral-500">
+            <span className="text-xs text-muted-foreground">
               {canGenerate
                 ? "หลังสร้างแล้ว คุณยังแก้ไขข้อความทุกส่วนได้เอง"
                 : "เพิ่มเนื้อหาอีกเล็กน้อยก่อนเริ่มสร้างฉบับร่าง"}
@@ -364,11 +364,11 @@ export function CreatorAIDraftGenerator({
 
       {hasGeneratedDraft && (
         <div className="mt-6 space-y-5">
-          <div className="rounded-2xl border border-white/80 bg-white p-5">
+          <div className="rounded-2xl border border-border bg-card p-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <h3 className="text-base font-semibold text-neutral-900">ฉบับร่างที่ AI สร้างให้</h3>
-                <p className="text-sm text-neutral-500">
+                <h3 className="text-base font-semibold text-foreground">ฉบับร่างที่ AI สร้างให้</h3>
+                <p className="text-sm text-muted-foreground">
                   ตรวจและแก้ไขข้อความแต่ละส่วนก่อนบันทึกลงใน resource นี้
                 </p>
               </div>
@@ -397,7 +397,7 @@ export function CreatorAIDraftGenerator({
 
             <div className="mt-5 grid gap-5">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-neutral-700">สรุปเนื้อหา</label>
+                <label className="text-sm font-medium text-foreground">สรุปเนื้อหา</label>
                 <Textarea
                   name="summary"
                   value={draftState.summary}
@@ -407,7 +407,7 @@ export function CreatorAIDraftGenerator({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-neutral-700">ผลลัพธ์การเรียนรู้</label>
+                <label className="text-sm font-medium text-foreground">ผลลัพธ์การเรียนรู้</label>
                 <Textarea
                   name="learningOutcomes"
                   value={draftState.learningOutcomes}
@@ -417,7 +417,7 @@ export function CreatorAIDraftGenerator({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-neutral-700">ชุดคำถามเบื้องต้น</label>
+                <label className="text-sm font-medium text-foreground">ชุดคำถามเบื้องต้น</label>
                 <Textarea
                   name="quizDraft"
                   value={draftState.quizDraft}

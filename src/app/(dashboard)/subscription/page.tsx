@@ -62,10 +62,10 @@ export default async function SubscriptionPage() {
     <PageContentNarrow className="space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="font-display text-h2 font-semibold tracking-tight text-zinc-900">
+        <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
           Membership
         </h1>
-        <p className="text-[14px] text-zinc-500">
+        <p className="text-[14px] text-muted-foreground">
           Manage your plan and unlock full access to {platform.platformShortName}.
         </p>
       </div>
@@ -111,36 +111,36 @@ export default async function SubscriptionPage() {
 
             {/* Usage stats */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-2xl border border-zinc-100 bg-white p-5 shadow-card">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                   Resources owned
                 </p>
-                <p className="mt-2 text-3xl font-bold tracking-tight text-zinc-900">
+                <p className="mt-2 text-3xl font-bold tracking-tight text-foreground">
                   {resourcesOwned}
                 </p>
                 <Link
                   href={routes.library}
-                  className="mt-2 flex items-center gap-1 text-[12px] font-medium text-blue-600 hover:text-blue-700"
+                  className="mt-2 flex items-center gap-1 text-[12px] font-medium text-primary transition hover:opacity-80"
                 >
                   View library <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
-              <div className="rounded-2xl border border-zinc-100 bg-white p-5 shadow-card">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                   Plan
                 </p>
-                <p className="mt-2 text-xl font-bold tracking-tight text-zinc-900">
+                <p className="mt-2 text-xl font-bold tracking-tight text-foreground">
                   {user?.subscriptionPlan?.replace(/_/g, " ") ?? "Pro"}
                 </p>
-                <p className="mt-1 text-[12px] text-zinc-400">
+                <p className="mt-1 text-[12px] text-muted-foreground">
                   Unlimited access
                 </p>
               </div>
             </div>
 
             {/* Benefits */}
-            <div className="rounded-2xl border border-zinc-100 bg-white p-6 shadow-card">
-              <h2 className="text-[14px] font-semibold text-zinc-900">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
+              <h2 className="text-[14px] font-semibold text-foreground">
                 Your Pro benefits
               </h2>
               <ul className="mt-4 space-y-4">
@@ -152,10 +152,10 @@ export default async function SubscriptionPage() {
                         <Icon className="h-4 w-4 text-emerald-600" />
                       </span>
                       <div>
-                        <p className="text-[13px] font-semibold text-zinc-900">
+                        <p className="text-[13px] font-semibold text-foreground">
                           {benefit.label}
                         </p>
-                        <p className="mt-0.5 text-[12px] text-zinc-500">
+                        <p className="mt-0.5 text-[12px] text-muted-foreground">
                           {benefit.desc}
                         </p>
                       </div>
@@ -166,19 +166,19 @@ export default async function SubscriptionPage() {
             </div>
 
             {/* Billing portal */}
-            <div className="rounded-2xl border border-zinc-100 bg-white p-5 shadow-card">
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[13px] font-semibold text-zinc-900">
+                  <p className="text-[13px] font-semibold text-foreground">
                     Billing &amp; invoices
                   </p>
-                  <p className="mt-0.5 text-[12px] text-zinc-500">
+                  <p className="mt-0.5 text-[12px] text-muted-foreground">
                     Manage payment, cancel, or change your plan.
                   </p>
                 </div>
                 <button
                   disabled
-                  className="rounded-xl border border-zinc-200 px-4 py-2 text-[12px] font-medium text-zinc-400 opacity-60 cursor-not-allowed"
+                  className="cursor-not-allowed rounded-xl border border-border bg-muted px-4 py-2 text-[12px] font-medium text-muted-foreground opacity-60"
                 >
                   Billing portal (soon)
                 </button>
@@ -188,22 +188,22 @@ export default async function SubscriptionPage() {
       ) : (
         <div className="space-y-5">
             {/* Current plan — free */}
-            <div className="rounded-2xl border border-zinc-100 bg-white p-6 shadow-card">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100">
-                    <CreditCard className="h-5 w-5 text-zinc-400" />
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+                    <CreditCard className="h-5 w-5 text-muted-foreground" />
                   </span>
                   <div>
-                    <p className="text-[14px] font-semibold text-zinc-900">
+                    <p className="text-[14px] font-semibold text-foreground">
                       Free Plan
                     </p>
-                    <p className="mt-0.5 text-[12px] text-zinc-500">
+                    <p className="mt-0.5 text-[12px] text-muted-foreground">
                       Purchase resources individually.
                     </p>
                   </div>
                 </div>
-                <span className="rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-semibold text-zinc-600">
+                <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-semibold text-secondary-foreground">
                   Current plan
                 </span>
               </div>
@@ -219,10 +219,10 @@ export default async function SubscriptionPage() {
                     Pro Plan
                   </span>
                 </div>
-                <p className="mt-2 text-[22px] font-bold tracking-tight text-zinc-900">
+                <p className="mt-2 text-[22px] font-bold tracking-tight text-foreground">
                   Unlimited access
                 </p>
-                <p className="mt-1 text-[13px] text-zinc-600">
+                <p className="mt-1 text-[13px] text-muted-foreground">
                   Get everything {platform.platformShortName} has to offer — one flat price.
                 </p>
 
@@ -235,7 +235,7 @@ export default async function SubscriptionPage() {
                       <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100">
                         <Check className="h-3 w-3 text-emerald-600" />
                       </span>
-                      <span className="text-[13px] text-zinc-700">
+                      <span className="text-[13px] text-foreground">
                         {benefit.label}
                       </span>
                     </li>

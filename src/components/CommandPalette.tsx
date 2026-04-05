@@ -75,7 +75,7 @@ export function CommandPalette() {
       onClick={close}
     >
       <div
-        className="w-[600px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
+        className="w-[600px] overflow-hidden rounded-xl border border-border bg-card shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <input
@@ -83,7 +83,7 @@ export function CommandPalette() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search commands..."
-          className="w-full border-b border-gray-200 px-4 py-3 text-sm outline-none"
+          className="w-full border-b border-border bg-transparent px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
         />
         <div className="divide-y">
           {commands.map((cmd) => (

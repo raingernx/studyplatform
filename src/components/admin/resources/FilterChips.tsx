@@ -65,16 +65,16 @@ export function FilterChips({
       {chips.map((chip) => (
         <div
           key={chip.key}
-          className="inline-flex items-center gap-1 rounded-full border border-border-subtle bg-surface-50 px-2.5 py-1 text-xs text-text-secondary"
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2.5 py-1 text-xs text-muted-foreground"
         >
           <span className="font-medium">
             {chip.label}:{" "}
-            <span className="font-normal text-text-primary">{chip.value}</span>
+            <span className="font-normal text-foreground">{chip.value}</span>
           </span>
           <button
             type="button"
             onClick={() => onRemove(chip.key)}
-            className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-text-muted hover:bg-surface-100 hover:text-text-primary"
+            className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-background hover:text-foreground"
             aria-label={`Clear ${chip.label.toLowerCase()} filter`}
           >
             <X className="h-3 w-3" />
@@ -87,7 +87,7 @@ export function FilterChips({
           type="button"
           variant="ghost"
           size="sm"
-          className="h-6 px-2 text-[11px] text-text-secondary"
+          className="h-6 px-2 text-[11px] text-muted-foreground"
           onClick={onClearAll}
         >
           Clear all filters

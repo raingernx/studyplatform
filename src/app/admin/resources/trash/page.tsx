@@ -24,10 +24,10 @@ export default async function AdminResourcesTrashPage() {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-h2 font-semibold tracking-tight text-text-primary">
+          <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
             Trash
           </h1>
-          <p className="mt-1 text-meta text-text-secondary">
+          <p className="mt-1 text-meta text-muted-foreground">
             View resources that have been moved to trash. Restored items will
             reappear in the main resources list.
           </p>
@@ -39,7 +39,7 @@ export default async function AdminResourcesTrashPage() {
           className="inline-flex items-center gap-2"
         >
           <Link href={routes.adminResources}>
-            <ArrowLeft className="h-4 w-4 text-text-secondary" />
+            <ArrowLeft className="h-4 w-4 text-muted-foreground" />
             <span>Back to Resources</span>
           </Link>
         </Button>

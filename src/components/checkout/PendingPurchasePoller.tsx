@@ -115,7 +115,7 @@ export function PendingPurchasePoller({
 
   if (exhausted) {
     return (
-      <div className="flex h-full min-h-0 flex-col justify-between rounded-2xl border border-amber-100 bg-white p-6 shadow-card-lg">
+      <div className="flex h-full min-h-0 flex-col justify-between rounded-2xl border border-amber-200/70 bg-card p-6 shadow-card-lg">
         <div className="space-y-5">
           {/* Icon */}
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
@@ -126,10 +126,10 @@ export function PendingPurchasePoller({
 
           {/* Copy */}
           <div className="space-y-2 text-center">
-            <p className="text-[15px] font-semibold text-zinc-900">
+            <p className="text-[15px] font-semibold text-foreground">
               Taking longer than expected
             </p>
-            <p className="text-[13px] leading-6 text-zinc-500">
+            <p className="text-[13px] leading-6 text-muted-foreground">
               Your payment was received but confirmation is delayed. Your
               resource will appear in your library once it processes — usually
               within a minute.
@@ -140,16 +140,16 @@ export function PendingPurchasePoller({
           <div className="space-y-2">
             <Link
               href={routes.library}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-zinc-700"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3 text-[14px] font-semibold text-background transition hover:opacity-90"
             >
               <Library className="h-4 w-4" />
               Check My Library
             </Link>
-            <p className="text-center text-[12px] text-zinc-400">
+            <p className="text-center text-[12px] text-muted-foreground">
               Still not there?{" "}
               <Link
                 href={routes.support}
-                className="underline underline-offset-2 hover:text-zinc-600"
+                className="underline underline-offset-2 transition hover:text-foreground"
               >
                 Contact support
               </Link>
@@ -163,7 +163,7 @@ export function PendingPurchasePoller({
   // ── Polling state ──────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full min-h-0 flex-col justify-center rounded-2xl border border-emerald-100 bg-white p-6 shadow-card-lg">
+    <div className="flex h-full min-h-0 flex-col justify-center rounded-2xl border border-emerald-200/70 bg-card p-6 shadow-card-lg">
       <div className="space-y-6 text-center">
         {/* Spinner */}
         <div className="flex items-center justify-center">
@@ -174,11 +174,11 @@ export function PendingPurchasePoller({
 
         {/* Copy */}
         <div className="space-y-1.5">
-          <p className="text-[15px] font-semibold text-zinc-900">
+          <p className="text-[15px] font-semibold text-foreground">
             Confirming your payment…
           </p>
-          <p className="text-[13px] leading-6 text-zinc-500">
-            <span className="font-medium text-zinc-700">{resourceTitle}</span>{" "}
+          <p className="text-[13px] leading-6 text-muted-foreground">
+            <span className="font-medium text-foreground">{resourceTitle}</span>{" "}
             will be ready to download in just a moment.
           </p>
         </div>
@@ -197,13 +197,13 @@ export function PendingPurchasePoller({
               key={i}
               className={[
                 "h-1.5 w-1.5 rounded-full transition-colors duration-300",
-                i < displayAttempt ? "bg-emerald-400" : "bg-zinc-200",
+                i < displayAttempt ? "bg-emerald-400" : "bg-border",
               ].join(" ")}
             />
           ))}
         </div>
 
-        <p className="text-[11px] text-zinc-400">
+        <p className="text-[11px] text-muted-foreground">
           Checking — {displayAttempt + 1} of {maxAttempts}
         </p>
       </div>

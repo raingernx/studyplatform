@@ -114,7 +114,7 @@ export function TagInput({
       {label !== undefined && (
         <label
           htmlFor="tag-input-search"
-          className="mb-1 block text-sm font-medium text-zinc-700"
+          className="mb-1 block text-sm font-medium text-foreground"
         >
           {label}
         </label>
@@ -125,13 +125,13 @@ export function TagInput({
           {selectedTags.map((t) => (
             <span
               key={t.id}
-              className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700"
+              className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground"
             >
               {t.name.toLowerCase()}
               <button
                 type="button"
                 onClick={() => remove(t.id)}
-                className="rounded-full p-0.5 text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-800"
+                className="rounded-full p-0.5 text-muted-foreground transition hover:bg-background hover:text-foreground"
                 aria-label={`Remove tag ${t.name}`}
               >
                 <X className="h-3 w-3" />
@@ -141,9 +141,9 @@ export function TagInput({
         </div>
       )}
 
-      <div className="relative min-w-0 rounded-xl border border-border-subtle bg-surface-50">
+      <div className="relative min-w-0 rounded-xl border border-border bg-muted">
         <div className="flex min-w-0 items-center gap-2 px-3 py-2">
-          <Search className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
+          <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           <input
             id="tag-input-search"
             type="text"
@@ -156,7 +156,7 @@ export function TagInput({
             onKeyDown={handleKeyDown}
             placeholder={creating ? "Creating…" : placeholder}
             disabled={creating}
-            className="w-full min-w-0 bg-transparent text-[13px] text-text-primary outline-none placeholder:text-text-muted disabled:opacity-60"
+            className="w-full min-w-0 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-60"
             aria-autocomplete="list"
             aria-expanded={open}
           />
@@ -164,7 +164,7 @@ export function TagInput({
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="shrink-0 text-text-secondary hover:text-text-primary"
+              className="shrink-0 text-muted-foreground hover:text-foreground"
               aria-label="Clear search"
             >
               <X className="h-3.5 w-3.5" />
@@ -173,13 +173,13 @@ export function TagInput({
         </div>
 
         {open && (query.length > 0 || notSelected.length > 0) && (
-          <div className="absolute left-0 right-0 top-full z-10 max-h-40 overflow-y-auto rounded-b-xl border border-t-0 border-border-subtle bg-white py-1 shadow-md">
+          <div className="absolute left-0 right-0 top-full z-10 max-h-40 overflow-y-auto rounded-b-xl border border-t-0 border-border bg-popover py-1 shadow-md">
             {notSelected.length === 0 && !onCreateTag ? (
-              <p className="py-3 text-center text-[12px] text-text-secondary">
+              <p className="py-3 text-center text-[12px] text-muted-foreground">
                 No tags found.
               </p>
             ) : notSelected.length === 0 && query.trim() && onCreateTag ? (
-              <p className="py-2 px-3 text-[12px] text-text-secondary">
+              <p className="py-2 px-3 text-[12px] text-muted-foreground">
                 Press Enter to create &quot;{query.trim()}&quot;
               </p>
             ) : (
@@ -191,7 +191,7 @@ export function TagInput({
                   className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] transition ${
                     i === highlightIndex
                       ? "bg-brand-50 text-brand-800"
-                      : "text-text-primary hover:bg-surface-100"
+                      : "text-foreground hover:bg-muted"
                   }`}
                 >
                   {t.name}

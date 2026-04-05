@@ -114,7 +114,7 @@ export function CreatorBuyerPreviewModal({
     >
       {/* Modal panel — stop click propagation so inner clicks don't close */}
       <div
-        className="relative mx-auto w-full max-w-5xl rounded-2xl bg-zinc-50 shadow-2xl"
+        className="relative mx-auto w-full max-w-5xl rounded-2xl bg-background shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Preview mode banner ────────────────────────────────────────── */}
@@ -137,7 +137,7 @@ export function CreatorBuyerPreviewModal({
         <div className="space-y-8 p-4 sm:p-6 lg:p-8">
 
           {/* Hero card — mirrors real detail page top section */}
-          <section className="rounded-[24px] border border-surface-200 bg-gradient-to-br from-white via-white to-brand-50/30 p-4 shadow-card sm:p-6">
+          <section className="rounded-[24px] border border-border bg-gradient-to-br from-card via-card to-primary-50 p-4 shadow-card sm:p-6">
             <div className="space-y-6 lg:space-y-8">
               {/* Title, creator placeholder, no stats (unpublished) */}
               <ResourceHeader
@@ -158,12 +158,12 @@ export function CreatorBuyerPreviewModal({
                 />
 
                 {/* Preview-only price card (replaces PurchaseCard which is async server) */}
-                <div className="order-3 flex flex-col gap-4 rounded-2xl border border-surface-200 bg-white p-5 shadow-sm">
+                <div className="order-3 flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Price
                     </p>
-                    <p className="mt-1 text-3xl font-bold tracking-tight text-zinc-900">
+                    <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
                       {priceLabel}
                     </p>
                   </div>
@@ -173,11 +173,11 @@ export function CreatorBuyerPreviewModal({
                       type="button"
                       disabled
                       aria-disabled="true"
-                      className="w-full cursor-not-allowed rounded-xl bg-neutral-100 py-3 text-[14px] font-medium text-neutral-400"
+                      className="w-full cursor-not-allowed rounded-xl bg-muted py-3 text-[14px] font-medium text-muted-foreground"
                     >
                       Purchase unavailable in preview
                     </button>
-                    <p className="text-center text-[12px] leading-5 text-zinc-400">
+                    <p className="text-center text-[12px] leading-5 text-muted-foreground">
                       {resource.isFree
                         ? "Buyers will add this to their library for free."
                         : "Buyers will see payment options here after you publish."}
@@ -197,10 +197,10 @@ export function CreatorBuyerPreviewModal({
               <ResourceFiles files={includedFiles} />
               {/* Frosted overlay makes the section visibly non-interactive */}
               <div
-                className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/70 backdrop-blur-[2px]"
+                className="absolute inset-0 flex items-center justify-center rounded-2xl bg-[hsl(var(--card)/0.7)] backdrop-blur-[2px]"
                 aria-hidden="true"
               >
-                <span className="rounded-full border border-zinc-200 bg-white px-4 py-1.5 text-[12px] font-medium text-zinc-500 shadow-sm">
+                <span className="rounded-full border border-border bg-card px-4 py-1.5 text-[12px] font-medium text-muted-foreground shadow-sm">
                   Download available after purchase
                 </span>
               </div>
@@ -208,7 +208,7 @@ export function CreatorBuyerPreviewModal({
           )}
 
           {/* Footer note — sets expectations about what the full page will include */}
-          <p className="pb-2 text-center text-[12px] text-zinc-400">
+          <p className="pb-2 text-center text-[12px] text-muted-foreground">
             The live listing will also show reviews, related resources, and your creator profile.
           </p>
         </div>

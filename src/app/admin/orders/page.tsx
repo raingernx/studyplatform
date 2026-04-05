@@ -91,28 +91,28 @@ export default async function AdminOrdersPage({
       {/* Stats */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <Card className="p-4">
-          <p className="font-ui text-caption text-text-muted">
+          <p className="font-ui text-caption text-muted-foreground">
             Total revenue
           </p>
-          <p className="mt-2 text-2xl font-semibold tracking-tight text-text-primary">
+          <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
             {formatPrice(totalRevenue / 100)}
           </p>
         </Card>
 
         <Card className="p-4">
-          <p className="font-ui text-caption text-text-muted">
+          <p className="font-ui text-caption text-muted-foreground">
             Orders today
           </p>
-          <p className="mt-2 text-2xl font-semibold tracking-tight text-text-primary">
+          <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
             {formatNumber(ordersToday)}
           </p>
         </Card>
 
         <Card className="p-4">
-          <p className="font-ui text-caption text-text-muted">
+          <p className="font-ui text-caption text-muted-foreground">
             Average order value
           </p>
-          <p className="mt-2 text-2xl font-semibold tracking-tight text-text-primary">
+          <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
             {formatPrice(averageOrderValue / 100)}
           </p>
         </Card>
@@ -124,7 +124,7 @@ export default async function AdminOrdersPage({
           <div className="flex w-full flex-col gap-1 sm:w-auto">
             <label
               htmlFor="status"
-              className="font-ui text-caption text-text-muted"
+              className="font-ui text-caption text-muted-foreground"
             >
               Status
             </label>
@@ -144,7 +144,7 @@ export default async function AdminOrdersPage({
           <div className="flex w-full flex-col gap-1 sm:w-auto">
             <label
               htmlFor="from"
-              className="font-ui text-caption text-text-muted"
+              className="font-ui text-caption text-muted-foreground"
             >
               From
             </label>
@@ -160,7 +160,7 @@ export default async function AdminOrdersPage({
           <div className="flex w-full flex-col gap-1 sm:w-auto">
             <label
               htmlFor="to"
-              className="font-ui text-caption text-text-muted"
+              className="font-ui text-caption text-muted-foreground"
             >
               To
             </label>
@@ -220,31 +220,31 @@ export default async function AdminOrdersPage({
 
               return (
                 <DataTableRow key={order.id}>
-                  <DataTableCell className="px-2 font-mono text-sm text-text-secondary">
+                  <DataTableCell className="px-2 font-mono text-sm text-muted-foreground">
                     {order.id}
                   </DataTableCell>
-                  <DataTableCell className="px-3 text-text-secondary">
+                  <DataTableCell className="px-3 text-muted-foreground">
                     <div className="flex flex-col">
                       <span>{order.user.name ?? "Unknown"}</span>
-                      <span className="text-caption text-text-muted">
+                      <span className="text-caption text-muted-foreground">
                         {order.user.email}
                       </span>
                     </div>
                   </DataTableCell>
-                  <DataTableCell className="px-3 text-text-secondary">
+                  <DataTableCell className="px-3 text-muted-foreground">
                     {order.resource.title}
                   </DataTableCell>
-                  <DataTableCell className="px-3 tabular-nums text-text-secondary">
+                  <DataTableCell className="px-3 tabular-nums text-muted-foreground">
                     {formatPrice(order.amount / 100)}
                   </DataTableCell>
-                  <DataTableCell className="px-3 text-text-secondary">
+                  <DataTableCell className="px-3 text-muted-foreground">
                     <StatusBadge
                       status={order.status}
                       label={badge.label}
                       tone={badge.tone}
                     />
                   </DataTableCell>
-                  <DataTableCell className="px-3 text-text-secondary">
+                  <DataTableCell className="px-3 text-muted-foreground">
                     {formatDate(order.createdAt)}
                   </DataTableCell>
                 </DataTableRow>

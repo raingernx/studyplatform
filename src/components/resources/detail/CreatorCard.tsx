@@ -18,8 +18,8 @@ export function CreatorCard({ creator }: CreatorCardProps) {
   const displayName = creator.name ?? "Creator";
 
   return (
-    <section className="space-y-4 border-t border-surface-200 pt-6">
-      <h2 className="font-display text-lg font-semibold text-zinc-900">Creator</h2>
+    <section className="space-y-4 border-t border-border pt-6">
+      <h2 className="font-display text-lg font-semibold text-foreground">Creator</h2>
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
         <Avatar
           src={creator.image}
@@ -28,8 +28,8 @@ export function CreatorCard({ creator }: CreatorCardProps) {
           size={56}
         />
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-zinc-900 truncate">{displayName}</p>
-          <p className="mt-1 text-small leading-6 text-zinc-600 line-clamp-2">
+          <p className="font-medium text-foreground truncate">{displayName}</p>
+          <p className="mt-1 text-small leading-6 text-muted-foreground line-clamp-2">
             {creator.bio ?? "Marketplace creator sharing practical learning resources."}
           </p>
           {creator.creatorSlug && (

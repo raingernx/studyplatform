@@ -1,6 +1,6 @@
 /**
  * Admin Stats Card. StudyDock Stat Card — multiple metrics.
- * Style: rounded-xl, border-zinc-200, bg-white, p-5.
+ * Style: rounded-xl, border-border, bg-card, p-5.
  * Layout per metric: label, then value (e.g. Downloads / 1,240).
  */
 import { formatNumber } from "@/lib/format";
@@ -19,15 +19,15 @@ export function StatsCard({ downloads, purchases, reviews }: StatsCardProps) {
   ] as const;
 
   return (
-    <div className="min-w-0 rounded-xl border border-border-subtle bg-white p-5">
-      <h3 className="mb-4 font-ui text-caption text-text-muted">
+    <div className="min-w-0 rounded-xl border border-border bg-card p-5">
+      <h3 className="mb-4 font-ui text-caption text-muted-foreground">
         Stats
       </h3>
       <div className="grid grid-cols-3 gap-4">
         {metrics.map(({ label, value }) => (
           <div key={label} className="min-w-0">
-            <p className="text-small text-text-secondary">{label}</p>
-            <p className="mt-1 truncate text-lg font-semibold tabular-nums text-text-primary">
+            <p className="text-small text-muted-foreground">{label}</p>
+            <p className="mt-1 truncate text-lg font-semibold tabular-nums text-foreground">
               {formatNumber(value)}
             </p>
           </div>

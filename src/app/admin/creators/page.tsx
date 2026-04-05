@@ -30,50 +30,50 @@ export default async function AdminCreatorsPage() {
       />
 
       {sorted.length === 0 ? (
-        <p className="text-sm text-zinc-500">No applications yet.</p>
+        <p className="text-sm text-muted-foreground">No applications yet.</p>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-card">
-          <table className="min-w-full divide-y divide-zinc-100 text-sm">
-            <thead className="bg-zinc-50">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-muted">
               <tr>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Applicant
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Creator Name / Slug
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Bio
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Applied
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100">
+            <tbody className="divide-y divide-border">
               {sorted.map((app) => {
                 const badge = STATUS_BADGE[app.creatorApplicationStatus] ?? STATUS_BADGE.PENDING;
                 return (
-                  <tr key={app.id} className="hover:bg-zinc-50/60">
+                  <tr key={app.id} className="hover:bg-muted/60">
                     <td className="px-4 py-3">
-                      <p className="font-medium text-zinc-900">{app.name ?? "—"}</p>
-                      <p className="text-[12px] text-zinc-500">{app.email}</p>
+                      <p className="font-medium text-foreground">{app.name ?? "—"}</p>
+                      <p className="text-[12px] text-muted-foreground">{app.email}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-zinc-900">{app.creatorDisplayName ?? "—"}</p>
+                      <p className="font-medium text-foreground">{app.creatorDisplayName ?? "—"}</p>
                       {app.creatorSlug && (
-                        <p className="text-[12px] text-zinc-500">/creators/{app.creatorSlug}</p>
+                        <p className="text-[12px] text-muted-foreground">/creators/{app.creatorSlug}</p>
                       )}
                     </td>
                     <td className="max-w-[240px] px-4 py-3">
-                      <p className="line-clamp-2 text-[12px] text-zinc-600">
-                        {app.creatorBio ?? <span className="italic text-zinc-400">No bio</span>}
+                      <p className="line-clamp-2 text-[12px] text-muted-foreground">
+                        {app.creatorBio ?? <span className="italic text-muted-foreground/70">No bio</span>}
                       </p>
                       {app.creatorApplicationStatus === "REJECTED" && app.rejectionReason && (
                         <p className="mt-1 text-[11px] text-red-600">
@@ -82,7 +82,7 @@ export default async function AdminCreatorsPage() {
                         </p>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-[12px] text-zinc-500 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap text-[12px] text-muted-foreground">
                       {app.appliedAt
                         ? new Date(app.appliedAt).toLocaleDateString("en-US", {
                             month: "short",
@@ -102,7 +102,7 @@ export default async function AdminCreatorsPage() {
                       {app.creatorApplicationStatus === "PENDING" ? (
                         <CreatorApplicationActions userId={app.id} />
                       ) : (
-                        <span className="text-[12px] text-zinc-400">—</span>
+                        <span className="text-[12px] text-muted-foreground/70">—</span>
                       )}
                     </td>
                   </tr>

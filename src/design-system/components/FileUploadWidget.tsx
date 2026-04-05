@@ -213,16 +213,16 @@ export function FileUploadWidget({
               <FileText className="h-4 w-4 text-blue-500" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-2 truncate text-[13px] font-medium text-zinc-800">
+              <p className="flex items-center gap-2 truncate text-[13px] font-medium text-foreground">
                 <span className="truncate">{uploadedFile.name}</span>
                 {uploadedFile.name ? (
-                  <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-600">
+                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                     {uploadedFile.name.split(".").pop()?.toUpperCase()}
                   </span>
                 ) : null}
               </p>
               {uploadedFile.size !== null ? (
-                <p className="text-[11px] text-zinc-400">
+                <p className="text-[11px] text-muted-foreground">
                   {formatFileSize(uploadedFile.size)}
                 </p>
               ) : null}
@@ -271,14 +271,14 @@ export function FileUploadWidget({
             className="block"
           >
             <PickerDropzoneShell disabled={!resourceId && !onEnsureResourceId}>
-              <Upload className="mb-2 h-5 w-5 text-text-muted" />
-              <p className="font-medium text-text-primary">
+              <Upload className="mb-2 h-5 w-5 text-muted-foreground" />
+              <p className="font-medium text-foreground">
                 {labels.dragAndDrop}
               </p>
-              <p className="mt-1 text-[11px] text-text-secondary">
+              <p className="mt-1 text-[11px] text-muted-foreground">
                 {labels.formats}
               </p>
-              <p className="mt-0.5 text-[11px] text-text-secondary">
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
                 {labels.maxSize}
               </p>
             </PickerDropzoneShell>

@@ -103,22 +103,22 @@ export function LibraryGridClient({ items }: LibraryGridClientProps) {
       "rounded-full px-3 py-1.5 text-small font-medium transition-colors whitespace-nowrap",
       activeFilter === key
         ? "bg-primary-50 text-primary-700 ring-1 ring-primary-200"
-        : "bg-white text-zinc-600 ring-1 ring-surface-200 hover:bg-surface-50",
+        : "bg-card text-muted-foreground ring-1 ring-border hover:bg-muted hover:text-foreground",
     ].join(" ");
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-surface-200 bg-white p-4 sm:p-5">
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
-            <p className="text-caption font-semibold text-zinc-500">Library tools</p>
-            <p className="text-small text-zinc-500">
+            <p className="text-caption font-semibold text-muted-foreground">Library tools</p>
+            <p className="text-small text-muted-foreground">
               Search by title or creator, then narrow your library by format.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-caption text-zinc-400">
-            <span className="font-medium text-zinc-700">{filteredItems.length}</span>
+          <div className="flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
+            <span className="font-medium text-foreground">{filteredItems.length}</span>
             <span>{filteredItems.length === 1 ? "result" : "results"}</span>
             {search.trim().length > 0 || activeFilter !== "all" ? (
               <>
@@ -145,11 +145,11 @@ export function LibraryGridClient({ items }: LibraryGridClientProps) {
             onChange={(e) => setSearch(e.target.value)}
             onClear={() => setSearch("")}
             containerClassName="min-w-0 flex-1"
-            className="bg-surface-50"
+            className="bg-muted"
           />
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-2 px-1 text-caption font-medium text-zinc-500">
+            <span className="inline-flex items-center gap-2 px-1 text-caption font-medium text-muted-foreground">
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Filter
             </span>
@@ -196,14 +196,14 @@ export function LibraryGridClient({ items }: LibraryGridClientProps) {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-surface-200 bg-white py-14 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-50">
-            <Search className="h-5 w-5 text-zinc-300" />
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card py-14 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
+            <Search className="h-5 w-5 text-muted-foreground/50" />
           </div>
-          <p className="mt-3 text-small font-medium text-zinc-700">
+          <p className="mt-3 text-small font-medium text-foreground">
             No matching resources
           </p>
-          <p className="mt-1 max-w-sm text-caption leading-6 text-zinc-400">
+          <p className="mt-1 max-w-sm text-caption leading-6 text-muted-foreground">
             Try another title, creator name, or filter to find what you need faster.
           </p>
         </div>

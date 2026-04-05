@@ -22,17 +22,17 @@ const TOPBAR_HEIGHT_CLASS: Record<DashboardShellVariant, string> = {
 };
 
 const TOPBAR_BORDER_CLASS: Record<DashboardShellVariant, string> = {
-  user: "border-neutral-100",
-  creator: "border-neutral-100",
-  admin: "border-border-subtle",
+  user: "border-border",
+  creator: "border-border",
+  admin: "border-border",
 };
 
 const TOPBAR_SURFACE_CLASS: Record<DashboardShellVariant, string> = {
-  user: "sticky top-0 z-20 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/80",
+  user: "sticky top-0 z-20 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/80",
   creator:
-    "sticky top-0 z-20 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/80",
+    "sticky top-0 z-20 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/80",
   admin:
-    "sticky top-0 z-20 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/90",
+    "sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90",
 };
 
 const TOPBAR_PADDING_CLASS: Record<DashboardShellVariant, string> = {
@@ -73,7 +73,7 @@ export function DashboardTopbar({
             type="button"
             onClick={onMenuToggle}
             aria-label="Toggle sidebar"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 lg:hidden"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-accent hover:text-foreground lg:hidden"
           >
             <Menu className="h-4 w-4" />
           </button>

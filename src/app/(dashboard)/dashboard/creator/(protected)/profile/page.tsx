@@ -28,10 +28,10 @@ export default async function CreatorProfilePage() {
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-500">
               Creator
             </p>
-            <h1 className="mt-2 font-display text-h2 font-semibold tracking-tight text-neutral-900">
+            <h1 className="mt-2 font-display text-h2 font-semibold tracking-tight text-foreground">
               Creator Profile
             </h1>
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Build the public identity learners see across your creator page and resource listings.
             </p>
           </div>
@@ -51,7 +51,7 @@ export default async function CreatorProfilePage() {
                   View public profile
                   <ArrowRight className="h-4 w-4" />
                 </span>
-                <p className="max-w-xs text-xs text-neutral-500">
+                <p className="max-w-xs text-xs text-muted-foreground">
                   Save a creator slug to unlock your public profile page.
                 </p>
               </>

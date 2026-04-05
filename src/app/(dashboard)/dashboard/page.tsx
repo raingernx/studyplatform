@@ -55,13 +55,13 @@ interface WorkspaceStatProps {
 function WorkspaceStat({ label, value, detail, icon: Icon }: WorkspaceStatProps) {
   return (
     <div className="space-y-1.5">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-50 text-zinc-500">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
         <Icon className="h-4 w-4" />
       </div>
       <div className="space-y-0.5">
-        <p className="text-xl font-semibold tracking-tight text-zinc-900">{value}</p>
-        <p className="text-small font-medium text-zinc-600">{label}</p>
-        <p className="text-caption text-zinc-400">{detail}</p>
+        <p className="text-xl font-semibold tracking-tight text-foreground">{value}</p>
+        <p className="text-small font-medium text-muted-foreground">{label}</p>
+        <p className="text-caption text-muted-foreground/80">{detail}</p>
       </div>
     </div>
   );
@@ -89,9 +89,9 @@ function DashboardShelfCard({
   return (
     <Link
       href={routes.resource(resource.slug)}
-      className={`group flex ${widthClassName} h-[248px] flex-shrink-0 flex-col rounded-xl border border-surface-200 bg-white p-3.5 transition hover:border-surface-300 hover:bg-surface-50/40`}
+      className={`group flex ${widthClassName} h-[248px] flex-shrink-0 flex-col rounded-xl border border-border bg-card p-3.5 transition hover:bg-accent/40`}
     >
-      <div className="relative flex h-[120px] w-full items-center justify-center overflow-hidden rounded-lg border border-surface-200 bg-surface-100">
+      <div className="relative flex h-[120px] w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
         {resource.previewUrl ? (
           <Image
             src={resource.previewUrl}
@@ -102,21 +102,21 @@ function DashboardShelfCard({
             className="object-cover"
           />
         ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/85">
-            <FileText className="h-6 w-6 text-zinc-300" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-background/80">
+            <FileText className="h-6 w-6 text-muted-foreground/50" />
           </div>
         )}
       </div>
       <div className="mt-3 flex min-h-[54px] flex-1 flex-col justify-start space-y-0.5">
-        <p className="line-clamp-2 text-small font-semibold leading-5 text-zinc-900">
+        <p className="line-clamp-2 text-small font-semibold leading-5 text-foreground">
           {resource.title}
         </p>
-        <p className="line-clamp-1 text-caption text-zinc-400">
+        <p className="line-clamp-1 text-caption text-muted-foreground">
           {meta ?? resource.author?.name ?? "Unknown"}
         </p>
       </div>
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-small font-semibold text-zinc-900">
+        <span className="text-small font-semibold text-foreground">
           {resource.isFree ? "Free" : formatPrice(resource.price / 100)}
         </span>
         <span className="text-caption font-medium text-primary-700 transition group-hover:text-primary-800">
@@ -227,17 +227,17 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       <section className="space-y-4">
         <div className="space-y-1.5">
-          <h1 className="font-display text-h2 font-semibold tracking-tight text-neutral-900">
+          <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
             Welcome back, {firstName}
           </h1>
-          <p className="max-w-2xl text-small leading-6 text-neutral-500">
+          <p className="max-w-2xl text-small leading-6 text-muted-foreground">
             Your dashboard keeps recent activity, saved resources, and the next useful pick in
             one place.
           </p>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-stretch">
-          <div className="h-full rounded-xl border border-surface-200 bg-white px-5 py-4 sm:px-6">
+          <div className="h-full rounded-xl border border-border bg-card px-5 py-4 sm:px-6">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {STATS.map((stat) => (
                 <WorkspaceStat
@@ -251,13 +251,13 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <aside className="flex h-full flex-col justify-between rounded-xl border border-surface-200 bg-white px-5 py-3.5 sm:px-6">
+          <aside className="flex h-full flex-col justify-between rounded-xl border border-border bg-card px-5 py-3.5 sm:px-6">
             <div className="space-y-1">
-              <p className="text-caption font-semibold text-zinc-500">Plan</p>
-              <h2 className="text-base font-semibold text-zinc-900">
+              <p className="text-caption font-semibold text-muted-foreground">Plan</p>
+              <h2 className="text-base font-semibold text-foreground">
                 {isSubscribed ? "Pro membership is active" : "Upgrade when you need more"}
               </h2>
-              <p className="text-small leading-6 text-zinc-500">
+              <p className="text-small leading-6 text-muted-foreground">
                 {isSubscribed
                   ? "You already have full access to your dashboard workspace and repeat downloads."
                   : "Unlock unlimited resources and a faster path back into your study workflow."}
@@ -277,13 +277,13 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_320px]">
-        <div className="rounded-xl border border-surface-200 bg-white">
-          <div className="flex items-center justify-between border-b border-surface-200 px-5 py-4 sm:px-6">
+        <div className="rounded-xl border border-border bg-card">
+          <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-6">
             <div className="space-y-0.5">
-              <h2 className="text-base font-semibold text-neutral-900">
+              <h2 className="text-base font-semibold text-foreground">
                 Recently added to your library
               </h2>
-              <p className="text-small text-neutral-500">
+              <p className="text-small text-muted-foreground">
                 Jump back into the resources you picked up most recently.
               </p>
             </div>
@@ -298,32 +298,32 @@ export default async function DashboardPage() {
 
           {recentPurchases.length === 0 ? (
             <div className="flex flex-col items-center justify-center px-6 py-11 text-center">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-50">
-                <BookOpen className="h-5 w-5 text-neutral-300" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted">
+                <BookOpen className="h-5 w-5 text-muted-foreground/50" />
               </div>
-              <p className="mt-3 text-small font-medium text-neutral-600">
+              <p className="mt-3 text-small font-medium text-foreground">
                 No resources yet
               </p>
-              <p className="mt-1 max-w-sm text-caption text-neutral-400">
+              <p className="mt-1 max-w-sm text-caption text-muted-foreground">
                 Browse the marketplace to find your first resource and start building your
                 workspace.
               </p>
               <Link
                 href={routes.marketplace}
-                className="mt-4 rounded-xl bg-neutral-900 px-4 py-2.5 text-small font-semibold text-white hover:bg-neutral-800"
+                className="mt-4 rounded-xl bg-foreground px-4 py-2.5 text-small font-semibold text-background transition hover:bg-foreground/90"
               >
                 Browse marketplace
               </Link>
             </div>
           ) : (
-            <ul className="divide-y divide-surface-200">
+            <ul className="divide-y divide-border">
               {recentPurchases.map((purchase) => (
                 <li key={purchase.id}>
                   <Link
                     href={routes.resource(purchase.resource.slug)}
-                    className="flex items-center gap-4 px-5 py-4 transition hover:bg-surface-50/70 sm:px-6"
+                    className="flex items-center gap-4 px-5 py-4 transition hover:bg-muted/70 sm:px-6"
                   >
-                    <div className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-surface-200 bg-surface-50">
+                    <div className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
                       {purchase.resource.previewUrl ? (
                         <Image
                           src={purchase.resource.previewUrl}
@@ -334,18 +334,18 @@ export default async function DashboardPage() {
                           className="rounded-xl object-cover"
                         />
                       ) : (
-                        <FileText className="h-5 w-5 text-zinc-400" />
+                        <FileText className="h-5 w-5 text-muted-foreground/60" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-small font-medium text-neutral-900">
+                      <p className="truncate text-small font-medium text-foreground">
                         {purchase.resource.title}
                       </p>
-                      <p className="mt-0.5 text-caption text-neutral-400">
+                      <p className="mt-0.5 text-caption text-muted-foreground">
                         {purchase.resource.author?.name ?? "Unknown"} · {formatDate(purchase.createdAt)}
                       </p>
                     </div>
-                    <span className="flex-shrink-0 text-small font-semibold text-neutral-500">
+                    <span className="flex-shrink-0 text-small font-semibold text-muted-foreground">
                       {purchase.resource.isFree
                         ? "Free"
                         : formatPrice(purchase.resource.price / 100)}
@@ -357,20 +357,20 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        <aside className="rounded-xl border border-surface-200 bg-white px-5 py-4 sm:px-6">
+        <aside className="rounded-xl border border-border bg-card px-5 py-4 sm:px-6">
           <div className="space-y-4">
             {lastOpened && (
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <p className="text-caption font-semibold text-zinc-500">
+                  <p className="text-caption font-semibold text-muted-foreground">
                     Continue
                   </p>
-                  <p className="text-small font-semibold text-zinc-900">
+                  <p className="text-small font-semibold text-foreground">
                     Pick up where you left off
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-surface-200 bg-surface-50">
+                  <div className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
                     {lastOpened.resource.previewUrl ? (
                       <Image
                         src={lastOpened.resource.previewUrl}
@@ -381,21 +381,21 @@ export default async function DashboardPage() {
                         className="rounded-xl object-cover"
                       />
                     ) : (
-                      <FileText className="h-5 w-5 text-zinc-400" />
+                      <FileText className="h-5 w-5 text-muted-foreground/60" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-small font-semibold text-neutral-900">
+                    <p className="truncate text-small font-semibold text-foreground">
                       {lastOpened.resource.title}
                     </p>
-                    <p className="mt-0.5 text-caption text-neutral-400">
+                    <p className="mt-0.5 text-caption text-muted-foreground">
                       {lastOpened.resource.author?.name ?? "Unknown"}
                     </p>
                   </div>
                 </div>
                 <Link
                   href={routes.resource(lastOpened.resource.slug)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-surface-200 bg-surface-50 px-4 py-2.5 text-small font-medium text-neutral-700 transition hover:bg-white"
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-muted px-4 py-2.5 text-small font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
                 >
                   <BookOpen className="h-4 w-4" />
                   Open resource
@@ -404,12 +404,12 @@ export default async function DashboardPage() {
             )}
 
             {nextBestAction && (
-              <div className="space-y-3 border-t border-surface-200 pt-4">
+              <div className="space-y-3 border-t border-border pt-4">
                 <div className="space-y-1">
-                  <p className="text-caption font-semibold text-zinc-500">
+                  <p className="text-caption font-semibold text-muted-foreground">
                     Next up
                   </p>
-                  <p className="text-small font-semibold text-zinc-900">
+                  <p className="text-small font-semibold text-foreground">
                     {becauseYouPickedUp
                       ? `Because you picked up ${becauseYouPickedUp}`
                       : continueLearningCategory
@@ -417,14 +417,14 @@ export default async function DashboardPage() {
                         : "Pick your next resource while momentum is high"}
                   </p>
                 </div>
-                <p className="text-small leading-6 text-neutral-500">
+                <p className="text-small leading-6 text-muted-foreground">
                   {nextBestAction.author?.name ? `${nextBestAction.author.name} · ` : ""}
                   {nextBestAction.isFree
                     ? "Free to add to your library"
                     : `${formatPrice(nextBestAction.price / 100)} · Ready when you are`}
                 </p>
                 {levelLabel && (
-                  <p className="text-caption font-medium text-neutral-500">
+                  <p className="text-caption font-medium text-muted-foreground">
                     Recommended for your {levelLabel.toLowerCase()} study flow
                   </p>
                 )}
@@ -438,8 +438,8 @@ export default async function DashboardPage() {
               </div>
             )}
 
-            <div className="space-y-2 border-t border-surface-200 pt-4">
-              <p className="text-caption font-semibold text-zinc-500">Quick links</p>
+            <div className="space-y-2 border-t border-border pt-4">
+              <p className="text-caption font-semibold text-muted-foreground">Quick links</p>
               <div className="space-y-1">
                 {quickLinks.map((link) => {
                   const Icon = link.icon;
@@ -447,18 +447,18 @@ export default async function DashboardPage() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="flex items-center justify-between rounded-xl px-3 py-2.5 text-small font-medium text-neutral-600 transition hover:bg-surface-50"
+                      className="flex items-center justify-between rounded-xl px-3 py-2.5 text-small font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
                     >
                       <div className="flex items-center gap-2.5">
-                        <Icon className="h-4 w-4 text-neutral-400" />
+                        <Icon className="h-4 w-4 text-muted-foreground" />
                         {link.label}
                       </div>
                       {link.count !== null ? (
-                        <span className="rounded-full bg-surface-100 px-2 py-0.5 text-caption font-semibold text-neutral-500">
+                        <span className="rounded-full bg-secondary px-2 py-0.5 text-caption font-semibold text-secondary-foreground">
                           {link.count}
                         </span>
                       ) : (
-                        <ArrowRight className="h-3.5 w-3.5 text-neutral-300" />
+                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/70" />
                       )}
                     </Link>
                   );
@@ -473,10 +473,10 @@ export default async function DashboardPage() {
         <section className="space-y-3.5">
           <div className="flex items-end justify-between gap-4">
             <div className="space-y-0.5">
-              <h2 className="text-base font-semibold text-neutral-900">
+              <h2 className="text-base font-semibold text-foreground">
                 Start with these picks
               </h2>
-              <p className="max-w-2xl text-small text-neutral-500">
+              <p className="max-w-2xl text-small text-muted-foreground">
                 {becauseYouPickedUp
                   ? `Because you picked up ${becauseYouPickedUp}, these are the strongest next resources to open or save next.`
                   : continueLearningCategory
@@ -507,12 +507,12 @@ export default async function DashboardPage() {
         <section className="space-y-3.5">
           <div className="flex items-end justify-between gap-4">
             <div className="space-y-0.5">
-              <h2 className="text-base font-semibold text-neutral-900">
+              <h2 className="text-base font-semibold text-foreground">
                 {multiCategoryLabel.length === 1
                   ? `New in ${multiCategoryLabel[0]}`
                   : "New in your categories"}
               </h2>
-              <p className="max-w-2xl text-small text-neutral-500">
+              <p className="max-w-2xl text-small text-muted-foreground">
                 {multiCategoryLabel.length === 1
                   ? `Newer releases in ${multiCategoryLabel[0]} so your next session starts with familiar context.`
                   : `Fresh releases across ${multiCategoryLabel.slice(0, 2).join(" and ")} so coming back feels tailored instead of random.`}
@@ -542,10 +542,10 @@ export default async function DashboardPage() {
         <section className="space-y-3.5">
           <div className="flex items-end justify-between gap-4">
             <div className="space-y-0.5">
-              <h2 className="text-base font-semibold text-neutral-900">
+              <h2 className="text-base font-semibold text-foreground">
                 Recommended for your level
               </h2>
-              <p className="max-w-2xl text-small text-neutral-500">
+              <p className="max-w-2xl text-small text-muted-foreground">
                 Because your recent library leans {levelLabel.toLowerCase()}, these picks should
                 feel closer to your current pace.
               </p>

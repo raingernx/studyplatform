@@ -25,7 +25,6 @@ import {
   recordCacheMiss,
   traceServerStep,
 } from "@/lib/performance/observability";
-import { resolveHomepageHero } from "@/services/heroes";
 import {
   findDiscoverCategoriesWithCounts,
   findDiscoverFallbackResourceIds,
@@ -486,15 +485,4 @@ const readDiscoverCategories = unstable_cache(
 export async function getDiscoverCategories() {
   recordCacheCall("getDiscoverCategories");
   return readDiscoverCategories();
-}
-
-/**
- * Returns the hero config used in discover mode.
- * Falls back to HomepageHero when no active CMS hero exists.
- */
-export async function getHeroConfig(context?: {
-  userId?: string | null;
-  staticAnonSeed?: boolean;
-}) {
-  return resolveHomepageHero(context);
 }

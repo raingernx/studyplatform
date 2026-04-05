@@ -29,7 +29,7 @@ function DropdownMenu({
         data-slot="dropdown-menu"
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-40 rounded-xl border border-surface-200 bg-white p-1 shadow-card-lg",
+          "z-50 min-w-40 rounded-xl border border-border bg-popover p-1 shadow-card-lg",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
           "data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2",
@@ -58,12 +58,12 @@ function DropdownItem({
       data-destructive={destructive || undefined}
       className={cn(
         "relative flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2",
-        "text-sm text-text-primary outline-none transition-colors",
-        "focus:bg-surface-100 focus:text-text-primary",
+        "text-sm text-foreground outline-none transition-colors",
+        "focus:bg-muted focus:text-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-40",
         destructive && "text-red-600 focus:bg-red-50 focus:text-red-600",
         inset && "pl-8",
-        "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-text-muted",
+        "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
         className,
       )}
       {...props}
@@ -80,7 +80,7 @@ function DropdownLabel({
     <DropdownPrimitive.Label
       data-slot="dropdown-label"
       className={cn(
-        "px-3 py-1.5 font-ui text-caption tracking-[0.12em] text-text-muted",
+        "px-3 py-1.5 font-ui text-caption tracking-[0.12em] text-muted-foreground",
         inset && "pl-8",
         className,
       )}
@@ -96,7 +96,7 @@ function DropdownSeparator({
   return (
     <DropdownPrimitive.Separator
       data-slot="dropdown-separator"
-      className={cn("-mx-1 my-1 h-px bg-surface-100", className)}
+      className={cn("-mx-1 my-1 h-px bg-border/70", className)}
       {...props}
     />
   )
@@ -113,8 +113,8 @@ function DropdownCheckboxItem({
       data-slot="dropdown-checkbox-item"
       className={cn(
         "relative flex cursor-default select-none items-center gap-2 rounded-lg py-2 pl-8 pr-3",
-        "text-sm text-text-primary outline-none transition-colors",
-        "focus:bg-surface-100 focus:text-text-primary",
+        "text-sm text-foreground outline-none transition-colors",
+        "focus:bg-muted focus:text-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-40",
         className,
       )}
@@ -145,8 +145,8 @@ function DropdownRadioItem({
       data-slot="dropdown-radio-item"
       className={cn(
         "relative flex cursor-default select-none items-center gap-2 rounded-lg py-2 pl-8 pr-3",
-        "text-sm text-text-primary outline-none transition-colors",
-        "focus:bg-surface-100 focus:text-text-primary",
+        "text-sm text-foreground outline-none transition-colors",
+        "focus:bg-muted focus:text-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-40",
         className,
       )}
@@ -177,10 +177,10 @@ function DropdownSubTrigger({
       data-slot="dropdown-sub-trigger"
       className={cn(
         "flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2",
-        "text-sm text-text-primary outline-none transition-colors",
-        "focus:bg-surface-100 data-[state=open]:bg-surface-100",
+        "text-sm text-foreground outline-none transition-colors",
+        "focus:bg-muted data-[state=open]:bg-muted",
         inset && "pl-8",
-        "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-text-muted",
+        "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
         className,
       )}
       {...props}
@@ -200,7 +200,7 @@ function DropdownSubMenu({
       <DropdownPrimitive.SubContent
         data-slot="dropdown-sub-menu"
         className={cn(
-          "z-50 min-w-32 rounded-xl border border-surface-200 bg-white p-1 shadow-card-lg",
+          "z-50 min-w-32 rounded-xl border border-border bg-popover p-1 shadow-card-lg",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
           "data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2",

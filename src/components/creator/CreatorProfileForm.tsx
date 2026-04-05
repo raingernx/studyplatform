@@ -28,12 +28,12 @@ interface CreatorProfileFormProps {
   };
 }
 
-const PANEL_CLASS = "rounded-2xl border border-border-subtle bg-white shadow-card";
+const PANEL_CLASS = "rounded-2xl border border-border bg-card shadow-card";
 const PANEL_HEADER_CLASS =
-  "flex flex-col gap-5 border-b border-border-subtle px-6 py-6 lg:flex-row lg:items-start lg:justify-between";
+  "flex flex-col gap-5 border-b border-border px-6 py-6 lg:flex-row lg:items-start lg:justify-between";
 const PANEL_BODY_CLASS = "grid gap-6 p-6 lg:grid-cols-[1.15fr_0.85fr]";
-const SUPPORT_PANEL_CLASS = "rounded-2xl border border-surface-100 bg-surface-50 p-4";
-const LABEL_CLASS = "text-sm font-medium text-text-primary";
+const SUPPORT_PANEL_CLASS = "rounded-2xl border border-border bg-muted p-4";
+const LABEL_CLASS = "text-sm font-medium text-foreground";
 const FEEDBACK_ERROR_CLASS =
   "rounded-xl border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700";
 
@@ -171,10 +171,10 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
               Public identity
             </Badge>
             <div className="space-y-2">
-              <h2 className="text-xl font-semibold text-text-primary">
+              <h2 className="text-xl font-semibold text-foreground">
                 Make your creator profile trustworthy
               </h2>
-              <p className="max-w-2xl text-sm text-text-secondary">
+              <p className="max-w-2xl text-sm text-muted-foreground">
                 Your creator profile powers your public page, resource attribution, and brand trust
                 across the marketplace.
               </p>
@@ -204,24 +204,24 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
           <div className="w-full max-w-sm space-y-3">
             <div className="flex items-baseline justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-muted">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Profile completeness
                 </p>
-                <p className="mt-1 text-lg font-semibold text-text-primary">
+                <p className="mt-1 text-lg font-semibold text-foreground">
                   {completionPercent}% complete
                 </p>
               </div>
-              <span className="text-xs font-medium text-text-secondary">
+              <span className="text-xs font-medium text-muted-foreground">
                 {completionPercent === 100 ? "Ready to publish" : "Keep filling the essentials"}
               </span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-surface-100">
+            <div className="h-2 overflow-hidden rounded-full bg-secondary">
               <div
                 className="h-full rounded-full bg-primary-600 transition-all"
                 style={{ width: `${completionPercent}%` }}
               />
             </div>
-            <p className="text-xs text-text-secondary">
+            <p className="text-xs text-muted-foreground">
               Add a name, slug, bio, banner, and at least one social link to complete your profile.
             </p>
           </div>
@@ -266,13 +266,13 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl border border-surface-100 bg-surface-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+              <div className="mt-4 rounded-xl border border-border bg-secondary px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Public URL preview
                 </p>
-                <p className="mt-2 text-sm text-text-secondary">
+                <p className="mt-2 text-sm text-muted-foreground">
                   {normalizedSlugPreview ? (
-                    <span className="font-medium text-text-primary">
+                    <span className="font-medium text-foreground">
                       /creators/{normalizedSlugPreview}
                     </span>
                   ) : (
@@ -296,7 +296,7 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
                   hint="Share your niche, audience, and why your resources stand out."
                   error={fieldErrors.creatorBio}
                 />
-                <div className="flex items-center justify-end text-xs text-text-muted">
+                <div className="flex items-center justify-end text-xs text-muted-foreground">
                   <span>{form.creatorBio.trim().length}/600</span>
                 </div>
               </div>
@@ -378,18 +378,18 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
                     size={112}
                     className="h-28 w-full rounded-xl object-cover ring-1 ring-border-subtle"
                   />
-                  <span className="w-full text-center text-xs text-text-muted">Account avatar</span>
+                  <span className="w-full text-center text-xs text-muted-foreground">Account avatar</span>
                 </div>
 
                 <div className="min-w-0 flex-1 space-y-4">
                   <div className="space-y-1.5">
-                    <p className="text-sm font-semibold text-text-primary">Creator identity</p>
-                    <p className="max-w-md text-sm leading-6 text-text-secondary">
+                    <p className="text-sm font-semibold text-foreground">Creator identity</p>
+                    <p className="max-w-md text-sm leading-6 text-muted-foreground">
                       Your creator profile currently uses your account avatar and public identity.
                     </p>
                   </div>
 
-                  <p className="max-w-md text-xs leading-5 text-text-secondary">
+                  <p className="max-w-md text-xs leading-5 text-muted-foreground">
                     Update your account avatar in Account Settings to change how you appear on your
                     creator page.
                   </p>
@@ -407,7 +407,7 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     ) : (
-                      <span className="inline-flex items-center gap-2 text-sm font-medium text-text-muted">
+                      <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
                         View public profile
                         <ArrowRight className="h-4 w-4" />
                       </span>
@@ -419,12 +419,12 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
 
             <div className={SUPPORT_PANEL_CLASS}>
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-text-primary">Banner preview</p>
-                <p className="text-xs text-text-secondary">
+                <p className="text-sm font-semibold text-foreground">Banner preview</p>
+                <p className="text-xs text-muted-foreground">
                   This preview updates as you edit your banner URL.
                 </p>
               </div>
-              <div className="mt-4 overflow-hidden rounded-2xl border border-surface-100 bg-white">
+              <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
                 {form.creatorBanner ? (
                   <img
                     src={form.creatorBanner}
@@ -432,15 +432,15 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
                     className="h-40 w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-40 items-center justify-center px-6 text-center text-sm font-medium text-text-muted">
+                  <div className="flex h-40 items-center justify-center px-6 text-center text-sm font-medium text-muted-foreground">
                     Add a banner URL to preview your public header
                   </div>
                 )}
               </div>
               <div className="mt-3 space-y-2">
-                <p className="text-xs text-text-secondary">
+                <p className="text-xs text-muted-foreground">
                   Public URL preview:{" "}
-                  <span className="font-medium text-text-primary">
+                  <span className="font-medium text-foreground">
                     {normalizedSlugPreview
                       ? `/creators/${normalizedSlugPreview}`
                       : "Add a slug or display name to preview your public URL"}
@@ -455,7 +455,7 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
                     View public profile
                   </Link>
                 ) : (
-                  <div className="inline-flex items-center gap-2 text-xs text-text-muted">
+                  <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                     <Link2 className="h-3.5 w-3.5" />
                     Save your profile to enable the public page
                   </div>
@@ -466,7 +466,7 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
         </div>
       </section>
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-border-subtle bg-white px-5 py-4 shadow-card sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-card sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-3">
           {error ? <p className={FEEDBACK_ERROR_CLASS}>{error}</p> : null}
           {successMessage ? (
@@ -475,7 +475,7 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
               {successMessage}
             </p>
           ) : (
-            <p className="text-sm text-text-secondary">
+            <p className="text-sm text-muted-foreground">
               Changes update your public creator page and marketplace attribution after save.
             </p>
           )}

@@ -55,8 +55,8 @@ export function CreatorApplicationActions({ userId }: Props) {
           onChange={(e) => setReason(e.target.value)}
           placeholder="Rejection reason (shown to the applicant)…"
           rows={2}
-          className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900
-                     placeholder-zinc-400 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 resize-none"
+          className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground
+                     placeholder:text-muted-foreground outline-none transition focus:border-destructive/60 focus:ring-2 focus:ring-destructive/15"
         />
         {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex items-center gap-2">
@@ -70,7 +70,7 @@ export function CreatorApplicationActions({ userId }: Props) {
           </button>
           <button
             onClick={() => { setShowRejectForm(false); setError(""); }}
-            className="text-xs text-zinc-500 hover:text-zinc-800"
+            className="text-xs text-muted-foreground transition hover:text-foreground"
           >
             Cancel
           </button>
@@ -92,7 +92,7 @@ export function CreatorApplicationActions({ userId }: Props) {
       <button
         onClick={() => setShowRejectForm(true)}
         disabled={busy !== null}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"
       >
         <X className="h-3 w-3" />
         Reject

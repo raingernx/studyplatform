@@ -49,8 +49,8 @@ export function ResourceGallery({
     return (
       <>
         <div className="hidden lg:order-1 lg:block lg:w-20 lg:shrink-0" aria-hidden />
-        <div className="relative order-1 flex w-full items-center justify-center overflow-hidden rounded-xl border border-surface-200 bg-surface-50 aspect-[4/3] min-h-[420px] lg:order-2">
-          <div className="flex flex-col items-center gap-2 text-center text-zinc-400">
+        <div className="relative order-1 flex w-full items-center justify-center overflow-hidden rounded-xl border border-border bg-muted aspect-[4/3] min-h-[420px] lg:order-2">
+          <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
             <FileText className="h-10 w-10" />
             <span className="text-sm font-medium">No preview images</span>
             <span className="text-xs">Check the description below to see what&apos;s included.</span>
@@ -136,7 +136,7 @@ export function ResourceGallery({
             disabled={!canGoUp}
             aria-label="Previous image"
             aria-disabled={!canGoUp}
-            className="mb-3 hidden shrink-0 text-zinc-500 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 lg:block"
+            className="mb-3 hidden shrink-0 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 lg:block"
           >
             <ChevronUp className="h-5 w-5" />
           </button>
@@ -157,7 +157,7 @@ export function ResourceGallery({
                     "relative aspect-square w-16 shrink-0 overflow-hidden rounded-lg border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 lg:w-20",
                     isActive
                       ? "border-primary-500 ring-1 ring-primary-500/20"
-                      : "border-surface-200 opacity-70 hover:border-zinc-300 hover:opacity-100",
+                      : "border-border opacity-70 hover:border-muted-foreground/40 hover:opacity-100",
                   ].join(" ")}
                 >
                   <RevealImage
@@ -168,7 +168,7 @@ export function ResourceGallery({
                     unoptimized={shouldBypassImageOptimizer(p.imageUrl)}
                     loading={globalIndex === activeIndex ? "eager" : undefined}
                     fetchPriority={globalIndex === activeIndex ? "high" : undefined}
-                    overlayClassName="bg-surface-100"
+                    overlayClassName="bg-muted"
                     className="object-cover"
                   />
                 </button>
@@ -194,7 +194,7 @@ export function ResourceGallery({
             disabled={!canGoDown}
             aria-label="Next image"
             aria-disabled={!canGoDown}
-            className="mt-3 hidden shrink-0 text-zinc-500 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 lg:block"
+            className="mt-3 hidden shrink-0 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 lg:block"
           >
             <ChevronDown className="h-5 w-5" />
           </button>
@@ -207,7 +207,7 @@ export function ResourceGallery({
         type="button"
         onClick={() => setZoomed(true)}
         aria-label="Enlarge preview"
-        className="group relative order-1 w-full cursor-zoom-in overflow-hidden rounded-xl border border-surface-200 bg-surface-50 aspect-[4/3] min-h-[420px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 lg:order-2"
+        className="group relative order-1 w-full cursor-zoom-in overflow-hidden rounded-xl border border-border bg-muted aspect-[4/3] min-h-[420px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 lg:order-2"
       >
         <RevealImage
           src={current.imageUrl}
@@ -219,17 +219,17 @@ export function ResourceGallery({
           loading="eager"
           fetchPriority="high"
           unoptimized={currentIsRemotePreview}
-          overlayClassName="bg-surface-100"
+          overlayClassName="bg-muted"
         />
 
         {/* Enlarge badge — visual hint only, top-right, visible on hover */}
-        <span className="absolute right-3 top-3 inline-flex items-center justify-center rounded-full bg-white/90 p-2 text-zinc-600 opacity-100 shadow-sm transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+        <span className="absolute right-3 top-3 inline-flex items-center justify-center rounded-full bg-[hsl(var(--card)/0.9)] p-2 text-muted-foreground opacity-100 shadow-sm transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
           <ZoomIn className="h-3.5 w-3.5" />
         </span>
 
         {/* Counter + depth label */}
         {total > 1 && (
-          <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-caption font-medium text-zinc-600 shadow-sm">
+          <span className="absolute bottom-3 left-3 rounded-full bg-[hsl(var(--card)/0.9)] px-2.5 py-1 text-caption font-medium text-muted-foreground shadow-sm">
             {activeIndex + 1} / {total}
           </span>
         )}

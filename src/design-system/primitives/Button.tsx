@@ -23,13 +23,13 @@ const buttonVariants = cva(
         default:
           "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800",
         dark:
-          "bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950",
+          "bg-foreground text-background hover:bg-foreground/90 active:bg-foreground",
         secondary:
-          "border-border-subtle bg-white text-text-primary hover:border-surface-300 hover:bg-surface-50",
+          "border-border bg-card text-foreground hover:border-primary/20 hover:bg-muted",
         outline:
-          "border-border-subtle bg-white text-text-primary hover:border-surface-300 hover:bg-surface-50",
+          "border-border bg-card text-foreground hover:border-primary/20 hover:bg-muted",
         ghost:
-          "bg-transparent text-text-secondary hover:bg-surface-100 hover:text-text-primary",
+          "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
         danger:
           "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-500/20",
         destructive:

@@ -474,7 +474,7 @@ export function HeroSearch({
 
     return (
       <div className="space-y-2">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           Try these searches
         </p>
         <div className="flex flex-wrap gap-2">
@@ -483,7 +483,7 @@ export function HeroSearch({
               key={suggestion}
               type="button"
               onClick={() => navigateToSearchQuery(suggestion)}
-              className="inline-flex items-center rounded-full border border-surface-200 bg-surface-50 px-3 py-1.5 text-xs font-medium text-text-primary transition hover:border-surface-300 hover:bg-white"
+              className="inline-flex items-center rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary/20 hover:bg-background"
             >
               {suggestion}
             </button>
@@ -502,7 +502,7 @@ export function HeroSearch({
       <div className="space-y-3">
         {recovery.categoryMatches.length > 0 ? (
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Browse categories
             </p>
             <div className="flex flex-wrap gap-2">
@@ -511,7 +511,7 @@ export function HeroSearch({
                   key={`category-${match.slug}`}
                   type="button"
                   onClick={() => navigateToHref(routes.marketplaceCategory(match.slug))}
-                  className="inline-flex items-center rounded-full border border-surface-200 bg-white px-3 py-1.5 text-xs font-medium text-text-primary transition hover:border-surface-300 hover:bg-surface-50"
+                  className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary/20 hover:bg-muted"
                 >
                   {match.name}
                 </button>
@@ -522,7 +522,7 @@ export function HeroSearch({
 
         {recovery.tagMatches.length > 0 ? (
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Related tags
             </p>
             <div className="flex flex-wrap gap-2">
@@ -531,7 +531,7 @@ export function HeroSearch({
                   key={`tag-${match.slug}`}
                   type="button"
                   onClick={() => navigateToHref(routes.marketplaceTag(match.slug))}
-                  className="inline-flex items-center rounded-full border border-surface-200 bg-white px-3 py-1.5 text-xs font-medium text-text-primary transition hover:border-surface-300 hover:bg-surface-50"
+                  className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary/20 hover:bg-muted"
                 >
                   #{match.name}
                 </button>
@@ -552,12 +552,12 @@ export function HeroSearch({
       return (
         <div
           id={listboxId}
-          className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-2xl shadow-slate-900/8"
+          className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-border bg-popover shadow-2xl shadow-slate-900/8"
         >
           <div className="space-y-5 px-4 py-4">
             {recentSearches.length > 0 ? (
               <div className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   ค้นหาล่าสุด
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -566,7 +566,7 @@ export function HeroSearch({
                       key={query}
                       type="button"
                       onClick={() => navigateToSearchQuery(query)}
-                      className="inline-flex items-center rounded-full border border-surface-200 bg-white px-3 py-1.5 text-xs font-medium text-text-primary transition hover:border-surface-300 hover:bg-surface-50"
+                      className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary/20 hover:bg-muted"
                     >
                       {query}
                     </button>
@@ -576,7 +576,7 @@ export function HeroSearch({
             ) : null}
 
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 ลัดไปที่
               </p>
               <div className="grid gap-2 sm:grid-cols-3">
@@ -585,7 +585,7 @@ export function HeroSearch({
                     key={label}
                     type="button"
                     onClick={() => navigateToHref(href)}
-                    className="flex items-center gap-2 rounded-2xl border border-surface-200 bg-surface-50 px-3 py-3 text-left text-sm font-medium text-text-primary transition hover:border-surface-300 hover:bg-white"
+                    className="flex items-center gap-2 rounded-2xl border border-border bg-muted px-3 py-3 text-left text-sm font-medium text-foreground transition hover:border-primary/20 hover:bg-card"
                   >
                     <Icon className="h-4 w-4 shrink-0 text-brand-600" />
                     <span>{label}</span>
@@ -595,7 +595,7 @@ export function HeroSearch({
             </div>
 
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 เลือกดูตามหมวด
               </p>
               <div className="flex flex-wrap gap-2">
@@ -604,7 +604,7 @@ export function HeroSearch({
                     key={label}
                     type="button"
                     onClick={() => navigateToHref(href)}
-                    className="inline-flex items-center rounded-full border border-surface-200 bg-white px-3 py-1.5 text-xs font-medium text-text-primary transition hover:border-surface-300 hover:bg-surface-50"
+                    className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary/20 hover:bg-muted"
                   >
                     {label}
                   </button>
@@ -618,13 +618,13 @@ export function HeroSearch({
 
     if (results.length === 0 && !isLoadingResults) {
       return (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-2xl shadow-slate-900/8">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-border bg-popover shadow-2xl shadow-slate-900/8">
           <div className="space-y-4 px-4 py-4">
             <div className="text-center">
-              <p className="text-sm font-medium text-text-primary">
+              <p className="text-sm font-medium text-foreground">
               ยังไม่พบผลลัพธ์ที่ตรงกับ “{value.trim()}”
               </p>
-              <p className="mt-1 text-xs leading-5 text-text-muted">
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
                 ลองใช้คำที่กว้างขึ้น หรือข้ามไปดูหมวดที่ใกล้เคียงแทน
               </p>
             </div>
@@ -635,7 +635,7 @@ export function HeroSearch({
           <button
             type="button"
             onClick={() => navigateToSearchQuery(value)}
-            className="flex w-full items-center justify-center gap-2 border-t border-surface-100 px-4 py-3 text-sm font-semibold text-brand-700 transition hover:bg-surface-50"
+            className="flex w-full items-center justify-center gap-2 border-t border-border/70 px-4 py-3 text-sm font-semibold text-brand-700 transition hover:bg-muted"
           >
             <Search className="h-4 w-4" />
             ดูผลลัพธ์ทั้งหมด
@@ -648,10 +648,10 @@ export function HeroSearch({
       <div
         id={listboxId}
         role="listbox"
-        className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-2xl shadow-slate-900/8"
+        className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-border bg-popover shadow-2xl shadow-slate-900/8"
       >
-        <div className="border-b border-surface-100 px-4 py-2.5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+        <div className="border-b border-border/70 px-4 py-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Top matches
           </p>
         </div>
@@ -682,7 +682,7 @@ export function HeroSearch({
               onMouseEnter={() => setActiveIndex(index)}
               className={cn(
                 "flex w-full items-center gap-3 px-4 py-3 text-left transition",
-                index === activeIndex ? "bg-surface-50" : "hover:bg-surface-50",
+                index === activeIndex ? "bg-muted" : "hover:bg-muted",
               )}
             >
               <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50">
@@ -693,7 +693,7 @@ export function HeroSearch({
                     fill
                     sizes="44px"
                     unoptimized={shouldBypassImageOptimizer(result.previewUrl)}
-                    overlayClassName="rounded-xl bg-surface-100"
+                    overlayClassName="rounded-xl bg-muted"
                     className="rounded-xl object-cover"
                   />
                 ) : (
@@ -702,18 +702,18 @@ export function HeroSearch({
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-text-primary">
+                <p className="truncate text-sm font-semibold text-foreground">
                   {result.title}
                 </p>
                 {meta ? (
-                  <p className="mt-0.5 truncate text-xs text-text-muted">
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
                     {meta}
                   </p>
                 ) : null}
               </div>
 
               <div className="shrink-0 text-right">
-                <p className="text-xs font-semibold text-text-primary">
+                <p className="text-xs font-semibold text-foreground">
                   {result.isFree
                     ? "ฟรี"
                     : new Intl.NumberFormat("th-TH", {
@@ -722,7 +722,7 @@ export function HeroSearch({
                         maximumFractionDigits: 0,
                       }).format(result.price / 100)}
                 </p>
-                <p className="mt-0.5 text-[11px] text-text-muted">
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
                   เปิดรายละเอียด
                 </p>
               </div>
@@ -733,7 +733,7 @@ export function HeroSearch({
         <button
           type="button"
           onClick={() => navigateToSearchQuery(value)}
-          className="flex w-full items-center justify-center gap-2 border-t border-surface-100 px-4 py-3 text-sm font-semibold text-brand-700 transition hover:bg-surface-50"
+          className="flex w-full items-center justify-center gap-2 border-t border-border/70 px-4 py-3 text-sm font-semibold text-brand-700 transition hover:bg-muted"
         >
           <Search className="h-4 w-4" />
           ดูผลลัพธ์ทั้งหมดสำหรับ “{value.trim()}”
@@ -792,14 +792,14 @@ export function HeroSearch({
           loading={isPending || isLoadingResults}
           startAdornment={
             variant === "listing" ? (
-              <span className="pointer-events-none absolute inset-y-0 left-0 flex w-[44px] items-center justify-center text-[#94a3b8]">
+              <span className="pointer-events-none absolute inset-y-0 left-0 flex w-[44px] items-center justify-center text-muted-foreground">
                 <Search className="h-[14px] w-[14px] stroke-[1.75]" aria-hidden />
               </span>
             ) : undefined
           }
           className={cn(
             variant === "listing" &&
-              "h-[40px] rounded-[999px] border-[#e2e8f0] bg-white py-[8px] pl-[45px] pr-[45px] text-[16px] font-normal leading-normal tracking-[0px] text-text-primary shadow-none placeholder:text-[#94a3b8] focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 focus-visible:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500/15",
+              "h-[40px] rounded-[999px] border-border bg-background py-[8px] pl-[45px] pr-[45px] text-[16px] font-normal leading-normal tracking-[0px] text-foreground shadow-none placeholder:text-muted-foreground focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 focus-visible:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500/15",
             className,
           )}
         />

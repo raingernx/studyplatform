@@ -41,7 +41,7 @@ const USER_PREFERENCE_SELECT = {
 
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   language: "en",
-  theme: "system",
+  theme: "light",
   currency: "USD",
   timezone: "UTC",
   emailNotifications: true,
@@ -73,7 +73,10 @@ export async function getUserPreferences(userId: string): Promise<UserPreference
   const preferences = await prisma.userPreference.upsert({
     where: { userId },
     update: {},
-    create: { userId },
+    create: {
+      userId,
+      ...DEFAULT_USER_PREFERENCES,
+    },
     select: USER_PREFERENCE_SELECT,
   });
 
@@ -123,6 +126,7 @@ export async function updateUserPreferences(userId: string, data: PreferenceUpda
     update: safe,
     create: {
       userId,
+      ...DEFAULT_USER_PREFERENCES,
       ...safe,
     },
   });

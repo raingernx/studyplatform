@@ -43,7 +43,7 @@ const STATUS_CONFIG = {
   REFUNDED: {
     label: "Refunded",
     icon: XCircle,
-    className: "text-zinc-500 bg-zinc-100",
+    className: "bg-secondary text-secondary-foreground",
   },
 };
 
@@ -62,17 +62,17 @@ export default async function PurchasesPage() {
         {/* Header */}
         <div className="mb-6 flex items-start justify-between">
           <div>
-            <h1 className="font-display text-h2 font-semibold tracking-tight text-zinc-900">
+            <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
               Purchases
             </h1>
-            <p className="mt-1 text-[14px] text-zinc-500">
+            <p className="mt-1 text-[14px] text-muted-foreground">
               Your complete order history on {platform.platformShortName}.
             </p>
           </div>
           {purchases.length > 0 && (
             <div className="hidden flex-col items-end gap-0.5 sm:flex">
-              <p className="text-[12px] text-zinc-400">Total spent</p>
-              <p className="text-[18px] font-bold tracking-tight text-zinc-900">
+              <p className="text-[12px] text-muted-foreground">Total spent</p>
+              <p className="text-[18px] font-bold tracking-tight text-foreground">
                 {formatPrice(totalSpent / 100)}
               </p>
             </div>
@@ -81,7 +81,7 @@ export default async function PurchasesPage() {
 
         {purchases.length === 0 ? (
           <EmptyState
-            className="bg-white py-20"
+            className="bg-card py-20"
             icon={
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50">
                 <ShoppingBag className="h-7 w-7 text-violet-400" />
@@ -92,7 +92,7 @@ export default async function PurchasesPage() {
             action={
               <Link
                 href={routes.marketplace}
-                className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-zinc-700"
+                className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-[13px] font-semibold text-background transition hover:bg-foreground/90"
               >
                 <BookOpen className="h-4 w-4" />
                 Browse marketplace
@@ -100,27 +100,27 @@ export default async function PurchasesPage() {
             }
           />
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-card">
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
             {/* Table header */}
-            <div className="grid grid-cols-[2fr_1fr_120px_120px_100px] gap-4 border-b border-zinc-100 bg-zinc-50/60 px-6 py-3">
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+            <div className="grid grid-cols-[2fr_1fr_120px_120px_100px] gap-4 border-b border-border bg-muted/70 px-6 py-3">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Resource
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Creator
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Date
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Amount
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Status
               </span>
             </div>
 
-            <ul className="divide-y divide-zinc-50">
+            <ul className="divide-y divide-border">
               {purchases.map((purchase) => {
                 const statusCfg =
                   STATUS_CONFIG[purchase.status] ?? STATUS_CONFIG.PENDING;
@@ -131,7 +131,7 @@ export default async function PurchasesPage() {
                     <div className="grid grid-cols-[2fr_1fr_120px_120px_100px] items-center gap-4 px-6 py-4">
                       {/* Resource */}
                       <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-50">
+                      <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted">
                           {purchase.resource.previewUrl ? (
                           <Image
                             src={purchase.resource.previewUrl}
@@ -142,12 +142,12 @@ export default async function PurchasesPage() {
                             className="rounded-xl object-cover"
                           />
                           ) : (
-                            <FileText className="h-4 w-4 text-zinc-300" />
+                            <FileText className="h-4 w-4 text-muted-foreground/50" />
                           )}
                         </div>
                         <Link
                           href={routes.resource(purchase.resource.slug)}
-                          className="group flex min-w-0 items-center gap-1 truncate text-[13px] font-medium text-zinc-900 hover:text-blue-600"
+                          className="group flex min-w-0 items-center gap-1 truncate text-[13px] font-medium text-foreground hover:text-primary-700"
                         >
                           <span className="truncate">
                             {purchase.resource.title}
@@ -157,12 +157,12 @@ export default async function PurchasesPage() {
                       </div>
 
                       {/* Creator */}
-                      <span className="truncate text-[13px] text-zinc-500">
+                      <span className="truncate text-[13px] text-muted-foreground">
                         {purchase.resource.author?.name ?? "—"}
                       </span>
 
-                      {/* Date */}
-                      <span className="text-[12px] text-zinc-500">
+                    {/* Date */}
+                      <span className="text-[12px] text-muted-foreground">
                         {formatDate(purchase.createdAt)}
                       </span>
 
@@ -171,7 +171,7 @@ export default async function PurchasesPage() {
                         {purchase.resource.isFree ? (
                           <span className="font-medium text-green-600">Free</span>
                         ) : (
-                          <span className="text-zinc-800">
+                          <span className="text-foreground">
                             {formatPrice(purchase.amount / 100)}
                           </span>
                         )}
@@ -191,11 +191,11 @@ export default async function PurchasesPage() {
             </ul>
 
             {/* Footer summary */}
-            <div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50/60 px-6 py-3">
-              <span className="text-[12px] text-zinc-400">
+            <div className="flex items-center justify-between border-t border-border bg-muted/70 px-6 py-3">
+              <span className="text-[12px] text-muted-foreground">
                 {purchases.length} order{purchases.length !== 1 ? "s" : ""}
               </span>
-              <span className="text-[13px] font-semibold text-zinc-700">
+              <span className="text-[13px] font-semibold text-foreground">
                 Total: {formatPrice(totalSpent / 100)}
               </span>
             </div>

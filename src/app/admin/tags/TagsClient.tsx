@@ -202,10 +202,10 @@ export function TagsClient({ tags }: Props) {
       </div>
 
       {/* ── Create form ────────────────────────────────────────────────────── */}
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-card">
-        <div className="flex items-center gap-2 border-b border-zinc-100 px-5 py-4">
-          <Plus className="h-4 w-4 text-zinc-400" />
-          <h2 className="text-[14px] font-semibold text-zinc-900">Create new tag</h2>
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+        <div className="flex items-center gap-2 border-b border-border px-5 py-4">
+          <Plus className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-[14px] font-semibold text-foreground">Create new tag</h2>
         </div>
 
         <form onSubmit={handleCreate} className="px-5 py-4">
@@ -220,17 +220,17 @@ export function TagsClient({ tags }: Props) {
                 }}
                 placeholder="Tag name, e.g. Exam Prep"
                 disabled={createPending}
-                className="w-full rounded-xl border border-zinc-200 bg-white px-3.5 py-2.5
-                           text-[13px] text-zinc-900 placeholder-zinc-400 shadow-sm outline-none
+                className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5
+                           text-[13px] text-foreground placeholder:text-muted-foreground shadow-sm outline-none
                            transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100
                            disabled:opacity-50"
               />
               {/* Slug preview */}
               {createSlugPreview && (
-                <p className="mt-1.5 flex items-center gap-1 text-[11px] text-zinc-400">
+                <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
                   <Hash className="h-3 w-3" />
                   Slug:
-                  <span className="font-mono font-medium text-zinc-600">
+                  <span className="font-mono font-medium text-foreground">
                     {createSlugPreview}
                   </span>
                 </p>
@@ -259,14 +259,14 @@ export function TagsClient({ tags }: Props) {
       </div>
 
       {/* ── Tags table ─────────────────────────────────────────────────────── */}
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-card">
-        <div className="flex items-center gap-2 border-b border-zinc-100 px-5 py-4">
-          <Tag className="h-4 w-4 text-zinc-400" />
-          <h2 className="text-[14px] font-semibold text-zinc-900">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+        <div className="flex items-center gap-2 border-b border-border px-5 py-4">
+          <Tag className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-[14px] font-semibold text-foreground">
             All Tags
           </h2>
-          <span className="ml-1 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px]
-                           font-semibold text-zinc-500 tabular-nums">
+          <span className="ml-1 rounded-full bg-secondary px-2 py-0.5 text-[11px]
+                           font-semibold text-secondary-foreground tabular-nums">
             {tags.length}
           </span>
         </div>
@@ -277,19 +277,19 @@ export function TagsClient({ tags }: Props) {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[13px]">
               <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50">
-                  <th className="px-5 py-3 font-semibold text-zinc-500">Tag</th>
-                  <th className="px-3 py-3 font-semibold text-zinc-500">Slug</th>
-                  <th className="px-3 py-3 text-center font-semibold text-zinc-500">
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="px-5 py-3 font-semibold text-muted-foreground">Tag</th>
+                  <th className="px-3 py-3 font-semibold text-muted-foreground">Slug</th>
+                  <th className="px-3 py-3 text-center font-semibold text-muted-foreground">
                     Resources
                   </th>
-                  <th className="px-3 py-3 text-right font-semibold text-zinc-500">
+                  <th className="px-3 py-3 text-right font-semibold text-muted-foreground">
                     Actions
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-zinc-100">
+              <tbody className="divide-y divide-border">
                 {tags.map((tag) => {
                   const isEditing   = editId === tag.id;
                   const isDeleting  = deleteId === tag.id;
@@ -300,8 +300,8 @@ export function TagsClient({ tags }: Props) {
                       key={tag.id}
                       className={
                         isEditing || isDeleting
-                          ? "bg-zinc-50/80"
-                          : "transition hover:bg-zinc-50/60"
+                          ? "bg-muted/60"
+                          : "transition hover:bg-muted/40"
                       }
                     >
                       {/* ── Tag name (static or editable) ──────────────── */}
@@ -320,8 +320,8 @@ export function TagsClient({ tags }: Props) {
                                 if (e.key === "Escape") cancelEdit();
                               }}
                               disabled={editPending}
-                              className="w-full rounded-lg border border-violet-300 bg-white
-                                         px-2.5 py-1.5 text-[13px] text-zinc-900 outline-none
+                              className="w-full rounded-lg border border-violet-300 bg-background
+                                         px-2.5 py-1.5 text-[13px] text-foreground outline-none
                                          ring-2 ring-violet-100 transition
                                          disabled:opacity-50"
                             />
@@ -334,21 +334,21 @@ export function TagsClient({ tags }: Props) {
                             )}
                           </div>
                         ) : (
-                          <span className="font-medium text-zinc-900">{tag.name}</span>
+                          <span className="font-medium text-foreground">{tag.name}</span>
                         )}
                       </td>
 
                       {/* ── Slug ───────────────────────────────────────── */}
                       <td className="px-3 py-3.5">
                         {isEditing ? (
-                          <span className="flex items-center gap-1 font-mono text-[12px] text-zinc-400">
+                          <span className="flex items-center gap-1 font-mono text-[12px] text-muted-foreground">
                             <Hash className="h-3 w-3 flex-shrink-0" />
                             {editSlugPreview || (
-                              <span className="italic text-zinc-300">—</span>
+                              <span className="italic text-muted-foreground/50">—</span>
                             )}
                           </span>
                         ) : (
-                          <span className="font-mono text-[12px] text-zinc-400">
+                          <span className="font-mono text-[12px] text-muted-foreground">
                             {tag.slug}
                           </span>
                         )}
@@ -361,7 +361,7 @@ export function TagsClient({ tags }: Props) {
                                       text-[11px] font-semibold tabular-nums
                                       ${inUse
                                         ? "bg-blue-50 text-blue-700"
-                                        : "bg-zinc-100 text-zinc-400"
+                                        : "bg-muted text-muted-foreground"
                                       }`}
                         >
                           {tag._count.resources}
@@ -471,12 +471,12 @@ function StatCard({
   const palette = {
     violet: "border-violet-100 bg-gradient-to-br from-violet-50 to-white text-violet-700",
     blue:   "border-blue-100   bg-gradient-to-br from-blue-50   to-white text-blue-700",
-    zinc:   "border-zinc-200   bg-white                                   text-zinc-900",
+    zinc:   "border-border bg-card text-foreground",
   }[color];
 
   return (
     <div className={`rounded-2xl border p-5 shadow-card ${palette}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <p className="mt-2 text-[26px] font-bold tabular-nums leading-none tracking-tight">
@@ -492,8 +492,8 @@ function EmptyTags() {
       <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50">
         <Tag className="h-7 w-7 text-violet-400" />
       </span>
-      <p className="mt-4 font-semibold text-zinc-800">No tags yet.</p>
-      <p className="mt-1 max-w-xs text-sm text-zinc-500">
+      <p className="mt-4 font-semibold text-foreground">No tags yet.</p>
+      <p className="mt-1 max-w-xs text-sm text-muted-foreground">
         Use the form above to create your first tag.
       </p>
     </div>

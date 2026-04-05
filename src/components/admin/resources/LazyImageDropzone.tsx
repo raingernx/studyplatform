@@ -29,11 +29,11 @@ function ImageDropzoneShellContent({
 }) {
   return (
     <>
-      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-surface-100 text-brand-600">
+      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-muted text-brand-600">
         <ImagePlus className="h-5 w-5" />
       </div>
-      <p className="font-medium text-text-primary">{helpText}</p>
-      <p className="mt-1 text-[11px] text-text-secondary">{supportingText}</p>
+      <p className="font-medium text-foreground">{helpText}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{supportingText}</p>
     </>
   );
 }
@@ -49,7 +49,7 @@ function ImageDropzoneLoadingShell({
     <div className="w-full min-w-0 space-y-1.5">
       <PickerDropzoneShell
         disabled={disabled}
-        className={cn("border-border-subtle bg-white")}
+        className={cn("border-border bg-card")}
         aria-busy="true"
       >
         <ImageDropzoneShellContent
@@ -123,7 +123,7 @@ export function LazyImageDropzone({
         tabIndex={props.disabled ? -1 : 0}
         aria-label="Load image uploader"
         aria-disabled={props.disabled ? "true" : undefined}
-        className="border-border-subtle bg-white"
+        className="border-border bg-card"
         onMouseEnter={requestUploader}
         onFocus={requestUploader}
         onTouchStart={requestUploader}

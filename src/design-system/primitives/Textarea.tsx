@@ -46,7 +46,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(function T
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className={cn("text-caption text-text-muted")}>
+        <p id={hintId} className={cn("text-caption text-muted-foreground")}>
           {hint}
         </p>
       ) : null}

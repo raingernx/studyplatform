@@ -66,7 +66,7 @@ function ModalContent({
         className={cn(
           "fixed left-1/2 top-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2",
           sizeClasses[size],
-          "rounded-2xl border border-surface-200 bg-white shadow-card-lg",
+          "rounded-2xl border border-border bg-card shadow-card-lg",
           "flex flex-col overflow-hidden outline-none",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
@@ -81,7 +81,7 @@ function ModalContent({
             <Button
               variant="ghost"
               size="sm"
-              className="absolute right-3 top-3 h-9 w-9 p-0 text-text-muted hover:text-text-primary"
+              className="absolute right-3 top-3 h-9 w-9 p-0 text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>
@@ -99,7 +99,7 @@ function ModalHeader({ className, ...props }: ModalHeaderProps) {
   return (
     <div
       data-slot="modal-header"
-      className={cn("flex flex-col gap-1 border-b border-surface-100 px-5 py-4", className)}
+      className={cn("flex flex-col gap-1 border-b border-border/70 px-5 py-4", className)}
       {...props}
     />
   );
@@ -111,7 +111,7 @@ function ModalTitle({ className, ...props }: ModalTitleProps) {
   return (
     <DialogPrimitive.Title
       data-slot="modal-title"
-      className={cn("font-display text-base font-semibold leading-snug text-text-primary", className)}
+      className={cn("font-display text-base font-semibold leading-snug text-foreground", className)}
       {...props}
     />
   );
@@ -123,7 +123,7 @@ function ModalDescription({ className, ...props }: ModalDescriptionProps) {
   return (
     <DialogPrimitive.Description
       data-slot="modal-description"
-      className={cn("text-sm text-text-secondary", className)}
+      className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
   );
@@ -148,7 +148,7 @@ function ModalFooter({ className, ...props }: ModalFooterProps) {
     <div
       data-slot="modal-footer"
       className={cn(
-        "flex items-center justify-end gap-2 border-t border-surface-100 bg-surface-50/60 px-5 py-3",
+        "flex items-center justify-end gap-2 border-t border-border/70 bg-muted/60 px-5 py-3",
         className,
       )}
       {...props}

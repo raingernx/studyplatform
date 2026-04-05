@@ -136,25 +136,25 @@ export function AdminGlobalSearch() {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search resources, users, orders..."
         leftAdornment={<Search className="h-4 w-4" />}
-        className="rounded-full bg-surface-50"
+        className="rounded-full bg-muted"
       />
 
       {isOpen && (
         <div
           className={cn(
             "absolute left-0 right-0 top-full mt-2 z-50",
-            "rounded-2xl border border-border-subtle bg-white shadow-card-lg",
+            "rounded-2xl border border-border bg-card shadow-card-lg",
           )}
         >
           {groups.length === 0 ? (
-            <div className="px-3 py-3 text-sm text-text-muted">
+            <div className="px-3 py-3 text-sm text-muted-foreground">
               No matches found.
             </div>
           ) : (
             <div className="max-h-80 overflow-y-auto py-1">
               {groups.map((group) => (
                 <div key={group.label} className="pb-1">
-                  <p className="px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-tightest text-text-muted">
+                  <p className="px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-tightest text-muted-foreground">
                     {group.label}
                   </p>
                   {group.items.map((item) => (
@@ -162,7 +162,7 @@ export function AdminGlobalSearch() {
                       key={item.id}
                       type="button"
                       onClick={() => handleSelect(item)}
-                      className="block w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-surface-50"
+                      className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
                     >
                       {item.label}
                     </button>

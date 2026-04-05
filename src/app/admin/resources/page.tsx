@@ -122,7 +122,7 @@ export default async function AdminResourcesPage({
                   className="inline-flex items-center gap-2"
                 >
                   <Link href={routes.adminTrash}>
-                    <BookOpen className="h-4 w-4 text-text-secondary" />
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
                     <span>View Trash</span>
                   </Link>
                 </Button>
@@ -133,7 +133,7 @@ export default async function AdminResourcesPage({
                   className="inline-flex items-center gap-2"
                 >
                   <Link href={routes.adminBulkUpload}>
-                    <Upload className="h-4 w-4 text-text-secondary" />
+                    <Upload className="h-4 w-4 text-muted-foreground" />
                     <span>Bulk Upload</span>
                   </Link>
                 </Button>
@@ -156,7 +156,7 @@ export default async function AdminResourcesPage({
 
           {rows.length === 0 ? (
             <EmptyState
-              className="min-h-0 border-border-subtle bg-surface-50/50 px-6 py-12"
+              className="min-h-0 border-border bg-muted/50 px-6 py-12"
               icon={
                 <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-50">
                   <BookOpen className="h-6 w-6 text-primary-700" />
@@ -173,7 +173,7 @@ export default async function AdminResourcesPage({
             <>
               <ResourceTable resources={rows} categories={categories} />
 
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-50/70 px-4 py-2.5 text-small text-text-secondary">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/70 px-4 py-2.5 text-small text-muted-foreground">
                 <span className="min-w-0">
                   Page {currentPage} of {totalPages}
                 </span>

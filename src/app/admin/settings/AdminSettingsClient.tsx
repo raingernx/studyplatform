@@ -439,14 +439,14 @@ export function AdminSettingsClient({
         description="Manage global platform branding and metadata. Other sections stay local-only for now."
       />
 
-      <div className="space-y-0 rounded-2xl border border-border-subtle bg-white px-6 py-6 shadow-card sm:px-7 sm:py-7">
+      <div className="space-y-0 rounded-2xl border border-border bg-card px-6 py-6 shadow-card sm:px-7 sm:py-7">
         <FormSection
           title="General"
           description="Persisted platform settings used across branding, metadata, and support surfaces."
           contentClassName="grid grid-cols-1 gap-4 sm:grid-cols-2"
         >
           <div className="space-y-1.5">
-            <label htmlFor="platformName" className="text-sm font-medium text-text-primary">
+            <label htmlFor="platformName" className="text-sm font-medium text-foreground">
               Platform Name
             </label>
             <Input
@@ -457,7 +457,7 @@ export function AdminSettingsClient({
             />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="platformShortName" className="text-sm font-medium text-text-primary">
+            <label htmlFor="platformShortName" className="text-sm font-medium text-foreground">
               Short Name
             </label>
             <Input
@@ -468,7 +468,7 @@ export function AdminSettingsClient({
             />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="supportEmail" className="text-sm font-medium text-text-primary">
+            <label htmlFor="supportEmail" className="text-sm font-medium text-foreground">
               Support Email
             </label>
             <Input
@@ -482,7 +482,7 @@ export function AdminSettingsClient({
           <div className="space-y-1.5 sm:col-span-2">
             <label
               htmlFor="platformDescription"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               Platform Description
             </label>
@@ -495,7 +495,7 @@ export function AdminSettingsClient({
             />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <label htmlFor="siteUrl" className="text-sm font-medium text-text-primary">
+            <label htmlFor="siteUrl" className="text-sm font-medium text-foreground">
               Site URL
             </label>
             <Input
@@ -505,12 +505,12 @@ export function AdminSettingsClient({
               onChange={handleInputChange}
               placeholder="https://www.example.com"
             />
-            <p className="text-caption text-text-muted">
+            <p className="text-caption text-muted-foreground">
               Used for canonical metadata, social URLs, and other platform-level references.
             </p>
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="defaultCurrency" className="text-sm font-medium text-text-primary">
+            <label htmlFor="defaultCurrency" className="text-sm font-medium text-foreground">
               Default Currency
             </label>
             <Select
@@ -525,7 +525,7 @@ export function AdminSettingsClient({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="timezone" className="text-sm font-medium text-text-primary">
+            <label htmlFor="timezone" className="text-sm font-medium text-foreground">
               Timezone
             </label>
             <Select
@@ -544,7 +544,7 @@ export function AdminSettingsClient({
           <div className="space-y-1.5">
             <label
               htmlFor="currencyDisplayFormat"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               Currency Display Format
             </label>
@@ -565,7 +565,7 @@ export function AdminSettingsClient({
           <div className="space-y-1.5">
             <label
               htmlFor="defaultLanguage"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               Default Language
             </label>
@@ -650,7 +650,7 @@ export function AdminSettingsClient({
         <FormSection
           title="Moderation"
           description="Control how resources and user-generated content are reviewed."
-          contentClassName="divide-y divide-border-subtle"
+          contentClassName="divide-y divide-border"
         >
           {[
             [
@@ -676,8 +676,8 @@ export function AdminSettingsClient({
           ].map(([key, title, description]) => (
             <div key={key} className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-text-primary">{title}</p>
-                <p className="text-caption text-text-secondary">{description}</p>
+                <p className="text-sm font-medium text-foreground">{title}</p>
+                <p className="text-caption text-muted-foreground">{description}</p>
               </div>
               <Switch
                 checked={Boolean(settings[key as keyof AdminSettingsState])}
@@ -695,7 +695,7 @@ export function AdminSettingsClient({
           <div className="space-y-1.5">
             <label
               htmlFor="defaultCommission"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               Default Commission (%)
             </label>
@@ -710,7 +710,7 @@ export function AdminSettingsClient({
             />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="minPrice" className="text-sm font-medium text-text-primary">
+            <label htmlFor="minPrice" className="text-sm font-medium text-foreground">
               Minimum Resource Price
             </label>
             <Input
@@ -721,7 +721,7 @@ export function AdminSettingsClient({
               value={settings.minPrice}
               onChange={handleInputChange}
             />
-            <p className="text-caption text-text-muted">
+            <p className="text-caption text-muted-foreground">
               Recommended minimum price for Thai market: 19–29 THB
             </p>
           </div>
@@ -735,7 +735,7 @@ export function AdminSettingsClient({
           <div className="space-y-1.5">
             <label
               htmlFor="paymentProvider"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               Payment Provider
             </label>
@@ -755,7 +755,7 @@ export function AdminSettingsClient({
               <div className="space-y-1.5">
                 <label
                   htmlFor="stripePublicKey"
-                  className="text-sm font-medium text-text-primary"
+                  className="text-sm font-medium text-foreground"
                 >
                   Stripe Public Key
                 </label>
@@ -770,7 +770,7 @@ export function AdminSettingsClient({
               <div className="space-y-1.5">
                 <label
                   htmlFor="stripeSecretKey"
-                  className="text-sm font-medium text-text-primary"
+                  className="text-sm font-medium text-foreground"
                 >
                   Stripe Secret Key
                 </label>
@@ -786,7 +786,7 @@ export function AdminSettingsClient({
               <div className="space-y-1.5 md:col-span-2">
                 <label
                   htmlFor="stripeWebhookSecret"
-                  className="text-sm font-medium text-text-primary"
+                  className="text-sm font-medium text-foreground"
                 >
                   Webhook Secret
                 </label>
@@ -807,7 +807,7 @@ export function AdminSettingsClient({
               <div className="space-y-1.5">
                 <label
                   htmlFor="promptpayQrId"
-                  className="text-sm font-medium text-text-primary"
+                  className="text-sm font-medium text-foreground"
                 >
                   PromptPay QR ID
                 </label>
@@ -822,7 +822,7 @@ export function AdminSettingsClient({
               <div className="space-y-1.5">
                 <label
                   htmlFor="promptpayPhoneNumber"
-                  className="text-sm font-medium text-text-primary"
+                  className="text-sm font-medium text-foreground"
                 >
                   PromptPay Phone Number
                 </label>
@@ -847,7 +847,7 @@ export function AdminSettingsClient({
             <div className="space-y-1.5">
               <label
                 htmlFor="maxFileSizeMb"
-                className="text-sm font-medium text-text-primary"
+                className="text-sm font-medium text-foreground"
               >
                 Max File Size (MB)
               </label>
@@ -863,7 +863,7 @@ export function AdminSettingsClient({
             <div className="space-y-1.5">
               <label
                 htmlFor="storageProvider"
-                className="text-sm font-medium text-text-primary"
+                className="text-sm font-medium text-foreground"
               >
                 Storage Provider
               </label>
@@ -881,7 +881,7 @@ export function AdminSettingsClient({
           <div className="space-y-1.5">
             <label
               htmlFor="allowedFileTypes"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               Allowed File Types
             </label>
@@ -892,7 +892,7 @@ export function AdminSettingsClient({
               value={settings.allowedFileTypes}
               onChange={handleInputChange}
             />
-            <p className="text-caption text-text-muted">
+            <p className="text-caption text-muted-foreground">
               Comma-separated list of extensions (without dots).
             </p>
           </div>
@@ -906,7 +906,7 @@ export function AdminSettingsClient({
           <div className="space-y-1.5 md:col-span-2">
             <label
               htmlFor="emailSenderName"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               Sender Name
             </label>
@@ -916,12 +916,12 @@ export function AdminSettingsClient({
               value={settings.emailSenderName}
               onChange={handleInputChange}
             />
-            <p className="text-caption text-text-muted">
+            <p className="text-caption text-muted-foreground">
               Used as the default sender label for platform emails.
             </p>
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="smtpHost" className="text-sm font-medium text-text-primary">
+            <label htmlFor="smtpHost" className="text-sm font-medium text-foreground">
               SMTP Host
             </label>
             <Input
@@ -932,7 +932,7 @@ export function AdminSettingsClient({
             />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="smtpPort" className="text-sm font-medium text-text-primary">
+            <label htmlFor="smtpPort" className="text-sm font-medium text-foreground">
               SMTP Port
             </label>
             <Input
@@ -947,7 +947,7 @@ export function AdminSettingsClient({
           <div className="space-y-1.5">
             <label
               htmlFor="smtpUsername"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               SMTP Username
             </label>
@@ -961,7 +961,7 @@ export function AdminSettingsClient({
           <div className="space-y-1.5">
             <label
               htmlFor="smtpPassword"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               SMTP Password
             </label>
@@ -976,7 +976,7 @@ export function AdminSettingsClient({
           <div className="space-y-1.5 md:col-span-2">
             <label
               htmlFor="smtpFromEmail"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               From Email
             </label>
@@ -998,7 +998,7 @@ export function AdminSettingsClient({
           <div className="space-y-1.5">
             <label
               htmlFor="defaultMetaTitle"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               Default Meta Title
             </label>
@@ -1010,14 +1010,14 @@ export function AdminSettingsClient({
               placeholder={PLATFORM_DEFAULTS.defaultMetaTitle}
               className="font-thai"
             />
-            <p className="text-caption text-text-muted">
+            <p className="text-caption text-muted-foreground">
               Used as the main title in browser tabs and search results.
             </p>
           </div>
           <div className="space-y-1.5">
             <label
               htmlFor="defaultMetaDescription"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               Default Meta Description
             </label>
@@ -1030,12 +1030,12 @@ export function AdminSettingsClient({
               placeholder={PLATFORM_DEFAULTS.defaultMetaDescription}
               className="font-thai"
             />
-            <p className="text-caption text-text-muted">
+            <p className="text-caption text-muted-foreground">
               Short description shown in search results; aim for 120–160 characters.
             </p>
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="ogSiteName" className="text-sm font-medium text-text-primary">
+            <label htmlFor="ogSiteName" className="text-sm font-medium text-foreground">
               Open Graph Site Name
             </label>
             <Input
@@ -1045,14 +1045,14 @@ export function AdminSettingsClient({
               onChange={handleInputChange}
               placeholder={PLATFORM_DEFAULTS.ogSiteName}
             />
-            <p className="text-caption text-text-muted">
+            <p className="text-caption text-muted-foreground">
               Shown as the site name in social previews when pages inherit base Open Graph metadata.
             </p>
           </div>
           <div className="space-y-1.5">
             <label
               htmlFor="seoOpenGraphImageUrl"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               OpenGraph Image URL
             </label>
@@ -1063,14 +1063,14 @@ export function AdminSettingsClient({
               onChange={handleInputChange}
               placeholder="https://example.com/og-image.jpg"
             />
-            <p className="text-caption text-text-muted">
+            <p className="text-caption text-muted-foreground">
               Image used when sharing your site on social platforms (Open Graph).
             </p>
           </div>
           <div className="space-y-1.5">
             <label
               htmlFor="seoTwitterCardImageUrl"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-medium text-foreground"
             >
               Twitter Card Image
             </label>
@@ -1081,14 +1081,14 @@ export function AdminSettingsClient({
               onChange={handleInputChange}
               placeholder="https://example.com/twitter-card.jpg"
             />
-            <p className="text-caption text-text-muted">
+            <p className="text-caption text-muted-foreground">
               Image used for Twitter/X cards; can match your OpenGraph image.
             </p>
           </div>
         </FormSection>
       </div>
 
-      <div className="sticky bottom-4 z-10 flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-surface-200 bg-white/95 p-3 shadow-card backdrop-blur">
+      <div className="sticky bottom-4 z-10 flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-border bg-card/95 p-3 shadow-card backdrop-blur">
         <Button type="button" variant="outline" onClick={handleReset}>
           Reset
         </Button>

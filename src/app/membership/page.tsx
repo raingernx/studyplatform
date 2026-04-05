@@ -174,31 +174,31 @@ export default function MembershipPage() {
       </section>
 
       {/* ── Feature comparison table ─────────────────────────────────────────── */}
-      <section className="bg-white py-16">
+      <section className="bg-background py-16">
         <PageContainer>
           <PageContent className="space-y-8">
           <div className="text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Plan details
             </p>
-            <h2 className="mt-3 text-2xl font-bold text-gray-900">
+            <h2 className="mt-3 text-2xl font-bold text-foreground">
               Compare plans
             </h2>
-            <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-500">
+            <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
               A clearer look at what changes as you move from free access to premium and team workflows.
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="p-4 text-left font-semibold text-gray-700">Feature</th>
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="p-4 text-left font-semibold text-foreground">Feature</th>
                   {TIERS.map((t) => (
                     <th
                       key={t.id}
                       className={`p-4 text-center font-semibold ${
-                        t.highlighted ? "text-blue-700" : "text-gray-700"
+                        t.highlighted ? "text-blue-700" : "text-foreground"
                       }`}
                     >
                       {t.name}
@@ -206,20 +206,20 @@ export default function MembershipPage() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {COMPARISON_ROWS.map((row) => (
-                  <tr key={row.feature} className="hover:bg-gray-50 transition-colors">
-                    <td className="p-4 text-gray-700">{row.feature}</td>
+                  <tr key={row.feature} className="transition-colors hover:bg-muted/50">
+                    <td className="p-4 text-foreground">{row.feature}</td>
                     {[row.free, row.pro, row.team].map((val, i) => (
                       <td key={i} className="p-4 text-center">
                         {typeof val === "boolean" ? (
                           val ? (
                             <Check className="mx-auto h-4 w-4 text-blue-600" />
                           ) : (
-                            <span className="text-gray-300">—</span>
+                            <span className="text-muted-foreground/50">—</span>
                           )
                         ) : (
-                          <span className="font-medium text-gray-900">{val}</span>
+                          <span className="font-medium text-foreground">{val}</span>
                         )}
                       </td>
                     ))}
@@ -233,19 +233,22 @@ export default function MembershipPage() {
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────────────────────── */}
-      <section className="bg-gray-50 py-16">
+      <section className="bg-muted/40 py-16">
         <PageContainer>
           <PageContentNarrow className="space-y-10">
           <div className="text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               FAQ
             </p>
-            <h2 className="mt-3 text-2xl font-bold text-gray-900">
+            <h2 className="mt-3 text-2xl font-bold text-foreground">
               Frequently asked questions
             </h2>
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 text-muted-foreground">
               Can&apos;t find the answer you need?{" "}
-              <a href={`mailto:${platform.supportEmail}`} className="text-blue-600 hover:underline">
+              <a
+                href={`mailto:${platform.supportEmail}`}
+                className="text-primary transition-colors hover:text-primary/80 hover:underline"
+              >
                 Email us
               </a>
               .
@@ -256,13 +259,13 @@ export default function MembershipPage() {
             {FAQ.map((item) => (
               <div
                 key={item.q}
-                className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100"
+                className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border"
               >
                 <div className="flex items-start gap-3">
                   <HelpCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500" />
                   <div>
-                    <p className="font-semibold text-gray-900">{item.q}</p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-gray-600">
+                    <p className="font-semibold text-foreground">{item.q}</p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                       {item.a}
                     </p>
                   </div>

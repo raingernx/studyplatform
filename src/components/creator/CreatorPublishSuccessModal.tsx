@@ -93,7 +93,7 @@ export function CreatorPublishSuccessModal({
     >
       {/* Modal panel */}
       <div
-        className="relative mx-auto w-full max-w-lg rounded-2xl bg-white shadow-2xl"
+        className="relative mx-auto w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
@@ -101,7 +101,7 @@ export function CreatorPublishSuccessModal({
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+          className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground"
         >
           <X className="h-4 w-4" />
         </button>
@@ -112,10 +112,10 @@ export function CreatorPublishSuccessModal({
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
               <CheckCircle2 className="h-8 w-8 text-emerald-500" />
             </span>
-            <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight text-neutral-900">
+            <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight text-foreground">
               Your resource is live 🎉
             </h2>
-            <p className="mt-1.5 text-sm text-neutral-500">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               It&apos;s now visible in the marketplace.
             </p>
           </div>
@@ -138,7 +138,7 @@ export function CreatorPublishSuccessModal({
               type="button"
               onClick={handleViewLive}
               disabled={!liveHref}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
             >
               View live page
               <ArrowRight className="h-4 w-4" />
@@ -150,7 +150,7 @@ export function CreatorPublishSuccessModal({
                 type="button"
                 onClick={handleCopyLink}
                 disabled={!liveUrl}
-                className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {copied ? (
                   <>
@@ -168,7 +168,7 @@ export function CreatorPublishSuccessModal({
               <button
                 type="button"
                 onClick={handleCreateAnother}
-                className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
               >
                 <Plus className="h-4 w-4" />
                 Create another
@@ -177,7 +177,7 @@ export function CreatorPublishSuccessModal({
           </div>
 
           {/* ── Helper text ────────────────────────────────────────────── */}
-          <p className="mt-5 text-center text-xs text-neutral-400">
+          <p className="mt-5 text-center text-xs text-muted-foreground">
             You can edit anytime from your dashboard.
           </p>
         </div>

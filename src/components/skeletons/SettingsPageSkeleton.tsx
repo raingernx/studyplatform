@@ -9,7 +9,7 @@ function FlatSectionSkeleton({
   footerWidth?: string;
 }) {
   return (
-    <section className="space-y-5 border-b border-border-subtle pb-6 last:border-b-0 last:pb-0">
+    <section className="space-y-5 border-b border-border pb-6 last:border-b-0 last:pb-0">
       <div className="space-y-2">
         <LoadingSkeleton className="h-5 w-28 rounded-md" />
         <LoadingSkeleton className="h-4 w-72 rounded-md" />
@@ -18,7 +18,7 @@ function FlatSectionSkeleton({
         {Array.from({ length: rows }).map((_, index) => (
           <div
             key={index}
-            className="grid gap-3 border-b border-border-subtle pb-4 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_240px] md:gap-6"
+            className="grid gap-3 border-b border-border pb-4 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_240px] md:gap-6"
           >
             <div className="space-y-2">
               <LoadingSkeleton className="h-4 w-32 rounded-md" />
@@ -47,7 +47,7 @@ export function SettingsPageSkeleton() {
         <FlatSectionSkeleton rows={4} />
         <FlatSectionSkeleton rows={3} footerWidth="w-32" />
         <div className="pt-6">
-          <LoadingSkeleton className="h-24 rounded-xl border border-border-subtle bg-white" />
+          <LoadingSkeleton className="h-24 rounded-xl border border-border bg-card" />
         </div>
       </div>
     </PageContentNarrow>

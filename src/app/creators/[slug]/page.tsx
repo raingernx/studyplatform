@@ -72,13 +72,13 @@ export default async function CreatorPublicProfilePage({
   ].filter((link) => Boolean(link.href));
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-background">
       <Navbar headerSearch={<HeroSearch variant="listing" />} />
 
       <main>
         <PageContainer className="py-10">
           <PageContentWide>
-        <section className="overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-card">
+        <section className="overflow-hidden rounded-[28px] border border-border bg-card shadow-card">
           <div className="relative h-48 bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400">
             {creator.banner && (
               <Image
@@ -99,11 +99,11 @@ export default async function CreatorPublicProfilePage({
                   name={creator.displayName}
                   alt={creator.displayName}
                   size={96}
-                  className="rounded-[28px] border-4 border-white bg-zinc-100 text-3xl font-bold text-zinc-500"
+                  className="rounded-[28px] border-4 border-white bg-muted text-3xl font-bold text-muted-foreground"
                 />
                 <div className="pb-1">
                   <div className="flex items-center gap-2">
-                    <h1 className="font-display text-3xl font-semibold tracking-tight text-zinc-900">
+                    <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
                       {creator.displayName}
                     </h1>
                     {creator.status === "ACTIVE" && (
@@ -119,15 +119,15 @@ export default async function CreatorPublicProfilePage({
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-sm text-zinc-500">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     /creators/{creator.slug}
                   </p>
-                  <p className="mt-1 text-sm text-zinc-500">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {creator.resourceCount} published resource
                     {creator.resourceCount === 1 ? "" : "s"}
                   </p>
                   {creator.statusBadge?.description && (
-                    <p className="mt-2 text-sm text-zinc-600">{creator.statusBadge.description}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{creator.statusBadge.description}</p>
                   )}
                 </div>
               </div>
@@ -140,7 +140,7 @@ export default async function CreatorPublicProfilePage({
                       <Link
                         key={link.key}
                         href={link.href!}
-                        className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                        className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
                       >
                         <Icon className="h-4 w-4" />
                         {link.label}
@@ -152,34 +152,34 @@ export default async function CreatorPublicProfilePage({
             </div>
 
             {creator.bio && (
-              <p className="mt-6 max-w-3xl text-sm leading-6 text-zinc-600">{creator.bio}</p>
+              <p className="mt-6 max-w-3xl text-sm leading-6 text-muted-foreground">{creator.bio}</p>
             )}
           </div>
         </section>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-card">
-            <div className="flex items-center gap-2 text-zinc-500">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <Layers3 className="h-4 w-4" />
               <span className="text-xs font-semibold uppercase tracking-wide">Resources</span>
             </div>
-            <p className="mt-3 text-2xl font-bold text-zinc-900">{creator.resourceCount}</p>
+            <p className="mt-3 text-2xl font-bold text-foreground">{creator.resourceCount}</p>
           </div>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-card">
-            <div className="flex items-center gap-2 text-zinc-500">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <Sparkles className="h-4 w-4" />
               <span className="text-xs font-semibold uppercase tracking-wide">Status</span>
             </div>
-            <p className="mt-3 text-2xl font-bold text-zinc-900">
+            <p className="mt-3 text-2xl font-bold text-foreground">
               {creator.statusBadge?.label ?? creator.status}
             </p>
           </div>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-card">
-            <div className="flex items-center gap-2 text-zinc-500">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <FileText className="h-4 w-4" />
               <span className="text-xs font-semibold uppercase tracking-wide">Slug</span>
             </div>
-            <p className="mt-3 text-lg font-semibold text-zinc-900">
+            <p className="mt-3 text-lg font-semibold text-foreground">
               {creator.momentum?.last30dDownloads
                 ? `${creator.momentum.last30dDownloads.toLocaleString()} recent downloads`
                 : creator.slug ?? "—"}
@@ -187,13 +187,13 @@ export default async function CreatorPublicProfilePage({
           </div>
         </div>
 
-        <section className="mt-8 rounded-[28px] border border-zinc-200 bg-white p-6 shadow-card">
+        <section className="mt-8 rounded-[28px] border border-border bg-card p-6 shadow-card">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-display text-2xl font-semibold text-zinc-900">
+              <h2 className="font-display text-2xl font-semibold text-foreground">
                 Published resources
               </h2>
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Browse the latest resources from this creator.
               </p>
             </div>
@@ -201,7 +201,7 @@ export default async function CreatorPublicProfilePage({
 
           {creator.resources.length === 0 ? (
             <div className="py-16 text-center">
-              <p className="text-sm text-zinc-500">No published resources yet.</p>
+              <p className="text-sm text-muted-foreground">No published resources yet.</p>
             </div>
           ) : (
             <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">

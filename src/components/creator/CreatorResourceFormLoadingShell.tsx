@@ -2,7 +2,7 @@ import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 
 export function CreatorResourceFormLoadingShell() {
   return (
-    <section className="space-y-6 rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+    <section className="space-y-6 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
       <div className="space-y-3">
         <LoadingSkeleton className="h-4 w-32" />
         <LoadingSkeleton className="h-11 w-full rounded-2xl" />

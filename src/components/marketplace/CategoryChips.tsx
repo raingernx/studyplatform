@@ -87,7 +87,7 @@ export function DiscoverButton() {
         "inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-base font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70",
         isDiscover
           ? "border-primary-300 bg-primary-100 text-primary-800 shadow-sm"
-          : "border-surface-200 bg-surface-50 text-text-secondary hover:border-surface-300 hover:bg-surface-100 hover:text-text-primary",
+          : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
         isPending && "cursor-wait opacity-70"
       )}
     >
@@ -201,7 +201,7 @@ function chipClassName(
     "inline-flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border px-4 text-base font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70",
     active || pending
       ? "border-primary-400 bg-primary-100 text-primary-900 shadow-sm"
-      : "border-surface-200 bg-surface-50 text-text-secondary hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800",
+      : "border-border bg-background text-muted-foreground hover:border-primary-200 hover:bg-muted hover:text-foreground",
     pending && "cursor-wait opacity-75",
     anyPending && !pending && !active && "opacity-40",
     className,

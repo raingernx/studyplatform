@@ -26,7 +26,6 @@ import { formatNumber, formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import {
   getDiscoverData,
-  getHeroConfig,
   type DiscoverData,
 } from "@/services/discover";
 import { getSearchRecoveryData } from "@/services/search";
@@ -61,21 +60,7 @@ export async function ResourcesDiscoverHero({
 }: {
   className?: string;
 }) {
-  let heroConfig: Awaited<ReturnType<typeof getHeroConfig>> = null;
-
-  try {
-    heroConfig = await traceServerStep(
-      "resources.getHeroConfig",
-      () => getHeroConfig({ staticAnonSeed: true }),
-      { personalized: false },
-    );
-  } catch (error) {
-    if (!isMissingTableError(error)) {
-      throw error;
-    }
-  }
-
-  return <HeroBanner config={heroConfig} className={className} />;
+  return <HeroBanner className={className} />;
 }
 
 export async function ResourcesPageContent({
@@ -256,23 +241,23 @@ async function ResourcesListingContent({
       <section className="space-y-5 pb-7 sm:space-y-6 sm:pb-8">
         <div className="flex flex-col gap-4">
           <div className="max-w-3xl space-y-3">
-            <p className="font-ui text-caption tracking-[0.12em] text-text-muted">
+            <p className="font-ui text-caption tracking-[0.12em] text-muted-foreground">
               Browse
             </p>
-            <h1 className="max-w-3xl font-display text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl">
+            <h1 className="max-w-3xl font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               {pageTitle}
             </h1>
             {resultsContext ? (
-              <p className="max-w-2xl text-small leading-6 text-text-secondary">
+              <p className="max-w-2xl text-small leading-6 text-muted-foreground">
                 {resultsContext}
               </p>
             ) : null}
           </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-text-secondary">
-            <span className="font-medium text-text-primary">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-muted-foreground">
+            <span className="font-medium text-foreground">
               {formatNumber(total)} results
             </span>
-            <span className="text-text-muted" aria-hidden>
+            <span className="text-muted-foreground" aria-hidden>
               •
             </span>
             <span>{`Sorted by ${sortLabel}`}</span>
@@ -301,10 +286,10 @@ async function ResourcesListingContent({
                       <p className="font-ui text-caption tracking-[0.12em] text-primary-700">
                         {spotlightLabel}
                       </p>
-                      <h2 className="text-xl font-semibold tracking-tight text-text-primary sm:text-2xl">
+                      <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                         Start with the strongest pick first
                       </h2>
-                      <p className="max-w-2xl text-small leading-6 text-text-secondary">
+                      <p className="max-w-2xl text-small leading-6 text-muted-foreground">
                         Use this highlighted pick as your first stop in {(activeCategoryName ?? "the marketplace").toLowerCase()} before
                         you scan the rest of the collection.
                       </p>
@@ -315,7 +300,7 @@ async function ResourcesListingContent({
                         {sortLabel}
                       </span>
                       {activeCategoryName ? (
-                        <span className="inline-flex items-center rounded-full border border-surface-200 bg-white/85 px-3 py-1 text-xs font-medium text-text-secondary">
+                        <span className="inline-flex items-center rounded-full border border-border/80 bg-card/85 px-3 py-1 text-xs font-medium text-muted-foreground">
                           {activeCategoryName}
                         </span>
                       ) : null}
@@ -352,16 +337,16 @@ async function ResourcesListingContent({
             ) : null}
 
             {isSearchResults ? (
-              <p className="text-small text-text-secondary">
+              <p className="text-small text-muted-foreground">
                 {total === 0 ? (
                   <>
                     No results for{" "}
-                    <strong className="text-text-primary">&ldquo;{normalizedSearch}&rdquo;</strong>.
+                    <strong className="text-foreground">&ldquo;{normalizedSearch}&rdquo;</strong>.
                   </>
                 ) : (
                   <>
                     Showing results for{" "}
-                    <strong className="text-text-primary">&ldquo;{normalizedSearch}&rdquo;</strong>.
+                    <strong className="text-foreground">&ldquo;{normalizedSearch}&rdquo;</strong>.
                   </>
                 )}
               </p>
@@ -456,7 +441,7 @@ async function ResourcesDiscoverDeferredSections({
     {
       title: "Flashcards",
       description: "Review-ready cards for memorisation, recall, and speaking drills.",
-      href: routes.marketplaceQuery("tag=flashcard&sort=trending"),
+      href: routes.marketplaceQuery("tag=flashcards&sort=trending"),
       eyebrow: "Format",
     },
     {
@@ -680,11 +665,11 @@ function SectionHeader({
   viewAllLabel?: string;
 }) {
   return (
-    <div className="flex flex-col gap-3 border-b border-surface-200/80 pb-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-3 border-b border-border/80 pb-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold tracking-tight text-text-primary">{title}</h2>
+        <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
         {description ? (
-          <p className="max-w-2xl text-sm leading-6 text-text-secondary">{description}</p>
+          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>
         ) : null}
       </div>
       <IntentPrefetchLink
@@ -718,13 +703,13 @@ function DiscoverBrowseCard({
   return (
     <CategoryBrowseCardLink
       href={href}
-      className="group rounded-[24px] border border-surface-200 bg-white p-5 shadow-sm transition hover:border-primary-200 hover:bg-primary-50/30 hover:shadow-card"
+      className="group rounded-[24px] border border-border bg-card p-5 shadow-sm transition hover:border-primary-200 hover:bg-primary-50/30 hover:shadow-card"
     >
       <div className="flex h-full flex-col gap-4">
         <div className="space-y-2">
           <p className="font-ui text-caption tracking-[0.12em] text-primary-700">{eyebrow}</p>
-          <h3 className="text-lg font-semibold tracking-tight text-text-primary">{title}</h3>
-          <p className="text-sm leading-6 text-text-secondary">{description}</p>
+          <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
+          <p className="text-sm leading-6 text-muted-foreground">{description}</p>
         </div>
         <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary-700 transition group-hover:text-primary-800">
           Explore
@@ -757,10 +742,10 @@ function DiscoverCollectionCard({
       prefetchScope="discover-collection-card"
       prefetchLimit={4}
       resourcesNavigationMode="listing"
-      className="group overflow-hidden rounded-[24px] border border-surface-200 bg-white shadow-sm transition hover:border-primary-200 hover:shadow-card"
+      className="group overflow-hidden rounded-[24px] border border-border bg-card shadow-sm transition hover:border-primary-200 hover:shadow-card"
     >
       <div className="flex h-full flex-col">
-        <div className="relative aspect-[5/3] overflow-hidden border-b border-surface-200 bg-surface-100">
+        <div className="relative aspect-[5/3] overflow-hidden border-b border-border bg-muted">
           {previewUrl ? (
             <Image
               src={previewUrl}
@@ -778,10 +763,10 @@ function DiscoverCollectionCard({
         </div>
         <div className="flex flex-1 flex-col gap-3 p-5">
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold tracking-tight text-text-primary">{title}</h3>
-            <p className="text-sm leading-6 text-text-secondary">{description}</p>
+            <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
+            <p className="text-sm leading-6 text-muted-foreground">{description}</p>
           </div>
-          <p className="line-clamp-2 text-sm font-medium text-text-primary">{resource.title}</p>
+          <p className="line-clamp-2 text-sm font-medium text-foreground">{resource.title}</p>
           <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary-700 transition group-hover:text-primary-800">
             Open collection
             <ArrowRight className="h-4 w-4" />
@@ -809,14 +794,14 @@ function TopCreatorSpotlightCard({
       prefetchMode="intent"
       prefetchScope="top-creator-spotlight"
       prefetchLimit={1}
-      className="group rounded-[24px] border border-surface-200 bg-surface-50/80 p-5 shadow-sm transition hover:border-primary-200 hover:bg-white hover:shadow-card"
+      className="group rounded-[24px] border border-border bg-muted/80 p-5 shadow-sm transition hover:border-primary-200 hover:bg-card hover:shadow-card"
     >
       <div className="flex h-full flex-col gap-4">
         <div className="space-y-2">
           <p className="font-ui text-caption tracking-[0.12em] text-primary-700">Creator spotlight</p>
-          <h3 className="text-lg font-semibold tracking-tight text-text-primary">{name}</h3>
-          <p className="text-sm leading-6 text-text-secondary">{description}</p>
-          {bio ? <p className="line-clamp-3 text-sm text-text-muted">{bio}</p> : null}
+          <h3 className="text-lg font-semibold tracking-tight text-foreground">{name}</h3>
+          <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+          {bio ? <p className="line-clamp-3 text-sm text-muted-foreground">{bio}</p> : null}
         </div>
         <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary-700 transition group-hover:text-primary-800">
           Explore creator

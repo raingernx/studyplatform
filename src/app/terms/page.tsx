@@ -12,14 +12,14 @@ export default function TermsPage() {
       <Navbar />
       <Container className="py-16">
         <div className="mx-auto max-w-2xl">
-          <h1 className="font-display text-h2 font-semibold tracking-tight text-text-primary">
+          <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
             Terms of Service
           </h1>
-          <p className="mt-2 text-sm text-text-muted">Last updated: March 2026</p>
+          <p className="mt-2 text-sm text-muted-foreground">Last updated: March 2026</p>
 
-          <div className="mt-10 space-y-8 text-sm leading-relaxed text-text-secondary">
+          <div className="mt-10 space-y-8 text-sm leading-relaxed text-muted-foreground">
             <section>
-              <h2 className="mb-3 text-base font-semibold text-text-primary">
+              <h2 className="mb-3 text-base font-semibold text-foreground">
                 1. Acceptance of terms
               </h2>
               <p>
@@ -29,7 +29,7 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="mb-3 text-base font-semibold text-text-primary">
+              <h2 className="mb-3 text-base font-semibold text-foreground">
                 2. Use of the platform
               </h2>
               <p>
@@ -40,7 +40,7 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="mb-3 text-base font-semibold text-text-primary">
+              <h2 className="mb-3 text-base font-semibold text-foreground">
                 3. Purchased content
               </h2>
               <p>
@@ -51,7 +51,7 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="mb-3 text-base font-semibold text-text-primary">
+              <h2 className="mb-3 text-base font-semibold text-foreground">
                 4. Creator responsibilities
               </h2>
               <p>
@@ -61,7 +61,7 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="mb-3 text-base font-semibold text-text-primary">
+              <h2 className="mb-3 text-base font-semibold text-foreground">
                 5. Limitation of liability
               </h2>
               <p>
@@ -71,7 +71,7 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="mb-3 text-base font-semibold text-text-primary">
+              <h2 className="mb-3 text-base font-semibold text-foreground">
                 6. Changes to these terms
               </h2>
               <p>

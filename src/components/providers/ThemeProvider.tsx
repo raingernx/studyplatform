@@ -16,7 +16,7 @@ type ThemeProviderProps = {
   initialTheme?: Theme;
 };
 
-export function ThemeProvider({ children, initialTheme = "system" }: ThemeProviderProps) {
+export function ThemeProvider({ children, initialTheme = "light" }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => readStoredTheme() ?? initialTheme);
 
   useLayoutEffect(() => {

@@ -16,7 +16,7 @@ export function TableToolbar({ children, className }: TableToolbarProps) {
   return (
     <div
       className={cn(
-        "flex min-w-0 flex-wrap items-end gap-3 rounded-xl border border-border-subtle bg-white px-4 py-3",
+        "flex min-w-0 flex-wrap items-end gap-3 rounded-xl border border-border bg-card px-4 py-3",
         className
       )}
     >

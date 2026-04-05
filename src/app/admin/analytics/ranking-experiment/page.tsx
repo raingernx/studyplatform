@@ -37,7 +37,7 @@ function rateTone(
   thresholdHigh: number,
   thresholdLow: number,
 ): string {
-  if (rate === null) return "text-zinc-400";
+  if (rate === null) return "text-muted-foreground";
   if (rate >= thresholdHigh) return "text-emerald-700 font-semibold";
   if (rate >= thresholdLow) return "text-amber-600 font-semibold";
   return "text-red-600 font-semibold";
@@ -46,14 +46,14 @@ function rateTone(
 /** Column header accent class per variant. */
 function variantHeaderAccent(variant: string): string {
   if (variant === "B") return "text-indigo-700";
-  if (variant === "UNASSIGNED") return "text-zinc-400";
-  return "text-zinc-700";
+  if (variant === "UNASSIGNED") return "text-muted-foreground";
+  return "text-foreground";
 }
 
 /** Column header background per variant. */
 function variantHeaderBg(variant: string): string {
   if (variant === "B") return "bg-indigo-50";
-  return "bg-zinc-50";
+  return "bg-muted";
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -74,13 +74,13 @@ function MetricRow({
   renderCell: (row: RankingVariantRow) => React.ReactNode;
 }) {
   return (
-    <tr className="border-b border-zinc-100 hover:bg-zinc-50/60 transition-colors">
+    <tr className="border-b border-border/60 transition-colors hover:bg-muted/60">
       <td className="px-5 py-3.5">
         <div className="flex items-center gap-1.5">
-          <span className="text-sm font-medium text-zinc-800">{label}</span>
+          <span className="text-sm font-medium text-foreground">{label}</span>
           <span
             title={tooltip}
-            className="cursor-help text-zinc-300 hover:text-zinc-400"
+            className="cursor-help text-muted-foreground hover:text-foreground"
             aria-label={tooltip}
           >
             <Info className="h-3 w-3" />
@@ -90,7 +90,7 @@ function MetricRow({
       {variants.map((row) => (
         <td
           key={row.variant}
-          className="px-5 py-3.5 text-right tabular-nums text-zinc-900"
+          className="px-5 py-3.5 text-right tabular-nums text-foreground"
         >
           {renderCell(row)}
         </td>
@@ -134,15 +134,15 @@ export default async function RankingExperimentPage({
         />
 
         {/* Arm legend */}
-        <div className="shrink-0 rounded-xl border border-border-subtle bg-surface-50 px-5 py-4 text-small text-text-secondary">
-          <p className="mb-2 font-ui text-caption text-text-muted">
+        <div className="shrink-0 rounded-xl border border-border bg-muted px-5 py-4 text-small text-muted-foreground">
+          <p className="mb-2 font-ui text-caption text-muted-foreground">
             Experiment arms
           </p>
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-zinc-400" />
+              <span className="h-2 w-2 rounded-full bg-muted-foreground" />
               <span>
-                <span className="font-semibold text-zinc-700">A</span>
+                <span className="font-semibold text-foreground">A</span>
                 {" — Control (Baseline) · sort: newest"}
               </span>
             </div>
@@ -154,14 +154,14 @@ export default async function RankingExperimentPage({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-zinc-300" />
+              <span className="h-2 w-2 rounded-full bg-border" />
               <span>
-                <span className="font-semibold text-zinc-500">UNASSIGNED</span>
+                <span className="font-semibold text-muted-foreground">UNASSIGNED</span>
                 {" — pre-experiment / missing cookie"}
               </span>
             </div>
           </div>
-          <p className="mt-2 text-caption text-text-muted">
+          <p className="mt-2 text-caption text-muted-foreground">
             Cookie: <code className="font-mono">ranking_variant</code> · 30-day lifetime
           </p>
         </div>
@@ -174,7 +174,7 @@ export default async function RankingExperimentPage({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="start"
-              className="font-ui text-caption text-text-muted"
+              className="font-ui text-caption text-muted-foreground"
             >
               From
             </label>
@@ -189,7 +189,7 @@ export default async function RankingExperimentPage({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="end"
-              className="font-ui text-caption text-text-muted"
+              className="font-ui text-caption text-muted-foreground"
             >
               To
             </label>
@@ -209,14 +209,14 @@ export default async function RankingExperimentPage({
             {hasFilters && (
               <a
                 href={routes.adminRankingExperiment}
-                className="rounded-lg border border-border-subtle px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-50"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
               >
                 Reset
               </a>
             )}
           </div>
 
-          <p className="flex items-center gap-1.5 font-ui text-caption text-text-muted lg:ml-auto">
+          <p className="flex items-center gap-1.5 font-ui text-caption text-muted-foreground lg:ml-auto">
             {report.isDefaultRange
               ? "Showing last 30 days (default)"
               : `${report.filterStart} — ${report.filterEnd}`}
@@ -227,20 +227,20 @@ export default async function RankingExperimentPage({
 
       {/* ── Comparison table ─────────────────────────────────────────────────── */}
       <section aria-label="Variant comparison">
-        <p className="mb-3 font-ui text-caption text-text-muted">
+        <p className="mb-3 font-ui text-caption text-muted-foreground">
           Per-variant metrics
         </p>
 
         {variants.length === 0 ? (
-          <div className="rounded-xl border border-border-subtle bg-white px-6 py-12 text-center text-small text-text-muted">
+          <div className="rounded-xl border border-border bg-card px-6 py-12 text-center text-small text-muted-foreground">
             No attributed events in this date range. Widen the window or wait for more data.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-border-subtle bg-white">
+          <div className="overflow-x-auto rounded-xl border border-border bg-card">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border-subtle">
-                  <th className="min-w-[200px] bg-white px-5 py-3 text-left font-ui text-caption text-text-muted">
+                <tr className="border-b border-border">
+                  <th className="min-w-[200px] bg-card px-5 py-3 text-left font-ui text-caption text-muted-foreground">
                     Metric
                   </th>
                   {variants.map((row) => (
@@ -256,7 +256,7 @@ export default async function RankingExperimentPage({
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-border-subtle/60">
+              <tbody className="divide-y divide-border/60">
 
                 {/* Checkout starts */}
                 <MetricRow
@@ -330,37 +330,37 @@ export default async function RankingExperimentPage({
             </table>
 
             {/* ── Attribution footnotes ──────────────────────────────────────── */}
-            <div className="border-t border-border-subtle bg-surface-50/80 px-5 py-4">
-              <p className="mb-2 font-ui text-caption text-text-muted">
+            <div className="border-t border-border bg-muted/80 px-5 py-4">
+              <p className="mb-2 font-ui text-caption text-muted-foreground">
                 Attribution notes
               </p>
-              <ul className="space-y-1 text-caption text-text-muted">
+              <ul className="space-y-1 text-caption text-muted-foreground">
                 <li>
-                  <span className="font-semibold text-zinc-600">Checkout starts, FPD</span>
+                  <span className="font-semibold text-foreground">Checkout starts, FPD</span>
                   {" — "}
-                  <span className="font-medium text-zinc-500">direct:</span>
+                  <span className="font-medium text-muted-foreground">direct:</span>
                   {" these ActivityLog events carry "}
-                  <code className="font-mono text-zinc-500">rankingVariant</code>
+                  <code className="font-mono text-foreground">rankingVariant</code>
                   {" in their metadata at write time."}
                 </li>
                 <li>
-                  <span className="font-semibold text-zinc-600">Redirects</span>
+                  <span className="font-semibold text-foreground">Redirects</span>
                   {" — "}
-                  <span className="font-medium text-zinc-500">inferred:</span>
+                  <span className="font-medium text-muted-foreground">inferred:</span>
                   {" CHECKOUT_REDIRECTED is fired client-side with no cookie access. Attributed by joining to the CHECKOUT_STARTED event for the same user + resource within a 30-minute window."}
                 </li>
                 <li>
-                  <span className="font-semibold text-zinc-600">Completions</span>
+                  <span className="font-semibold text-foreground">Completions</span>
                   {" — "}
-                  <span className="font-medium text-zinc-500">inferred:</span>
+                  <span className="font-medium text-muted-foreground">inferred:</span>
                   {" PURCHASE_COMPLETED_WEBHOOK fires on payment provider servers with no browser session. Attributed by joining Purchase rows to CHECKOUT_STARTED on userId + resourceId."}
                 </li>
                 <li>
-                  <span className="font-semibold text-zinc-600">Unassigned / Legacy</span>
+                  <span className="font-semibold text-foreground">Unassigned / Legacy</span>
                   {" — includes: (1) users whose cookie had not yet been assigned on first page load, (2) pre-experiment sessions before the cookie was introduced, (3) sessions where the cookie read failed silently. Not an error state."}
                 </li>
                 <li>
-                  <span className="font-semibold text-zinc-600">Cross-variant rule:</span>
+                  <span className="font-semibold text-foreground">Cross-variant rule:</span>
                   {" completions and redirects are always attributed to the variant in the CHECKOUT_STARTED event — never back-assigned from the FIRST_PAID_DOWNLOAD variant."}
                 </li>
               </ul>
@@ -370,12 +370,12 @@ export default async function RankingExperimentPage({
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <div className="border-t border-border-subtle pt-4 text-caption text-text-muted">
+      <div className="border-t border-border pt-4 text-caption text-muted-foreground">
         Generated at {report.generatedAt} ·{" "}
         {report.isDefaultRange
           ? "last 30 days"
           : `${report.filterStart} – ${report.filterEnd}`}{" "}
-        · <span className="font-medium text-zinc-600">read-only</span>{" "}
+        · <span className="font-medium text-foreground">read-only</span>{" "}
         · no effect on live rankings
       </div>
     </div>

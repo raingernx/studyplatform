@@ -82,7 +82,7 @@ export default async function AdminReviewsPage() {
           ) : (
             reviews.map((review) => (
               <DataTableRow key={review.id}>
-                <DataTableCell className="px-2 font-medium text-text-primary">
+                <DataTableCell className="px-2 font-medium text-foreground">
                   <div className="flex flex-col gap-1">
                     <Link
                       href={routes.resource(review.resource.slug)}
@@ -90,31 +90,31 @@ export default async function AdminReviewsPage() {
                     >
                       {review.resource.title}
                     </Link>
-                    <span className="text-caption font-normal text-text-muted">
+                    <span className="text-caption font-normal text-muted-foreground">
                       {review.resource.slug}
                     </span>
                   </div>
                 </DataTableCell>
-                <DataTableCell className="px-3 text-text-secondary">
+                <DataTableCell className="px-3 text-muted-foreground">
                   <div className="flex flex-col">
                     <span>{review.user.name ?? "Anonymous"}</span>
-                    <span className="text-caption text-text-muted">
+                    <span className="text-caption text-muted-foreground">
                       {review.user.email}
                     </span>
                   </div>
                 </DataTableCell>
-                <DataTableCell className="px-3 tabular-nums text-text-secondary">
+                <DataTableCell className="px-3 tabular-nums text-muted-foreground">
                   {review.rating}/5
                 </DataTableCell>
-                <DataTableCell className="px-3 text-text-secondary">
+                <DataTableCell className="px-3 text-muted-foreground">
                   <p className="line-clamp-2 max-w-md">
                     {review.body ?? "—"}
                   </p>
                 </DataTableCell>
-                <DataTableCell className="px-3 text-text-secondary">
+                <DataTableCell className="px-3 text-muted-foreground">
                   {formatDate(review.createdAt)}
                 </DataTableCell>
-                <DataTableCell className="px-3 text-text-secondary">
+                <DataTableCell className="px-3 text-muted-foreground">
                   <StatusBadge
                     status={review.isVisible ? "VISIBLE" : "HIDDEN"}
                     label={review.isVisible ? "Visible" : "Hidden"}

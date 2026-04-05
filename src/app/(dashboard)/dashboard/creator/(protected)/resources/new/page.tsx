@@ -53,12 +53,12 @@ export default async function CreatorNewResourcePage() {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div className="border-b border-neutral-100 pb-5">
+      <div className="border-b border-border pb-5">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-500">Creator</p>
-        <h1 className="mt-2 font-display text-h2 font-semibold tracking-tight text-neutral-900">
+        <h1 className="mt-2 font-display text-h2 font-semibold tracking-tight text-foreground">
           {isFirstResource ? "Create your first resource" : "New resource"}
         </h1>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           {isFirstResource
             ? "Fill in the details below. You can save a draft first and publish when you're ready."
             : "Complete the form below and save as a draft or publish directly."}

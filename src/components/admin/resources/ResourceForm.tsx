@@ -187,7 +187,7 @@ export function Label({
   return (
     <label
       htmlFor={htmlFor}
-      className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wide text-zinc-500"
+      className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground"
     >
       {icon}
       {children}
@@ -225,7 +225,7 @@ function PreviewUrlsEditor({
     <div className="w-full min-w-0">
       <Label htmlFor="preview-url-0" icon={<ImagePlus className="h-3.5 w-3.5" />}>
         Preview Images
-        <span className="ml-1 font-normal normal-case text-text-secondary">
+        <span className="ml-1 font-normal normal-case text-muted-foreground">
           (optional, multiple URLs or upload)
         </span>
       </Label>
@@ -233,7 +233,7 @@ function PreviewUrlsEditor({
       <div className="space-y-2">
         {urls.map((url, i) => (
           <div key={i} className="flex min-w-0 items-center gap-2">
-            <GripVertical className="h-4 w-4 shrink-0 text-text-muted" aria-hidden />
+            <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             <input
               id={i === 0 ? "preview-url-0" : undefined}
               type="text"
@@ -632,7 +632,7 @@ export function ResourceForm({
         className="w-full min-w-0 space-y-8"
       >
         {/* Save state indicator */}
-        <div className="flex justify-end text-[11px] text-text-secondary">
+        <div className="flex justify-end text-[11px] text-muted-foreground">
           {saveState === "saving" && <span>Saving...</span>}
           {saveState === "saved" && (
             <span className="text-emerald-600">Saved</span>
@@ -640,7 +640,7 @@ export function ResourceForm({
         </div>
 
         {/* Basic Info */}
-        <h3 className="text-sm font-semibold text-zinc-900">Basic Info</h3>
+        <h3 className="text-sm font-semibold text-foreground">Basic Info</h3>
         <div className="grid w-full min-w-0 gap-4">
           <div className="min-w-0 space-y-1.5">
             <Label htmlFor="title">Title</Label>
@@ -660,10 +660,10 @@ export function ResourceForm({
                 {fieldErrors.title}
               </p>
             )}
-            <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-text-secondary">
+            <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
               {!isEditingSlug ? (
                 <>
-                  <p className="truncate text-text-secondary">
+                  <p className="truncate text-muted-foreground">
                     /resources/{slugPreview}
                   </p>
                   <button
@@ -676,7 +676,7 @@ export function ResourceForm({
                 </>
               ) : (
                 <div className="flex w-full items-center gap-1.5">
-                  <span className="shrink-0 text-text-secondary">
+                  <span className="shrink-0 text-muted-foreground">
                     /resources/
                   </span>
                   <input
@@ -726,7 +726,7 @@ export function ResourceForm({
                 {fieldErrors.description}
               </p>
             )}
-            <p className="mt-1 text-[11px] text-text-secondary">
+            <p className="mt-1 text-[11px] text-muted-foreground">
               {descriptionLength} / 500 characters
             </p>
           </div>
@@ -792,7 +792,7 @@ export function ResourceForm({
 
         {/* Pricing */}
         <div className="grid w-full min-w-0 gap-4">
-          <h3 className="text-sm font-semibold text-zinc-900">Pricing</h3>
+          <h3 className="text-sm font-semibold text-foreground">Pricing</h3>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
             <div className="flex items-center gap-2">
               <Switch
@@ -806,7 +806,7 @@ export function ResourceForm({
                   }))
                 }
               />
-              <label htmlFor="isFree" className="text-sm font-medium text-zinc-700">
+              <label htmlFor="isFree" className="text-sm font-medium text-foreground">
                 Free resource
               </label>
             </div>
@@ -821,7 +821,7 @@ export function ResourceForm({
                 value={form.price}
                 onChange={handleChange}
                 placeholder="49"
-                className="input-base w-full disabled:bg-zinc-100 disabled:opacity-70"
+                className="input-base w-full disabled:opacity-70"
                 disabled={form.isFree}
               />
               {fieldErrors.price && (
@@ -835,7 +835,7 @@ export function ResourceForm({
 
         {/* Visibility */}
         <div className="grid w-full min-w-0 gap-4">
-          <h3 className="text-sm font-semibold text-zinc-900">Visibility</h3>
+          <h3 className="text-sm font-semibold text-foreground">Visibility</h3>
           <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-6">
             <div className="min-w-0 space-y-1.5 sm:max-w-[180px]">
               <Label htmlFor="status">Status</Label>
@@ -849,7 +849,7 @@ export function ResourceForm({
                 <option value="PUBLISHED">Published</option>
                 <option value="ARCHIVED">Archived</option>
               </Select>
-              <p className="mt-1 text-[11px] text-text-secondary">
+              <p className="mt-1 text-[11px] text-muted-foreground">
                 {form.status === "DRAFT" && "Only visible to admins."}
                 {form.status === "PUBLISHED" && "Visible in marketplace."}
                 {form.status === "ARCHIVED" && "Hidden but not deleted."}
@@ -863,11 +863,11 @@ export function ResourceForm({
                   setForm((prev) => ({ ...prev, featured: checked }))
                 }
               />
-              <label htmlFor="featured" className="text-sm font-medium text-zinc-700">
+              <label htmlFor="featured" className="text-sm font-medium text-foreground">
                 Featured resource
               </label>
             </div>
-            <p className="text-[11px] text-text-secondary">
+            <p className="text-[11px] text-muted-foreground">
               May appear on homepage or in featured sections.
             </p>
             {form.status === "PUBLISHED" && (
@@ -887,7 +887,7 @@ export function ResourceForm({
                   <option value="PUBLIC">Public</option>
                   <option value="UNLISTED">Unlisted</option>
                 </Select>
-                <p className="mt-1 text-[11px] text-text-secondary">
+                <p className="mt-1 text-[11px] text-muted-foreground">
                   Unlisted: accessible by URL, not shown in marketplace listings.
                 </p>
               </div>
@@ -899,7 +899,7 @@ export function ResourceForm({
         <div className="w-full min-w-0">
           <Label htmlFor="tag-input-search" icon={<Tag className="h-3.5 w-3.5" />}>
             Tags
-            <span className="ml-1 font-normal normal-case text-text-secondary">
+            <span className="ml-1 font-normal normal-case text-muted-foreground">
               (optional)
             </span>
           </Label>
@@ -929,9 +929,9 @@ export function ResourceForm({
         </div>
 
         {/* Media */}
-        <h3 className="text-sm font-semibold text-zinc-900">Media</h3>
+        <h3 className="text-sm font-semibold text-foreground">Media</h3>
         <div className="w-full min-w-0 space-y-4">
-          <p className="text-[11px] text-text-secondary">
+          <p className="text-[11px] text-muted-foreground">
             JPEG, PNG, WebP, GIF. Max 5MB per image.
           </p>
           {/* Thumbnail: uses first preview URL (cover = first in list) */}
@@ -978,7 +978,7 @@ export function ResourceForm({
           {/* Drag & drop upload + sortable previews; first image = cover */}
           <div className="w-full min-w-0 space-y-2">
             <Label htmlFor="preview-images">Preview images</Label>
-            <p className="text-[11px] text-text-secondary">
+            <p className="text-[11px] text-muted-foreground">
               First image is the cover. Drag to reorder; use first position as cover.
             </p>
             <LazyImageDropzone
@@ -1027,7 +1027,7 @@ export function ResourceForm({
 
         {/* File */}
         <div className="grid w-full min-w-0 gap-4">
-          <h3 className="text-sm font-semibold text-zinc-900">File</h3>
+          <h3 className="text-sm font-semibold text-foreground">File</h3>
           <div className="min-w-0 space-y-4">
             <div className="min-w-0 space-y-1.5">
               <Label
@@ -1045,7 +1045,7 @@ export function ResourceForm({
                 placeholder="https://example.com/file.pdf"
                 className="input-base w-full"
               />
-              <p className="mt-1 text-[11px] text-text-secondary">
+              <p className="mt-1 text-[11px] text-muted-foreground">
                 Used when the file is hosted externally instead of private
                 uploads.
               </p>
@@ -1053,24 +1053,24 @@ export function ResourceForm({
 
             <div className="w-full min-w-0 space-y-1.5">
               <Label htmlFor="file">File upload</Label>
-              <div className="w-full min-w-0 space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
+              <div className="w-full min-w-0 space-y-3 rounded-xl border border-border bg-card p-4">
                 <div className="space-y-2">
-                  <p className="text-[12px] font-semibold uppercase tracking-tightest text-text-secondary">
+                  <p className="text-[12px] font-semibold uppercase tracking-tightest text-muted-foreground">
                     File upload
                   </p>
 
                   {hasPrivateFile && initialFileName && (
                     <div className="space-y-2">
-                      <div className="text-[11px] font-medium uppercase tracking-tightest text-text-muted">
+                      <div className="text-[11px] font-medium uppercase tracking-tightest text-muted-foreground">
                         Current file
                       </div>
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="min-w-0">
-                          <p className="truncate text-[13px] font-medium text-text-primary">
+                          <p className="truncate text-[13px] font-medium text-foreground">
                             {initialFileName}
                           </p>
                           {initialFileSize != null && (
-                            <p className="text-[11px] text-text-muted">
+                            <p className="text-[11px] text-muted-foreground">
                               {(initialFileSize / (1024 * 1024)).toFixed(1)} MB
                             </p>
                           )}
@@ -1081,7 +1081,7 @@ export function ResourceForm({
                 </div>
 
                 <div className="space-y-2">
-                  <div className="text-[11px] font-medium uppercase tracking-tightest text-text-muted">
+                  <div className="text-[11px] font-medium uppercase tracking-tightest text-muted-foreground">
                     {hasPrivateFile ? "Replace file" : "Upload file"}
                   </div>
                   <FileUploadWidget
@@ -1100,7 +1100,7 @@ export function ResourceForm({
                   />
                 </div>
               </div>
-              <p className="mt-1 text-[11px] text-text-secondary">
+              <p className="mt-1 text-[11px] text-muted-foreground">
                 Allowed: PDF, DOCX, XLSX, ZIP. Max file size: 50MB.
               </p>
             </div>
@@ -1109,7 +1109,7 @@ export function ResourceForm({
 
         {/* License */}
         <div className="grid w-full min-w-0 gap-4">
-          <h3 className="text-sm font-semibold text-zinc-900">License</h3>
+          <h3 className="text-sm font-semibold text-foreground">License</h3>
           <div className="min-w-0 max-w-md space-y-1.5">
             <Label htmlFor="license">License type</Label>
             <Select
@@ -1128,7 +1128,7 @@ export function ResourceForm({
 
         {/* Creator (admin override) — optional; default is current user */}
         <div className="grid w-full min-w-0 gap-4">
-          <h3 className="text-sm font-semibold text-zinc-900">Creator</h3>
+          <h3 className="text-sm font-semibold text-foreground">Creator</h3>
           <div className="min-w-0 max-w-md space-y-1.5">
             <Label htmlFor="authorId">Assign owner</Label>
             <UserSearchSelect
@@ -1141,7 +1141,7 @@ export function ResourceForm({
               currentUserName={currentUser?.name}
               initialAuthorName={resource?.authorName}
             />
-            <p className="text-[11px] text-text-secondary">
+            <p className="text-[11px] text-muted-foreground">
               Optional. Defaults to the current admin user.
             </p>
           </div>
@@ -1166,7 +1166,7 @@ export function ResourceForm({
           </div>
         )}
 
-        <div className="flex items-center justify-between border-t border-border-subtle pt-6">
+        <div className="flex items-center justify-between border-t border-border pt-6">
           {isEdit && onDelete ? (
             <Button
               type="button"
@@ -1184,7 +1184,7 @@ export function ResourceForm({
             {isEdit && resource && (
               <Link
                 href={routes.resource(resource.slug)}
-                className="inline-flex items-center justify-center rounded-xl border border-border-subtle bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
               >
                 View resource
               </Link>
@@ -1202,16 +1202,16 @@ export function ResourceForm({
       {/* Delete confirmation modal */}
       {isEdit && onDelete && showDeleteConfirm && resource && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-card-lg">
+          <div className="mx-4 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-card-lg">
             <div className="flex items-start gap-4">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50">
                 <AlertTriangle className="h-5 w-5 text-red-500" />
               </span>
               <div>
-                <h3 className="text-[15px] font-semibold text-zinc-900">
+                <h3 className="text-[15px] font-semibold text-foreground">
                   Delete &ldquo;{resource.title}&rdquo;?
                 </h3>
-                <p className="mt-1.5 text-[13px] text-zinc-500">
+                <p className="mt-1.5 text-[13px] text-muted-foreground">
                   This will permanently remove the resource along with all
                   associated purchases and reviews. This action cannot be
                   undone.
@@ -1223,7 +1223,7 @@ export function ResourceForm({
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleteLoading}
-                className="rounded-xl px-4 py-2 text-[13px] font-medium text-zinc-600 transition hover:bg-zinc-100 disabled:opacity-50"
+                className="rounded-xl px-4 py-2 text-[13px] font-medium text-muted-foreground transition hover:bg-muted disabled:opacity-50"
               >
                 Cancel
               </button>

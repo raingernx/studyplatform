@@ -150,7 +150,7 @@ export function CreateResourceForm({ categories, tags: initialTags, currentUser 
   return (
     <AdminFormLayout
       form={
-        <Card className="w-full min-w-0 rounded-2xl border border-surface-200 bg-white px-5 pb-6 pt-4 shadow-card sm:px-6 sm:pb-8 lg:px-8">
+        <Card className="w-full min-w-0 rounded-2xl border border-border bg-card px-5 pb-6 pt-4 shadow-card sm:px-6 sm:pb-8 lg:px-8">
           <ResourceForm
             mode="create"
             categories={categories}
@@ -166,7 +166,7 @@ export function CreateResourceForm({ categories, tags: initialTags, currentUser 
       }
       sidebar={
         <div className="w-full">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             LIVE PREVIEW
           </p>
           <ResourceCard resource={previewData} variant="preview" previewMode />

@@ -57,8 +57,8 @@ function PresetButtons({ start, end }: { start: string | null; end: string | nul
             href={href}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               isActive
-                ? "bg-zinc-900 text-white"
-                : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700"
+                ? "bg-foreground text-background"
+                : "bg-secondary text-secondary-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
             {p.label}
@@ -93,27 +93,27 @@ function FunnelStep({
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-stretch">
       {/* Card */}
-      <div className="flex-1 rounded-2xl border border-zinc-200 bg-white p-5">
+      <div className="flex-1 rounded-2xl border border-border bg-card p-5">
         <div className="flex items-start justify-between">
           <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${accent}`}>
             <Icon className="h-4 w-4" />
           </span>
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             Step {step}
           </span>
         </div>
-        <p className="mt-3 text-3xl font-bold tabular-nums text-zinc-900">{fmt(count)}</p>
-        <p className="mt-0.5 text-sm font-medium text-zinc-700">{label}</p>
-        <p className="mt-1 text-xs text-zinc-400">{description}</p>
+        <p className="mt-3 text-3xl font-bold tabular-nums text-foreground">{fmt(count)}</p>
+        <p className="mt-0.5 text-sm font-medium text-foreground">{label}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
       </div>
 
       {/* Arrow + conversion rate */}
       {!isLast && (
         <div className="flex items-center justify-center md:flex-col md:py-2">
           <div className="flex flex-col items-center gap-1">
-            <ArrowRight className="hidden h-5 w-5 text-zinc-300 md:block" />
-            <div className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1">
-              <span className="text-xs font-semibold tabular-nums text-zinc-600">
+            <ArrowRight className="hidden h-5 w-5 text-muted-foreground/40 md:block" />
+            <div className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-1">
+              <span className="text-xs font-semibold tabular-nums text-secondary-foreground">
                 {fmtPct(conversionFromPrev)}
               </span>
             </div>
@@ -147,7 +147,7 @@ export default async function CreatorActivationPage({
   const overallRate = funnel.overallRate;
   const summaryTone =
     overallRate === null
-      ? "bg-zinc-50 border-zinc-200 text-zinc-600"
+      ? "bg-muted border-border text-muted-foreground"
       : overallRate >= 50
         ? "bg-emerald-50 border-emerald-200 text-emerald-800"
         : overallRate >= 20
@@ -160,10 +160,10 @@ export default async function CreatorActivationPage({
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Creator Activation Funnel
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Unique creators at each onboarding milestone — from first-run view to first published
             resource.
           </p>
@@ -176,7 +176,7 @@ export default async function CreatorActivationPage({
             <div className="flex flex-col gap-1">
               <label
                 htmlFor="start"
-                className="text-[10px] font-medium uppercase tracking-wide text-zinc-400"
+                className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
               >
                 From
               </label>
@@ -185,13 +185,13 @@ export default async function CreatorActivationPage({
                 name="start"
                 type="date"
                 defaultValue={start ?? ""}
-                className="w-36 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                className="w-36 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <div className="flex flex-col gap-1">
               <label
                 htmlFor="end"
-                className="text-[10px] font-medium uppercase tracking-wide text-zinc-400"
+                className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
               >
                 To
               </label>
@@ -200,17 +200,17 @@ export default async function CreatorActivationPage({
                 name="end"
                 type="date"
                 defaultValue={end ?? ""}
-                className="w-36 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                className="w-36 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <button
               type="submit"
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+              className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/80"
             >
               Apply
             </button>
           </form>
-          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-zinc-400">
+          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
             {rangeLabel}
             {funnel.isDefaultRange && <span>(default)</span>}
@@ -239,7 +239,7 @@ export default async function CreatorActivationPage({
 
       {/* ── Funnel steps ────────────────────────────────────────────────────── */}
       <div>
-        <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+        <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           Funnel steps · unique creators
         </p>
 
@@ -286,28 +286,28 @@ export default async function CreatorActivationPage({
 
       {/* ── Conversion breakdown table ─────────────────────────────────────── */}
       <div>
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           Conversion breakdown
         </p>
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50">
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-400">
+              <tr className="border-b border-border bg-muted/50">
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Transition
                 </th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   From
                 </th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   To
                 </th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Rate
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100">
+            <tbody className="divide-y divide-border">
               {[
                 {
                   label: "View → Click",
@@ -334,13 +334,13 @@ export default async function CreatorActivationPage({
                   rate: funnel.overallRate,
                 },
               ].map((row) => (
-                <tr key={row.label} className="transition-colors hover:bg-zinc-50/60">
-                  <td className="px-5 py-3 font-medium text-zinc-700">{row.label}</td>
-                  <td className="px-5 py-3 text-right tabular-nums text-zinc-500">{fmt(row.from)}</td>
-                  <td className="px-5 py-3 text-right tabular-nums font-semibold text-zinc-900">{fmt(row.to)}</td>
+                <tr key={row.label} className="transition-colors hover:bg-muted/50">
+                  <td className="px-5 py-3 font-medium text-foreground">{row.label}</td>
+                  <td className="px-5 py-3 text-right tabular-nums text-muted-foreground">{fmt(row.from)}</td>
+                  <td className="px-5 py-3 text-right tabular-nums font-semibold text-foreground">{fmt(row.to)}</td>
                   <td className="px-5 py-3 text-right tabular-nums">
                     {row.rate === null ? (
-                      <span className="text-zinc-300">—</span>
+                      <span className="text-muted-foreground/50">—</span>
                     ) : (
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
@@ -360,14 +360,14 @@ export default async function CreatorActivationPage({
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-[11px] text-zinc-400">
+        <p className="mt-2 text-[11px] text-muted-foreground">
           Each row counts distinct creators. A creator is counted at a step only once per
           date range, regardless of how many times they triggered the event.
         </p>
       </div>
 
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
-      <div className="border-t border-zinc-100 pt-4 text-[11px] text-zinc-400">
+      <div className="border-t border-border pt-4 text-[11px] text-muted-foreground">
         Generated at {funnel.generatedAt}
       </div>
     </div>

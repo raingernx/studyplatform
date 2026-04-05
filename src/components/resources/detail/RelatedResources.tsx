@@ -8,10 +8,10 @@ export function RelatedResources({ resources }: RelatedResourcesProps) {
   if (resources.length === 0) return null;
 
   return (
-    <section className="space-y-4 border-t border-surface-200 pt-7">
+    <section className="space-y-4 border-t border-border pt-7">
       <div className="space-y-1.5">
-        <h2 className="font-display text-lg font-semibold text-zinc-900">More like this</h2>
-        <p className="text-small leading-6 text-zinc-500">
+        <h2 className="font-display text-lg font-semibold text-foreground">More like this</h2>
+        <p className="text-small leading-6 text-muted-foreground">
           Explore a few nearby options if you want another format, teaching style, or price point.
         </p>
       </div>

@@ -4,7 +4,6 @@ import {
   FlaskConical,
   Folder,
   LayoutDashboard,
-  Megaphone,
   PenSquare,
   Rocket,
   Settings as SettingsIcon,
@@ -54,13 +53,6 @@ export const ADMIN_DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
     items: [
       { href: routes.adminUsers, label: "Users", icon: Users },
       { href: routes.adminOrders, label: "Orders", icon: ShoppingCart },
-    ],
-  },
-  {
-    id: "marketing",
-    label: "Marketing",
-    items: [
-      { href: routes.adminHeroes, label: "Heroes", icon: Megaphone },
     ],
   },
   {

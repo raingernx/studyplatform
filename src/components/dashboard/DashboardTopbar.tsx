@@ -98,11 +98,11 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
           className="relative hidden max-w-lg flex-1 sm:block"
         >
           <Search
-            className={cn(
-              "absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors",
-              searchFocused ? "text-primary-700" : "text-neutral-400"
-            )}
-          />
+              className={cn(
+                "absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors",
+                searchFocused ? "text-primary-700" : "text-muted-foreground"
+              )}
+            />
           <input
             ref={searchRef}
             type="search"
@@ -111,13 +111,13 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
             placeholder="Search worksheets, flashcards, templates…"
-            className="w-full rounded-xl border border-surface-200 bg-surface-50 py-2.5 pl-10 pr-10 text-small text-neutral-900 transition-colors placeholder:text-neutral-400 focus:border-primary-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/10"
+            className="w-full rounded-xl border border-border bg-muted py-2.5 pl-10 pr-10 text-small text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary-300 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary-500/10"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-300 transition hover:text-neutral-500"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 transition hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>
@@ -130,7 +130,7 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
           <Link
             href={routes.marketplace}
             onClick={() => handleMarketplaceNavigation(routes.marketplace)}
-            className="hidden items-center rounded-xl border border-surface-200 bg-white px-3 py-2 text-small font-medium text-neutral-700 transition hover:bg-surface-50 sm:flex"
+            className="hidden items-center rounded-xl border border-border bg-card px-3 py-2 text-small font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground sm:flex"
           >
             Browse resources
           </Link>
@@ -138,7 +138,7 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
           <button
             type="button"
             aria-label="Notifications"
-            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-neutral-400 transition hover:border-surface-200 hover:bg-surface-50 hover:text-neutral-600"
+            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-muted-foreground transition hover:border-border hover:bg-accent hover:text-foreground"
           >
             <Bell className="h-4 w-4" />
           </button>
@@ -166,12 +166,12 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
             </button>
 
             {avatarOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-surface-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
-                <div className="border-b border-neutral-100 px-4 py-3">
-                  <p className="text-small font-semibold text-neutral-900">
+              <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+                <div className="border-b border-border px-4 py-3">
+                  <p className="text-small font-semibold text-foreground">
                     {user.name ?? "Account"}
                   </p>
-                  <p className="mt-0.5 truncate text-caption text-neutral-400">
+                  <p className="mt-0.5 truncate text-caption text-muted-foreground">
                     {user.email}
                   </p>
                 </div>
@@ -187,15 +187,15 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
                           handleDashboardNavigation(item.href);
                           setAvatarOpen(false);
                         }}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-small text-neutral-700 transition hover:bg-neutral-50"
+                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-small text-muted-foreground transition hover:bg-accent hover:text-foreground"
                       >
-                        <Icon className="h-3.5 w-3.5 text-neutral-400" />
+                        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                         {item.label}
                       </Link>
                     );
                   })}
 
-                  <div className="mt-1 border-t border-neutral-100 pt-1">
+                  <div className="mt-1 border-t border-border pt-1">
                     <button
                       type="button"
                       disabled={isSigningOut}

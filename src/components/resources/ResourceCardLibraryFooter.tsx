@@ -27,7 +27,7 @@ export function ResourceCardLibraryFooter({
   return (
     <>
       {resource.downloadedAt && downloadedLabel ? (
-        <p className="text-caption text-text-muted">
+        <p className="text-caption text-muted-foreground">
           {downloadedLabel}
         </p>
       ) : null}
@@ -75,14 +75,14 @@ export function ResourceCardLibraryFooter({
         {downloadClicked ? (
           <p className="mt-2.5 flex items-center gap-1.5 text-caption text-emerald-700">
             <span className="font-medium">Downloaded ✓</span>
-            <span className="text-zinc-300" aria-hidden>•</span>
+            <span className="text-muted-foreground/40" aria-hidden>•</span>
             <Link
               href={
                 resource.category?.slug
                   ? routes.category(resource.category.slug)
                   : routes.marketplace
               }
-              className="text-zinc-500 underline underline-offset-2 hover:text-zinc-700"
+              className="text-muted-foreground underline underline-offset-2 transition hover:text-foreground"
             >
               Want more like this?
             </Link>

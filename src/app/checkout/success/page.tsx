@@ -33,22 +33,22 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
       <CheckoutSuccessTracker slug={slug} />
       <Navbar />
 
-      <main className="flex flex-1 items-center bg-zinc-50">
+      <main className="flex flex-1 items-center bg-background">
         <Container className="py-16 sm:py-24">
           <div className="mx-auto max-w-md">
-            <div className="rounded-[28px] border border-emerald-100 bg-white p-8 shadow-card sm:p-10">
+            <div className="rounded-[28px] border border-emerald-200 bg-card p-8 shadow-card sm:p-10">
               {/* Icon */}
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50">
                 <CheckCircle className="h-7 w-7 text-emerald-500" />
               </div>
 
               {/* Heading */}
-              <h1 className="mt-5 text-center font-display text-xl font-semibold tracking-tight text-zinc-900">
+              <h1 className="mt-5 text-center font-display text-xl font-semibold tracking-tight text-foreground">
                 You&apos;re all set!
               </h1>
 
               {/* Body */}
-              <p className="mx-auto mt-3 max-w-sm text-center text-sm leading-6 text-zinc-500">
+              <p className="mx-auto mt-3 max-w-sm text-center text-sm leading-6 text-muted-foreground">
                 {slug
                   ? "Head back to the resource — your download will be ready in a few seconds."
                   : "Your purchase is confirmed. Head to your library — it's ready within a few seconds."}
@@ -60,7 +60,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
               </p>
 
               {/* Divider */}
-              <div className="my-6 border-t border-surface-200" />
+              <div className="my-6 border-t border-border" />
 
               {/* CTAs */}
               <div className="flex flex-col gap-3">
@@ -74,14 +74,14 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
                     */}
                     <Link
                       href={routes.resourcePaymentSuccess(slug)}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                     >
                       <Download className="h-4 w-4" />
                       Go back &amp; download
                     </Link>
                     <Link
                       href={routes.library}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-surface-200 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-surface-50"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
                     >
                       <Library className="h-4 w-4" />
                       View my library
@@ -94,14 +94,14 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
                         library page so the buyer can find their purchase. */}
                     <Link
                       href={routes.libraryPaymentSuccess()}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                     >
                       <Library className="h-4 w-4" />
                       Go to My Library
                     </Link>
                     <Link
                       href={routes.marketplace}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-surface-200 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-surface-50"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
                     >
                       <BookOpen className="h-4 w-4" />
                       Browse more resources
@@ -111,11 +111,11 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
               </div>
 
               {/* Reassurance */}
-              <p className="mt-5 text-center text-[12px] text-zinc-400">
+              <p className="mt-5 text-center text-[12px] text-muted-foreground">
                 If your library doesn&apos;t update within a minute,{" "}
                 <Link
                   href={routes.support}
-                  className="underline underline-offset-2 hover:text-zinc-600"
+                  className="underline underline-offset-2 transition hover:text-foreground"
                 >
                   contact support
                 </Link>

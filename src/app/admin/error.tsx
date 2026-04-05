@@ -22,10 +22,10 @@ export default function AdminRouteError({
         <p className="text-caption font-semibold uppercase tracking-[0.18em] text-primary-700">
           Admin error
         </p>
-        <h1 className="font-display text-3xl font-semibold text-text-primary">
+        <h1 className="font-display text-3xl font-semibold text-foreground">
           The admin area could not load.
         </h1>
-        <p className="text-body leading-7 text-text-secondary">
+        <p className="text-body leading-7 text-muted-foreground">
           Try again. If the problem continues, reopen the admin workspace from the dashboard.
         </p>
       </div>

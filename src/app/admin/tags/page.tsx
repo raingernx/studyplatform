@@ -30,7 +30,7 @@ export default async function AdminTagsPage() {
     <div className="flex min-h-screen flex-col">
       <Navbar />
 
-      <main className="flex-1 bg-zinc-50">
+      <main className="flex-1 bg-background">
         <PageContainer className="py-10">
           <PageContentWide>
 
@@ -38,19 +38,19 @@ export default async function AdminTagsPage() {
           <div className="mb-8 flex items-start justify-between">
             <div>
               <p className="eyebrow mb-1">Admin</p>
-              <h1 className="font-display text-h2 font-semibold tracking-tight text-text-primary">
+              <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
                 Tag Management
               </h1>
-              <p className="mt-1 text-meta text-zinc-500">
+              <p className="mt-1 text-meta text-muted-foreground">
                 Create, rename, and delete tags used across the resource library.
               </p>
             </div>
 
             <Link
               href={routes.admin}
-              className="rounded-xl border border-zinc-200 bg-white px-4 py-2
-                         text-[13px] font-medium text-zinc-600 shadow-sm transition
-                         hover:bg-zinc-50 hover:text-zinc-900"
+              className="rounded-xl border border-border bg-card px-4 py-2
+                         text-[13px] font-medium text-muted-foreground shadow-sm transition
+                         hover:bg-muted hover:text-foreground"
             >
               ← Admin home
             </Link>

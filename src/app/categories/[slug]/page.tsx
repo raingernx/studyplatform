@@ -80,7 +80,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const { items, total } = await getCategoryResources(slug);
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface-50">
+    <div className="flex min-h-screen flex-col bg-background">
       <Navbar headerSearch={<HeroSearch variant="listing" />} />
 
       {/* Hero banner */}
@@ -121,20 +121,20 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <main className="flex-1">
         <Container className="py-12 sm:py-14 lg:py-16">
           <div className="space-y-6">
-            <div className="rounded-[32px] border border-surface-200 bg-white/85 p-4 shadow-card sm:p-5 lg:p-6">
-              <div className="mb-6 flex flex-col gap-3 border-b border-surface-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="rounded-[32px] border border-border bg-[hsl(var(--card)/0.85)] p-4 shadow-card sm:p-5 lg:p-6">
+              <div className="mb-6 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="space-y-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Curated collection
                   </p>
-                  <h2 className="font-display text-xl font-semibold tracking-tight text-text-primary sm:text-2xl">
+                  <h2 className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                     Latest in {categoryName}
                   </h2>
-                  <p className="text-sm leading-6 text-text-secondary">
+                  <p className="text-sm leading-6 text-muted-foreground">
                     Browse the newest and most useful resources in this category with the same calm rhythm as the wider marketplace.
                   </p>
                 </div>
-                <p className="text-sm font-medium text-text-secondary">
+                <p className="text-sm font-medium text-muted-foreground">
                   {total} resource{total !== 1 ? "s" : ""}
                 </p>
               </div>

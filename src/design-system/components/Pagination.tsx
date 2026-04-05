@@ -43,7 +43,7 @@ export function PaginationButton({
           : "min-w-[36px] rounded-lg px-3 py-2 text-sm",
         active
           ? "border-brand-600 bg-brand-600 text-white"
-          : "border-surface-200 bg-white text-text-secondary hover:border-brand-300 hover:bg-surface-50 hover:text-brand-600",
+          : "border-border bg-card text-muted-foreground hover:border-primary/20 hover:bg-muted hover:text-brand-600",
         className,
       )}
       {...props}
@@ -54,7 +54,7 @@ export function PaginationButton({
 export interface PaginationInfoProps extends React.ComponentProps<"span"> {}
 
 export function PaginationInfo({ className, ...props }: PaginationInfoProps) {
-  return <span className={cn("text-sm text-text-muted", className)} {...props} />;
+  return <span className={cn("text-sm text-muted-foreground", className)} {...props} />;
 }
 
 export interface PaginationEllipsisProps extends React.ComponentProps<"span"> {}
@@ -63,7 +63,7 @@ export function PaginationEllipsis({ className, ...props }: PaginationEllipsisPr
   return (
     <span
       aria-hidden="true"
-      className={cn("select-none px-1 text-sm text-text-muted", className)}
+      className={cn("select-none px-1 text-sm text-muted-foreground", className)}
       {...props}
     >
       …

@@ -12,20 +12,20 @@ export function CreatorApplyPageSkeleton() {
           </span>
           <div className="space-y-2">
             <LoadingSkeleton className="h-3.5 w-20 rounded-full bg-blue-200/80" />
-            <LoadingSkeleton className="h-9 w-56 rounded-2xl bg-white/85" />
+            <LoadingSkeleton className="h-9 w-56 rounded-2xl bg-[hsl(var(--card)/0.85)]" />
           </div>
         </div>
 
         <div className="mt-5 space-y-2">
-          <LoadingSkeleton className="h-4 w-full max-w-3xl bg-white/80" />
-          <LoadingSkeleton className="h-4 w-4/5 max-w-2xl bg-white/70" />
+          <LoadingSkeleton className="h-4 w-full max-w-3xl bg-[hsl(var(--card)/0.8)]" />
+          <LoadingSkeleton className="h-4 w-4/5 max-w-2xl bg-[hsl(var(--card)/0.7)]" />
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {Array.from({ length: 4 }, (_, index) => (
             <div
               key={index}
-              className="rounded-2xl border border-white/80 bg-white/90 p-5 shadow-sm"
+              className="rounded-2xl border border-border bg-card p-5 shadow-sm"
             >
               <LoadingSkeleton className="h-10 w-10 rounded-xl" />
               <LoadingSkeleton className="mt-4 h-4 w-40" />
@@ -38,7 +38,7 @@ export function CreatorApplyPageSkeleton() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-card">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
         <LoadingSkeleton className="h-6 w-48" />
         <div className="mt-3 space-y-2">
           <LoadingSkeleton className="h-4 w-full max-w-2xl" />

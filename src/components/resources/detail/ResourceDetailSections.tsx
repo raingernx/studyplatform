@@ -35,14 +35,14 @@ export function ResourceDetailBodyFallback() {
 
 export function ResourceDetailReviewsFallback() {
   return (
-    <div className="space-y-3 border-t border-surface-200 pt-6">
+    <div className="space-y-3 border-t border-border pt-6">
       <div className="space-y-1">
         <LoadingSkeleton className="h-5 w-24 rounded-lg" />
         <LoadingSkeleton className="h-4 w-56" />
       </div>
       <div className="space-y-3">
         {[0, 1].map((i) => (
-          <div key={i} className="rounded-xl border border-zinc-200 bg-white px-4 py-4">
+          <div key={i} className="rounded-xl border border-border bg-card px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex gap-0.5">
                 {[0, 1, 2, 3, 4].map((s) => (
@@ -69,7 +69,7 @@ export function ResourceDetailOwnerReviewFallback() {
 export function ResourceDetailFooterFallback() {
   return (
     <>
-      <div className="space-y-4 border-t border-surface-200 pt-6">
+      <div className="space-y-4 border-t border-border pt-6">
         <LoadingSkeleton className="h-5 w-16 rounded-lg" />
         <div className="flex flex-wrap gap-2">
           {[72, 96, 64, 88, 80].map((w) => (
@@ -77,7 +77,7 @@ export function ResourceDetailFooterFallback() {
           ))}
         </div>
       </div>
-      <div className="space-y-4 border-t border-surface-200 pt-6">
+      <div className="space-y-4 border-t border-border pt-6">
         <LoadingSkeleton className="h-5 w-20 rounded-lg" />
         <div className="flex items-center gap-4">
           <LoadingSkeleton className="h-14 w-14 shrink-0 rounded-full" />
@@ -94,14 +94,14 @@ export function ResourceDetailFooterFallback() {
 
 export function ResourceDetailRelatedFallback() {
   return (
-    <div className="space-y-4 border-t border-surface-200 pt-7">
+    <div className="space-y-4 border-t border-border pt-7">
       <div className="space-y-1.5">
         <LoadingSkeleton className="h-5 w-28 rounded-lg" />
         <LoadingSkeleton className="h-4 w-72" />
       </div>
       <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="overflow-hidden rounded-xl border border-border-subtle bg-white">
+          <div key={i} className="overflow-hidden rounded-xl border border-border bg-card">
             <LoadingSkeleton className="aspect-[4/3] w-full rounded-none" />
             <div className="space-y-2 p-3">
               <LoadingSkeleton className="h-4 w-full" />
@@ -127,30 +127,30 @@ export function ResourceDetailRelatedQuickLinks({
   }
 
   return (
-    <section className="space-y-4 border-t border-surface-200 pt-7">
+    <section className="space-y-4 border-t border-border pt-7">
       <div className="space-y-1.5">
-        <h2 className="font-display text-lg font-semibold text-zinc-900">More like this</h2>
-        <p className="text-small leading-6 text-zinc-500">
+        <h2 className="font-display text-lg font-semibold text-foreground">More like this</h2>
+        <p className="text-small leading-6 text-muted-foreground">
           Keep exploring nearby resources while we load tailored suggestions.
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
         <Link
           href={`/categories/${categorySlug}`}
-          className="inline-flex items-center gap-1 rounded-full border border-surface-200 bg-white px-3 py-1.5 text-xs font-medium text-primary-700 transition hover:border-primary-200 hover:bg-primary-50"
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-primary-700 transition hover:border-primary-200 hover:bg-primary-50"
         >
           Browse {categoryName}
         </Link>
         <Link
           href="/resources?sort=newest"
-          className="inline-flex items-center gap-1 rounded-full border border-surface-200 bg-white px-3 py-1.5 text-xs font-medium text-primary-700 transition hover:border-primary-200 hover:bg-primary-50"
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-primary-700 transition hover:border-primary-200 hover:bg-primary-50"
         >
           See newest picks
         </Link>
       </div>
       <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="overflow-hidden rounded-xl border border-border-subtle bg-white">
+          <div key={i} className="overflow-hidden rounded-xl border border-border bg-card">
             <LoadingSkeleton className="aspect-[4/3] w-full rounded-none" />
             <div className="space-y-2 p-3">
               <LoadingSkeleton className="h-4 w-full" />

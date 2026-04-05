@@ -11,7 +11,7 @@ function AdminSectionSkeleton({
   const gridClass = columns === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2";
 
   return (
-    <section className="space-y-5 border-b border-border-subtle pb-6 last:border-b-0 last:pb-0">
+    <section className="space-y-5 border-b border-border pb-6 last:border-b-0 last:pb-0">
       <div className="space-y-2">
         <LoadingSkeleton className="h-5 w-36 rounded-md" />
         <LoadingSkeleton className="h-4 w-80 rounded-md" />
@@ -36,9 +36,9 @@ export function AdminSettingsPageSkeleton() {
         <LoadingSkeleton className="h-4 w-[34rem] max-w-full rounded-md" />
       </div>
 
-      <div className="space-y-0 rounded-2xl border border-border-subtle bg-white px-6 py-6 shadow-card sm:px-7 sm:py-7">
+      <div className="space-y-0 rounded-2xl border border-border bg-card px-6 py-6 shadow-card sm:px-7 sm:py-7">
         <AdminSectionSkeleton rows={6} />
-        <section className="space-y-5 border-b border-border-subtle pb-6">
+        <section className="space-y-5 border-b border-border pb-6">
           <div className="space-y-2">
             <LoadingSkeleton className="h-5 w-36 rounded-md" />
             <LoadingSkeleton className="h-4 w-80 rounded-md" />
@@ -47,17 +47,17 @@ export function AdminSettingsPageSkeleton() {
             {Array.from({ length: 4 }).map((_, index) => (
               <LoadingSkeleton
                 key={index}
-                className="h-48 rounded-xl border border-border-subtle bg-surface-50"
+                className="h-48 rounded-xl border border-border bg-muted"
               />
             ))}
           </div>
         </section>
-        <section className="space-y-5 border-b border-border-subtle pb-6">
+        <section className="space-y-5 border-b border-border pb-6">
           <div className="space-y-2">
             <LoadingSkeleton className="h-5 w-32 rounded-md" />
             <LoadingSkeleton className="h-4 w-72 rounded-md" />
           </div>
-          <div className="divide-y divide-border-subtle">
+          <div className="divide-y divide-border">
             {Array.from({ length: 4 }).map((_, index) => (
               <div
                 key={index}
@@ -79,7 +79,7 @@ export function AdminSettingsPageSkeleton() {
       </div>
 
       <div className="flex justify-end">
-        <LoadingSkeleton className="h-12 w-56 rounded-2xl border border-surface-200 bg-white" />
+        <LoadingSkeleton className="h-12 w-56 rounded-2xl border border-border bg-card" />
       </div>
     </PageContent>
   );

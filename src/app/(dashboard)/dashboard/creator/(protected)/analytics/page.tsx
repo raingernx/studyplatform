@@ -16,13 +16,13 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-const PANEL_CLASS = "rounded-2xl border border-border-subtle bg-white shadow-card";
-const PANEL_HEADER_CLASS = "border-b border-surface-100 px-6 py-4";
-const PANEL_TITLE_CLASS = "text-sm font-semibold text-text-primary";
-const PANEL_DESCRIPTION_CLASS = "mt-1 text-xs text-text-secondary";
+const PANEL_CLASS = "rounded-2xl border border-border bg-card shadow-card";
+const PANEL_HEADER_CLASS = "border-b border-border/70 px-6 py-4";
+const PANEL_TITLE_CLASS = "text-sm font-semibold text-foreground";
+const PANEL_DESCRIPTION_CLASS = "mt-1 text-xs text-muted-foreground";
 const TABLE_HEAD_CLASS =
-  "border-b border-surface-100 text-left text-xs font-semibold uppercase tracking-wide text-text-muted";
-const TABLE_BODY_CLASS = "divide-y divide-surface-100";
+  "border-b border-border/70 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground";
+const TABLE_BODY_CLASS = "divide-y divide-border/60";
 
 type CreatorAnalyticsPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -37,8 +37,8 @@ function rangeLink(range: string, currentRange: string) {
 
   return `inline-flex rounded-full px-3 py-1.5 text-sm font-medium transition ${
     active
-      ? "bg-surface-900 text-white"
-      : "border border-border-subtle bg-white text-text-secondary hover:bg-surface-50"
+      ? "bg-foreground text-background"
+      : "border border-border bg-card text-muted-foreground hover:bg-muted"
   }`;
 }
 
@@ -79,25 +79,25 @@ export default async function CreatorAnalyticsPage({
       label: "Gross revenue",
       value: formatPrice(analytics.summary.grossRevenue / 100),
       icon: DollarSign,
-      colorClass: "bg-surface-100 text-warning-700",
+      colorClass: "bg-muted text-warning-700",
     },
     {
       label: "Creator share",
       value: formatPrice(analytics.summary.creatorShare / 100),
       icon: BarChart2,
-      colorClass: "bg-surface-100 text-info-700",
+      colorClass: "bg-muted text-info-700",
     },
     {
       label: "Total sales",
       value: analytics.summary.totalSales.toLocaleString(),
       icon: ShoppingBag,
-      colorClass: "bg-surface-100 text-primary-700",
+      colorClass: "bg-muted text-primary-700",
     },
     {
       label: "Total downloads",
       value: analytics.summary.totalDownloads.toLocaleString(),
       icon: Download,
-      colorClass: "bg-surface-100 text-success-700",
+      colorClass: "bg-muted text-success-700",
     },
   ];
   const reviewSummaryCards = [
@@ -105,21 +105,21 @@ export default async function CreatorAnalyticsPage({
       label: "Average rating",
       value: reviewAnalytics.overview.averageRating?.toFixed(1) ?? "—",
       icon: Star,
-      colorClass: "bg-surface-100 text-warning-700",
+      colorClass: "bg-muted text-warning-700",
       description: "Visible marketplace rating across your owned resources.",
     },
     {
       label: "Visible reviews",
       value: reviewAnalytics.overview.totalVisibleReviews.toLocaleString(),
       icon: MessageSquare,
-      colorClass: "bg-surface-100 text-info-700",
+      colorClass: "bg-muted text-info-700",
       description: "Public reviews that remain visible after moderation.",
     },
     {
       label: "Resources with reviews",
       value: reviewAnalytics.overview.resourcesWithVisibleReviews.toLocaleString(),
       icon: FileText,
-      colorClass: "bg-surface-100 text-primary-700",
+      colorClass: "bg-muted text-primary-700",
       description: "Owned resources with at least one visible marketplace review.",
     },
   ];
@@ -156,10 +156,10 @@ export default async function CreatorAnalyticsPage({
                 >
                   <Icon className="h-4 w-4" />
                 </span>
-                <p className="mt-4 text-2xl font-bold tracking-tight text-text-primary">
+                <p className="mt-4 text-2xl font-bold tracking-tight text-foreground">
                   {card.value}
                 </p>
-                <p className="mt-1 text-sm font-medium text-text-secondary">{card.label}</p>
+                <p className="mt-1 text-sm font-medium text-muted-foreground">{card.label}</p>
               </CardContent>
             </Card>
           );
@@ -177,11 +177,11 @@ export default async function CreatorAnalyticsPage({
                 >
                   <Icon className="h-4 w-4" />
                 </span>
-                <p className="mt-4 text-2xl font-bold tracking-tight text-text-primary">
+                <p className="mt-4 text-2xl font-bold tracking-tight text-foreground">
                   {card.value}
                 </p>
-                <p className="mt-1 text-sm font-medium text-text-secondary">{card.label}</p>
-                <p className="mt-2 text-xs leading-5 text-text-secondary">{card.description}</p>
+                <p className="mt-1 text-sm font-medium text-muted-foreground">{card.label}</p>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">{card.description}</p>
               </CardContent>
             </Card>
           );
@@ -198,7 +198,7 @@ export default async function CreatorAnalyticsPage({
           </div>
 
           {seriesRows.length === 0 ? (
-            <p className="px-6 py-12 text-sm text-text-secondary">No analytics data in this range.</p>
+            <p className="px-6 py-12 text-sm text-muted-foreground">No analytics data in this range.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -213,14 +213,14 @@ export default async function CreatorAnalyticsPage({
                 <tbody className={TABLE_BODY_CLASS}>
                   {seriesRows.map((row) => (
                     <tr key={row.date}>
-                      <td className="px-6 py-4 font-medium text-text-primary">
+                      <td className="px-6 py-4 font-medium text-foreground">
                         {formatDate(row.date)}
                       </td>
-                      <td className="px-4 py-4 text-right text-text-secondary">
+                      <td className="px-4 py-4 text-right text-muted-foreground">
                         {formatPrice(row.revenue / 100)}
                       </td>
-                      <td className="px-4 py-4 text-right text-text-secondary">{row.sales}</td>
-                      <td className="px-6 py-4 text-right text-text-secondary">{row.downloads}</td>
+                      <td className="px-4 py-4 text-right text-muted-foreground">{row.sales}</td>
+                      <td className="px-6 py-4 text-right text-muted-foreground">{row.downloads}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -255,32 +255,32 @@ export default async function CreatorAnalyticsPage({
           ].map((section) => (
             <div
               key={section.title}
-              className="rounded-2xl border border-border-subtle bg-white p-6 shadow-card"
+              className="rounded-2xl border border-border bg-card p-6 shadow-card"
             >
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-text-primary">{section.title}</h2>
-                <span className="text-xs uppercase tracking-wide text-text-muted">
+                <h2 className="text-sm font-semibold text-foreground">{section.title}</h2>
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">
                     {section.metricLabel}
                 </span>
               </div>
 
               {section.resources.length === 0 ? (
-                <p className="mt-4 text-sm text-text-secondary">No resources yet.</p>
+                <p className="mt-4 text-sm text-muted-foreground">No resources yet.</p>
               ) : (
                 <ul className="mt-4 space-y-3">
                   {section.resources.map((resource) => (
                     <li key={`${section.title}-${resource.id}`}>
-                      <div className="flex items-center justify-between gap-3 rounded-xl border border-surface-100 px-4 py-3">
+                      <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-4 py-3">
                         <div className="min-w-0">
                           <Link
                             href={routes.resource(resource.slug)}
-                            className="truncate text-sm font-medium text-text-primary hover:text-brand-600"
+                            className="truncate text-sm font-medium text-foreground hover:text-brand-600"
                           >
                             {resource.title}
                           </Link>
-                          <p className="mt-1 text-xs text-text-muted">{resource.slug}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{resource.slug}</p>
                         </div>
-                        <span className="text-sm font-semibold text-text-primary">
+                        <span className="text-sm font-semibold text-foreground">
                           {section.renderMetric(resource)}
                         </span>
                       </div>
@@ -303,7 +303,7 @@ export default async function CreatorAnalyticsPage({
           </div>
 
           {reviewAnalytics.resources.length === 0 ? (
-            <p className="px-6 py-12 text-sm text-text-secondary">
+            <p className="px-6 py-12 text-sm text-muted-foreground">
                 No owned resources are available for review analytics yet.
             </p>
           ) : (
@@ -325,22 +325,22 @@ export default async function CreatorAnalyticsPage({
                         <div className="min-w-0">
                           <Link
                             href={routes.resource(resource.slug)}
-                            className="truncate text-sm font-medium text-text-primary hover:text-brand-600"
+                            className="truncate text-sm font-medium text-foreground hover:text-brand-600"
                           >
                             {resource.title}
                           </Link>
-                          <p className="mt-1 text-xs text-text-muted">
+                          <p className="mt-1 text-xs text-muted-foreground">
                             {resource.isFree ? "Free" : formatPrice(resource.price / 100)}
                           </p>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-right text-text-secondary">
+                      <td className="px-4 py-4 text-right text-muted-foreground">
                         {resource.averageRating?.toFixed(1) ?? "—"}
                       </td>
-                      <td className="px-4 py-4 text-right text-text-secondary">
+                      <td className="px-4 py-4 text-right text-muted-foreground">
                         {resource.visibleReviewCount.toLocaleString()}
                       </td>
-                      <td className="px-4 py-4 text-right text-text-secondary">
+                      <td className="px-4 py-4 text-right text-muted-foreground">
                         {resource.lastReviewDate ? formatDate(resource.lastReviewDate) : "—"}
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -363,7 +363,7 @@ export default async function CreatorAnalyticsPage({
           </div>
 
           {reviewAnalytics.recentReviews.length === 0 ? (
-            <p className="px-6 py-12 text-sm text-text-secondary">
+            <p className="px-6 py-12 text-sm text-muted-foreground">
                 No visible reviews yet.
             </p>
           ) : (
@@ -374,19 +374,19 @@ export default async function CreatorAnalyticsPage({
                     <div className="min-w-0">
                       <Link
                         href={routes.resource(review.resourceSlug)}
-                        className="truncate text-sm font-medium text-text-primary hover:text-brand-600"
+                        className="truncate text-sm font-medium text-foreground hover:text-brand-600"
                       >
                         {review.resourceTitle}
                       </Link>
-                      <p className="mt-1 text-xs text-text-secondary">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {review.reviewerName} · {formatDate(review.createdAt)}
                       </p>
                       {review.body ? (
-                        <p className="mt-2 line-clamp-3 text-sm leading-6 text-text-secondary">
+                        <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
                           {review.body}
                         </p>
                       ) : (
-                        <p className="mt-2 text-sm text-text-muted">No written comment.</p>
+                        <p className="mt-2 text-sm text-muted-foreground">No written comment.</p>
                       )}
                     </div>
                     <Badge variant="warning" className="px-2.5 py-1 font-semibold">
@@ -408,7 +408,7 @@ export default async function CreatorAnalyticsPage({
           </div>
 
           {reviewAnalytics.distribution.every((row) => row.count === 0) ? (
-            <p className="px-6 py-12 text-sm text-text-secondary">
+            <p className="px-6 py-12 text-sm text-muted-foreground">
               Ratings will appear here once visible reviews are available.
             </p>
           ) : (
@@ -419,11 +419,11 @@ export default async function CreatorAnalyticsPage({
 
                 return (
                   <li key={rating} className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                       <Star className="h-4 w-4 fill-warning-500 text-warning-500" />
                       {rating} star{rating === 1 ? "" : "s"}
                     </div>
-                    <span className="text-sm font-semibold text-text-secondary">
+                    <span className="text-sm font-semibold text-muted-foreground">
                       {count.toLocaleString()}
                     </span>
                   </li>
@@ -442,7 +442,7 @@ export default async function CreatorAnalyticsPage({
           </div>
 
           {analytics.recentSales.length === 0 ? (
-            <p className="px-6 py-12 text-sm text-text-secondary">No recent sales yet.</p>
+            <p className="px-6 py-12 text-sm text-muted-foreground">No recent sales yet.</p>
           ) : (
             <ul className={TABLE_BODY_CLASS}>
               {analytics.recentSales.map((sale) => (
@@ -450,16 +450,16 @@ export default async function CreatorAnalyticsPage({
                   <div className="min-w-0">
                     <Link
                       href={routes.resource(sale.resourceSlug)}
-                      className="truncate text-sm font-medium text-text-primary hover:text-brand-600"
+                      className="truncate text-sm font-medium text-foreground hover:text-brand-600"
                     >
                       {sale.resourceTitle}
                     </Link>
-                    <p className="mt-1 text-xs text-text-secondary">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {sale.buyerName} · {sale.status} · {formatDate(sale.createdAt)}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-text-primary">
+                    <p className="text-sm font-semibold text-foreground">
                       {formatPrice(sale.amount / 100)}
                     </p>
                     <p className="mt-1 text-xs text-success-700">
@@ -481,7 +481,7 @@ export default async function CreatorAnalyticsPage({
           </div>
 
           {analytics.recentDownloads.length === 0 ? (
-            <p className="px-6 py-12 text-sm text-text-secondary">No recent downloads yet.</p>
+            <p className="px-6 py-12 text-sm text-muted-foreground">No recent downloads yet.</p>
           ) : (
             <ul className={TABLE_BODY_CLASS}>
               {analytics.recentDownloads.map((download) => (
@@ -489,11 +489,11 @@ export default async function CreatorAnalyticsPage({
                   <div className="min-w-0">
                     <Link
                       href={routes.resource(download.resourceSlug)}
-                      className="truncate text-sm font-medium text-text-primary hover:text-brand-600"
+                      className="truncate text-sm font-medium text-foreground hover:text-brand-600"
                     >
                       {download.resourceTitle}
                     </Link>
-                    <p className="mt-1 text-xs text-text-secondary">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {download.userId ? `User ${download.userId.slice(0, 8)}` : "Anonymous user"} ·{" "}
                       {formatDate(download.createdAt)}
                     </p>
@@ -511,7 +511,7 @@ export default async function CreatorAnalyticsPage({
       <section className={PANEL_CLASS}>
         <div className={PANEL_HEADER_CLASS}>
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-text-muted" />
+            <FileText className="h-4 w-4 text-muted-foreground" />
             <h2 className={PANEL_TITLE_CLASS}>Next action</h2>
           </div>
           <p className={PANEL_DESCRIPTION_CLASS}>

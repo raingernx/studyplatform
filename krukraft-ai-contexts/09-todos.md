@@ -15,6 +15,7 @@
 
 - [ ] Keep discover fallbacks aligned with final section intent; avoid misleading placeholder destinations
 - [ ] Audit live search, filter/sidebar fallbacks, and creator-profile fallbacks for usable-but-consistent loading states
+- [ ] Pilot `boneyard-js` on one high-value flow before considering wider skeleton replacement; keep route-level loading/error/empty-state contracts explicit even if DOM-captured bones are adopted
 - [ ] Keep Playwright search smoke aligned with real canonical submit flows as marketplace search UX evolves
 - [ ] Re-audit brand asset previews if legacy stored values from earlier fallback behavior still exist in the database
 
@@ -43,4 +44,4 @@
 
 ---
 
-*Refreshed against the repo state on 2026-04-02.*
+*Refreshed against the repo state on 2026-04-05.*

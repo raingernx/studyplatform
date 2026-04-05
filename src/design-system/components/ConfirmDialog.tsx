@@ -87,7 +87,7 @@ export function ConfirmDialog({
         />
         <DialogPrimitive.Content
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 flex w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-card-lg outline-none sm:max-w-md",
+            "fixed left-1/2 top-1/2 z-50 flex w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card-lg outline-none sm:max-w-md",
             "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
             "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
             "duration-150",
@@ -105,18 +105,18 @@ export function ConfirmDialog({
                 <Icon className="h-5 w-5" />
               </span>
               <div className="min-w-0 flex-1">
-                <DialogPrimitive.Title className="font-display text-base font-semibold text-text-primary">
+                <DialogPrimitive.Title className="font-display text-base font-semibold text-foreground">
                   {title}
                 </DialogPrimitive.Title>
                 {description ? (
-                  <DialogPrimitive.Description className="mt-1 text-sm text-text-secondary">
+                  <DialogPrimitive.Description className="mt-1 text-sm text-muted-foreground">
                     {description}
                   </DialogPrimitive.Description>
                 ) : null}
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-end gap-2 border-t border-surface-100 bg-surface-50/60 px-5 py-3">
+          <div className="flex items-center justify-end gap-2 border-t border-border/70 bg-muted/60 px-5 py-3">
             <DialogPrimitive.Close asChild>
               <Button variant="outline" disabled={isBusy}>
                 {cancelLabel}

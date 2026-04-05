@@ -11,6 +11,7 @@
 - `src/design-system/README.md` is the repo-local DS inventory and ownership reference.
 - `/figma-component-map.md` is the repo-owned manual registry that maps live Figma components and patterns back to canonical code owners.
 - `npm run figma-map:check` validates that every `.tsx` file under `src/design-system/primitives` and `src/design-system/components` has a registry row in `/figma-component-map.md`.
+- `npm run tokens:audit` validates that `src/design-system/tokens/*`, the barrel in `src/design-system/tokens/index.ts`, and the repo-owned DS inventory docs remain aligned.
 - `/design-system.md` is the repo-owned Figma reconstruction and handoff document. It should stay aligned with current DS ownership, token names, and component boundaries.
 - Core design-system directories:
   - `src/design-system/tokens/*`
@@ -68,6 +69,12 @@
 ## Current Implementation Notes
 
 - `src/design-system/README.md` is now the quick DS source for inventory, directory roles, and ownership notes. Use it before treating older docs or historical thread context as current.
+- Reusable Figma component sets now follow a prop-style naming contract for key
+  shared surfaces:
+  - property names mirror code props where practical, for example `variant`,
+    `size`, `align`, `submitButton`
+  - lower-case option values are preferred when the backing code prop values are
+    lower-case, for example `primary`, `outline`, `sm`, `md`, `flat`, `card`
 - `RevealImage` is the shared image primitive for already-sized containers. It wraps `next/image`, keeps images visible by default, and expects the surrounding container to own placeholder/background treatment.
 - The image delivery policy is selective:
   - optimizer-compatible HTTPS sources use Next Image
@@ -80,7 +87,31 @@
   - optional submit-button slot
   - optional leading and trailing adornments
 - `LoadingSkeleton` is the canonical DS loading primitive. New loading work should reference it instead of adding ad-hoc placeholder blocks or reviving `src/components/shared/LoadingSkeleton` as an implementation owner.
-- `src/design-system/tokens/hero.ts` now holds the browse-stage / merchandising-hero support layer for hero-specific spacing, radii, and typography only. Hero color decisions are expected to come from the shared DS semantic and scale tokens in `src/design-system/tokens/colors.ts`, and Pencil sync should bind hero surfaces to those canonical DS colors rather than a separate hero-only palette.
+- `boneyard-js` is available as an optional DOM-capture skeleton workflow, but it complements the DS loading system rather than replacing route-level loading/error/empty-state design. Generated bones are expected under `src/bones`.
+- `PriceLabel` is now theme-aware at the DS level (`text-foreground` for paid prices, `text-success-600` for free) so product surfaces can reuse it on both light and dark shells without local color patches.
+- `src/design-system/tokens/hero.ts` now holds the current marketplace hero support layer for the Figma-led split banner: badge/chip spacing, 16px panel radii, a 56px desktop headline, a 36px mobile/tablet headline, and the premium-panel title/CTA typography. Hero color decisions still come from `src/design-system/tokens/colors.ts`, but the shared semantic layer now includes a thin hero surface contract (`heroBackground`, `heroBackgroundSubtle`, `heroPanel`, `heroPanelForeground`, `heroPanelBorder`, `heroChip`, `heroChipForeground`) so hero UI does not have to masquerade as generic `card` chrome or rely on raw primitives everywhere.
+- The live Figma `Krukraft / Colors / Semantic` collection is no longer the old
+  19-variable starter set. It now carries a broader alias layer for
+  `surface`, `border`, `text`, `action`, `feedback`, `hero`, and `sidebar`
+  roles so designers can tune stateful semantics in Figma without editing the
+  primitive ramps directly.
+- The live Figma variable surface now mirrors the repo token families more
+  directly:
+  - `Krukraft / Colors / Primitives` now includes `brand`, `primary`,
+    `accent`, `highlight`, `neutral`, `surface`, `success`, `warning`,
+    `info`, and `danger`
+  - `Krukraft / Colors / Theme` mirrors the repo `themeColors` contract and
+    chart/sidebar roles with Light/Dark modes
+  - `Krukraft / Typography` mirrors repo family/stack/size/line-height/
+    letter-spacing/weight token values as variables for reference/editing
+  - `Krukraft / Hero` mirrors the repo hero support layer across spacing,
+    radius, and typography token groups
+- Figma-to-code fidelity work now has an explicit repo workflow:
+  - lock one canonical frame / variant before editing code
+  - inspect important child nodes individually instead of trusting only the root frame or screenshot
+  - inspect the surrounding section shell, not just the component
+  - map `Fill container` intent into the right CSS layout behavior for the parent context
+  - compare back to the same canonical frame after patching before claiming a 1:1 match
 - `ResourceCard` in the design-system component barrel is currently a thin re-export of the marketplace implementation in `src/components/resources/ResourceCard`. Product-card changes may therefore land outside `src/design-system/components` while still affecting the DS surface.
 - For Figma/library planning, split DS surfaces into two buckets:
   - generic library surfaces: primitives, layout helpers, and composed generic building blocks such as `FormSection`, `SectionHeader`, `Pagination`, and `EmptyState`
@@ -96,6 +127,16 @@
   - `text-text-secondary`
   - `text-text-muted`
   - `text-primary-*`
+- Theme-switching shell chrome should not rely on that semantic layer alone.
+  The current `semanticColors` export is still light-only, so app-level surfaces
+  that must respond to `light | dark | system` should prefer the CSS-variable
+  contract instead:
+  - `bg-background`
+  - `bg-card`
+  - `border-border`
+  - `text-foreground`
+  - `text-muted-foreground`
+  - `bg-secondary` / `bg-accent`
 - Current marketplace and admin UI favors:
   - large radii (`rounded-xl` through `rounded-3xl`)
   - soft surface borders instead of heavy shadows
@@ -122,6 +163,8 @@
 - Live DS library file:
   - `Krukraft Design System`
   - [https://www.figma.com/design/D3cCyIYFnHDlY34eCqDURf](https://www.figma.com/design/D3cCyIYFnHDlY34eCqDURf)
+  - The live library now sits in the shared Team project rather than personal
+    Drafts.
 - Manual repo mapping registry:
   - `/figma-component-map.md`
 - Recommended Figma page split:
@@ -130,10 +173,14 @@
   - `Composed`
   - `Product / Marketplace`
   - `Product / Admin`
-  - `Patterns`
+  - `Product / Dashboard`
 - The live file now already contains those pages plus foundational docs for:
   - primitive colors
   - semantic colors
+  - theme colors
+  - expanded semantic aliases for `surface`, `border`, `text`, `action`,
+    `feedback`, `hero`, and `sidebar`
+  - typography and hero token references
   - spacing
   - radius
   - typography specimens
@@ -169,19 +216,38 @@
   - `RowActions`
   - `ConfirmDialog`
 - The live `Product / Marketplace` page now has real component sets for:
-  - `ResourceCard`
-  - `PriceBadge`
-  - `PriceLabel`
-  - `SearchInput`
+  - `HeroBanner`
+  - This is the current canonical marketplace surface in Figma while the wider
+    marketplace product library continues to evolve incrementally.
+- Key reusable component sets in the live file now use code-aligned property
+  naming, including:
+  - `Button` `variant` / `size`
+  - `Badge` `variant`
+  - `Card` `size`
+  - `FormSection` `variant`
+  - `SectionHeader` `align`
+  - `Pagination` `size`
+  - `ConfirmDialog` `variant`
+  - `HeroBanner` `viewport`
 - The live `Product / Admin` page now has real component sets for:
   - `FileUploadWidget`
   - `NotificationButton`
   - `PickerControls`
-- The live `Patterns` page now holds flow-level exemplars for:
-  - admin settings anti-nesting
-  - marketplace discover with neutral skeletons
-  - resource detail shell composition
-  - creator dashboard surface hierarchy
+- The live file now keeps flow-level exemplars on owner product pages instead
+  of a generic `Patterns` page:
+  - `Product / Admin`
+    - admin settings anti-nesting
+  - `Product / Marketplace`
+    - hero banner built from local DS component instances
+  - `Product / Dashboard`
+    - creator dashboard surface hierarchy
+- When a screen needs to prove DS-backed composition but shared-library import
+  to a separate file is not available yet, the current preferred workflow is to
+  build that exemplar directly on the owning product page inside the DS file
+  rather than creating a freehand exploration file or a generic pattern page.
+- The current hero flow on `Product / Marketplace` is split into `HeroBanner / Component Set`
+  and `HeroBanner / Preview` sections. Edit the component set first, then validate
+  the result in the preview block instead of editing instances directly.
 - Recommended first Code Connect mappings:
   - `Button`
   - `Badge`
@@ -202,4 +268,4 @@
 
 ---
 
-*Refreshed against the repo state on 2026-04-03.*
+*Refreshed against the repo state on 2026-04-05.*

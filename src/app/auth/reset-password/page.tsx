@@ -42,19 +42,19 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <Logo variant="full" size="lg" />
-          <h1 className="mt-5 text-2xl font-bold tracking-tight text-zinc-900">
+          <h1 className="mt-5 text-2xl font-bold tracking-tight text-foreground">
             Reset your password
           </h1>
-          <p className="mt-1.5 text-sm text-zinc-500">
+          <p className="mt-1.5 text-sm text-muted-foreground">
             Enter your email and we&apos;ll send you a reset link.
           </p>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-card">
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-card">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error ? (
               <div className="flex items-start gap-2.5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
@@ -71,7 +71,7 @@ export default function ResetPasswordPage() {
             ) : null}
 
             <div>
-              <label htmlFor="email" className="mb-1.5 block text-[13px] font-medium text-zinc-700">
+              <label htmlFor="email" className="mb-1.5 block text-[13px] font-medium text-foreground">
                 Email address
               </label>
               <input
@@ -82,7 +82,7 @@ export default function ResetPasswordPage() {
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring"
               />
             </div>
 
@@ -99,9 +99,9 @@ export default function ResetPasswordPage() {
           </form>
         </div>
 
-        <p className="mt-5 text-center text-[13px] text-zinc-500">
+        <p className="mt-5 text-center text-[13px] text-muted-foreground">
           Remembered it?{" "}
-          <Link href={routes.login} className="font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+          <Link href={routes.login} className="font-semibold text-primary transition-colors hover:text-foreground">
             Back to sign in
           </Link>
         </p>

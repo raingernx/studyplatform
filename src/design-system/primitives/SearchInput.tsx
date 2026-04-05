@@ -47,7 +47,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
     const searchIcon = startAdornment ?? (
       <Search
         className={cn(
-          "pointer-events-none absolute inset-y-0 left-0 text-text-muted",
+          "pointer-events-none absolute inset-y-0 left-0 text-muted-foreground",
           variant === "hero"
             ? "h-full w-12 p-4 sm:w-14 sm:p-[18px]"
             : "h-full w-11 p-3.5",
@@ -63,7 +63,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
           onClick={onClear}
           aria-label={clearLabel}
           className={cn(
-            "absolute inset-y-0 right-0 text-text-muted transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30 focus-visible:ring-offset-2",
+            "absolute inset-y-0 right-0 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30 focus-visible:ring-offset-2",
             variant === "hero"
               ? "w-12 rounded-full p-4 sm:w-14 sm:p-[18px]"
               : "w-11 p-3.5",
@@ -76,7 +76,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
     const loadingIndicator = loading ? (
       <Loader2
         className={cn(
-          "absolute inset-y-0 right-0 animate-spin text-text-muted",
+          "absolute inset-y-0 right-0 animate-spin text-muted-foreground",
           variant === "hero"
             ? "h-full w-12 p-4 sm:w-14 sm:p-[18px]"
             : "h-full w-11 p-3.5",
@@ -96,16 +96,16 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
           className={cn(
             variant === "hero"
               ? [
-                  "w-full rounded-2xl border border-border-subtle bg-white",
-                  "py-3.5 pl-12 pr-12 text-sm text-text-primary sm:py-4 sm:pl-14 sm:pr-14 sm:text-base",
-                  "placeholder:text-text-muted",
+                  "w-full rounded-2xl border border-input bg-background",
+                  "py-3.5 pl-12 pr-12 text-sm text-foreground sm:py-4 sm:pl-14 sm:pr-14 sm:text-base",
+                  "placeholder:text-muted-foreground",
                   "outline-none transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-70",
                   "focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15",
                   "focus-visible:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500/15",
                 ]
               : [
-                  "w-full rounded-xl border border-border-subtle bg-white py-2.5 pl-11 pr-11 text-sm",
-                  "text-text-primary placeholder:text-text-muted outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-70",
+                  "w-full rounded-xl border border-input bg-background py-2.5 pl-11 pr-11 text-sm",
+                  "text-foreground placeholder:text-muted-foreground outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-70",
                   "focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15",
                   "focus-visible:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500/15",
                 ],

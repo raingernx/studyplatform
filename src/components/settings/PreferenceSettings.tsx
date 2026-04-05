@@ -50,16 +50,16 @@ function PreferenceRow({
   children,
 }: PreferenceRowProps) {
   return (
-    <div className="grid gap-3 border-b border-border-subtle pb-4 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_240px] md:items-start md:gap-6">
+    <div className="grid gap-3 border-b border-border pb-4 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_240px] md:items-start md:gap-6">
       <div className="space-y-1">
         <label
           htmlFor={id}
-          className="flex items-center gap-2 text-sm font-medium text-text-primary"
+          className="flex items-center gap-2 text-sm font-medium text-foreground"
         >
           {icon}
           {label}
         </label>
-        <p className="text-small text-text-secondary">{description}</p>
+        <p className="text-small text-muted-foreground">{description}</p>
       </div>
       <div className="w-full md:justify-self-end">{children}</div>
     </div>
@@ -80,7 +80,7 @@ export function PreferenceSettings({
   } | null>(null);
 
   const [initialPreferences, setInitialPreferences] = useState<PreferenceSettingsProps>(() => ({
-    theme: initialTheme ?? "system",
+    theme: initialTheme ?? "light",
     currency: initialCurrency ?? "THB",
     timezone: initialTimezone ?? "Asia/Bangkok",
   }));
@@ -91,7 +91,7 @@ export function PreferenceSettings({
 
   useEffect(() => {
     if (readStoredTheme() !== null) return;
-    setTheme(initialPreferences.theme ?? "system", { persist: false });
+    setTheme(initialPreferences.theme ?? "light", { persist: false });
   }, [initialPreferences.theme, setTheme]);
 
   const hasChanges =
@@ -217,7 +217,7 @@ export function PreferenceSettings({
     >
       <PreferenceRow
         id="preference-theme"
-        icon={<Sun className="h-4 w-4 text-text-muted" />}
+        icon={<Sun className="h-4 w-4 text-muted-foreground" />}
         label="Theme"
         description="Switch between light, dark, or system theme."
       >
@@ -237,7 +237,7 @@ export function PreferenceSettings({
 
       <PreferenceRow
         id="preference-currency"
-        icon={<Coins className="h-4 w-4 text-text-muted" />}
+        icon={<Coins className="h-4 w-4 text-muted-foreground" />}
         label="Currency"
         description="Used for displaying prices in the interface."
       >
@@ -257,7 +257,7 @@ export function PreferenceSettings({
 
       <PreferenceRow
         id="preference-timezone"
-        icon={<Clock4 className="h-4 w-4 text-text-muted" />}
+        icon={<Clock4 className="h-4 w-4 text-muted-foreground" />}
         label="Timezone"
         description="Future features will use this timezone for schedules and history."
       >

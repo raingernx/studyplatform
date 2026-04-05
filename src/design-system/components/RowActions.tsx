@@ -24,13 +24,13 @@ export interface RowActionButtonProps extends ButtonProps {
 }
 
 const toneClasses: Record<RowActionTone, string> = {
-  default: "border-border-subtle text-text-primary hover:bg-surface-50",
+  default: "border-border text-foreground hover:bg-muted",
   danger:
     "border-danger-200 text-danger-600 hover:bg-danger-50 hover:text-danger-700",
   success:
     "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700",
   muted:
-    "border-border-subtle text-text-secondary hover:bg-surface-50 hover:text-text-primary",
+    "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
 };
 
 export function RowActionButton({

@@ -96,13 +96,13 @@ export function PricingCard({ tier, billing }: PricingCardProps) {
             <p className="text-xs font-semibold uppercase tracking-widest text-blue-400">
               {tier.name}
             </p>
-            <p className="mt-1.5 text-sm text-zinc-400">{tier.description}</p>
+            <p className="mt-1.5 text-sm text-white/72">{tier.description}</p>
 
             <div className="mt-6 flex items-baseline gap-1.5">
               <span className="text-5xl font-bold tracking-tight text-white">
                 {price === 0 ? "Free" : `$${price}`}
               </span>
-              {price > 0 ? <span className="text-sm text-zinc-500">/mo</span> : null}
+              {price > 0 ? <span className="text-sm text-white/45">/mo</span> : null}
               {savings > 0 ? (
                 <span className="ml-2 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-400 ring-1 ring-emerald-500/30">
                   Save {savings}%
@@ -118,7 +118,7 @@ export function PricingCard({ tier, billing }: PricingCardProps) {
                   <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-600/20 ring-1 ring-blue-500/30">
                     <Check className="h-3 w-3 text-blue-400" />
                   </span>
-                  <span className="text-sm leading-relaxed text-zinc-300">
+                  <span className="text-sm leading-relaxed text-white/82">
                     {feature}
                   </span>
                 </li>
@@ -147,23 +147,23 @@ export function PricingCard({ tier, billing }: PricingCardProps) {
   }
 
   return (
-    <div className="relative flex flex-col rounded-3xl bg-white p-8 ring-1 ring-zinc-200 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-md">
+    <div className="relative flex flex-col rounded-3xl bg-card p-8 ring-1 ring-border shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-md">
       {tier.badge ? (
-        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-zinc-900 px-3.5 py-1 text-xs font-bold text-white shadow-sm">
+        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-foreground px-3.5 py-1 text-xs font-bold text-background shadow-sm">
           {tier.badge}
         </span>
       ) : null}
 
-      <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
         {tier.name}
       </p>
-      <p className="mt-1.5 text-sm text-zinc-500">{tier.description}</p>
+      <p className="mt-1.5 text-sm text-muted-foreground">{tier.description}</p>
 
       <div className="mt-6 flex items-baseline gap-1.5">
-        <span className="text-5xl font-bold tracking-tight text-zinc-900">
+        <span className="text-5xl font-bold tracking-tight text-foreground">
           {price === 0 ? "Free" : `$${price}`}
         </span>
-        {price > 0 ? <span className="text-sm text-zinc-400">/mo</span> : null}
+        {price > 0 ? <span className="text-sm text-muted-foreground">/mo</span> : null}
         {savings > 0 ? (
           <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
             Save {savings}%
@@ -171,7 +171,7 @@ export function PricingCard({ tier, billing }: PricingCardProps) {
         ) : null}
       </div>
 
-      <div className="mt-6 border-t border-zinc-100" />
+      <div className="mt-6 border-t border-border" />
 
       <ul className="mt-5 flex-1 space-y-3">
         {tier.features.map((feature) => (
@@ -179,7 +179,7 @@ export function PricingCard({ tier, billing }: PricingCardProps) {
             <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 ring-1 ring-blue-100">
               <Check className="h-3 w-3 text-blue-600" />
             </span>
-            <span className="text-sm leading-relaxed text-zinc-600">
+            <span className="text-sm leading-relaxed text-muted-foreground">
               {feature}
             </span>
           </li>

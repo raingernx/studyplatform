@@ -52,7 +52,7 @@ function ppDelta(a: number, b: number): string {
 function deltaColor(a: number, b: number): string {
   if (b > a) return "text-emerald-600";
   if (b < a) return "text-red-500";
-  return "text-zinc-400";
+  return "text-muted-foreground";
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ function PresetButtons({ start, end }: { start: string | null; end: string | nul
             className={`whitespace-nowrap rounded-full px-3 py-1 font-ui text-caption font-medium transition-colors ${
               isActive
                 ? "bg-primary-700 text-white"
-                : "bg-surface-100 text-text-secondary hover:bg-surface-200 hover:text-text-primary"
+                : "bg-muted text-muted-foreground hover:bg-background hover:text-foreground"
             }`}
           >
             {p.label}
@@ -97,10 +97,10 @@ function PresetButtons({ start, end }: { start: string | null; end: string | nul
 function StatRow({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="flex items-center justify-between py-2">
-      <span className="text-small text-text-secondary">{label}</span>
-      <span className="text-small font-semibold tabular-nums text-text-primary">
+      <span className="text-small text-muted-foreground">{label}</span>
+      <span className="text-small font-semibold tabular-nums text-foreground">
         {value}
-        {sub && <span className="ml-1.5 text-caption font-normal text-text-muted">{sub}</span>}
+        {sub && <span className="ml-1.5 text-caption font-normal text-muted-foreground">{sub}</span>}
       </span>
     </div>
   );
@@ -120,22 +120,22 @@ function VariantCard({
       ? ["Phase 2", "Behavior-based · treatment arm"]
       : ["Phase 1", "Category-trending · control arm"];
 
-  const accentBorder = accent === "blue" ? "border-primary-200" : "border-border-subtle";
-  const ctrColor     = accent === "blue" ? "text-primary-700" : "text-text-primary";
+  const accentBorder = accent === "blue" ? "border-primary-200" : "border-border";
+  const ctrColor     = accent === "blue" ? "text-primary-700" : "text-foreground";
 
   return (
     <Card className={`rounded-xl border ${accentBorder} p-0`}>
-      <CardHeader className="border-b border-border-subtle px-5 pb-4 pt-4.5">
+      <CardHeader className="border-b border-border px-5 pb-4 pt-4.5">
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-base font-semibold text-text-primary">{title}</CardTitle>
-            <CardDescription className="mt-0.5 text-caption text-text-muted">{desc}</CardDescription>
+            <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>
+            <CardDescription className="mt-0.5 text-caption text-muted-foreground">{desc}</CardDescription>
           </div>
           <span
             className={`rounded-full px-2.5 py-0.5 font-ui text-caption font-semibold ${
               accent === "blue"
                 ? "bg-primary-50 text-primary-700"
-                : "bg-surface-100 text-text-secondary"
+                : "bg-muted text-muted-foreground"
             }`}
           >
             {phase}
@@ -147,12 +147,12 @@ function VariantCard({
           <p className={`text-3xl font-semibold tabular-nums ${ctrColor}`}>
             {fmtPct(metrics.ctr)}
           </p>
-          <p className="mt-0.5 text-caption text-text-muted">Click-through rate</p>
+          <p className="mt-0.5 text-caption text-muted-foreground">Click-through rate</p>
         </div>
       </CardHeader>
 
       <CardContent className="px-5 py-1">
-        <div className="divide-y divide-border-subtle/60">
+        <div className="divide-y divide-border/60">
           <StatRow label="Impressions" value={fmt(metrics.impressions)} />
           <StatRow label="Clicks"      value={fmt(metrics.clicks)} />
           <StatRow label="Users"       value={fmt(metrics.users)}     sub="unique" />
@@ -212,7 +212,7 @@ export default async function RecommendationExperimentPage({
           ? "bg-emerald-50 border-emerald-200 text-emerald-800"
           : winner === "Phase 1"
             ? "bg-red-50 border-red-200 text-red-800"
-            : "bg-zinc-50 border-zinc-200 text-zinc-600";
+            : "bg-muted border-border text-muted-foreground";
 
       const rawJsonHref = `/api/admin/recommendation-report${
         start || end ? `?start=${report.filterStart}&end=${report.filterEnd}` : ""
@@ -270,7 +270,7 @@ export default async function RecommendationExperimentPage({
             description={
               <>
                 Phase 1 vs Phase 2 performance.{" "}
-                <code className="rounded bg-surface-100 px-1.5 py-0.5 font-mono text-caption text-text-secondary">
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-caption text-muted-foreground">
                   {report.experimentId}
                 </code>
               </>
@@ -281,7 +281,7 @@ export default async function RecommendationExperimentPage({
             <div className="shrink-0">
               <form method="get" className="flex flex-wrap items-end gap-2.5">
                 <div className="flex flex-col gap-1">
-                  <label htmlFor="start" className="font-ui text-caption text-text-muted">
+                  <label htmlFor="start" className="font-ui text-caption text-muted-foreground">
                     From
                   </label>
                   <Input
@@ -293,7 +293,7 @@ export default async function RecommendationExperimentPage({
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label htmlFor="end" className="font-ui text-caption text-text-muted">
+                  <label htmlFor="end" className="font-ui text-caption text-muted-foreground">
                     To
                   </label>
                   <Input
@@ -308,7 +308,7 @@ export default async function RecommendationExperimentPage({
                   Apply
                 </Button>
               </form>
-              <p className="mt-2 flex items-center gap-1.5 font-ui text-caption text-text-muted">
+              <p className="mt-2 flex items-center gap-1.5 font-ui text-caption text-muted-foreground">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-success-400" />
                 {rangeLabel}
                 {report.isDefaultRange && <span>(default)</span>}
@@ -322,10 +322,10 @@ export default async function RecommendationExperimentPage({
               { label: "Total clicks", value: fmt(totalClicks), sub: "Both variants" },
               { label: "Overall CTR", value: fmtPct(overallCtr), sub: "clicks / impressions" },
             ].map(({ label, value, sub }) => (
-              <div key={label} className="rounded-xl border border-border-subtle bg-white p-4">
-                <p className="text-2xl font-semibold tabular-nums text-text-primary">{value}</p>
-                <p className="mt-0.5 text-small font-medium text-text-secondary">{label}</p>
-                <p className="mt-1 text-caption text-text-muted">{sub}</p>
+              <div key={label} className="rounded-xl border border-border bg-card p-4">
+                <p className="text-2xl font-semibold tabular-nums text-foreground">{value}</p>
+                <p className="mt-0.5 text-small font-medium text-muted-foreground">{label}</p>
+                <p className="mt-1 text-caption text-muted-foreground">{sub}</p>
               </div>
             ))}
           </div>
@@ -346,7 +346,7 @@ export default async function RecommendationExperimentPage({
           </div>
 
           <div>
-            <h2 className="mb-4 font-display text-h3 font-semibold text-text-primary">
+            <h2 className="mb-4 font-display text-h3 font-semibold text-foreground">
               Variant breakdown
             </h2>
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -356,38 +356,38 @@ export default async function RecommendationExperimentPage({
           </div>
 
           <div>
-            <h2 className="mb-4 font-display text-h3 font-semibold text-text-primary">
+            <h2 className="mb-4 font-display text-h3 font-semibold text-foreground">
               Side-by-side comparison
             </h2>
-            <div className="overflow-hidden rounded-xl border border-border-subtle bg-white">
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border-subtle bg-surface-50/80">
-                    <th className="px-5 py-3 font-ui text-caption text-text-muted">Metric</th>
-                    <th className="px-5 py-3 text-right font-ui text-caption text-text-muted">
+                  <tr className="border-b border-border bg-muted/80">
+                    <th className="px-5 py-3 font-ui text-caption text-muted-foreground">Metric</th>
+                    <th className="px-5 py-3 text-right font-ui text-caption text-muted-foreground">
                       Phase 1
                     </th>
-                    <th className="px-5 py-3 text-right font-ui text-caption text-text-muted">
+                    <th className="px-5 py-3 text-right font-ui text-caption text-muted-foreground">
                       Phase 2
                     </th>
-                    <th className="px-5 py-3 text-right font-ui text-caption text-text-muted">
+                    <th className="px-5 py-3 text-right font-ui text-caption text-muted-foreground">
                       Delta
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border-subtle/60">
+                <tbody className="divide-y divide-border/60">
                   {tableRows.map((row) => (
-                    <tr key={row.label} className="transition-colors hover:bg-zinc-50/60">
-                      <td className="px-5 py-3 font-medium text-zinc-700">{row.label}</td>
-                      <td className="px-5 py-3 text-right tabular-nums text-zinc-500">
+                    <tr key={row.label} className="transition-colors hover:bg-muted/60">
+                      <td className="px-5 py-3 font-medium text-foreground">{row.label}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-muted-foreground">
                         {row.p1}
                       </td>
-                      <td className="px-5 py-3 text-right tabular-nums font-semibold text-zinc-900">
+                      <td className="px-5 py-3 text-right tabular-nums font-semibold text-foreground">
                         {row.p2}
                       </td>
                       <td className="px-5 py-3 text-right tabular-nums">
                         {row.delta === null ? (
-                          <span className="text-zinc-300">—</span>
+                          <span className="text-muted-foreground">—</span>
                         ) : (
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
@@ -405,17 +405,17 @@ export default async function RecommendationExperimentPage({
                 </tbody>
               </table>
             </div>
-            <p className="mt-2 text-caption text-text-muted">
+            <p className="mt-2 text-caption text-muted-foreground">
               Delta = Phase 2 vs Phase 1. CTR delta shown in percentage points (pp). Positive is
               better for all metrics.
             </p>
           </div>
 
-          <div className="flex items-center justify-between border-t border-border-subtle pt-4 text-caption text-text-muted">
+          <div className="flex items-center justify-between border-t border-border pt-4 text-caption text-muted-foreground">
             <span>Generated at {report.generatedAt}</span>
             <a
               href={rawJsonHref}
-              className="underline hover:text-zinc-600"
+              className="underline hover:text-foreground"
               target="_blank"
               rel="noopener noreferrer"
             >

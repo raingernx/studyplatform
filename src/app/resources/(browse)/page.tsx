@@ -1,6 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { Navbar } from "@/components/layout/Navbar";
-import { Container } from "@/design-system";
+import { Container, colorScales } from "@/design-system";
 import { DEFAULT_SORT, getEffectiveMarketplaceSort } from "@/config/sortOptions";
 import { HeroSearch } from "@/components/marketplace/HeroSearch";
 import { ResourcesContentFallback } from "@/components/skeletons/ResourcesContentFallback";
@@ -82,8 +82,6 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
   const mobileFilterActiveCount = isDiscoverMode
     ? 0
     : [Boolean(category && category !== "all"), Boolean(tag)].filter(Boolean).length;
-  const discoverHeroClassName =
-    "min-h-[440px] rounded-[26px] border-white/70 sm:min-h-[500px] lg:min-h-[540px]";
 
   return withRequestPerformanceTrace(
     "route:/resources",
@@ -97,7 +95,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
       const heroPromise = isDiscoverMode
         ? trackRequestWork(
             ResourcesDiscoverHero({
-              className: discoverHeroClassName,
+              className: "shadow-none",
             }),
           )
         : null;
@@ -116,7 +114,7 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
       );
 
       return (
-        <div className="flex min-h-screen flex-col bg-surface-50">
+        <div className="flex min-h-screen flex-col bg-background">
           <Navbar
             headerSearch={
               <Suspense fallback={<ResourcesCatalogSearchSkeleton />}>
@@ -135,10 +133,13 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
 
           <main className="flex-1">
             {isDiscoverMode ? (
-              <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(224,231,255,0.78),transparent_32%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
-                <Container className="space-y-4 py-4 sm:space-y-5 sm:py-6 lg:space-y-6 lg:py-7">
+              <section
+                className="relative overflow-hidden"
+                style={{ backgroundColor: colorScales.brand[300] }}
+              >
+                <Container className="space-y-4 py-5 sm:space-y-5 sm:py-6 lg:space-y-6 lg:py-8">
                   {heroPromise ? (
-                    <Suspense fallback={<HeroBannerFallback className={discoverHeroClassName} />}>
+                    <Suspense fallback={<HeroBannerFallback className="shadow-none" />}>
                       <AwaitResolvedNode promise={heroPromise} />
                     </Suspense>
                   ) : null}

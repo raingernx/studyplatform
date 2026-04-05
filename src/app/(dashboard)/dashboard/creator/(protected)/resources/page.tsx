@@ -65,15 +65,15 @@ export default async function CreatorResourcesPage({
   return (
     <div className="min-w-0 space-y-8">
       {/* Header */}
-      <div className="flex min-w-0 flex-wrap items-end justify-between gap-4 border-b border-surface-200 pb-4">
+      <div className="flex min-w-0 flex-wrap items-end justify-between gap-4 border-b border-border pb-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-tightest text-brand-600">
             Creator
           </p>
-          <h1 className="mt-1 font-display text-h2 font-semibold tracking-tight text-text-primary">
+          <h1 className="mt-1 font-display text-h2 font-semibold tracking-tight text-foreground">
             Resource management
           </h1>
-          <p className="mt-1 text-meta text-text-secondary">
+          <p className="mt-1 text-meta text-muted-foreground">
             Filter, publish, and monitor the listings you own in the marketplace.
           </p>
         </div>
@@ -90,31 +90,31 @@ export default async function CreatorResourcesPage({
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-border-subtle bg-white p-5 shadow-card">
-          <p className="text-xs font-semibold uppercase tracking-tightest text-text-muted">Resources</p>
-          <p className="mt-3 text-2xl font-bold tracking-tight text-text-primary">{data.resources.length}</p>
-          <p className="mt-1 text-sm text-text-secondary">{publishedCount} published</p>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground">Resources</p>
+          <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">{data.resources.length}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{publishedCount} published</p>
         </div>
-        <div className="rounded-2xl border border-border-subtle bg-white p-5 shadow-card">
-          <p className="text-xs font-semibold uppercase tracking-tightest text-text-muted">Downloads</p>
-          <p className="mt-3 text-2xl font-bold tracking-tight text-text-primary">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground">Downloads</p>
+          <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
             {totalDownloads.toLocaleString()}
           </p>
-          <p className="mt-1 text-sm text-text-secondary">Across owned resources</p>
+          <p className="mt-1 text-sm text-muted-foreground">Across owned resources</p>
         </div>
-        <div className="rounded-2xl border border-border-subtle bg-white p-5 shadow-card">
-          <p className="text-xs font-semibold uppercase tracking-tightest text-text-muted">Revenue</p>
-          <p className="mt-3 text-2xl font-bold tracking-tight text-text-primary">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground">Revenue</p>
+          <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
             {formatPrice(totalRevenue / 100)}
           </p>
-          <p className="mt-1 text-sm text-text-secondary">Gross sales revenue</p>
+          <p className="mt-1 text-sm text-muted-foreground">Gross sales revenue</p>
         </div>
       </div>
 
       {/* Filters */}
-      <form className="flex min-w-0 flex-wrap items-end gap-3 rounded-2xl border border-border-subtle bg-white px-4 py-3 shadow-card">
+      <form className="flex min-w-0 flex-wrap items-end gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-card">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold uppercase tracking-tightest text-text-secondary">
+          <label className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground">
             Status
           </label>
           <Select name="status" defaultValue={status ?? "all"}>
@@ -126,7 +126,7 @@ export default async function CreatorResourcesPage({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold uppercase tracking-tightest text-text-secondary">
+          <label className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground">
             Pricing
           </label>
           <Select name="pricing" defaultValue={pricing ?? "all"}>
@@ -137,7 +137,7 @@ export default async function CreatorResourcesPage({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold uppercase tracking-tightest text-text-secondary">
+          <label className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground">
             Category
           </label>
           <Select name="categoryId" defaultValue={categoryId ?? ""}>
@@ -151,7 +151,7 @@ export default async function CreatorResourcesPage({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold uppercase tracking-tightest text-text-secondary">
+          <label className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground">
             Sort
           </label>
           <Select name="sort" defaultValue={sort ?? "latest"}>
@@ -170,10 +170,10 @@ export default async function CreatorResourcesPage({
       </form>
 
       {/* Table */}
-      <div className="min-w-0 w-full overflow-hidden rounded-2xl border border-border-subtle bg-white shadow-card">
-        <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
-          <p className="text-sm font-semibold text-text-primary">Your resources</p>
-          <p className="text-xs text-text-muted">
+      <div className="min-w-0 w-full overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+        <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
+          <p className="text-sm font-semibold text-foreground">Your resources</p>
+          <p className="text-xs text-muted-foreground">
             {data.resources.length} result{data.resources.length === 1 ? "" : "s"}
           </p>
         </div>
@@ -181,11 +181,11 @@ export default async function CreatorResourcesPage({
         {data.resources.length === 0 ? (
           hasActiveFilters ? (
             <div className="px-6 py-16 text-center">
-              <FolderOpen className="mx-auto h-8 w-8 text-text-muted" />
-              <p className="mt-3 text-sm font-medium text-text-secondary">
+              <FolderOpen className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="mt-3 text-sm font-medium text-muted-foreground">
                 No resources match your filters
               </p>
-              <p className="mt-1 text-xs text-text-muted">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Try adjusting your filters to find what you're looking for.
               </p>
               <Button variant="outline" size="sm" className="mt-4" asChild>
@@ -194,9 +194,9 @@ export default async function CreatorResourcesPage({
             </div>
           ) : (
             <div className="px-6 py-16 text-center">
-              <FolderOpen className="mx-auto h-10 w-10 text-text-muted" />
-              <p className="mt-4 text-sm font-semibold text-text-primary">No resources yet</p>
-              <p className="mt-2 text-sm text-text-secondary">
+              <FolderOpen className="mx-auto h-10 w-10 text-muted-foreground" />
+              <p className="mt-4 text-sm font-semibold text-foreground">No resources yet</p>
+              <p className="mt-2 text-sm text-muted-foreground">
                 {access.canCreate
                   ? "Start building your catalog by creating your first marketplace listing."
                   : "This account can manage existing resources but cannot create new listings."}
@@ -214,43 +214,43 @@ export default async function CreatorResourcesPage({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-border-subtle bg-surface-50/80">
+              <thead className="border-b border-border/70 bg-muted/80">
                 <tr>
-                  <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-tightest text-text-secondary">Resource</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-tightest text-text-secondary">Category</th>
-                  <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-tightest text-text-secondary">Price</th>
-                  <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-tightest text-text-secondary">Downloads</th>
-                  <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-tightest text-text-secondary">Revenue</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-tightest text-text-secondary">Status</th>
-                  <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-tightest text-text-secondary">Actions</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-tightest text-muted-foreground">Resource</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-tightest text-muted-foreground">Category</th>
+                  <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-tightest text-muted-foreground">Price</th>
+                  <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-tightest text-muted-foreground">Downloads</th>
+                  <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-tightest text-muted-foreground">Revenue</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-tightest text-muted-foreground">Status</th>
+                  <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-tightest text-muted-foreground">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-subtle/60">
+              <tbody className="divide-y divide-border/60">
                 {data.resources.map((resource) => (
-                  <tr key={resource.id} className="bg-white transition-colors hover:bg-surface-50">
+                  <tr key={resource.id} className="bg-card transition-colors hover:bg-muted/60">
                     <td className="px-2 py-3">
                       <div className="min-w-0">
                         <Link
                           href={routes.creatorResource(resource.id)}
-                          className="truncate font-medium text-text-primary hover:text-brand-600"
+                          className="truncate font-medium text-foreground hover:text-brand-600"
                         >
                           {resource.title}
                         </Link>
-                        <p className="mt-0.5 text-xs text-text-muted">
+                        <p className="mt-0.5 text-xs text-muted-foreground">
                           Updated {formatDate(resource.updatedAt)}
                         </p>
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-sm text-text-secondary">
+                    <td className="px-3 py-3 text-sm text-muted-foreground">
                       {resource.category?.name ?? "Uncategorized"}
                     </td>
-                    <td className="px-3 py-3 text-right text-sm font-medium text-text-primary">
+                    <td className="px-3 py-3 text-right text-sm font-medium text-foreground">
                       {resource.isFree ? "Free" : formatPrice(resource.price / 100)}
                     </td>
-                    <td className="px-3 py-3 text-right text-sm font-medium text-text-primary tabular-nums">
+                    <td className="px-3 py-3 text-right text-sm font-medium text-foreground tabular-nums">
                       {resource.downloadCount.toLocaleString()}
                     </td>
-                    <td className="px-3 py-3 text-right text-sm font-medium text-text-primary tabular-nums">
+                    <td className="px-3 py-3 text-right text-sm font-medium text-foreground tabular-nums">
                       {formatPrice(resource.revenue / 100)}
                     </td>
                     <td className="px-3 py-3">

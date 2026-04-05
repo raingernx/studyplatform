@@ -88,11 +88,11 @@ export function LastPurchaseRecovery({
       <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Resource info */}
         <div className="min-w-0">
-          <p className="truncate text-[15px] font-semibold text-zinc-900">
+          <p className="truncate text-[15px] font-semibold text-foreground">
             {item.title}
           </p>
           {item.authorName && (
-            <p className="mt-0.5 text-[12px] text-zinc-500">
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
               by {item.authorName}
             </p>
           )}
@@ -106,7 +106,7 @@ export function LastPurchaseRecovery({
           {/* Primary: download directly via the download API */}
           <a
             href={`/api/download/${item.id}`}
-            className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-[13px] font-semibold text-white transition hover:bg-zinc-700"
+            className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-[13px] font-semibold text-background transition hover:opacity-90"
           >
             <Download className="h-4 w-4" />
             Download now
@@ -115,7 +115,7 @@ export function LastPurchaseRecovery({
           {/* Secondary: navigate to the resource page */}
           <Link
             href={routes.resource(item.slug)}
-            className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-[13px] font-medium text-zinc-700 transition hover:bg-zinc-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-[13px] font-medium text-foreground transition hover:bg-muted"
           >
             <ExternalLink className="h-4 w-4" />
             View resource

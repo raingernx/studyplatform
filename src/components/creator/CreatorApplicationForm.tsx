@@ -93,7 +93,7 @@ export function CreatorApplicationForm({ defaultSlug = "" }: Props) {
 
       {/* Display name */}
       <div>
-        <label htmlFor="displayName" className="mb-1.5 block text-[13px] font-medium text-zinc-700">
+        <label htmlFor="displayName" className="mb-1.5 block text-[13px] font-medium text-foreground">
           Creator display name <span className="text-red-500">*</span>
         </label>
         <input
@@ -104,8 +104,8 @@ export function CreatorApplicationForm({ defaultSlug = "" }: Props) {
           required
           maxLength={64}
           placeholder="e.g. Jane Smith"
-          className="w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-900
-                     placeholder-zinc-400 shadow-sm outline-none transition
+          className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-foreground
+                     placeholder:text-muted-foreground shadow-sm outline-none transition
                      focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
         />
         {fieldErrors.creatorDisplayName && (
@@ -115,11 +115,11 @@ export function CreatorApplicationForm({ defaultSlug = "" }: Props) {
 
       {/* Slug */}
       <div>
-        <label htmlFor="slug" className="mb-1.5 block text-[13px] font-medium text-zinc-700">
+        <label htmlFor="slug" className="mb-1.5 block text-[13px] font-medium text-foreground">
           Creator URL slug <span className="text-red-500">*</span>
         </label>
-        <div className="flex items-center overflow-hidden rounded-xl border border-zinc-200 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
-          <span className="select-none border-r border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm text-zinc-400">
+        <div className="flex items-center overflow-hidden rounded-xl border border-border bg-card shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+          <span className="select-none border-r border-border bg-muted px-3.5 py-2.5 text-sm text-muted-foreground">
             /creators/
           </span>
           <input
@@ -130,13 +130,13 @@ export function CreatorApplicationForm({ defaultSlug = "" }: Props) {
             required
             maxLength={48}
             placeholder="jane-smith"
-            className="flex-1 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none"
+            className="flex-1 bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
         </div>
         {fieldErrors.creatorSlug ? (
           <p className="mt-1 text-[12px] text-red-600">{fieldErrors.creatorSlug}</p>
         ) : (
-          <p className="mt-1 text-[12px] text-zinc-400">
+          <p className="mt-1 text-[12px] text-muted-foreground">
             Lowercase letters, numbers, and hyphens only. This will be your public profile URL.
           </p>
         )}
@@ -144,8 +144,8 @@ export function CreatorApplicationForm({ defaultSlug = "" }: Props) {
 
       {/* Bio */}
       <div>
-        <label htmlFor="bio" className="mb-1.5 block text-[13px] font-medium text-zinc-700">
-          Short bio <span className="text-zinc-400">(optional)</span>
+        <label htmlFor="bio" className="mb-1.5 block text-[13px] font-medium text-foreground">
+          Short bio <span className="text-muted-foreground">(optional)</span>
         </label>
         <textarea
           id="bio"
@@ -154,11 +154,11 @@ export function CreatorApplicationForm({ defaultSlug = "" }: Props) {
           maxLength={500}
           rows={3}
           placeholder="Tell us a bit about yourself and the content you plan to create."
-          className="w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-900
-                     placeholder-zinc-400 shadow-sm outline-none transition resize-none
+          className="w-full resize-none rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-foreground
+                     placeholder:text-muted-foreground shadow-sm outline-none transition
                      focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
         />
-        <p className="mt-1 text-right text-[12px] text-zinc-400">{bio.length}/500</p>
+        <p className="mt-1 text-right text-[12px] text-muted-foreground">{bio.length}/500</p>
       </div>
 
       <Button type="submit" loading={loading} fullWidth size="lg">

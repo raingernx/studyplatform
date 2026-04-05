@@ -73,6 +73,7 @@
   :root {
     /* Theme values mirror `themeColors.light` in src/design-system/tokens/colors.ts. */
     /* ── shadcn/ui v3 design tokens aligned to Krukraft surface system ── */
+    color-scheme: light;
     --background:            0 0% 100%;
     --foreground:            222 47.4% 11.2%;
 
@@ -121,6 +122,7 @@
 
   :root[data-theme="dark"] {
     /* Theme values mirror `themeColors.dark` in src/design-system/tokens/colors.ts. */
+    color-scheme: dark;
     --background:            222 47.4% 11.2%;
     --foreground:            0 0% 98%;
 
@@ -180,7 +182,7 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   h1, h2, h3, h4 {
-    @apply font-semibold text-text-primary;
+    @apply font-semibold text-foreground;
     font-family: var(--font-heading);
     line-height: var(--line-height-heading);
     letter-spacing: var(--letter-spacing-heading);
@@ -190,8 +192,8 @@
   }
   ::-webkit-scrollbar        { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track  { background: transparent; }
-  ::-webkit-scrollbar-thumb  { @apply rounded-full bg-zinc-300; }
-  ::-webkit-scrollbar-thumb:hover { @apply bg-zinc-400; }
+  ::-webkit-scrollbar-thumb  { @apply rounded-full bg-border; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground; }
   * {
     @apply border-border outline-ring/50;
   }
@@ -212,11 +214,11 @@
 
   /* Cards */
   .card {
-    @apply rounded-xl border border-border-subtle bg-white shadow-none;
+    @apply rounded-xl border border-border bg-card shadow-none;
   }
   .card-interactive {
     @apply card cursor-pointer transition-colors duration-200 ease-out
-           hover:border-surface-300 hover:bg-surface-50;
+           hover:border-primary/20 hover:bg-muted;
   }
 
   /* Section labels */
@@ -233,11 +235,11 @@
 
   /* Input */
   .input-base {
-    @apply h-11 w-full rounded-xl border border-border-subtle bg-white px-3.5
-           font-ui text-sm text-text-primary placeholder:text-text-muted outline-none
+    @apply h-11 w-full rounded-xl border border-input bg-background px-3.5
+           font-ui text-sm text-foreground placeholder:text-muted-foreground outline-none
            transition-colors duration-150
            focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 focus:ring-offset-0
-           disabled:cursor-not-allowed disabled:bg-surface-50 disabled:text-text-muted;
+           disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground;
   }
 
   /* Select (dropdown) with custom arrow */

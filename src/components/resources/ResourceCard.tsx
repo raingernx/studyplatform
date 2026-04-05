@@ -209,16 +209,16 @@ function CardBody({
       : "h-full w-full object-cover";
 
   const thumbWrapperClass =
-    "relative aspect-[4/3] w-full overflow-hidden rounded-t-xl rounded-b-none bg-surface-100";
+    "relative aspect-[4/3] w-full overflow-hidden rounded-t-xl rounded-b-none bg-muted";
 
   const articleClass = cn(
     isMarketplace
-      ? "relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-white transition-[transform,box-shadow,border-color,opacity] duration-150 sm:hover:border-surface-300"
+      ? "relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-[transform,box-shadow,border-color,opacity] duration-150 sm:hover:border-border"
       : isHero
-        ? "relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-white transition-[transform,box-shadow,border-color,opacity] duration-150"
-        : "relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-white transition-[transform,box-shadow,border-color,opacity] duration-150",
+        ? "relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-[transform,box-shadow,border-color,opacity] duration-150"
+        : "relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-[transform,box-shadow,border-color,opacity] duration-150",
     isNavigating &&
-      "scale-[0.985] border-primary-300 shadow-card-lg ring-2 ring-primary-200/80 ring-offset-2 ring-offset-surface-50",
+      "scale-[0.985] border-primary-300 shadow-card-lg ring-2 ring-primary-200/80 ring-offset-2 ring-offset-background",
   );
 
   const showPrice = variant !== "library";
@@ -228,9 +228,9 @@ function CardBody({
     <article className={articleClass}>
       {isNavigating ? (
         <>
-          <div className="pointer-events-none absolute inset-0 z-10 bg-white/60" />
+          <div className="pointer-events-none absolute inset-0 z-10 bg-[hsl(var(--background)/0.72)]" />
           <div className="pointer-events-none absolute inset-x-4 top-4 z-20 flex">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white/95 px-3 py-1.5 text-caption font-medium text-primary-700 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-[hsl(var(--card)/0.95)] px-3 py-1.5 text-caption font-medium text-primary-700 shadow-sm">
               <span className="h-2 w-2 rounded-full bg-primary-500" aria-hidden />
               <span>Opening resource…</span>
             </div>
@@ -250,15 +250,15 @@ function CardBody({
             loading={imageLoading}
             fetchPriority={imageLoading === "eager" ? "high" : undefined}
             className={thumbImgClass}
-            overlayClassName="bg-surface-100"
+            overlayClassName="bg-muted"
             onError={() => {
               setImageError(true);
             }}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/80">
-              <FileText className="h-6 w-6 text-neutral-300" aria-hidden />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[hsl(var(--card)/0.8)]">
+              <FileText className="h-6 w-6 text-muted-foreground/50" aria-hidden />
             </div>
           </div>
         )}
@@ -280,7 +280,7 @@ function CardBody({
         ) : null}
 
         {resource.highlightBadge ? (
-          <span className="absolute right-3 top-3 rounded-full border border-white/80 bg-white/92 px-2.5 py-1 text-caption font-medium text-text-primary backdrop-blur-sm">
+          <span className="absolute right-3 top-3 rounded-full border border-border/80 bg-[hsl(var(--card)/0.92)] px-2.5 py-1 text-caption font-medium text-foreground backdrop-blur-sm">
             {resource.highlightBadge}
           </span>
         ) : null}
@@ -289,21 +289,21 @@ function CardBody({
       {/* ── Body: Title + Price → Author + Category → Meta / CTAs ── */}
       <div className={cn("flex flex-1 flex-col justify-between gap-3 p-4", isHero && "p-4")}>
         <div className="flex flex-1 flex-col gap-2">
-          <h3 className="min-h-[2.75rem] line-clamp-2 text-base font-semibold leading-snug text-text-primary">
+          <h3 className="min-h-[2.75rem] line-clamp-2 text-base font-semibold leading-snug text-foreground">
             {resource.title}
           </h3>
-          <p className="line-clamp-1 min-h-[1.25rem] text-small text-text-secondary">
+          <p className="line-clamp-1 min-h-[1.25rem] text-small text-muted-foreground">
             {metaLine}
           </p>
         </div>
 
-        <div className="mt-auto space-y-2 border-t border-surface-100 pt-3">
+        <div className="mt-auto space-y-2 border-t border-border pt-3">
           {showPrice ? (
             <div className="flex items-end justify-between gap-3">
               <p
                 className={cn(
                   "text-lg font-semibold leading-none",
-                  isFree ? "text-emerald-700" : "text-text-primary",
+                  isFree ? "text-emerald-700" : "text-foreground",
                 )}
               >
                 {priceLabel}

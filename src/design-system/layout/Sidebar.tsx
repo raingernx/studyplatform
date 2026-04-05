@@ -17,7 +17,7 @@ export function SidebarContainer({
   return (
     <aside
       className={cn(
-        "sticky top-0 flex h-screen shrink-0 flex-col border-r border-neutral-200 bg-white",
+        "sticky top-0 flex h-screen shrink-0 flex-col border-r border-border bg-card",
         collapsed ? "w-16" : "w-[272px]",
         className,
       )}
@@ -75,7 +75,7 @@ export function SidebarSectionLabel({
   return (
     <p
       className={cn(
-        "mb-2 mt-6 px-2 font-ui text-caption tracking-[0.08em] text-neutral-500",
+        "mb-2 mt-6 px-2 font-ui text-caption tracking-[0.08em] text-muted-foreground",
         className,
       )}
       {...props}
@@ -138,7 +138,7 @@ export function SidebarItem({
       className={cn(
         "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
         active
-          ? "bg-slate-900 font-semibold text-white hover:bg-slate-900 hover:text-white"
+          ? "bg-accent font-semibold text-foreground hover:bg-accent hover:text-foreground"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
         className,
       )}
@@ -169,7 +169,7 @@ export function SidebarAvatar({
   return (
     <div
       className={cn(
-        "flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-sm font-semibold",
+        "flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground",
         className,
       )}
       {...props}
@@ -195,7 +195,7 @@ export function SidebarFooter({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 border-t border-gray-200 px-4 py-3",
+        "flex items-center gap-3 border-t border-border px-4 py-3",
         className,
       )}
       {...props}
@@ -214,7 +214,7 @@ export interface DividerProps {
 }
 
 export function Divider({ className }: DividerProps) {
-  return <div className={cn("border-t border-gray-200", className)} />;
+  return <div className={cn("border-t border-border", className)} />;
 }
 
 export interface NavGroupProps {

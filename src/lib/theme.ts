@@ -3,6 +3,27 @@ export type ResolvedTheme = Exclude<Theme, "system">;
 
 export const THEME_STORAGE_KEY = "user_theme";
 const SYSTEM_DARK_MEDIA_QUERY = "(prefers-color-scheme: dark)";
+const DEFAULT_THEME: Theme = "light";
+export const THEME_INIT_SCRIPT = `(() => {
+  try {
+    const storedTheme = window.localStorage.getItem("${THEME_STORAGE_KEY}");
+    const theme =
+      storedTheme === "light" || storedTheme === "dark" || storedTheme === "system"
+        ? storedTheme
+        : "${DEFAULT_THEME}";
+    const resolvedTheme =
+      theme === "system"
+        ? window.matchMedia("${SYSTEM_DARK_MEDIA_QUERY}").matches
+          ? "dark"
+          : "light"
+        : theme;
+    document.documentElement.dataset.theme = resolvedTheme;
+    document.documentElement.style.colorScheme = resolvedTheme;
+  } catch {
+    document.documentElement.dataset.theme = "light";
+    document.documentElement.style.colorScheme = "light";
+  }
+})();`;
 
 export function isTheme(value: unknown): value is Theme {
   return value === "light" || value === "dark" || value === "system";
@@ -27,6 +48,7 @@ export function applyTheme(theme: Theme) {
   const resolvedTheme = resolveTheme(theme);
   if (typeof document !== "undefined") {
     document.documentElement.dataset.theme = resolvedTheme;
+    document.documentElement.style.colorScheme = resolvedTheme;
   }
   return resolvedTheme;
 }

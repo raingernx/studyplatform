@@ -13,7 +13,7 @@ import {
 import { ScrollableCategoryNav } from "@/components/marketplace/ScrollableCategoryNav";
 import { getDiscoverCategories } from "@/services/discover";
 
-const CONTROLS_BAR_CLASS_NAME = "border-y border-surface-200 bg-white";
+const CONTROLS_BAR_CLASS_NAME = "border-y border-border bg-background";
 const CONTROLS_BAR_MAIN_CLASS_NAME = "flex min-w-0 items-center gap-2.5 overflow-hidden";
 const CONTROLS_BAR_GROUP_CLASS_NAME =
   "flex min-w-0 items-center gap-2.5 overflow-hidden";

@@ -12,7 +12,7 @@ const Switch = React.forwardRef<
       ref={ref}
       disabled={disabled}
       className={cn(
-        "inline-flex h-6 w-[46px] items-center rounded-full bg-surface-300 transition-colors duration-200",
+        "inline-flex h-6 w-[46px] items-center rounded-full bg-muted transition-colors duration-200",
         "data-[state=checked]:bg-primary-500",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2",
         disabled && "cursor-not-allowed opacity-60",
@@ -22,7 +22,7 @@ const Switch = React.forwardRef<
     >
       <SwitchPrimitives.Thumb
         className={cn(
-          "h-5 w-5 rounded-full bg-white shadow transition-transform duration-200",
+          "h-5 w-5 rounded-full bg-background shadow transition-transform duration-200",
           "translate-x-0.5 data-[state=checked]:translate-x-[24px]",
         )}
       />

@@ -130,7 +130,7 @@ export function AuditTrailClient({
         <div className="w-full max-w-xs space-y-1.5">
           <label
             htmlFor="actionFilter"
-            className="font-ui text-caption text-text-muted"
+            className="font-ui text-caption text-muted-foreground"
           >
             Action type
           </label>
@@ -151,7 +151,7 @@ export function AuditTrailClient({
         <div className="w-full max-w-xs space-y-1.5">
           <label
             htmlFor="adminFilter"
-            className="font-ui text-caption text-text-muted"
+            className="font-ui text-caption text-muted-foreground"
           >
             Admin
           </label>
@@ -173,7 +173,7 @@ export function AuditTrailClient({
           <div className="space-y-1.5">
             <label
               htmlFor="from"
-              className="font-ui text-caption text-text-muted"
+              className="font-ui text-caption text-muted-foreground"
             >
               From
             </label>
@@ -188,7 +188,7 @@ export function AuditTrailClient({
           <div className="space-y-1.5">
             <label
               htmlFor="to"
-              className="font-ui text-caption text-text-muted"
+              className="font-ui text-caption text-muted-foreground"
             >
               To
             </label>
@@ -232,24 +232,24 @@ export function AuditTrailClient({
               <DataTableRow key={item.id}>
                 <DataTableCell className="px-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-text-primary">
+                    <p className="truncate text-sm font-medium text-foreground">
                       {item.admin.name}
                     </p>
                     {item.admin.email && (
-                      <p className="truncate text-caption text-text-muted">
+                      <p className="truncate text-caption text-muted-foreground">
                         {item.admin.email}
                       </p>
                     )}
                   </div>
                 </DataTableCell>
-                <DataTableCell className="px-3 text-text-secondary">
+                <DataTableCell className="px-3 text-muted-foreground">
                   {item.action}
                 </DataTableCell>
-                <DataTableCell className="px-3 text-text-secondary">
+                <DataTableCell className="px-3 text-muted-foreground">
                   {item.entityType}
                   {item.entityId && ` #${item.entityId}`}
                 </DataTableCell>
-                <DataTableCell className="px-3 text-text-secondary">
+                <DataTableCell className="px-3 text-muted-foreground">
                   {formatDate(new Date(item.createdAt))}
                 </DataTableCell>
               </DataTableRow>

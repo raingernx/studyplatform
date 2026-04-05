@@ -21,7 +21,7 @@ interface BuyButtonProps {
 
 const buyButtonToneClassName = {
   dark:
-    "bg-zinc-900 text-white hover:bg-zinc-700 active:bg-zinc-800 focus-visible:ring-zinc-700/50",
+    "bg-foreground text-background hover:opacity-90 active:opacity-95 focus-visible:ring-ring/50",
   accent:
     "bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 focus-visible:ring-orange-400/50",
 } as const;
@@ -147,7 +147,7 @@ export function BuyButton({
             File not available yet
           </Button>
         )}
-        <p className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
+        <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
           <CheckCircle className="h-3 w-3 text-emerald-500" />
           In your library · Secure download
         </p>
@@ -227,7 +227,7 @@ export function BuyButton({
 
         {libraryError && <InlineError message={libraryError} />}
 
-        <p className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
+        <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
           <Lock className="h-3 w-3" /> No card needed · Yours to keep forever
         </p>
       </div>
@@ -374,11 +374,11 @@ export function BuyButton({
       {checkoutError && <InlineError message={checkoutError} />}
 
       {isRedirecting ? (
-        <p className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
+        <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
           <Lock className="h-3 w-3" /> Secured by Stripe · You&apos;ll return here after payment
         </p>
       ) : (
-        <p className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
+        <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
           <Lock className="h-3 w-3" /> Secure checkout · Pay once, keep forever
         </p>
       )}

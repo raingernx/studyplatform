@@ -58,7 +58,7 @@ function today() {
  * Thresholds are intentionally generous — these vary wildly by step.
  */
 function rateTone(rate: number | null): string {
-  if (rate === null) return "bg-zinc-100 text-zinc-500";
+  if (rate === null) return "bg-muted text-muted-foreground";
   if (rate >= 70) return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
   if (rate >= 35) return "bg-amber-50 text-amber-700 ring-1 ring-amber-200";
   return "bg-red-50 text-red-600 ring-1 ring-red-200";
@@ -100,7 +100,7 @@ function PresetButtons({
             className={`whitespace-nowrap rounded-full px-3 py-1 font-ui text-caption font-medium transition-colors ${
               isActive
                 ? "bg-primary-700 text-white"
-                : "bg-surface-100 text-text-secondary hover:bg-surface-200 hover:text-text-primary"
+                : "bg-secondary text-secondary-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
             {p.label}
@@ -127,17 +127,17 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <div className="rounded-xl border border-border-subtle bg-white p-4">
+    <div className="rounded-xl border border-border bg-card p-4">
       <span
         className={`flex h-9 w-9 items-center justify-center rounded-xl ${accent}`}
       >
         <Icon className="h-4 w-4" />
       </span>
-      <p className="mt-3 text-2xl font-semibold tabular-nums tracking-tight text-text-primary">
+      <p className="mt-3 text-2xl font-semibold tabular-nums tracking-tight text-foreground">
         {value}
       </p>
-      <p className="mt-0.5 text-small font-medium text-text-secondary">{label}</p>
-      {sub && <p className="mt-1 text-caption text-text-muted">{sub}</p>}
+      <p className="mt-0.5 text-small font-medium text-muted-foreground">{label}</p>
+      {sub && <p className="mt-1 text-caption text-muted-foreground">{sub}</p>}
     </div>
   );
 }
@@ -153,7 +153,7 @@ function SparkBar({
 }) {
   if (data.length === 0) {
     return (
-      <div className="flex h-12 items-center justify-center text-caption text-text-muted">
+      <div className="flex h-12 items-center justify-center text-caption text-muted-foreground">
         No data
       </div>
     );
@@ -193,19 +193,19 @@ function FunnelRow({
 
   return (
     <>
-      <tr className="group transition-colors hover:bg-zinc-50/60">
+      <tr className="group transition-colors hover:bg-muted/50">
         {/* Stage label */}
         <td className="px-5 py-4">
-          <p className="text-sm font-semibold text-zinc-800">{step.label}</p>
-          <p className="mt-0.5 font-mono text-caption text-text-muted">
+          <p className="text-sm font-semibold text-foreground">{step.label}</p>
+          <p className="mt-0.5 font-mono text-caption text-muted-foreground">
             {step.action}
           </p>
         </td>
 
         {/* Count + inline bar */}
         <td className="px-5 py-4">
-          <p className="text-xl font-bold tabular-nums text-zinc-900">{fmt(step.count)}</p>
-          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100">
+          <p className="text-xl font-bold tabular-nums text-foreground">{fmt(step.count)}</p>
+          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
               className="h-full rounded-full bg-violet-400 transition-all"
               style={{ width: `${barPct}%` }}
@@ -222,12 +222,12 @@ function FunnelRow({
               >
                 {fmtPct(step.rateFromPrev)}
               </span>
-              <span className="font-ui text-caption font-medium text-text-muted">
+              <span className="font-ui text-caption font-medium text-muted-foreground">
                 {step.rateLabel}
               </span>
             </div>
           ) : (
-            <span className="text-xs text-zinc-300">—</span>
+            <span className="text-xs text-muted-foreground/50">—</span>
           )}
         </td>
       </tr>
@@ -237,7 +237,7 @@ function FunnelRow({
         <tr aria-hidden>
           <td colSpan={3} className="px-5 py-0">
             <div className="flex items-center gap-2 py-1">
-              <ArrowDown className="h-3.5 w-3.5 shrink-0 text-zinc-300" />
+              <ArrowDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
             </div>
           </td>
         </tr>
@@ -317,7 +317,7 @@ export default async function PurchaseAnalyticsPage({
             <div className="flex flex-col gap-1">
               <label
                 htmlFor="start"
-                className="font-ui text-caption text-text-muted"
+                className="font-ui text-caption text-muted-foreground"
               >
                 From
               </label>
@@ -332,7 +332,7 @@ export default async function PurchaseAnalyticsPage({
             <div className="flex flex-col gap-1">
               <label
                 htmlFor="end"
-                className="font-ui text-caption text-text-muted"
+                className="font-ui text-caption text-muted-foreground"
               >
                 To
               </label>
@@ -346,7 +346,7 @@ export default async function PurchaseAnalyticsPage({
             </div>
             <Button type="submit" size="sm" className="whitespace-nowrap">Apply</Button>
           </form>
-          <p className="mt-2 flex items-center gap-1.5 font-ui text-caption text-text-muted">
+          <p className="mt-2 flex items-center gap-1.5 font-ui text-caption text-muted-foreground">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-success-400" />
             {rangeLabel}
             {report.isDefaultRange && <span>(default)</span>}
@@ -356,7 +356,7 @@ export default async function PurchaseAnalyticsPage({
 
       {/* ── Summary cards ───────────────────────────────────────────────────── */}
       <section aria-label="Summary">
-        <p className="mb-3 font-ui text-caption text-text-muted">
+        <p className="mb-3 font-ui text-caption text-muted-foreground">
           Summary
         </p>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
@@ -393,7 +393,7 @@ export default async function PurchaseAnalyticsPage({
             value={fmt(report.totalAcquisitions)}
             sub="paid + free"
             icon={Package}
-            accent="bg-zinc-100 text-zinc-600"
+            accent="bg-secondary text-secondary-foreground"
           />
           <StatCard
             label="Downloads started"
@@ -415,30 +415,30 @@ export default async function PurchaseAnalyticsPage({
       {/* ── Funnel table ─────────────────────────────────────────────────────── */}
       <section aria-label="Purchase funnel">
         <div className="mb-3 flex items-baseline justify-between">
-          <p className="font-ui text-caption text-text-muted">
+          <p className="font-ui text-caption text-muted-foreground">
             Checkout funnel
           </p>
-          <p className="text-caption text-text-muted">
+          <p className="text-caption text-muted-foreground">
             Source: ActivityLog events · step-to-step conversion
           </p>
         </div>
 
         {funnelTopCount === 0 ? (
-          <div className="rounded-xl border border-border-subtle bg-white px-6 py-10 text-center text-small text-text-muted">
+          <div className="rounded-xl border border-border bg-card px-6 py-10 text-center text-small text-muted-foreground">
             No checkout events recorded in this date range.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border-subtle bg-white">
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border-subtle bg-surface-50/80">
-                  <th className="px-5 py-3 text-left font-ui text-caption text-text-muted">
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="px-5 py-3 text-left font-ui text-caption text-muted-foreground">
                     Stage
                   </th>
-                  <th className="px-5 py-3 text-left font-ui text-caption text-text-muted">
+                  <th className="px-5 py-3 text-left font-ui text-caption text-muted-foreground">
                     Events
                   </th>
-                  <th className="px-5 py-3 text-right font-ui text-caption text-text-muted">
+                  <th className="px-5 py-3 text-right font-ui text-caption text-muted-foreground">
                     vs previous
                   </th>
                 </tr>
@@ -456,7 +456,7 @@ export default async function PurchaseAnalyticsPage({
             </table>
 
             {/* Rates summary strip */}
-            <div className="border-t border-border-subtle bg-surface-50/80 px-5 py-3">
+            <div className="border-t border-border bg-muted/50 px-5 py-3">
               <div className="flex flex-wrap gap-x-6 gap-y-1.5">
                 {[
                   { label: "Redirect rate", value: report.redirectRate },
@@ -466,7 +466,7 @@ export default async function PurchaseAnalyticsPage({
                   { label: "Paid activation rate", value: report.paidActivationRate },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-center gap-2">
-                    <span className="text-caption text-text-secondary">{label}</span>
+                    <span className="text-caption text-muted-foreground">{label}</span>
                     <span
                       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${rateTone(value)}`}
                     >
@@ -482,33 +482,33 @@ export default async function PurchaseAnalyticsPage({
 
       {/* ── Provider breakdown ───────────────────────────────────────────────── */}
       <section aria-label="Provider breakdown">
-        <p className="mb-3 font-ui text-caption text-text-muted">
+        <p className="mb-3 font-ui text-caption text-muted-foreground">
           Provider breakdown
         </p>
         {report.providerBreakdown.length === 0 ? (
-          <div className="rounded-xl border border-border-subtle bg-white px-6 py-10 text-center text-small text-text-muted">
+          <div className="rounded-xl border border-border bg-card px-6 py-10 text-center text-small text-muted-foreground">
             No completed purchases in this date range.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border-subtle bg-white">
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border-subtle bg-surface-50/80">
-                  <th className="px-5 py-3 text-left font-ui text-caption text-text-muted">
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="px-5 py-3 text-left font-ui text-caption text-muted-foreground">
                     Provider
                   </th>
-                  <th className="px-5 py-3 text-right font-ui text-caption text-text-muted">
+                  <th className="px-5 py-3 text-right font-ui text-caption text-muted-foreground">
                     Purchases
                   </th>
-                  <th className="px-5 py-3 text-right font-ui text-caption text-text-muted">
+                  <th className="px-5 py-3 text-right font-ui text-caption text-muted-foreground">
                     Share
                   </th>
-                  <th className="px-5 py-3 text-right font-ui text-caption text-text-muted">
+                  <th className="px-5 py-3 text-right font-ui text-caption text-muted-foreground">
                     Revenue
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100">
+              <tbody className="divide-y divide-border">
                 {report.providerBreakdown.map((row) => {
                   const sharePct =
                     totalProviderPurchases > 0
@@ -518,23 +518,23 @@ export default async function PurchaseAnalyticsPage({
                   return (
                     <tr
                       key={row.provider}
-                      className="transition-colors hover:bg-zinc-50/60"
+                      className="transition-colors hover:bg-muted/50"
                     >
                       <td className="px-5 py-3">
-                        <span className="inline-flex items-center gap-2 font-medium text-zinc-700">
-                          <CreditCard className="h-3.5 w-3.5 text-zinc-400" />
+                        <span className="inline-flex items-center gap-2 font-medium text-foreground">
+                          <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
                           {row.provider}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right tabular-nums font-semibold text-zinc-900">
+                      <td className="px-5 py-3 text-right tabular-nums font-semibold text-foreground">
                         {fmt(row.purchaseCount)}
                       </td>
                       <td className="px-5 py-3 text-right">
-                        <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-zinc-600">
+                        <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold tabular-nums text-secondary-foreground">
                           {sharePct !== null ? `${sharePct}%` : "—"}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right tabular-nums font-semibold text-zinc-900">
+                      <td className="px-5 py-3 text-right tabular-nums font-semibold text-foreground">
                         {formatPrice(row.revenue / 100)}
                       </td>
                     </tr>
@@ -544,25 +544,25 @@ export default async function PurchaseAnalyticsPage({
                 {/* Revenue split rows */}
                 {(report.platformFee > 0 || report.creatorShare > 0) && (
                   <>
-                    <tr className="bg-zinc-50/60">
+                    <tr className="bg-muted/50">
                       <td
                         colSpan={4}
-                        className="px-5 py-2 font-ui text-caption text-text-muted"
+                        className="px-5 py-2 font-ui text-caption text-muted-foreground"
                       >
                         Revenue split (all providers)
                       </td>
                     </tr>
-                    <tr className="transition-colors hover:bg-zinc-50/60">
-                      <td className="px-5 py-2 text-zinc-500">Platform fee</td>
+                    <tr className="transition-colors hover:bg-muted/50">
+                      <td className="px-5 py-2 text-muted-foreground">Platform fee</td>
                       <td colSpan={2} />
-                      <td className="px-5 py-2 text-right tabular-nums text-zinc-700">
+                      <td className="px-5 py-2 text-right tabular-nums text-foreground">
                         {formatPrice(report.platformFee / 100)}
                       </td>
                     </tr>
-                    <tr className="transition-colors hover:bg-zinc-50/60">
-                      <td className="px-5 py-2 text-zinc-500">Creator share</td>
+                    <tr className="transition-colors hover:bg-muted/50">
+                      <td className="px-5 py-2 text-muted-foreground">Creator share</td>
                       <td colSpan={2} />
-                      <td className="px-5 py-2 text-right tabular-nums text-zinc-700">
+                      <td className="px-5 py-2 text-right tabular-nums text-foreground">
                         {formatPrice(report.creatorShare / 100)}
                       </td>
                     </tr>
@@ -577,22 +577,22 @@ export default async function PurchaseAnalyticsPage({
       {/* ── Daily charts ─────────────────────────────────────────────────────── */}
       {report.dailySeries.length > 0 && (
         <section aria-label="Daily trends">
-          <p className="mb-3 font-ui text-caption text-text-muted">
+          <p className="mb-3 font-ui text-caption text-muted-foreground">
             Daily trends
           </p>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {/* Paid completions */}
-            <div className="rounded-xl border border-border-subtle bg-white p-5">
-              <p className="text-sm font-semibold text-zinc-900">
+            <div className="rounded-xl border border-border bg-card p-5">
+              <p className="text-sm font-semibold text-foreground">
                 Paid completions per day
               </p>
-              <p className="mt-0.5 text-caption text-text-muted">
+              <p className="mt-0.5 text-caption text-muted-foreground">
                 Confirmed paid purchases by day of session.
               </p>
               <div className="mt-4">
                 <SparkBar data={dailyPaidData} colorClass="bg-violet-400" />
               </div>
-              <div className="mt-2 flex items-center justify-between text-caption text-text-muted">
+              <div className="mt-2 flex items-center justify-between text-caption text-muted-foreground">
                 <span>{dailyPaidData[0]?.date ?? ""}</span>
                 <span>Total: {fmt(report.sessionsCompleted)}</span>
                 <span>{dailyPaidData[dailyPaidData.length - 1]?.date ?? ""}</span>
@@ -600,17 +600,17 @@ export default async function PurchaseAnalyticsPage({
             </div>
 
             {/* Free claims */}
-            <div className="rounded-xl border border-border-subtle bg-white p-5">
-              <p className="text-sm font-semibold text-zinc-900">
+            <div className="rounded-xl border border-border bg-card p-5">
+              <p className="text-sm font-semibold text-foreground">
                 Free claims per day
               </p>
-              <p className="mt-0.5 text-caption text-text-muted">
+              <p className="mt-0.5 text-caption text-muted-foreground">
                 Free resource adds by day.
               </p>
               <div className="mt-4">
                 <SparkBar data={dailyFreeData} colorClass="bg-amber-400" />
               </div>
-              <div className="mt-2 flex items-center justify-between text-caption text-text-muted">
+              <div className="mt-2 flex items-center justify-between text-caption text-muted-foreground">
                 <span>{dailyFreeData[0]?.date ?? ""}</span>
                 <span>Total: {fmt(report.freeClaims)}</span>
                 <span>{dailyFreeData[dailyFreeData.length - 1]?.date ?? ""}</span>
@@ -622,39 +622,39 @@ export default async function PurchaseAnalyticsPage({
 
       {/* ── Top resources ────────────────────────────────────────────────────── */}
       <section aria-label="Top resources">
-        <p className="mb-3 font-ui text-caption text-text-muted">
+        <p className="mb-3 font-ui text-caption text-muted-foreground">
           Top paid resources
         </p>
         {report.topResources.length === 0 ? (
-          <div className="rounded-xl border border-border-subtle bg-white px-6 py-10 text-center text-small text-text-muted">
+          <div className="rounded-xl border border-border bg-card px-6 py-10 text-center text-small text-muted-foreground">
             No paid purchases in this date range.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border-subtle bg-white">
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border-subtle bg-surface-50/80">
-                  <th className="px-5 py-3 text-left font-ui text-caption text-text-muted">
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="px-5 py-3 text-left font-ui text-caption text-muted-foreground">
                     #
                   </th>
-                  <th className="px-5 py-3 text-left font-ui text-caption text-text-muted">
+                  <th className="px-5 py-3 text-left font-ui text-caption text-muted-foreground">
                     Resource
                   </th>
-                  <th className="px-5 py-3 text-right font-ui text-caption text-text-muted">
+                  <th className="px-5 py-3 text-right font-ui text-caption text-muted-foreground">
                     Purchases
                   </th>
-                  <th className="px-5 py-3 text-right font-ui text-caption text-text-muted">
+                  <th className="px-5 py-3 text-right font-ui text-caption text-muted-foreground">
                     Revenue
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100">
+              <tbody className="divide-y divide-border">
                 {report.topResources.map((r, i) => (
                   <tr
                     key={r.resourceId}
-                    className="transition-colors hover:bg-zinc-50/60"
+                    className="transition-colors hover:bg-muted/50"
                   >
-                    <td className="w-10 px-5 py-3 font-ui text-caption font-semibold tabular-nums text-text-muted">
+                    <td className="w-10 px-5 py-3 font-ui text-caption font-semibold tabular-nums text-muted-foreground">
                       {i + 1}
                     </td>
                     <td className="px-5 py-3">
@@ -662,15 +662,15 @@ export default async function PurchaseAnalyticsPage({
                         href={routes.resource(r.slug)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium text-zinc-800 hover:text-primary-700 hover:underline"
+                        className="font-medium text-foreground hover:text-primary-700 hover:underline"
                       >
                         {r.title}
                       </Link>
                     </td>
-                    <td className="px-5 py-3 text-right tabular-nums font-semibold text-zinc-900">
+                    <td className="px-5 py-3 text-right tabular-nums font-semibold text-foreground">
                       {fmt(r.purchaseCount)}
                     </td>
-                    <td className="px-5 py-3 text-right tabular-nums text-zinc-700">
+                    <td className="px-5 py-3 text-right tabular-nums text-foreground">
                       {formatPrice(r.revenue / 100)}
                     </td>
                   </tr>
@@ -682,7 +682,7 @@ export default async function PurchaseAnalyticsPage({
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <div className="border-t border-border-subtle pt-4 text-caption text-text-muted">
+      <div className="border-t border-border pt-4 text-caption text-muted-foreground">
         Generated at {report.generatedAt}
       </div>
         </div>

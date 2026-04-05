@@ -26,9 +26,9 @@ export function AccountTrigger({
   return (
     <span
       className={cn(
-        "inline-flex h-10 items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-text-secondary transition-colors duration-150",
-        "bg-transparent group-hover:bg-surface-100 group-hover:text-text-primary",
-        isOpen && "bg-surface-100 text-text-primary",
+        "inline-flex h-10 items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors duration-150",
+        "bg-transparent group-hover:bg-accent group-hover:text-foreground",
+        isOpen && "bg-accent text-foreground",
         className
       )}
     >
@@ -37,12 +37,12 @@ export function AccountTrigger({
         name={name}
         email={email}
         size={avatarSize}
-        className="ring-1 ring-surface-200"
+        className="ring-1 ring-border"
       />
       {showChevron ? (
         <ChevronDown
           className={cn(
-            "h-3.5 w-3.5 text-text-muted transition-transform duration-150",
+            "h-3.5 w-3.5 text-muted-foreground transition-transform duration-150",
             isOpen && "rotate-180"
           )}
           aria-hidden

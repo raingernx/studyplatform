@@ -137,20 +137,20 @@ function ResourceGridBody({
 
     if (hasActiveFilters) {
       return (
-        <div className="rounded-2xl border border-border-subtle bg-white px-6 py-14 text-center sm:px-8 sm:py-16">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-surface-200 bg-surface-50">
-            <Search className="h-7 w-7 text-zinc-300" />
+        <div className="rounded-2xl border border-border bg-card px-6 py-14 text-center sm:px-8 sm:py-16">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-muted">
+            <Search className="h-7 w-7 text-muted-foreground" />
           </div>
-          <p className="mt-5 text-lg font-semibold tracking-tight text-zinc-900">
+          <p className="mt-5 text-lg font-semibold tracking-tight text-foreground">
             Nothing matched these filters
           </p>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
             Try a broader keyword or clear a few filters to reopen the full library.
           </p>
           <IntentPrefetchLink
             href={clearFiltersHref}
             resourcesNavigationMode="auto"
-            className="mt-5 inline-flex items-center rounded-full border border-border-subtle bg-white px-4 py-2 text-sm font-medium text-text-primary transition hover:border-surface-300 hover:bg-surface-50"
+            className="mt-5 inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
           >
             Clear filters
           </IntentPrefetchLink>
@@ -159,20 +159,20 @@ function ResourceGridBody({
     }
 
     return (
-        <div className="rounded-2xl border border-border-subtle bg-white px-6 py-14 text-center sm:px-8 sm:py-16">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-surface-200 bg-surface-50">
-          <BookOpen className="h-7 w-7 text-zinc-300" />
+        <div className="rounded-2xl border border-border bg-card px-6 py-14 text-center sm:px-8 sm:py-16">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-muted">
+          <BookOpen className="h-7 w-7 text-muted-foreground" />
         </div>
-        <p className="mt-5 text-lg font-semibold tracking-tight text-zinc-900">
+        <p className="mt-5 text-lg font-semibold tracking-tight text-foreground">
           No resources here yet
         </p>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
           This collection is still growing. Explore the full library or check back soon for new releases.
         </p>
         <IntentPrefetchLink
           href={exploreAllHref}
           resourcesNavigationMode="discover"
-          className="mt-5 inline-flex items-center rounded-full border border-border-subtle bg-white px-4 py-2 text-sm font-medium text-text-primary transition hover:border-surface-300 hover:bg-surface-50"
+          className="mt-5 inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
         >
           Explore all resources
         </IntentPrefetchLink>
@@ -280,8 +280,8 @@ function ResourceGridBody({
         </div>
 
         {progressiveLoad ? (
-          <div className="flex flex-col items-center gap-3 border-t border-surface-200/80 pt-5">
-            <p className="text-small text-text-secondary">
+          <div className="flex flex-col items-center gap-3 border-t border-border pt-5">
+            <p className="text-small text-muted-foreground">
               Showing {loadedCount} of {total} resource{total === 1 ? "" : "s"}
             </p>
 

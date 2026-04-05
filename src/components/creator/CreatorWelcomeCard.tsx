@@ -21,13 +21,13 @@ export function CreatorWelcomeCard({ creatorName, canCreate }: CreatorWelcomeCar
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
             Welcome, Creator
           </p>
-          <h2 className="mt-0.5 text-xl font-semibold tracking-tight text-neutral-900">
+          <h2 className="mt-0.5 text-xl font-semibold tracking-tight text-foreground">
             Hey {firstName} — let's get you set up
           </h2>
         </div>
       </div>
 
-      <p className="mt-4 max-w-2xl text-sm text-neutral-600">
+      <p className="mt-4 max-w-2xl text-sm text-muted-foreground">
         Your creator account is approved. Complete your profile and publish your first resource to
         start appearing in the marketplace.
       </p>

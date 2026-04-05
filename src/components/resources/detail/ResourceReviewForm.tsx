@@ -89,19 +89,19 @@ export function ResourceReviewForm({
   }
 
   return (
-    <section className="rounded-[28px] border border-surface-200 bg-white p-5 shadow-card sm:p-6">
+    <section className="rounded-[28px] border border-border bg-card p-5 shadow-card sm:p-6">
       <div className="space-y-1">
-        <h2 className="font-display text-lg font-semibold text-zinc-900">
+        <h2 className="font-display text-lg font-semibold text-foreground">
           {existingReview ? "Update your review" : "Leave a review"}
         </h2>
-        <p className="text-sm leading-6 text-zinc-500">
+        <p className="text-sm leading-6 text-muted-foreground">
           Share a quick rating for {resourceTitle}. Only people who own this resource can review it.
         </p>
       </div>
 
       <form className="mt-5 space-y-5" onSubmit={(event) => void handleSubmit(event)}>
         <div className="space-y-2">
-          <p className="text-sm font-medium text-zinc-900">Your rating</p>
+          <p className="text-sm font-medium text-foreground">Your rating</p>
           <div className="flex flex-wrap gap-2">
             {RATING_OPTIONS.map((value) => (
               <Button
@@ -122,7 +122,7 @@ export function ResourceReviewForm({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-zinc-900" htmlFor={`review-comment-${resourceId}`}>
+          <label className="text-sm font-medium text-foreground" htmlFor={`review-comment-${resourceId}`}>
             Comment
           </label>
           <Textarea

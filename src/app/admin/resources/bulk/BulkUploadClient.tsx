@@ -63,17 +63,17 @@ const EXAMPLE_JSON = `[
   }
 ]`;
 
-const PANEL_CLASS = "rounded-2xl border border-border-subtle bg-white shadow-card";
-const PANEL_HEADER_CLASS = "border-b border-surface-100 px-6 py-4";
-const PANEL_TITLE_CLASS = "text-sm font-semibold text-text-primary";
-const PANEL_DESCRIPTION_CLASS = "mt-0.5 text-sm text-text-secondary";
-const TABLE_HEAD_ROW_CLASS = "border-b border-surface-100 bg-surface-50";
-const TABLE_HEAD_CELL_CLASS = "px-4 py-2.5 font-semibold text-text-muted";
-const TABLE_BODY_CLASS = "divide-y divide-surface-100";
-const TABLE_ROW_CLASS = "hover:bg-surface-50/60";
+const PANEL_CLASS = "rounded-2xl border border-border bg-card shadow-card";
+const PANEL_HEADER_CLASS = "border-b border-border px-6 py-4";
+const PANEL_TITLE_CLASS = "text-sm font-semibold text-foreground";
+const PANEL_DESCRIPTION_CLASS = "mt-0.5 text-sm text-muted-foreground";
+const TABLE_HEAD_ROW_CLASS = "border-b border-border bg-muted";
+const TABLE_HEAD_CELL_CLASS = "px-4 py-2.5 font-semibold text-muted-foreground";
+const TABLE_BODY_CLASS = "divide-y divide-border";
+const TABLE_ROW_CLASS = "hover:bg-muted/60";
 const CODE_PILL_CLASS =
-  "rounded bg-surface-100 px-1.5 py-0.5 text-[12px] font-mono text-text-secondary";
-const EMPTY_VALUE_CLASS = "text-text-muted";
+  "rounded bg-muted px-1.5 py-0.5 text-[12px] font-mono text-muted-foreground";
+const EMPTY_VALUE_CLASS = "text-muted-foreground";
 const FEEDBACK_ERROR_CLASS =
   "mt-3 flex items-start gap-2.5 rounded-xl border border-danger-100 bg-danger-50 px-4 py-3";
 const FEEDBACK_SUCCESS_CLASS =
@@ -197,25 +197,25 @@ export function BulkUploadClient() {
         <button
           type="button"
           onClick={() => setShowExample((v) => !v)}
-          className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-surface-50/70"
+          className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-muted/70"
         >
           <span className="flex items-center gap-2.5">
             <Info className="h-4 w-4 text-info-600" />
-            <span className="text-sm font-semibold text-text-primary">
+            <span className="text-sm font-semibold text-foreground">
               Format reference &amp; example
             </span>
           </span>
           {showExample ? (
-            <ChevronUp className="h-4 w-4 text-text-muted" />
+            <ChevronUp className="h-4 w-4 text-muted-foreground" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-text-muted" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
           )}
         </button>
 
         {showExample && (
-          <div className="border-t border-surface-100 px-6 pb-6 pt-4">
+          <div className="border-t border-border px-6 pb-6 pt-4">
             {/* Field reference */}
-            <div className="mb-5 overflow-x-auto rounded-xl border border-border-subtle">
+            <div className="mb-5 overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-left text-[13px]">
                 <thead>
                   <tr className={TABLE_HEAD_ROW_CLASS}>
@@ -238,7 +238,7 @@ export function BulkUploadClient() {
                     ["type", '"PDF" | "DOCUMENT"', "No", 'Defaults to "PDF"'],
                     ["featured", "boolean", "No", "Defaults to false"],
                   ].map(([field, type, req, notes]) => (
-                    <tr key={field} className="hover:bg-surface-50/70">
+                    <tr key={field} className="hover:bg-muted/70">
                       <td className="px-4 py-2.5">
                         <code className={CODE_PILL_CLASS}>
                           {field}
@@ -251,10 +251,10 @@ export function BulkUploadClient() {
                         {req === "Yes" ? (
                           <Badge variant="info">Required</Badge>
                         ) : (
-                          <span className="text-[12px] text-text-muted">Optional</span>
+                          <span className="text-[12px] text-muted-foreground">Optional</span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-[12px] text-text-secondary">{notes}</td>
+                      <td className="px-4 py-2.5 text-[12px] text-muted-foreground">{notes}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -262,10 +262,10 @@ export function BulkUploadClient() {
             </div>
 
             {/* Example */}
-            <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-text-muted">
+            <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
               Example JSON
             </p>
-            <pre className="overflow-x-auto rounded-xl border border-surface-800 bg-surface-950 p-4 text-[12px] leading-relaxed text-surface-100">
+            <pre className="overflow-x-auto rounded-xl border border-border bg-foreground p-4 text-[12px] leading-relaxed text-background">
               {EXAMPLE_JSON}
             </pre>
 
@@ -312,8 +312,8 @@ export function BulkUploadClient() {
             placeholder={`[\n  {\n    "title": "…",\n    "description": "…",\n    …\n  }\n]`}
             rows={16}
             spellCheck={false}
-            className="min-h-[360px] rounded-xl border border-surface-800 bg-surface-950 p-4 font-mono
-                       text-[13px] leading-relaxed text-surface-100 placeholder:text-surface-200/45
+            className="min-h-[360px] rounded-xl border border-border bg-foreground p-4 font-mono
+                       text-[13px] leading-relaxed text-background placeholder:text-background/45
                        focus:border-primary-500 focus:ring-primary-500/20"
           />
 
@@ -339,7 +339,7 @@ export function BulkUploadClient() {
         </div>
 
         {/* Actions row */}
-        <div className="flex items-center justify-between border-t border-surface-100 px-6 py-4">
+        <div className="flex items-center justify-between border-t border-border px-6 py-4">
           <Button
             type="button"
             onClick={handleReset}
@@ -401,13 +401,13 @@ export function BulkUploadClient() {
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr className={TABLE_HEAD_ROW_CLASS}>
-                  <th className="px-4 py-3 font-semibold text-text-muted">#</th>
-                  <th className="px-4 py-3 font-semibold text-text-muted">Title</th>
-                  <th className="px-4 py-3 font-semibold text-text-muted">Category</th>
-                  <th className="px-4 py-3 font-semibold text-text-muted">Tags</th>
-                  <th className="px-4 py-3 font-semibold text-text-muted">Previews</th>
-                  <th className="px-4 py-3 font-semibold text-text-muted">Status</th>
-                  <th className="px-4 py-3 text-right font-semibold text-text-muted">Price</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">#</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Title</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Category</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Tags</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Previews</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Price</th>
                 </tr>
               </thead>
               <tbody className={TABLE_BODY_CLASS}>
@@ -419,11 +419,11 @@ export function BulkUploadClient() {
 
                   return (
                     <tr key={i} className={TABLE_ROW_CLASS}>
-                      <td className="px-4 py-3 tabular-nums text-text-muted">
+                      <td className="px-4 py-3 tabular-nums text-muted-foreground">
                         {i + 1}
                       </td>
                       <td className="px-4 py-3">
-                        <p className="max-w-[240px] truncate font-medium text-text-primary">
+                        <p className="max-w-[240px] truncate font-medium text-foreground">
                           {coerceString(item.title)}
                         </p>
                       </td>
@@ -457,7 +457,7 @@ export function BulkUploadClient() {
                       <td className="px-4 py-3">
                         <StatusBadge status={status} />
                       </td>
-                      <td className="px-4 py-3 text-right font-medium text-text-secondary">
+                      <td className="px-4 py-3 text-right font-medium text-muted-foreground">
                         {formatPreviewPrice(item.price)}
                       </td>
                     </tr>
@@ -506,19 +506,19 @@ export function BulkUploadClient() {
                 "flex items-center gap-4 rounded-2xl border px-5 py-4",
                 result.failed > 0
                   ? "border-danger-100 bg-danger-50"
-                  : "border-border-subtle bg-surface-50",
+                  : "border-border bg-muted",
               ].join(" ")}
             >
               <span
                 className={[
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-                  result.failed > 0 ? "bg-danger-100" : "bg-surface-100",
+                  result.failed > 0 ? "bg-danger-100" : "bg-secondary",
                 ].join(" ")}
               >
                 <AlertCircle
                   className={[
                     "h-5 w-5",
-                    result.failed > 0 ? "text-danger-600" : "text-text-muted",
+                    result.failed > 0 ? "text-danger-600" : "text-muted-foreground",
                   ].join(" ")}
                 />
               </span>
@@ -526,7 +526,7 @@ export function BulkUploadClient() {
                 <p
                   className={[
                     "text-[22px] font-bold tabular-nums",
-                    result.failed > 0 ? "text-danger-700" : "text-text-muted",
+                    result.failed > 0 ? "text-danger-700" : "text-muted-foreground",
                   ].join(" ")}
                 >
                   {result.failed}
@@ -534,7 +534,7 @@ export function BulkUploadClient() {
                 <p
                   className={[
                     "text-[13px]",
-                    result.failed > 0 ? "text-danger-700" : "text-text-muted",
+                    result.failed > 0 ? "text-danger-700" : "text-muted-foreground",
                   ].join(" ")}
                 >
                   Failed
@@ -546,8 +546,8 @@ export function BulkUploadClient() {
           {/* Created list */}
           {result.created.length > 0 && (
             <div className={PANEL_CLASS}>
-              <div className="border-b border-surface-100 px-6 py-3.5">
-                <h3 className="text-[13px] font-semibold text-text-secondary">
+              <div className="border-b border-border px-6 py-3.5">
+                <h3 className="text-[13px] font-semibold text-muted-foreground">
                   Created resources
                 </h3>
               </div>
@@ -555,18 +555,18 @@ export function BulkUploadClient() {
                 <table className="w-full text-left text-[13px]">
                   <thead>
                     <tr className={TABLE_HEAD_ROW_CLASS}>
-                      <th className="px-5 py-2.5 font-semibold text-text-muted">Row</th>
-                      <th className="px-5 py-2.5 font-semibold text-text-muted">Title</th>
-                      <th className="px-5 py-2.5 font-semibold text-text-muted">ID</th>
+                      <th className="px-5 py-2.5 font-semibold text-muted-foreground">Row</th>
+                      <th className="px-5 py-2.5 font-semibold text-muted-foreground">Title</th>
+                      <th className="px-5 py-2.5 font-semibold text-muted-foreground">ID</th>
                     </tr>
                   </thead>
                   <tbody className={TABLE_BODY_CLASS}>
                     {result.created.map((c) => (
                       <tr key={c.id} className={TABLE_ROW_CLASS}>
-                        <td className="px-5 py-2.5 tabular-nums text-text-muted">
+                        <td className="px-5 py-2.5 tabular-nums text-muted-foreground">
                           {c.row}
                         </td>
-                        <td className="px-5 py-2.5 font-medium text-text-primary">
+                        <td className="px-5 py-2.5 font-medium text-foreground">
                           {c.title}
                         </td>
                         <td className="px-5 py-2.5">
@@ -584,7 +584,7 @@ export function BulkUploadClient() {
 
           {/* Error list */}
           {result.errors.length > 0 && (
-            <div className="rounded-2xl border border-danger-100 bg-white shadow-card">
+            <div className="rounded-2xl border border-danger-100 bg-card shadow-card">
               <div className="border-b border-danger-100 bg-danger-50 px-6 py-3.5">
                 <h3 className="text-[13px] font-semibold text-danger-700">
                   Errors — {result.errors.length} row
@@ -595,18 +595,18 @@ export function BulkUploadClient() {
                 <table className="w-full text-left text-[13px]">
                   <thead>
                     <tr className={TABLE_HEAD_ROW_CLASS}>
-                      <th className="px-5 py-2.5 font-semibold text-text-muted">Row</th>
-                      <th className="px-5 py-2.5 font-semibold text-text-muted">Title</th>
-                      <th className="px-5 py-2.5 font-semibold text-text-muted">Error</th>
+                      <th className="px-5 py-2.5 font-semibold text-muted-foreground">Row</th>
+                      <th className="px-5 py-2.5 font-semibold text-muted-foreground">Title</th>
+                      <th className="px-5 py-2.5 font-semibold text-muted-foreground">Error</th>
                     </tr>
                   </thead>
                   <tbody className={TABLE_BODY_CLASS}>
                     {result.errors.map((e, i) => (
                       <tr key={i} className="hover:bg-danger-50/40">
-                        <td className="px-5 py-2.5 tabular-nums text-text-muted">
+                        <td className="px-5 py-2.5 tabular-nums text-muted-foreground">
                           {e.row}
                         </td>
-                        <td className="px-5 py-2.5 text-text-secondary">
+                        <td className="px-5 py-2.5 text-muted-foreground">
                           {e.title ?? <span className={EMPTY_VALUE_CLASS}>—</span>}
                         </td>
                         <td className="px-5 py-2.5 text-danger-600">{e.message}</td>
