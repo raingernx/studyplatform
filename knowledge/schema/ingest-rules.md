@@ -21,6 +21,7 @@ Repo workflow:
 - `npm run wiki:ingest:batch -- <json-file>` ingests a batch plan from JSON, pre-validates the whole write set first, appends grouped entries to `knowledge/log.md`, and regenerates `knowledge/index.md` once after the batch lands
 - `npm run wiki:ingest:batch:dry-run -- <json-file>` previews the batch merge plan, including raw/wiki targets, related-page suggestions, backlink writes, and log/index side effects, without touching files
 - add `--format json` to any dry-run command when another agent, CI step, or script needs the ingest plan as machine-readable JSON instead of text
+- add `--report-file <path>` when another workflow should persist the serialized plan as a JSON artifact instead of scraping stdout
 - add `--enforce-policy` to any dry-run command when CI should fail fast if the preview resolves to `policySummary.status = "blocked_by_policy"`
 - `npm run wiki:ingest:dry-run:json` and `npm run wiki:ingest:batch:dry-run:json -- <json-file>` are the convenience wrappers for that machine-readable preview mode
 - `npm run wiki:ingest:enforce`, `npm run wiki:ingest:batch:enforce -- <json-file>`, `npm run wiki:ingest:dry-run:enforce`, `npm run wiki:ingest:dry-run:json:enforce`, `npm run wiki:ingest:batch:dry-run:enforce -- <json-file>`, and `npm run wiki:ingest:batch:dry-run:json:enforce -- <json-file>` are the convenience wrappers for policy-enforced write/preview mode
@@ -29,6 +30,7 @@ Repo workflow:
 - batch JSON can now include a top-level `policy` object with `allowExistingWikiUpdate`, `allowBacklinkSeeding`, `allowSkipRawCapture`, `maxReviewItems`, and `maxReviewTargets`
 - when a batch `policy` is present, dry-run JSON echoes it as `policyOverrides` and upgrades affected item/target/global policies to `blocked_by_policy` with explicit override violations
 - when `--enforce-policy` is active, dry-run still prints the preview first, then exits non-zero only for `blocked_by_policy`; plain `review_required` remains informational. In write mode, the command resolves the same plan first and exits before writing any files when the policy status is `blocked_by_policy`
+- in blocked write mode, `--format json` now emits the serialized plan to stdout before exiting, and `--report-file` writes the same JSON plan to disk for CI artifact collection
 - use `--wiki-dir <category> --wiki-slug <slug>` only when the source deserves an immediate topic page
 - `wiki:ingest` now suggests related wiki pages from title/source overlap, can suggest related pages between newly created wiki pages in the same batch, and seeds backlinks when it creates a new wiki page
 - batch JSON accepts an array or an object with `items`; each item mirrors the single-ingest fields: `bucket`, `slug`, `title`, `summary`, `source`, `wikiDir`, `wikiSlug`, and `wikiTitle`

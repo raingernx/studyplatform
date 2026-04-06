@@ -38,6 +38,7 @@ const { values } = parseArgs({
     "wiki-title": { type: "string" },
     "dry-run": { type: "boolean", default: false },
     "enforce-policy": { type: "boolean", default: false },
+    "report-file": { type: "string" },
   },
 });
 
@@ -1261,9 +1262,22 @@ function enforcePolicyIfNeeded(serializedPlan) {
   }
 
   if (serializedPlan.policySummary?.status === "blocked_by_policy") {
+    if (outputFormat === "json" && !values["dry-run"]) {
+      console.log(JSON.stringify(serializedPlan, null, 2));
+    }
     console.error("[wiki-ingest] Dry-run plan is blocked by batch policy overrides.");
     process.exit(2);
   }
+}
+
+function writeSerializedPlanReport(serializedPlan) {
+  if (!values["report-file"]) {
+    return;
+  }
+
+  const reportPath = path.resolve(process.cwd(), values["report-file"]);
+  mkdirSync(path.dirname(reportPath), { recursive: true });
+  writeFileSync(reportPath, `${JSON.stringify(serializedPlan, null, 2)}\n`, "utf8");
 }
 
 function writePlan(plan) {
@@ -1313,6 +1327,7 @@ if (plan.conflicts.length > 0) {
 
 if (dryRun) {
   const serializedPlan = serializeDryRunPlan(plan, input);
+  writeSerializedPlanReport(serializedPlan);
   if (outputFormat === "json") {
     console.log(JSON.stringify(serializedPlan, null, 2));
   } else {
@@ -1323,6 +1338,7 @@ if (dryRun) {
 }
 
 const serializedPlan = serializeDryRunPlan(plan, input);
+writeSerializedPlanReport(serializedPlan);
 enforcePolicyIfNeeded(serializedPlan);
 
 writePlan(plan);
