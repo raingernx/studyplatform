@@ -433,11 +433,38 @@ async function runCreatorManagementPagesScenario({ browser }: ProbeContext) {
   const context = await createContext(browser);
   const page = await context.newPage();
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
-  const pages: Array<{ path: string; heading: RegExp }> = [
-    { path: "/dashboard/creator/resources", heading: /^Resource management$/i },
-    { path: "/dashboard/creator/resources/new", heading: /^(Create your first resource|New resource)$/i },
-    { path: "/dashboard/creator/profile", heading: /^Creator Profile$/i },
-    { path: "/dashboard/creator/analytics", heading: /^Analytics$/i },
+  const pages: Array<{
+    path: string;
+    assert: (page: Page) => Promise<void>;
+  }> = [
+    {
+      path: "/dashboard/creator/resources",
+      assert: (page) =>
+        expect(page.getByRole("heading", { name: /^Resource management$/i }).first()).toBeVisible(),
+    },
+    {
+      path: "/dashboard/creator/resources/new",
+      assert: (page) =>
+        expect(
+          page.getByRole("heading", { name: /^(Create your first resource|New resource)$/i }).first(),
+        ).toBeVisible(),
+    },
+    {
+      path: "/dashboard/creator/profile",
+      assert: (page) =>
+        expect(page.getByRole("heading", { name: /^Creator Profile$/i }).first()).toBeVisible(),
+    },
+    {
+      path: "/dashboard/creator/analytics",
+      assert: async (page) => {
+        await expect(
+          page.getByRole("heading", { name: /^(Analytics|Creator Analytics)$/i }).first(),
+        ).toBeVisible({ timeout: 10_000 });
+        await expect(
+          page.getByText(/Revenue, downloads, and top-performing resources/i).first(),
+        ).toBeVisible({ timeout: 10_000 });
+      },
+    },
   ];
 
   try {
@@ -449,7 +476,7 @@ async function runCreatorManagementPagesScenario({ browser }: ProbeContext) {
       await expect(page).toHaveURL(
         new RegExp(`${target.path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
       );
-      await expect(page.getByRole("heading", { name: target.heading }).first()).toBeVisible();
+      await target.assert(page);
     }
 
     expect(pageErrors).toEqual([]);

@@ -52,7 +52,12 @@ test("settings does not flip runtime theme when DB preference differs from local
   await expect(page).toHaveURL(/\/resources$/);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 
-  await page.goto("/settings", { waitUntil: "commit" });
+  await page.goto("/settings", { waitUntil: "domcontentloaded" }).catch((error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("ERR_ABORTED")) {
+      throw error;
+    }
+  });
 
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole("heading", { name: /Settings/i })).toBeVisible();
