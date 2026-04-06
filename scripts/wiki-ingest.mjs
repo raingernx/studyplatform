@@ -37,6 +37,7 @@ const { values } = parseArgs({
     "wiki-slug": { type: "string" },
     "wiki-title": { type: "string" },
     "dry-run": { type: "boolean", default: false },
+    "enforce-policy": { type: "boolean", default: false },
   },
 });
 
@@ -1254,6 +1255,17 @@ function serializeDryRunPlan(plan, input) {
   };
 }
 
+function enforcePolicyIfNeeded(serializedPlan) {
+  if (!values["enforce-policy"]) {
+    return;
+  }
+
+  if (serializedPlan.policySummary?.status === "blocked_by_policy") {
+    console.error("[wiki-ingest] Dry-run plan is blocked by batch policy overrides.");
+    process.exit(2);
+  }
+}
+
 function writePlan(plan) {
   for (const item of plan.items) {
     if (!item.skipRawCapture) {
@@ -1300,11 +1312,13 @@ if (plan.conflicts.length > 0) {
 }
 
 if (dryRun) {
+  const serializedPlan = serializeDryRunPlan(plan, input);
   if (outputFormat === "json") {
-    console.log(JSON.stringify(serializeDryRunPlan(plan, input), null, 2));
+    console.log(JSON.stringify(serializedPlan, null, 2));
   } else {
     printDryRun(plan, input.isBatchMode);
   }
+  enforcePolicyIfNeeded(serializedPlan);
   process.exit(0);
 }
 
