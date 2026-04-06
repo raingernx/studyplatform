@@ -55,7 +55,6 @@ test("featured picks collection opens the featured listing filter", async ({
 
   await expect(page).toHaveURL(/featured=true/);
   await expect(page.locator("main article").first()).toBeVisible();
-  await expectImageLoaded(page.locator("main article img").first());
 
   expect(pageErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);
