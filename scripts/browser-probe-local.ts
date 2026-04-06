@@ -9,6 +9,7 @@ import { loginAsCreator } from "../tests/e2e/helpers/auth";
 
 const BASE_URL = process.env.BASE_URL ?? "http://127.0.0.1:3000";
 const HEADLESS = process.env.HEADLESS !== "0";
+const ALLOW_READY_TIMEOUT = process.env.BROWSER_PROBE_ALLOW_READY_TIMEOUT === "1";
 const OUTPUT_DIR = path.join(process.cwd(), "test-results", "browser-probe");
 const READY_TIMEOUT_MS = 120_000;
 const READY_POLL_INTERVAL_MS = 2_000;
@@ -18,7 +19,10 @@ type ProbeScenarioName =
   | "launch"
   | "resources-to-library"
   | "library-to-resources"
-  | "settings-theme";
+  | "settings-theme"
+  | "dashboard-to-downloads"
+  | "dashboard-to-purchases"
+  | "dashboard-to-settings";
 
 type ProbeContext = {
   browserName: "chromium" | "webkit";
@@ -30,6 +34,9 @@ const VALID_SCENARIOS: ProbeScenarioName[] = [
   "resources-to-library",
   "library-to-resources",
   "settings-theme",
+  "dashboard-to-downloads",
+  "dashboard-to-purchases",
+  "dashboard-to-settings",
 ];
 
 function parseScenarioNames(argv: string[]) {
@@ -67,9 +74,14 @@ async function ensureServerReady() {
     await new Promise((resolve) => setTimeout(resolve, READY_POLL_INTERVAL_MS));
   }
 
-  throw new Error(
-    `Timed out waiting for dev server readiness at ${readyUrl} after ${READY_TIMEOUT_MS}ms.`,
-  );
+  if (ALLOW_READY_TIMEOUT) {
+    console.warn(
+      `[browser-probe] Ready check timed out at ${readyUrl} after ${READY_TIMEOUT_MS}ms; continuing because BROWSER_PROBE_ALLOW_READY_TIMEOUT=1.`,
+    );
+    return;
+  }
+
+  throw new Error(`Timed out waiting for dev server readiness at ${readyUrl} after ${READY_TIMEOUT_MS}ms.`);
 }
 
 async function launchBrowser() {
@@ -251,6 +263,46 @@ async function runLibraryToResourcesScenario({ browser }: ProbeContext) {
   }
 }
 
+async function runDashboardRouteScenario(
+  { browser }: ProbeContext,
+  options: {
+    scenario: ProbeScenarioName;
+    linkName: RegExp;
+    headingName: RegExp;
+    urlPattern: RegExp;
+  },
+) {
+  const context = await createContext(browser);
+  const page = await context.newPage();
+  const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
+
+  try {
+    await loginAsCreator(page, "/dashboard/library");
+    await expect(page).toHaveURL(/\/dashboard\/library$/);
+    await expect(page.getByRole("heading", { name: /My Library/i })).toBeVisible();
+
+    const navLink = page.getByRole("link", { name: options.linkName }).first();
+    await expect(navLink).toBeVisible();
+
+    await Promise.all([page.waitForURL(options.urlPattern), navLink.click()]);
+
+    await expect(page).toHaveURL(options.urlPattern);
+    await expect(page.getByRole("heading", { name: options.headingName }).first()).toBeVisible();
+
+    expect(pageErrors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  } catch (error) {
+    const screenshot = await saveFailureScreenshot(page, options.scenario);
+    throw new Error(
+      `${options.scenario} probe failed. Screenshot: ${screenshot}. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  } finally {
+    await closeContext(context);
+  }
+}
+
 async function runSettingsThemeScenario({ browser }: ProbeContext) {
   await setUserThemePreference(CREATOR_EMAIL, "dark");
 
@@ -288,6 +340,27 @@ const scenarioHandlers: Record<ProbeScenarioName, (context: ProbeContext) => Pro
   launch: runLaunchScenario,
   "resources-to-library": runResourcesToLibraryScenario,
   "library-to-resources": runLibraryToResourcesScenario,
+  "dashboard-to-downloads": (context) =>
+    runDashboardRouteScenario(context, {
+      scenario: "dashboard-to-downloads",
+      linkName: /^Downloads$/,
+      headingName: /Download history/i,
+      urlPattern: /\/dashboard\/downloads$/,
+    }),
+  "dashboard-to-purchases": (context) =>
+    runDashboardRouteScenario(context, {
+      scenario: "dashboard-to-purchases",
+      linkName: /^Purchases$/,
+      headingName: /^Purchases$/,
+      urlPattern: /\/dashboard\/purchases$/,
+    }),
+  "dashboard-to-settings": (context) =>
+    runDashboardRouteScenario(context, {
+      scenario: "dashboard-to-settings",
+      linkName: /^Settings$/,
+      headingName: /^Settings$/,
+      urlPattern: /\/settings$/,
+    }),
   "settings-theme": runSettingsThemeScenario,
 };
 
