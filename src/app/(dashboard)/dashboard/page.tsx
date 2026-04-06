@@ -18,7 +18,7 @@ import {
 } from "@/services/purchases";
 import {
   getDashboardOverviewRecommendations,
-} from "@/services/resources";
+} from "@/services/resources/resource.service";
 import {
   traceServerStep,
   withRequestPerformanceTrace,

@@ -1,5 +1,5 @@
-import { CreatorDashboardProfileLoadingShell } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
+import { DashboardRouteRedirectSkeleton } from "@/components/skeletons/DashboardUserRouteSkeletons";
 
 export default function Loading() {
-  return <CreatorDashboardProfileLoadingShell />;
+  return <DashboardRouteRedirectSkeleton />;
 }

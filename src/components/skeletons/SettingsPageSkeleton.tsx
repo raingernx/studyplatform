@@ -6,35 +6,18 @@ import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 
 const SETTINGS_PAGE_SKELETON_NAME = "settings-page";
 
-function FlatSectionSkeleton({
-  rows,
-  footerWidth,
+function SectionHeadingSkeleton({
+  titleWidth,
+  descriptionWidth,
 }: {
-  rows: number;
-  footerWidth?: string;
+  titleWidth: string;
+  descriptionWidth: string;
 }) {
   return (
-    <section className="space-y-5 border-b border-border pb-6 last:border-b-0 last:pb-0">
-      <div className="space-y-2">
-        <LoadingSkeleton className="h-5 w-28 rounded-md" />
-        <LoadingSkeleton className="h-4 w-72 rounded-md" />
-      </div>
-      <div className="space-y-4">
-        {Array.from({ length: rows }).map((_, index) => (
-          <div
-            key={index}
-            className="grid gap-3 border-b border-border pb-4 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_240px] md:gap-6"
-          >
-            <div className="space-y-2">
-              <LoadingSkeleton className="h-4 w-32 rounded-md" />
-              <LoadingSkeleton className="h-3.5 w-64 rounded-md" />
-            </div>
-            <LoadingSkeleton className="h-11 w-full max-w-xs rounded-xl" />
-          </div>
-        ))}
-      </div>
-      {footerWidth ? <LoadingSkeleton className={`h-9 rounded-xl ${footerWidth}`} /> : null}
-    </section>
+    <div className="space-y-2">
+      <LoadingSkeleton className={`h-5 rounded-md ${titleWidth}`} />
+      <LoadingSkeleton className={`h-4 rounded-md ${descriptionWidth}`} />
+    </div>
   );
 }
 
@@ -47,12 +30,86 @@ function ManualSettingsPageSkeleton() {
       </div>
 
       <div className="space-y-0">
-        <FlatSectionSkeleton rows={2} footerWidth="w-32" />
-        <FlatSectionSkeleton rows={1} footerWidth="w-36" />
-        <FlatSectionSkeleton rows={4} />
-        <FlatSectionSkeleton rows={3} footerWidth="w-32" />
+        <section className="space-y-5 border-b border-border pb-6">
+          <SectionHeadingSkeleton titleWidth="w-24" descriptionWidth="w-72" />
+          <div className="space-y-5">
+            <div className="flex items-center gap-4">
+              <LoadingSkeleton className="h-14 w-14 rounded-full" />
+              <div className="space-y-2">
+                <LoadingSkeleton className="h-4 w-16 rounded-md" />
+                <LoadingSkeleton className="h-9 w-32 rounded-xl" />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div key={index} className="space-y-1.5">
+                  <LoadingSkeleton className="h-4 w-24 rounded-md" />
+                  <LoadingSkeleton className="h-11 w-full rounded-xl" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <LoadingSkeleton className="h-9 w-32 rounded-xl" />
+          </div>
+        </section>
+
+        <section className="space-y-5 border-b border-border pb-6 pt-6">
+          <SectionHeadingSkeleton titleWidth="w-28" descriptionWidth="w-80" />
+          <div className="space-y-1.5">
+            <LoadingSkeleton className="h-4 w-28 rounded-md" />
+            <LoadingSkeleton className="h-4 w-full max-w-md rounded-md" />
+            <LoadingSkeleton className="h-4 w-48 rounded-md" />
+          </div>
+          <LoadingSkeleton className="h-9 w-36 rounded-xl" />
+        </section>
+
+        <section className="space-y-5 border-b border-border pb-6 pt-6">
+          <SectionHeadingSkeleton titleWidth="w-36" descriptionWidth="w-80" />
+          <LoadingSkeleton className="h-4 w-56 rounded-md" />
+          <div className="divide-y divide-border">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="flex items-center justify-between gap-4 py-3">
+                <div className="space-y-1.5">
+                  <LoadingSkeleton className="h-4 w-32 rounded-md" />
+                  <LoadingSkeleton className="h-4 w-64 rounded-md" />
+                </div>
+                <LoadingSkeleton className="h-6 w-11 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-5 border-b border-border pb-6 pt-6">
+          <SectionHeadingSkeleton titleWidth="w-32" descriptionWidth="w-72" />
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={index}
+                className="grid gap-3 border-b border-border pb-4 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_240px] md:gap-6"
+              >
+                <div className="space-y-1.5">
+                  <LoadingSkeleton className="h-4 w-28 rounded-md" />
+                  <LoadingSkeleton className="h-4 w-64 rounded-md" />
+                </div>
+                <LoadingSkeleton className="h-11 w-full max-w-xs rounded-xl" />
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <LoadingSkeleton className="h-4 w-28 rounded-md" />
+            <LoadingSkeleton className="h-9 w-32 rounded-xl" />
+          </div>
+        </section>
+
         <div className="pt-6">
-          <LoadingSkeleton className="h-24 rounded-xl border border-border bg-card" />
+          <div className="flex items-center justify-between gap-6 rounded-xl border border-border bg-card p-4">
+            <div className="space-y-2">
+              <LoadingSkeleton className="h-4 w-36 rounded-md" />
+              <LoadingSkeleton className="h-4 w-64 rounded-md" />
+            </div>
+            <LoadingSkeleton className="h-9 w-32 rounded-xl" />
+          </div>
         </div>
       </div>
     </PageContentNarrow>

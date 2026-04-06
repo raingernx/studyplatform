@@ -5,7 +5,7 @@ import { CreatorServiceError } from "@/services/creator";
 import {
   CreatorResourceUploadServiceError,
   clearCreatorResourceFile,
-} from "@/services/resources";
+} from "@/services/resources/mutations";
 
 export async function DELETE(
   _req: Request,

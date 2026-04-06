@@ -6,7 +6,7 @@ import { warmTargetedPublicCaches } from "@/services/performance/public-cache-wa
 import {
   ResourceUploadServiceError,
   uploadAdminResourceFile,
-} from "@/services/resources";
+} from "@/services/resources/mutations";
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 

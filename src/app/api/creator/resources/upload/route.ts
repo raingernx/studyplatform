@@ -6,7 +6,7 @@ import { CreatorServiceError } from "@/services/creator";
 import {
   CreatorResourceUploadServiceError,
   uploadCreatorResourceFile,
-} from "@/services/resources";
+} from "@/services/resources/mutations";
 
 export async function POST(req: Request) {
   try {

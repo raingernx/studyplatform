@@ -3,7 +3,7 @@ import { requireAdminApi } from "@/lib/auth/require-admin-api";
 import {
   createAdminResourceDraft,
   ResourceServiceError,
-} from "@/services/resources";
+} from "@/services/resources/resource.service";
 
 function handleServiceError(err: unknown, label: string) {
   if (err instanceof ResourceServiceError) {

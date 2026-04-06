@@ -16,7 +16,10 @@ import {
   getResourceDetailPageReviewList,
 } from "@/services/resources";
 import { runNonCriticalResourceDetailTask } from "@/services/resources";
-import { ResourceDetailOwnerReviewClient } from "./ResourceDetailOwnerReviewClient";
+import {
+  ResourceDetailOwnerReviewClient,
+  ResourceDetailOwnerReviewSlotSkeleton,
+} from "./ResourceDetailOwnerReviewClient";
 import { ResourceDetailPurchaseCardClient } from "./ResourceDetailPurchaseCardClient";
 import { ResourceDetailSuccessClient } from "./ResourceDetailSuccessClient";
 
@@ -63,7 +66,7 @@ export function ResourceDetailReviewsFallback() {
 }
 
 export function ResourceDetailOwnerReviewFallback() {
-  return null;
+  return <ResourceDetailOwnerReviewSlotSkeleton />;
 }
 
 export function ResourceDetailFooterFallback() {

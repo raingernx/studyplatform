@@ -389,7 +389,13 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
 
               {/* PURCHASE CARD — order-2 mobile, col-2 rows 1–2 desktop */}
               <aside id="purchase-card" className="order-2 self-start lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-24">
-                <Suspense fallback={<PurchaseCardSkeleton />}>
+                <Suspense
+                  fallback={
+                    <PurchaseCardSkeleton
+                      variant={isReturningFromCheckout ? "pending-purchase" : "viewer-pending"}
+                    />
+                  }
+                >
                   <ResourceDetailPurchaseCard
                     resource={resource}
                     purchaseMetaPromise={purchaseMetaPromise}

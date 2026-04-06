@@ -7,7 +7,7 @@ import {
   permanentlyDeleteTrashedResource,
   ResourceTrashServiceError,
   restoreTrashedResource,
-} from "@/services/resources";
+} from "@/services/resources/mutations";
 
 type Params = { params: Promise<{ id: string }> };
 

@@ -8,7 +8,7 @@ import {
   createAdminResource,
   listAdminResources,
   ResourceServiceError,
-} from "@/services/resources";
+} from "@/services/resources/resource.service";
 
 function handleServiceError(err: unknown, label: string) {
   if (err instanceof ResourceServiceError) {

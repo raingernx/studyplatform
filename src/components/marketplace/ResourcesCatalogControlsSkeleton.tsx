@@ -7,7 +7,7 @@ import { ScrollableCategoryNav } from "@/components/marketplace/ScrollableCatego
 
 const RESOURCES_CATALOG_SEARCH_NAME = "resources-catalog-search";
 const RESOURCES_CATALOG_CONTROLS_NAME = "resources-catalog-controls";
-const CONTROLS_BAR_CLASS_NAME = "border-y border-border bg-card";
+const CONTROLS_BAR_CLASS_NAME = "border-y border-border bg-background";
 const CONTROLS_BAR_MAIN_CLASS_NAME = "flex min-w-0 items-center gap-2.5 overflow-hidden";
 const CONTROLS_BAR_GROUP_CLASS_NAME =
   "flex min-w-0 items-center gap-2.5 overflow-hidden";

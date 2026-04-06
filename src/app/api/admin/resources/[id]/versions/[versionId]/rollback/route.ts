@@ -6,7 +6,7 @@ import { warmTargetedPublicCaches } from "@/services/performance/public-cache-wa
 import {
   rollbackResourceVersion,
   ResourceVersionRollbackServiceError,
-} from "@/services/resources";
+} from "@/services/resources/mutations";
 
 type Params = { params: Promise<{ id: string; versionId: string }> };
 

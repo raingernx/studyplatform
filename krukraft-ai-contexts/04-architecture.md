@@ -20,6 +20,7 @@ API Route → Service → Repository → Prisma
 - Prefer server components where possible
 - Do not modify authentication logic casually
 - Keep build-safe and runtime-dynamic paths separate
+- `@/services/resources` is intentionally a public/viewer-state barrel only; admin, mutation, and other server-heavy callers must import from `@/services/resources/resource.service` or `@/services/resources/mutations` directly instead of widening the browser-facing surface again
 
 ## Repo Knowledge Layer
 
@@ -156,6 +157,7 @@ Key details:
 - anonymous detail views skip the detail viewer-state API entirely until auth-aware UI is actually needed
 - remote preview images use Next Image when the source is optimizer-compatible; bypass is reserved for non-optimizable cases
 - purchase rail is decomposed so CTA can appear before all trust/meta subparts
+- client-side overlays and loading shells for the detail route must stay presentation-only; `ResourceDetailLoadingShell` now owns its own fallback markup instead of importing `ResourceDetailSections.tsx`, which prevents `ResourcesNavigationOverlay` from dragging `@/services/platform`, viewer-state services, or resource mutations into the browser bundle during dev compilation
 
 ## Dashboard / Admin
 

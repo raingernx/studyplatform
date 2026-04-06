@@ -3,7 +3,7 @@ import { requireAdminApi } from "@/lib/auth/require-admin-api";
 import {
   duplicateAdminResource,
   ResourceDuplicateServiceError,
-} from "@/services/resources";
+} from "@/services/resources/mutations";
 
 type Params = { params: Promise<{ id: string }> };
 

@@ -7,11 +7,13 @@ import {
   variantToSort,
 } from "@/lib/ranking-experiment";
 import {
-  createOwnedResource,
   getMarketplaceResources,
   listPublicResources,
 } from "@/services/resources";
-import { ResourceServiceError } from "@/services/resources";
+import {
+  createOwnedResource,
+  ResourceServiceError,
+} from "@/services/resources/resource.service";
 
 function handleServiceError(err: unknown, label: string) {
   if (err instanceof ResourceServiceError) {

@@ -511,3 +511,7 @@ export function DashboardResourcesRedirectBonesPreview() {
 export function DashboardResourcesRedirectSkeleton() {
   return runtimeSkeleton(<DashboardResourcesRedirectPreview />, "dashboard-resources-redirect");
 }
+
+export function DashboardRouteRedirectSkeleton() {
+  return runtimeSkeleton(<DashboardResourcesRedirectPreview />, "dashboard-route-redirect");
+}

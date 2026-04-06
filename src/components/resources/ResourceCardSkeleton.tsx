@@ -20,12 +20,26 @@ const resourceCardFixture: ResourceCardResource = {
 
 function ManualResourceCardSkeleton() {
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-card shadow-sm">
-      <LoadingSkeleton className="aspect-[4/3] w-full rounded-t-xl rounded-b-none" />
-      <div className="flex flex-1 flex-col space-y-3 p-4">
-        <LoadingSkeleton className="h-4 w-3/4" />
-        <LoadingSkeleton className="h-3 w-1/3" />
-        <LoadingSkeleton className="h-4 w-1/4" />
+    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-card shadow-sm">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-xl rounded-b-none bg-muted">
+        <LoadingSkeleton className="h-full w-full rounded-none" />
+        <LoadingSkeleton className="absolute left-3 top-3 h-6 w-16 rounded-full" />
+      </div>
+
+      <div className="flex flex-1 flex-col justify-between gap-3 p-4">
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="space-y-2">
+            <LoadingSkeleton className="h-4 w-4/5" />
+            <LoadingSkeleton className="h-4 w-2/3" />
+          </div>
+          <LoadingSkeleton className="h-4 w-1/2" />
+        </div>
+
+        <div className="mt-auto space-y-2 border-t border-border-subtle pt-3">
+          <div className="flex items-end justify-between gap-3">
+            <LoadingSkeleton className="h-6 w-16" />
+          </div>
+        </div>
       </div>
     </div>
   );

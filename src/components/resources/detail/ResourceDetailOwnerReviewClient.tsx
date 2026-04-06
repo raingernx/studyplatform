@@ -1,9 +1,47 @@
 "use client";
 
+import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { ResourceReviewForm } from "./ResourceReviewForm";
 import type { ResourceDetailViewerReview } from "@/lib/resources/resource-detail-viewer-state";
 import { useFetchJson } from "@/lib/use-fetch-json";
 import { useResourceDetailViewerState } from "./ResourceDetailViewerStateProvider";
+
+export function ResourceDetailOwnerReviewSlotSkeleton() {
+  return (
+    <section className="rounded-[28px] border border-border bg-card p-5 shadow-card sm:p-6">
+      <div className="space-y-1">
+        <LoadingSkeleton className="h-6 w-40 rounded-lg" />
+        <LoadingSkeleton className="h-4 w-full max-w-xl" />
+      </div>
+
+      <div className="mt-5 space-y-5">
+        <div className="space-y-2">
+          <LoadingSkeleton className="h-4 w-24" />
+          <div className="flex flex-wrap gap-2">
+            {[68, 68, 72, 72, 76].map((width) => (
+              <LoadingSkeleton
+                key={width}
+                className="h-9 rounded-md"
+                style={{ width }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <LoadingSkeleton className="h-4 w-20" />
+          <LoadingSkeleton className="h-36 w-full rounded-2xl" />
+          <LoadingSkeleton className="h-3.5 w-64" />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <LoadingSkeleton className="h-10 w-36 rounded-md" />
+          <LoadingSkeleton className="h-4 w-32" />
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export function ResourceDetailOwnerReviewClient({
   resourceId,
@@ -25,7 +63,7 @@ export function ResourceDetailOwnerReviewClient({
   }
 
   if (!isReady) {
-    return null;
+    return <ResourceDetailOwnerReviewSlotSkeleton />;
   }
 
   return (
