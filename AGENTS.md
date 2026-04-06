@@ -616,7 +616,7 @@ Knowledge layer roles:
 - `knowledge/raw/` stores evidence and source captures that should not be rewritten casually
 - `knowledge/wiki/` stores synthesized topic pages for agent query/navigation
 - `knowledge/schema/` stores ingest/query/lint rules for maintaining the wiki
-- `npm run wiki:ingest`, `npm run wiki:index`, `npm run wiki:lint`, `npm run wiki:stale`, `npm run wiki:coverage`, and `npm run wiki:drift` are the repo-owned operational commands for that layer
+- `npm run wiki:ingest`, `npm run wiki:index`, `npm run wiki:lint`, `npm run wiki:stale`, `npm run wiki:coverage`, and `npm run wiki:drift` are the repo-owned operational commands for that layer; `wiki:ingest` also seeds related-page suggestions/backlinks when it creates a new wiki page
 
 Source priority remains:
 

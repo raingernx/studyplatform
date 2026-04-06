@@ -11,6 +11,7 @@ Krukraft maintains a repo-owned LLM wiki under `knowledge/` with explicit script
 - `knowledge/schema/` stores the maintenance rules.
 - `npm run wiki:ingest`, `npm run wiki:index`, `npm run wiki:lint`, `npm run wiki:stale`, and `npm run wiki:drift` are the operational commands for the layer.
 - `wiki:lint` now includes both structural and semantic checks, and `wiki:coverage` reports raw-note citation coverage plus canonical-source coverage.
+- `wiki:ingest` now suggests related wiki pages from title/source overlap and seeds backlinks when it creates a new wiki page.
 - The first raw evidence notes now cover browser smoke, skeleton policy, auth/viewer routing, browser verification split, and the decision to keep the knowledge layer repo-owned.
 
 ## Why It Matters
@@ -34,6 +35,8 @@ Without an explicit maintenance workflow, the repo-owned wiki would drift into d
 
 - ingest a source note into `knowledge/raw/`
 - optionally seed a wiki page from the ingest command
+- accept related-page suggestions driven by title/source overlap
+- seed backlinks into suggested wiki pages when a new page is created
 - regenerate `knowledge/index.md`
 - lint structure and stale-review dates before trusting the wiki
 - run semantic lint and coverage reporting to detect duplicate topics, uncited raw notes, or pages that rely only on low-priority sources

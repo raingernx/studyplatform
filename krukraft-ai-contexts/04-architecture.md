@@ -34,7 +34,7 @@ Canonical docs / code / contexts
 - `knowledge/raw/` stores source captures and evidence pages that should remain close to the original material
 - `knowledge/wiki/` stores synthesized repo knowledge for routes, systems, testing flows, design-system policy, and operational behavior
 - `knowledge/schema/` stores the maintenance rules for ingest/query/lint
-- repo-owned scripts now operationalize the layer: `wiki:ingest` adds raw notes and optional wiki stubs, `wiki:index` regenerates the navigation file, `wiki:stale` flags old pages for review, semantic/coverage checks catch duplicate topics plus raw/canonical source drift, and `wiki:drift` flags change sets where implementation-linked files or raw evidence changed but the related wiki pages were not reviewed
+- repo-owned scripts now operationalize the layer: `wiki:ingest` adds raw notes and optional wiki stubs, suggests related pages/backlinks, `wiki:index` regenerates the navigation file, `wiki:stale` flags old pages for review, semantic/coverage checks catch duplicate topics plus raw/canonical source drift, and `wiki:drift` flags change sets where implementation-linked files or raw evidence changed but the related wiki pages were not reviewed
 - this layer is intentionally subordinate to code, `AGENTS.md`, `krukraft-ai-contexts/`, `design-system.md`, and `figma-component-map.md`
 - repo-owned linting (`npm run wiki:lint`) enforces required wiki sections plus `knowledge/index.md` coverage so the wiki stays navigable instead of decaying into unlinked notes
 

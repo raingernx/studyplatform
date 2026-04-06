@@ -1,11 +1,14 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 
 import {
+  getWikiPageMetas,
   knowledgeRoot,
+  mergeRelatedPageLinks,
   renderKnowledgeIndex,
   slugify,
+  suggestRelatedWikiPages,
   toPosixPath,
   wikiCategoryOrder,
 } from "./lib/knowledge-wiki.mjs";
@@ -60,6 +63,17 @@ const sourceRelativeFromRaw =
 
 const relatedWikiEntries = [];
 let createdWikiRelativePath = null;
+let suggestedWikiPages = suggestRelatedWikiPages({
+  title: values.title,
+  sourcePath: sourcePath && existsSync(sourcePath) ? sourcePath : null,
+  preferredCategory: values["wiki-dir"] ?? null,
+});
+
+function pushUniqueRelatedEntry(targetEntries, entry) {
+  if (!targetEntries.some((candidate) => candidate.label === entry.label && candidate.target === entry.target)) {
+    targetEntries.push(entry);
+  }
+}
 
 if (values["wiki-dir"] || values["wiki-slug"] || values["wiki-title"]) {
   if (!values["wiki-dir"] || !wikiCategoryOrder.includes(values["wiki-dir"])) {
@@ -78,11 +92,16 @@ if (values["wiki-dir"] || values["wiki-slug"] || values["wiki-title"]) {
   mkdirSync(wikiDir, { recursive: true });
   createdWikiRelativePath = toPosixPath(path.relative(knowledgeRoot, wikiFile));
   const rawRelativeFromWiki = toPosixPath(path.relative(wikiDir, rawFile));
+  suggestedWikiPages = suggestedWikiPages.filter((page) => page.relativePath !== createdWikiRelativePath);
 
   const sourceLines = [`- [${values.title}](${rawRelativeFromWiki})`];
   if (sourceRelativeFromRaw) {
     sourceLines.push(`- [Canonical source](${toPosixPath(path.relative(wikiDir, sourcePath))})`);
   }
+
+  const relatedPageLines = suggestedWikiPages.length > 0
+    ? suggestedWikiPages.map((page) => `- [${page.title}](${toPosixPath(path.relative(wikiDir, path.join(knowledgeRoot, page.relativePath)))})`)
+    : ["- TODO"];
 
   writeFileSync(
     wikiFile,
@@ -118,7 +137,7 @@ TODO
 
 ## Related Pages
 
-- TODO
+${relatedPageLines.join("\n")}
 
 ## Sources
 
@@ -131,7 +150,32 @@ ${sourceLines.join("\n")}
     "utf8",
   );
 
-  relatedWikiEntries.push(`- [${wikiTitle}](${toPosixPath(path.relative(rawDir, wikiFile))})`);
+  pushUniqueRelatedEntry(relatedWikiEntries, {
+    label: wikiTitle,
+    target: toPosixPath(path.relative(rawDir, wikiFile)),
+  });
+
+  for (const page of suggestedWikiPages) {
+    const existingContent = readFileSync(page.file, "utf8");
+    const backlinkTarget = toPosixPath(path.relative(path.dirname(page.file), wikiFile));
+    const nextContent = mergeRelatedPageLinks(existingContent, [
+      {
+        label: wikiTitle,
+        target: backlinkTarget,
+      },
+    ]);
+
+    if (nextContent !== existingContent) {
+      writeFileSync(page.file, nextContent, "utf8");
+    }
+  }
+}
+
+for (const page of suggestedWikiPages) {
+  pushUniqueRelatedEntry(relatedWikiEntries, {
+    label: page.title,
+    target: toPosixPath(path.relative(rawDir, path.join(knowledgeRoot, page.relativePath))),
+  });
 }
 
 const rawLines = [
@@ -151,7 +195,9 @@ const rawLines = [
   "",
   "## Related Wiki Pages",
   "",
-  ...(relatedWikiEntries.length > 0 ? relatedWikiEntries : ["- TODO"]),
+  ...(relatedWikiEntries.length > 0
+    ? relatedWikiEntries.map((entry) => `- [${entry.label}](${entry.target})`)
+    : ["- TODO"]),
   "",
   "## Captured At",
   "",
@@ -168,6 +214,9 @@ const logEntryParts = [`captured [${values.title}](${rawRelativePath}) in \`${va
 if (createdWikiRelativePath) {
   logEntryParts.push(`seeded [wiki page](${createdWikiRelativePath})`);
 }
+if (suggestedWikiPages.length > 0) {
+  logEntryParts.push(`linked ${suggestedWikiPages.length} related page suggestion${suggestedWikiPages.length === 1 ? "" : "s"}`);
+}
 const logEntry = `- ${logEntryParts.join(" and ")}.`;
 
 let nextLogContent;
@@ -183,5 +232,10 @@ writeFileSync(path.join(knowledgeRoot, "index.md"), renderKnowledgeIndex(), "utf
 console.log(`[wiki-ingest] Created ${rawRelativePath}`);
 if (createdWikiRelativePath) {
   console.log(`[wiki-ingest] Created ${createdWikiRelativePath}`);
+}
+if (suggestedWikiPages.length > 0) {
+  console.log(
+    `[wiki-ingest] Related wiki suggestions: ${suggestedWikiPages.map((page) => page.relativePath).join(", ")}`,
+  );
 }
 console.log("[wiki-ingest] Rebuilt knowledge/index.md and updated knowledge/log.md");

@@ -215,6 +215,13 @@ export function extractMarkdownLinks(content) {
   }));
 }
 
+export function extractMarkdownLinkMap(content) {
+  return extractMarkdownLinks(content).map((link) => ({
+    ...link,
+    key: `${link.label}::${link.target}`,
+  }));
+}
+
 export function extractBacktickPaths(content) {
   const matches = [...content.matchAll(/`([^`]+)`/g)];
   return matches
@@ -248,6 +255,44 @@ export function normalizeTitleKey(value) {
     .trim();
 }
 
+const similarityStopwords = new Set([
+  "a",
+  "an",
+  "and",
+  "the",
+  "for",
+  "to",
+  "of",
+  "in",
+  "on",
+  "with",
+  "from",
+  "by",
+  "page",
+  "route",
+  "system",
+  "policy",
+  "workflow",
+  "layer",
+  "current",
+  "repo",
+  "owned",
+]);
+
+export function tokenizeForSimilarity(value) {
+  return value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/g)
+    .filter(Boolean)
+    .filter((token) => token.length > 1)
+    .filter((token) => !similarityStopwords.has(token));
+}
+
+export function countTokenOverlap(left, right) {
+  const rightSet = new Set(right);
+  return new Set(left).size === 0 ? 0 : [...new Set(left)].filter((token) => rightSet.has(token)).length;
+}
+
 export function collectWikiRepoReferences(wikiFile) {
   const content = normalizeContent(readFileSync(wikiFile, "utf8"));
   const references = new Set();
@@ -273,6 +318,105 @@ export function collectWikiRepoReferences(wikiFile) {
   }
 
   return references;
+}
+
+export function getWikiPageMetas() {
+  return getWikiFiles().map((file) => {
+    const relativePath = getKnowledgeRelativePath(file);
+    const [, category] = relativePath.split("/");
+    const title = readPageTitle(file);
+    const references = [...collectWikiRepoReferences(file)];
+    const referenceTokens = references.flatMap((reference) => tokenizeForSimilarity(reference));
+
+    return {
+      file,
+      relativePath,
+      category,
+      title,
+      titleTokens: tokenizeForSimilarity(title),
+      references,
+      referenceTokens,
+    };
+  });
+}
+
+export function suggestRelatedWikiPages({
+  title,
+  sourcePath,
+  preferredCategory,
+  excludeRelativePaths = [],
+  limit = 3,
+}) {
+  const metas = getWikiPageMetas();
+  const excluded = new Set(excludeRelativePaths);
+  const titleTokens = tokenizeForSimilarity(title);
+  const sourceRepoRelativePath = sourcePath ? getRepoRelativePath(sourcePath) : null;
+  const sourceTokens = sourceRepoRelativePath ? tokenizeForSimilarity(sourceRepoRelativePath) : [];
+
+  const scored = metas
+    .filter((meta) => !excluded.has(meta.relativePath))
+    .map((meta) => {
+      let score = 0;
+      score += countTokenOverlap(titleTokens, meta.titleTokens) * 6;
+      score += countTokenOverlap(sourceTokens, meta.referenceTokens) * 3;
+
+      if (sourceRepoRelativePath && meta.references.includes(sourceRepoRelativePath)) {
+        score += 12;
+      }
+
+      if (preferredCategory && meta.category === preferredCategory) {
+        score += 1;
+      }
+
+      return {
+        ...meta,
+        score,
+      };
+    })
+    .filter((meta) => meta.score > 0)
+    .sort((left, right) => right.score - left.score || left.title.localeCompare(right.title));
+
+  return scored.slice(0, limit);
+}
+
+export function replaceSection(content, heading, replacementBody) {
+  const lines = content.replaceAll("\r\n", "\n").split("\n");
+  const startIndex = lines.findIndex((line) => line.trim() === heading);
+  if (startIndex === -1) {
+    return content;
+  }
+
+  let endIndex = lines.length;
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    if (/^##\s+/.test(lines[index]) || /^#\s+/.test(lines[index])) {
+      endIndex = index;
+      break;
+    }
+  }
+
+  const before = lines.slice(0, startIndex + 1);
+  const after = lines.slice(endIndex);
+  const replacementLines = replacementBody.split("\n");
+
+  return `${[...before, "", ...replacementLines, "", ...after].join("\n").replace(/\n{3,}/g, "\n\n").trimEnd()}\n`;
+}
+
+export function mergeRelatedPageLinks(content, linksToAdd) {
+  const currentSection = extractSection(content, "## Related Pages");
+  const existingLinks = extractMarkdownLinkMap(currentSection);
+  const merged = new Map(existingLinks.map((link) => [link.key, link]));
+
+  for (const link of linksToAdd) {
+    merged.set(`${link.label}::${link.target}`, link);
+  }
+
+  const mergedLinks = [...merged.values()].sort((left, right) => left.label.localeCompare(right.label));
+  const body =
+    mergedLinks.length > 0
+      ? mergedLinks.map((link) => `- [${link.label}](${link.target})`).join("\n")
+      : "- TODO";
+
+  return replaceSection(content, "## Related Pages", body);
 }
 
 export function slugify(value) {
