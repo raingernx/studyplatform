@@ -18,9 +18,9 @@ export function ResourceDetailOwnerReviewSlotSkeleton() {
         <div className="space-y-2">
           <LoadingSkeleton className="h-4 w-24" />
           <div className="flex flex-wrap gap-2">
-            {[68, 68, 72, 72, 76].map((width) => (
+            {[68, 68, 72, 72, 76].map((width, index) => (
               <LoadingSkeleton
-                key={width}
+                key={`${width}-${index}`}
                 className="h-9 rounded-md"
                 style={{ width }}
               />

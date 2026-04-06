@@ -20,6 +20,12 @@ import { ViewerAwareResourceCard } from "./ViewerAwareResourceCard";
 const BONES_PREVIEW_IMAGE = "/uploads/c8fef7c0a5fecefa.png";
 const RESOURCES_DISCOVER_PERSONALIZED_NAME = "resources-discover-personalized";
 
+function dedupeResourceCards(resources: ResourceCardData[]) {
+  return resources.filter((resource, index, allResources) => {
+    return allResources.findIndex((candidate) => candidate.id === resource.id) === index;
+  });
+}
+
 const personalizedPreviewFixtures: {
   recommendedForYou: ResourceCardResource[];
   becauseYouStudied: ResourceCardResource[];
@@ -193,10 +199,11 @@ function ResourceCardRow({
   eagerPreviewUrls?: string[];
 }) {
   const eagerPreviewUrlSet = new Set(eagerPreviewUrls);
+  const uniqueResources = dedupeResourceCards(resources);
 
   return (
     <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-      {resources.map((resource, index) => {
+      {uniqueResources.map((resource, index) => {
         const decoratedResource = decorate ? decorate(resource, index) : resource;
         const previewUrl = getResourcePreviewUrl(decoratedResource);
         const imageLoading =
@@ -320,12 +327,15 @@ export function ResourcesDiscoverPersonalizedSection({
     discover?.recommendedForYou && discover.recommendedForYou.length > 0
       ? discover.recommendedForYou
       : fallbackCards;
+  const uniqueRecommendedForYou = dedupeResourceCards(recommendedForYou);
+  const uniqueBecauseYouStudied = dedupeResourceCards(discover?.becauseYouStudied ?? []);
+  const uniqueRecommendedForLevel = dedupeResourceCards(discover?.recommendedForLevel ?? []);
   const shouldUseRecommendedLabel = Boolean(discover);
   const eagerPreviewUrlSet = new Set(eagerPreviewUrls);
 
   return (
     <>
-      {recommendedForYou.length > 0 ? (
+      {uniqueRecommendedForYou.length > 0 ? (
         <section className="space-y-5">
           <ResourcesSectionHeader
             title={shouldUseRecommendedLabel ? "Recommended for you" : "Top picks"}
@@ -344,10 +354,10 @@ export function ResourcesDiscoverPersonalizedSection({
             <RecommendationSection
               variant={recommendationVariant}
               section="recommended_for_you"
-              resourceIds={recommendedForYou.map((resource) => resource.id)}
+              resourceIds={uniqueRecommendedForYou.map((resource) => resource.id)}
             >
               <div className="grid gap-6 lg:gap-8 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
-                {recommendedForYou.map((resource, index) => {
+                {uniqueRecommendedForYou.map((resource, index) => {
                   const previewUrl = getResourcePreviewUrl(resource);
                   const imageLoading =
                     index < eagerCardCount ||
@@ -370,7 +380,7 @@ export function ResourcesDiscoverPersonalizedSection({
             </RecommendationSection>
           ) : (
             <ResourceCardRow
-              resources={recommendedForYou}
+              resources={uniqueRecommendedForYou}
               eagerCardCount={eagerCardCount}
               eagerPreviewUrls={eagerPreviewUrls}
             />
@@ -378,7 +388,7 @@ export function ResourcesDiscoverPersonalizedSection({
         </section>
       ) : null}
 
-      {discover?.becauseYouStudied && discover.becauseYouStudied.length > 0 && discover.recentStudyTitle && discover.recentCategoryName ? (
+      {uniqueBecauseYouStudied.length > 0 && discover?.recentStudyTitle && discover?.recentCategoryName ? (
         <section className="space-y-5">
           <ResourcesSectionHeader
             title={`Because you studied ${discover.recentStudyTitle}`}
@@ -395,7 +405,7 @@ export function ResourcesDiscoverPersonalizedSection({
             }
           />
           <ResourceCardRow
-            resources={discover.becauseYouStudied}
+            resources={uniqueBecauseYouStudied}
             decorate={(resource) => ({
               ...resource,
               socialProofLabel: `More in ${discover.recentCategoryName}`,
@@ -406,14 +416,14 @@ export function ResourcesDiscoverPersonalizedSection({
         </section>
       ) : null}
 
-      {discover?.recommendedForLevel && discover.recommendedForLevel.length > 0 ? (
+      {uniqueRecommendedForLevel.length > 0 ? (
         <section className="space-y-5">
           <ResourcesSectionHeader
             title="Recommended for your level"
             description="Deterministic picks shaped by the difficulty level your recent purchases suggest."
           />
           <ResourceCardRow
-            resources={discover.recommendedForLevel}
+            resources={uniqueRecommendedForLevel}
             decorate={(resource) => ({
               ...resource,
               socialProofLabel: "Recommended for your current pace",

@@ -51,6 +51,12 @@ interface ResourceGridProps {
   };
 }
 
+function dedupeResourceCards(resources: ResourceCardData[]) {
+  return resources.filter((resource, index, allResources) => {
+    return allResources.findIndex((candidate) => candidate.id === resource.id) === index;
+  });
+}
+
 export function ResourceGridOwnedIdsHydrator({ ownedIds }: { ownedIds: string[] }) {
   const setDeferredOwnedIds = useContext(DeferredOwnedIdsContext);
 
@@ -184,9 +190,9 @@ function ResourceGridBody({
   const appendedResources = isSameQuery ? loadState.appendedResources : [];
   const nextPage = isSameQuery ? loadState.nextPage : page + 1;
   const isLoadingMore = isSameQuery ? loadState.isLoadingMore : false;
-  const displayedResources = progressiveLoad
-    ? [...resources, ...appendedResources]
-    : resources;
+  const displayedResources = dedupeResourceCards(
+    progressiveLoad ? [...resources, ...appendedResources] : resources,
+  );
   const queryParams = new URLSearchParams(queryKey.split("?")[1] ?? "");
   const hasSearchQuery = Boolean(queryParams.get("search")?.trim());
   const eagerImageCount = hasSearchQuery

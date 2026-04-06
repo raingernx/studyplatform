@@ -19,6 +19,21 @@ interface ResourceGalleryProps {
   fallbackImageUrl?: string | null;
 }
 
+function dedupePreviews(previews: Preview[]) {
+  const seen = new Set<string>();
+
+  return previews.filter((preview) => {
+    const key = preview.id;
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
 export function ResourceGallery({
   previews,
   resourceTitle,
@@ -30,7 +45,7 @@ export function ResourceGallery({
 
   const resolvedPreviews =
     previews.length > 0
-      ? previews
+      ? dedupePreviews(previews)
       : fallbackImageUrl
         ? [{ id: "fallback-preview", imageUrl: fallbackImageUrl, order: 0 }]
         : [];

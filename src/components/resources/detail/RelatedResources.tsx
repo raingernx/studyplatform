@@ -5,7 +5,17 @@ interface RelatedResourcesProps {
 }
 
 export function RelatedResources({ resources }: RelatedResourcesProps) {
-  if (resources.length === 0) return null;
+  const uniqueResources = resources.filter((resource, index, allResources) => {
+    const resourceKey = resource.id ?? resource.slug ?? resource.title;
+
+    return (
+      allResources.findIndex((candidate) => {
+        return (candidate.id ?? candidate.slug ?? candidate.title) === resourceKey;
+      }) === index
+    );
+  });
+
+  if (uniqueResources.length === 0) return null;
 
   return (
     <section className="space-y-4 border-t border-border pt-7">
@@ -16,7 +26,7 @@ export function RelatedResources({ resources }: RelatedResourcesProps) {
         </p>
       </div>
       <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
-        {resources.map((resource) => (
+        {uniqueResources.map((resource) => (
           <ResourceCard
             key={resource.id ?? resource.slug ?? resource.title}
             resource={resource}
