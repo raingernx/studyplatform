@@ -603,6 +603,34 @@ krukraft-ai-contexts/
 Agents should treat that directory as a maintained reference for current
 project truth, not a frozen export.
 
+The repo also includes a repo-owned knowledge layer under:
+
+```
+knowledge/
+```
+
+Use it as a structured LLM wiki, not as a replacement for canonical docs.
+
+Knowledge layer roles:
+
+- `knowledge/raw/` stores evidence and source captures that should not be rewritten casually
+- `knowledge/wiki/` stores synthesized topic pages for agent query/navigation
+- `knowledge/schema/` stores ingest/query/lint rules for maintaining the wiki
+
+Source priority remains:
+
+1. code and runtime behavior
+2. `AGENTS.md`
+3. `krukraft-ai-contexts/`
+4. `design-system.md`
+5. `figma-component-map.md`
+6. `knowledge/raw/`
+7. `knowledge/wiki/`
+
+Treat `knowledge/wiki/` as a maintained synthesis layer. Do not promote new facts
+into it without traceable sources, and do not let it silently drift away from the
+canonical sources above.
+
 Updating `krukraft-ai-contexts/` after system-level changes is not optional housekeeping.
 It is part of completing the task whenever shared understanding of the system changed.
 If the implementation changes architecture, rendering, caching, routing, auth behavior,
@@ -614,6 +642,7 @@ For design-system and Figma handoff work, also keep these repo-owned references 
 - `src/design-system/README.md` for DS inventory and ownership
 - `figma-component-map.md` for manual Figma-to-code component/pattern mapping
 - `design-system.md` for Figma reconstruction, variable/component mapping, and handoff rules
+- `knowledge/` for repo-owned synthesized knowledge pages, ingest/query rules, and raw evidence captures when the changed area is already represented there
 
 ## When context updates are required
 
@@ -628,6 +657,7 @@ the change affects system-level understanding, including:
 - brand/platform behavior that affects shared understanding across agents
 - design-system ownership, token naming, or Figma handoff conventions
 - manual Figma-to-code mapping registry changes or new reusable library components/patterns
+- repo knowledge structure, source-priority policy, or wiki maintenance workflow
 
 ## When context updates are usually not required
 
@@ -669,6 +699,12 @@ To run the blocking version manually:
 npm run context:check:staged:strict
 ```
 
+When the change adds or modifies repo-owned knowledge pages, also run:
+
+```bash
+npm run wiki:lint
+```
+
 ## Verification expectation
 
 For non-trivial changes, agents should usually finish by reporting:
@@ -678,6 +714,7 @@ For non-trivial changes, agents should usually finish by reporting:
 - which route, API, or user flow was verified
 - whether the flow was verified at runtime
 - any remaining uncertainty or blocked verification
+- whether `knowledge/` or `krukraft-ai-contexts/` changed as part of the work
 
 For design-system/Figma handoff changes, also report whether `npm run figma-map:check`
 was run and whether the live Figma file needed a corresponding update.

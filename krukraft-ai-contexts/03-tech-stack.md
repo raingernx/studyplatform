@@ -25,6 +25,7 @@
 - `build`: `prisma generate && next build --webpack`
 - `typecheck`: `tsc -p tsconfig.typecheck.json --noEmit`
 - `lint`: scoped ESLint run plus `npm run skeleton:check`, which blocks inline `*Skeleton` / `*Fallback` component declarations inside `src/app/**`
+- `wiki:lint`: repo-owned knowledge-layer validation that checks required `knowledge/` roots, schema files, wiki-page section headings, and `knowledge/index.md` coverage
 - `db:deploy`: `prisma migrate deploy`
 - `perf:post-deploy`: warm cache + smoke perf suite
 - GitHub post-deploy warm workflow supports both `deployment_status` and manual `workflow_dispatch` runs, which covers direct CLI production deploys
@@ -36,6 +37,7 @@
 - `browser:probe:dashboard`: repo-owned dashboard runtime probe for `/dashboard/downloads`, `/dashboard/purchases`, and `/settings` transitions after entering the dashboard shell
 - `browser:probe:pages`: repo-owned direct-load probe for public/product informational pages (`/membership`, legal/support, checkout status) plus the remaining admin root/index pages (`/admin`, activity, audit, categories, orders, reviews, tags, users)
 - `browser:probe:management`: repo-owned authenticated management probe for `/admin/analytics`, `/admin/analytics/recommendations`, `/dashboard/creator/resources`, `/dashboard/creator/resources/new`, `/dashboard/creator/profile`, and `/dashboard/creator/analytics`
+- `knowledge/`: repo-owned LLM wiki split into `knowledge/raw/` evidence captures, `knowledge/wiki/` synthesized topic pages, and `knowledge/schema/` ingest/query/lint rules; the layer is intentionally lighter-weight than a full external RAG stack and is maintained inside the repo
 - `smoke:local:browser`: local browser-debug entrypoint now mapped to the repo-owned `browser:probe` flow instead of the full Playwright Test CLI smoke bundle, because this macOS environment can still abort during `playwright test` browser launch even when direct Playwright API launch succeeds
 - `smoke:browser:ci`: GitHub Actions-safe Playwright smoke bundle for cloud runners; it keeps the public/auth/navigation/settings coverage but intentionally skips uploader specs that depend on storage configuration beyond the repo-owned local fallback path
 - `.github/workflows/browser-smoke.yml`: cloud CI workflow that provisions Postgres 16, explicitly enables `pg_trgm`, then runs `prisma db push` + `db:seed`, installs Playwright browsers, and runs lint, typecheck, and `npm run smoke:browser:ci`
@@ -50,6 +52,7 @@
 - `/api/auth/viewer` now reads the signed NextAuth JWT through `next-auth/jwt` instead of `getServerSession`, which keeps lightweight auth-chrome checks off the Prisma pool
 - the marketplace/detail private viewer-state APIs now use the same JWT-token snapshot pattern instead of Prisma-backed `getServerSession` reads, which removes a second source of auth-related pool pressure on public routes
 - local-only metadata/state folders `.byom/`, `.codex/environments/`, and ad-hoc `.agents/skills/*` copies are intentionally gitignored; only the tracked `.agents/skills/next-best-practices` subtree should remain under version control
+- `lint` now includes `npm run wiki:lint`, so repo-owned knowledge pages must stay structurally valid alongside the code/docs checks
 
 Important: build must stay schema-mutation-free. Migration deploy is a separate operational step.
 

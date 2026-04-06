@@ -21,6 +21,22 @@ API Route → Service → Repository → Prisma
 - Do not modify authentication logic casually
 - Keep build-safe and runtime-dynamic paths separate
 
+## Repo Knowledge Layer
+
+```
+Canonical docs / code / contexts
+  → knowledge/raw/   (evidence / source captures)
+  → knowledge/wiki/  (synthesized topic pages)
+  → agent query / maintenance workflows
+```
+
+- the repo now maintains a lightweight LLM wiki under `knowledge/`
+- `knowledge/raw/` stores source captures and evidence pages that should remain close to the original material
+- `knowledge/wiki/` stores synthesized repo knowledge for routes, systems, testing flows, design-system policy, and operational behavior
+- `knowledge/schema/` stores the maintenance rules for ingest/query/lint
+- this layer is intentionally subordinate to code, `AGENTS.md`, `krukraft-ai-contexts/`, `design-system.md`, and `figma-component-map.md`
+- repo-owned linting (`npm run wiki:lint`) enforces required wiki sections plus `knowledge/index.md` coverage so the wiki stays navigable instead of decaying into unlinked notes
+
 ## Route Structure
 
 ```
