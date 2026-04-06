@@ -7,7 +7,9 @@ This playbook explains when to use the repo-owned knowledge layer, when to skip 
 ## Current Truth
 
 - The knowledge layer is useful only for durable project knowledge, not for every chat or micro-change.
-- The normal workflow is: decide whether the source is durable, preview with `wiki:ingest:dry-run` when needed, then write with `wiki:ingest` or `wiki:ingest:batch`.
+- Default behavior is `Codex triages first`: the agent decides whether a change should be ignored, ingested as a single source, merged into an existing wiki page, or handled as a batch topic.
+- After triage, the agent must report the decision back to the user in plain language: what was kept, what was skipped, and why.
+- The normal workflow is: triage first, preview with `wiki:ingest:dry-run` when needed, then write with `wiki:ingest` or `wiki:ingest:batch`.
 - Existing wiki pages should usually be updated before creating new overlapping topic pages.
 - CI- or agent-facing workflows should prefer `--enforce-policy`, `--report-file`, and `--report-format bundle`.
 - The main maintenance checks are `wiki:lint`, `wiki:coverage`, `wiki:stale`, and `wiki:drift`.
@@ -26,12 +28,13 @@ Without a usage pattern, the knowledge layer either gets ignored or becomes extr
 
 ## Flows
 
-- ask one question first: "Will I want this knowledge again after this task is over?"
-- if the answer is no, do not ingest it
-- if the source is durable and self-contained, use single ingest
-- if several sources explain one topic together, use batch ingest
+- Codex asks one question first: "Will this knowledge matter again after the current task is over?"
+- if the answer is no, Codex should skip ingest and say so explicitly
+- if the source is durable and self-contained, Codex should prefer single ingest
+- if several sources explain one topic together, Codex should prefer batch ingest
 - run `wiki:ingest:dry-run` first when touching existing wiki pages, using `wikiTargetId`, or using `skipRawCapture`
 - write only after the preview matches the intended raw note, wiki target, and backlink scope
+- after writing, Codex should report what changed: created raw note, created/updated wiki target, backlinks seeded, and checks run
 - run `wiki:lint` and the other maintenance checks after meaningful knowledge changes
 
 ## Invariants
@@ -46,6 +49,12 @@ Without a usage pattern, the knowledge layer either gets ignored or becomes extr
 - Ingesting too aggressively creates noise and extra review work.
 - Using `skipRawCapture` too often can make later evidence review harder.
 - A single green lint pass does not prove that a wiki page is the right abstraction.
+
+## Operator Notes
+
+- The user should not need to decide ingest shape on every change.
+- The user can delegate that judgment to Codex by default.
+- Codex should only ask the user to decide when the ingest cost or topic boundary is genuinely ambiguous.
 
 ## Related Pages
 

@@ -21,6 +21,7 @@ Krukraft maintains a repo-owned LLM wiki under `knowledge/` with explicit script
 - `wiki:ingest` now suggests related wiki pages from title/source overlap, can suggest links between new wiki pages inside the same batch, seeds backlinks when it creates a new wiki page, appends `knowledge/log.md`, and regenerates `knowledge/index.md` after successful writes.
 - `wiki:ingest:batch` now supports explicit shared merge targets through `wikiTargets` + `wikiTargetId`, so several raw captures can merge into one existing or new wiki page in a single pre-validated write plan.
 - `wiki:ingest:batch` also supports `skipRawCapture: true` for source-only merge items, so a batch can update a wiki page from canonical evidence without minting a low-value raw note for every source fragment.
+- Default operator behavior is `Codex triages first`, so the agent chooses skip/single/update/batch ingest shape first and then reports the decision to the user.
 - The first raw evidence notes now cover browser smoke, skeleton policy, auth/viewer routing, browser verification split, and the decision to keep the knowledge layer repo-owned.
 
 ## Why It Matters
@@ -43,6 +44,7 @@ Without an explicit maintenance workflow, the repo-owned wiki would drift into d
 ## Flows
 
 - ingest a source note into `knowledge/raw/`
+- triage first: skip, single ingest, update existing wiki, or batch merge
 - preview the ingest plan with `wiki:ingest:dry-run` when you want to inspect the write set first
 - preview a multi-source merge plan with `wiki:ingest:batch:dry-run` when several raw captures and wiki stubs should land together
 - switch dry-run to `--format json` when another workflow needs to consume the merge plan programmatically instead of reading CLI text
@@ -64,6 +66,7 @@ Without an explicit maintenance workflow, the repo-owned wiki would drift into d
 - lint structure and stale-review dates before trusting the wiki
 - run semantic lint and coverage reporting to detect duplicate topics, uncited raw notes, or pages that rely only on low-priority sources
 - run drift checks when implementation-linked files or raw evidence notes changed to verify that the corresponding wiki pages were reviewed in the same diff
+- report the triage decision and resulting writes back to the user after the ingest decision is made
 
 ## Invariants
 

@@ -2,6 +2,7 @@
 
 ## 2026-04-06
 
+- made `Codex triages first` the default knowledge-layer workflow so the agent decides skip/single/update/batch ingest shape first and reports that choice back to the user.
 - captured [Post-Deploy Warm Workflow Baseline](raw/operations/post-deploy-warm-workflow-baseline.md) in `operations` from `.github/workflows/post-deploy-warm-cache.yml` and seeded [Post-Deploy Warm Workflow](wiki/operations/post-deploy-warm-workflow.md) with 3 related-page suggestions.
 
 - added a practical knowledge-layer playbook page that explains when ingest is worth doing, when to skip it, and how to keep the workflow from becoming overhead.
