@@ -13,6 +13,7 @@ type LoginCredentials = {
 };
 
 const AUTH_NAVIGATION_TIMEOUT_MS = 120_000;
+const AUTH_LOGIN_ATTEMPT_TIMEOUT_MS = 20_000;
 const LOGIN_ERROR_TEXT = "Invalid email or password. Please try again.";
 
 const ADMIN_CREDENTIALS: LoginCredentials = {
@@ -130,7 +131,7 @@ async function loginWithCredentials(
 
     try {
       await page.waitForURL(targetUrlPattern, {
-        timeout: AUTH_NAVIGATION_TIMEOUT_MS / 2,
+        timeout: AUTH_LOGIN_ATTEMPT_TIMEOUT_MS,
         waitUntil: "commit",
       });
       await page.waitForLoadState("domcontentloaded");

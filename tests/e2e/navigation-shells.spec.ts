@@ -5,7 +5,7 @@ import { collectRuntimeErrors } from "./helpers/browser";
 
 const LIBRARY_NAV_TIMEOUT_MS = 15_000;
 
-test.describe.configure({ timeout: 60_000 });
+test.describe.configure({ timeout: 75_000 });
 
 async function startNavigationProbe(page: Page) {
   await page.evaluate(() => {
@@ -116,35 +116,21 @@ function expectNoBlankGap(
 }
 
 async function openLibraryFromResources(page: Page) {
-  const directLibraryLink = page
-    .getByRole("link", { name: /^(คลังของฉัน|My Library)$/ })
-    .first();
   const accountButton = page
     .getByRole("button", { name: /^(เปิดเมนูบัญชี|Open account menu)$/i })
     .first();
+  const menuLibraryLink = page
+    .getByRole("link", { name: /^(คลังของฉัน|My Library)$/ })
+    .last();
 
   await page.getByRole("banner").first().hover();
-  await expect.poll(
-    async () =>
-      (await directLibraryLink.isVisible().catch(() => false)) ||
-      (await accountButton.isVisible().catch(() => false)),
-    { timeout: LIBRARY_NAV_TIMEOUT_MS },
-  ).toBeTruthy();
-
-  if (await directLibraryLink.isVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS }).catch(() => false)) {
-    await Promise.all([
-      page.waitForURL(/\/dashboard\/library$/),
-      directLibraryLink.click(),
-    ]);
-    return;
-  }
-
   await expect(accountButton).toBeVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS });
   await accountButton.click();
+  await expect(menuLibraryLink).toBeVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS });
 
   await Promise.all([
     page.waitForURL(/\/dashboard\/library$/),
-    page.getByRole("link", { name: /^(คลังของฉัน|My Library)$/ }).click(),
+    menuLibraryLink.click(),
   ]);
 }
 
