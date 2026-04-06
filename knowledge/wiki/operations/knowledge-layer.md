@@ -14,6 +14,7 @@ Krukraft maintains a repo-owned LLM wiki under `knowledge/` with explicit script
 - `wiki:lint` now includes both structural and semantic checks, and `wiki:coverage` reports raw-note citation coverage plus canonical-source coverage.
 - `wiki:ingest` now suggests related wiki pages from title/source overlap, can suggest links between new wiki pages inside the same batch, seeds backlinks when it creates a new wiki page, appends `knowledge/log.md`, and regenerates `knowledge/index.md` after successful writes.
 - `wiki:ingest:batch` now supports explicit shared merge targets through `wikiTargets` + `wikiTargetId`, so several raw captures can merge into one existing or new wiki page in a single pre-validated write plan.
+- `wiki:ingest:batch` also supports `skipRawCapture: true` for source-only merge items, so a batch can update a wiki page from canonical evidence without minting a low-value raw note for every source fragment.
 - The first raw evidence notes now cover browser smoke, skeleton policy, auth/viewer routing, browser verification split, and the decision to keep the knowledge layer repo-owned.
 
 ## Why It Matters
@@ -40,6 +41,7 @@ Without an explicit maintenance workflow, the repo-owned wiki would drift into d
 - preview a multi-source merge plan with `wiki:ingest:batch:dry-run` when several raw captures and wiki stubs should land together
 - optionally seed a wiki page from the ingest command
 - define explicit `wikiTargets` when several sources should converge on one shared wiki page instead of creating one wiki page per item
+- use `skipRawCapture: true` when an item should only enrich a wiki target from a canonical source and does not deserve its own durable raw note
 - accept related-page suggestions driven by title/source overlap
 - let batch ingest surface related-page suggestions between the new wiki pages before the files exist
 - let batch ingest merge several raw captures into one existing or new wiki page by `wikiTargetId`

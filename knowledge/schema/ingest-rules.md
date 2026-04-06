@@ -24,6 +24,8 @@ Repo workflow:
 - batch JSON accepts an array or an object with `items`; each item mirrors the single-ingest fields: `bucket`, `slug`, `title`, `summary`, `source`, `wikiDir`, `wikiSlug`, and `wikiTitle`
 - batch JSON can also include `wikiTargets`, where each target defines `id`, `wikiDir`, `wikiSlug`, and `wikiTitle`
 - use `wikiTargetId` on batch items when multiple raw captures should merge into the same wiki page; the target can point at a new page or an already-existing wiki page
+- batch items can set `skipRawCapture: true` when the source should update a wiki page directly without creating a new `knowledge/raw/` note
+- `skipRawCapture: true` requires a valid `source` path plus either `wikiTargetId` or inline wiki target config; it is meant for temporary evidence or low-value one-off source merges where a dedicated raw note would just create noise
 - inline `wikiDir/wikiSlug/wikiTitle` and `wikiTargetId` are mutually exclusive on the same batch item
 - when several batch items share one `wikiTargetId`, ingest updates that wiki page once with merged `Sources`, merged `Related Pages`, and a refreshed `Last Reviewed`
 - run `npm run wiki:index` manually only when adding/removing wiki pages outside the ingest helper; the ingest workflow now regenerates the index automatically after successful writes

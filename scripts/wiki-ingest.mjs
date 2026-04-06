@@ -74,6 +74,7 @@ function normalizeBatchItem(rawItem, index) {
     title: rawItem.title,
     summary: rawItem.summary ?? "TODO: summarize this source.",
     source: rawItem.source,
+    skipRawCapture: rawItem.skipRawCapture ?? rawItem["skip-raw-capture"] ?? false,
     wikiDir: rawItem.wikiDir ?? rawItem["wiki-dir"],
     wikiSlug: rawItem.wikiSlug ?? rawItem["wiki-slug"],
     wikiTitle: rawItem.wikiTitle ?? rawItem["wiki-title"],
@@ -131,12 +132,13 @@ function loadInput() {
       {
         bucket: values.bucket,
         slug: values.slug,
-        title: values.title,
-        summary: values.summary,
-        source: values.source,
-        wikiDir: values["wiki-dir"],
-        wikiSlug: values["wiki-slug"],
-        wikiTitle: values["wiki-title"],
+      title: values.title,
+      summary: values.summary,
+      source: values.source,
+      skipRawCapture: false,
+      wikiDir: values["wiki-dir"],
+      wikiSlug: values["wiki-slug"],
+      wikiTitle: values["wiki-title"],
         wikiTargetId: null,
       },
     ],
@@ -155,7 +157,9 @@ function resolveSourcePath(sourceValue) {
 }
 
 function normalizePlanItem(inputItem, index) {
-  if (!inputItem.bucket || !availableBuckets.includes(inputItem.bucket)) {
+  const skipRawCapture = Boolean(inputItem.skipRawCapture);
+
+  if (!skipRawCapture && (!inputItem.bucket || !availableBuckets.includes(inputItem.bucket))) {
     fail(`Item ${index + 1}: bucket is required and must be one of: ${availableBuckets.join(", ")}`);
   }
 
@@ -173,25 +177,33 @@ function normalizePlanItem(inputItem, index) {
     fail(`Item ${index + 1}: use either wikiTargetId or inline wikiDir/wikiSlug/wikiTitle, not both.`);
   }
 
-  const rawDir = path.join(rawRoot, inputItem.bucket);
-  const rawFile = path.join(rawDir, `${rawSlug}.md`);
-  const rawRelativePath = toPosixPath(path.relative(knowledgeRoot, rawFile));
   const sourcePath = resolveSourcePath(inputItem.source);
-  const sourceRelativeFromRaw = sourcePath ? toPosixPath(path.relative(rawDir, sourcePath)) : null;
+  if (skipRawCapture && !sourcePath) {
+    fail(`Item ${index + 1}: skipRawCapture items require a valid source path.`);
+  }
+  if (skipRawCapture && !inputItem.wikiTargetId && !hasInlineWikiConfig) {
+    fail(`Item ${index + 1}: skipRawCapture items require wikiTargetId or inline wiki target config.`);
+  }
+
+  const rawDir = skipRawCapture ? null : path.join(rawRoot, inputItem.bucket);
+  const rawFile = skipRawCapture ? null : path.join(rawDir, `${rawSlug}.md`);
+  const rawRelativePath = rawFile ? toPosixPath(path.relative(knowledgeRoot, rawFile)) : null;
+  const sourceRelativeFromRaw = rawDir && sourcePath ? toPosixPath(path.relative(rawDir, sourcePath)) : null;
 
   return {
     index,
-    bucket: inputItem.bucket,
+    bucket: inputItem.bucket ?? null,
     slug: rawSlug,
     title: inputItem.title,
     summary: inputItem.summary ?? "TODO: summarize this source.",
+    skipRawCapture,
     sourcePath,
     sourceRelativeFromRaw,
     sourceRepoRelativePath: sourcePath ? toPosixPath(path.relative(process.cwd(), sourcePath)) : null,
     rawDir,
     rawFile,
     rawRelativePath,
-    rawAlreadyExists: existsSync(rawFile),
+    rawAlreadyExists: rawFile ? existsSync(rawFile) : false,
     wikiTargetId: inputItem.wikiTargetId ?? null,
     inlineWikiConfig: hasInlineWikiConfig
       ? {
@@ -284,14 +296,24 @@ function updateLastReviewed(content) {
 function buildWikiSources(target) {
   const sourceLinks = [];
   for (const item of target.items) {
-    sourceLinks.push({
-      label: item.title,
-      target: toPosixPath(path.relative(target.wikiDir, item.rawFile)),
-    });
+    if (item.rawFile) {
+      sourceLinks.push({
+        label: item.title,
+        target: toPosixPath(path.relative(target.wikiDir, item.rawFile)),
+      });
+      continue;
+    }
+
+    if (item.sourcePath && item.sourceRepoRelativePath) {
+      sourceLinks.push({
+        label: item.title,
+        target: toPosixPath(path.relative(target.wikiDir, item.sourcePath)),
+      });
+    }
   }
 
   for (const item of target.items) {
-    if (!item.sourcePath || !item.sourceRepoRelativePath) {
+    if (item.skipRawCapture || !item.sourcePath || !item.sourceRepoRelativePath) {
       continue;
     }
     sourceLinks.push({
@@ -356,6 +378,10 @@ ${sourceLines.join("\n")}
 }
 
 function buildRawDraft(item) {
+  if (item.skipRawCapture) {
+    return null;
+  }
+
   return [
     `# ${item.title}`,
     "",
@@ -385,11 +411,19 @@ function buildRawDraft(item) {
 }
 
 function formatLogEntry(item) {
-  const titleLink = `[${item.title}](${item.rawRelativePath})`;
-  const details = [`captured ${titleLink} in \`${item.bucket}\``];
+  const details = [];
+
+  if (item.rawRelativePath) {
+    const titleLink = `[${item.title}](${item.rawRelativePath})`;
+    details.push(`captured ${titleLink} in \`${item.bucket}\``);
+  } else {
+    details.push(`referenced \`${item.sourceRepoRelativePath}\` as "${item.title}"`);
+  }
 
   if (item.sourceRepoRelativePath) {
-    details.push(`from \`${item.sourceRepoRelativePath}\``);
+    if (item.rawRelativePath) {
+      details.push(`from \`${item.sourceRepoRelativePath}\``);
+    }
   }
 
   if (item.wikiTarget) {
@@ -441,6 +475,9 @@ function buildPlan(input) {
 
   const rawTargets = new Map();
   for (const item of items) {
+    if (item.skipRawCapture) {
+      continue;
+    }
     if (item.rawAlreadyExists) {
       conflicts.push(`Raw note already exists for item ${item.index + 1}: ${item.rawRelativePath}`);
     }
@@ -607,20 +644,26 @@ function buildPlan(input) {
     if (item.wikiTarget) {
       pushUniqueRelatedEntry(item.relatedWikiEntries, {
         label: item.wikiTarget.wikiTitle,
-        target: toPosixPath(path.relative(item.rawDir, item.wikiTarget.wikiFile)),
+        target: item.rawDir
+          ? toPosixPath(path.relative(item.rawDir, item.wikiTarget.wikiFile))
+          : toPosixPath(path.relative(path.dirname(item.sourcePath), item.wikiTarget.wikiFile)),
       });
 
       for (const page of item.wikiTarget.existingSuggestions) {
         pushUniqueRelatedEntry(item.relatedWikiEntries, {
           label: page.title,
-          target: toPosixPath(path.relative(item.rawDir, path.join(knowledgeRoot, page.relativePath))),
+          target: item.rawDir
+            ? toPosixPath(path.relative(item.rawDir, path.join(knowledgeRoot, page.relativePath)))
+            : toPosixPath(path.relative(path.dirname(item.sourcePath), path.join(knowledgeRoot, page.relativePath))),
         });
       }
 
       for (const page of item.wikiTarget.plannedBatchSuggestions) {
         pushUniqueRelatedEntry(item.relatedWikiEntries, {
           label: page.wikiTitle,
-          target: toPosixPath(path.relative(item.rawDir, page.wikiFile)),
+          target: item.rawDir
+            ? toPosixPath(path.relative(item.rawDir, page.wikiFile))
+            : toPosixPath(path.relative(path.dirname(item.sourcePath), page.wikiFile)),
         });
       }
 
@@ -647,8 +690,12 @@ function printDryRun(plan, isBatchMode) {
   console.log(`[wiki-ingest] Mode: ${isBatchMode ? "batch" : "single"} (${plan.items.length} item${plan.items.length === 1 ? "" : "s"})`);
 
   for (const item of plan.items) {
-    console.log(`[wiki-ingest] Item ${item.index + 1}: ${item.title}`);
-    console.log(`  raw: ${item.rawRelativePath}${item.rawAlreadyExists ? " (already exists)" : ""}`);
+  console.log(`[wiki-ingest] Item ${item.index + 1}: ${item.title}`);
+    if (item.rawRelativePath) {
+      console.log(`  raw: ${item.rawRelativePath}${item.rawAlreadyExists ? " (already exists)" : ""}`);
+    } else {
+      console.log("  raw: skipped (source-only merge)");
+    }
     if (item.sourceRepoRelativePath) {
       console.log(`  source: ${item.sourceRepoRelativePath}`);
     }
@@ -675,14 +722,16 @@ function printDryRun(plan, isBatchMode) {
     for (const target of plan.wikiTargets) {
       console.log(
         `- ${target.wikiRelativePath}${target.wikiAlreadyExists ? " (existing)" : " (new)"} <= ${target.items
-          .map((item) => item.rawRelativePath)
+          .map((item) => item.rawRelativePath ?? item.sourceRepoRelativePath ?? item.title)
           .join(", ")}`,
       );
     }
   }
 
   console.log(
-    `[wiki-ingest] Batch summary: ${plan.items.length} raw note${plan.items.length === 1 ? "" : "s"}, ${
+    `[wiki-ingest] Batch summary: ${plan.items.filter((item) => !item.skipRawCapture).length} raw note${
+      plan.items.filter((item) => !item.skipRawCapture).length === 1 ? "" : "s"
+    }, ${
       plan.wikiTargets.length
     } wiki target${plan.wikiTargets.length === 1 ? "" : "s"}, ${plan.backlinkPlans.length} backlink write${
       plan.backlinkPlans.length === 1 ? "" : "s"
@@ -699,8 +748,10 @@ function printDryRun(plan, isBatchMode) {
 
 function writePlan(plan) {
   for (const item of plan.items) {
-    mkdirSync(item.rawDir, { recursive: true });
-    writeFileSync(item.rawFile, `${item.rawDraft}\n`, "utf8");
+    if (!item.skipRawCapture) {
+      mkdirSync(item.rawDir, { recursive: true });
+      writeFileSync(item.rawFile, `${item.rawDraft}\n`, "utf8");
+    }
   }
 
   for (const target of plan.wikiTargets) {
@@ -747,7 +798,9 @@ if (dryRun) {
 
 writePlan(plan);
 console.log(
-  `[wiki-ingest] Wrote ${plan.items.length} raw note${plan.items.length === 1 ? "" : "s"} and updated ${
+  `[wiki-ingest] Wrote ${plan.items.filter((item) => !item.skipRawCapture).length} raw note${
+    plan.items.filter((item) => !item.skipRawCapture).length === 1 ? "" : "s"
+  } and updated ${
     plan.wikiTargets.length
   } wiki target${plan.wikiTargets.length === 1 ? "" : "s"}.`,
 );
