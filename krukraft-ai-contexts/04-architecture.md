@@ -11,6 +11,7 @@ API Route → Service → Repository → Prisma
 - Repositories own data access
 - This pattern is actively maintained in the repo
 - Repository raw SQL must use the database table names produced by Prisma `@@map(...)` / `@map(...)`, not the Prisma model names; creator analytics verification on 2026-04-06 caught a real runtime failure where a raw join still referenced `"ResourceStat"` instead of the mapped `"resource_stats"` table
+- admin table shells must keep non-table chrome such as toolbars and pagination outside the `<table>` subtree; 2026-04-06 browser-smoke verification caught a real hydration mismatch on `/admin/audit` where `TablePagination` rendered a `<div>` directly under the `DataTable` table markup
 
 ## Key Architecture Constraints
 

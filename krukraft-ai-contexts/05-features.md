@@ -91,6 +91,7 @@ search, filters, pagination, or a non-default sort are active.
 - Review moderation
 - User and order management
 - Platform settings including brand assets
+- Admin audit/history tables now keep pagination outside the table element itself so browser verification does not hit hydration mismatches from invalid `<table>` descendants
 
 Marketplace hero note:
 - `/resources` discover hero is currently a fixed repo-owned design surface

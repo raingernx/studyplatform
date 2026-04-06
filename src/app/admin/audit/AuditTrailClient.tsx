@@ -204,65 +204,67 @@ export function AuditTrailClient({
       </TableToolbar>
 
       {/* Table */}
-      <DataTable minWidth="min-w-full">
-        <DataTableHeader>
-          <tr>
-            <DataTableHeadCell className="px-2">
-                  Admin
-            </DataTableHeadCell>
-            <DataTableHeadCell className="px-3">
-                  Action
-            </DataTableHeadCell>
-            <DataTableHeadCell className="px-3">
-                  Entity
-            </DataTableHeadCell>
-            <DataTableHeadCell className="px-3">
-                  Date
-            </DataTableHeadCell>
-          </tr>
-        </DataTableHeader>
-        <DataTableBody>
-          {items.length === 0 ? (
-            <TableEmptyState
-              message="No audit events found"
-              description="Try widening the date range or clearing the current filters."
-            />
-          ) : (
-            items.map((item) => (
-              <DataTableRow key={item.id}>
-                <DataTableCell className="px-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {item.admin.name}
-                    </p>
-                    {item.admin.email && (
-                      <p className="truncate text-caption text-muted-foreground">
-                        {item.admin.email}
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <DataTable minWidth="min-w-full" className="rounded-none border-0 bg-transparent">
+          <DataTableHeader>
+            <tr>
+              <DataTableHeadCell className="px-2">
+                Admin
+              </DataTableHeadCell>
+              <DataTableHeadCell className="px-3">
+                Action
+              </DataTableHeadCell>
+              <DataTableHeadCell className="px-3">
+                Entity
+              </DataTableHeadCell>
+              <DataTableHeadCell className="px-3">
+                Date
+              </DataTableHeadCell>
+            </tr>
+          </DataTableHeader>
+          <DataTableBody>
+            {items.length === 0 ? (
+              <TableEmptyState
+                message="No audit events found"
+                description="Try widening the date range or clearing the current filters."
+              />
+            ) : (
+              items.map((item) => (
+                <DataTableRow key={item.id}>
+                  <DataTableCell className="px-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {item.admin.name}
                       </p>
-                    )}
-                  </div>
-                </DataTableCell>
-                <DataTableCell className="px-3 text-muted-foreground">
-                  {item.action}
-                </DataTableCell>
-                <DataTableCell className="px-3 text-muted-foreground">
-                  {item.entityType}
-                  {item.entityId && ` #${item.entityId}`}
-                </DataTableCell>
-                <DataTableCell className="px-3 text-muted-foreground">
-                  {formatDate(new Date(item.createdAt))}
-                </DataTableCell>
-              </DataTableRow>
-            ))
-          )}
-        </DataTableBody>
+                      {item.admin.email && (
+                        <p className="truncate text-caption text-muted-foreground">
+                          {item.admin.email}
+                        </p>
+                      )}
+                    </div>
+                  </DataTableCell>
+                  <DataTableCell className="px-3 text-muted-foreground">
+                    {item.action}
+                  </DataTableCell>
+                  <DataTableCell className="px-3 text-muted-foreground">
+                    {item.entityType}
+                    {item.entityId && ` #${item.entityId}`}
+                  </DataTableCell>
+                  <DataTableCell className="px-3 text-muted-foreground">
+                    {formatDate(new Date(item.createdAt))}
+                  </DataTableCell>
+                </DataTableRow>
+              ))
+            )}
+          </DataTableBody>
+        </DataTable>
         <TablePagination
           page={page}
           totalPages={totalPages}
           onPageChange={handlePageChange}
           className="px-4 py-2.5"
         />
-      </DataTable>
+      </div>
     </div>
   );
 }
