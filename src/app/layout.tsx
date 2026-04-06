@@ -28,6 +28,7 @@ export default function RootLayout({
 }) {
   const platform = getBuildSafePublicPlatformConfig();
   const htmlLang = platform.defaultLanguage.trim() || "th";
+  const enableVercelTelemetry = process.env.NODE_ENV === "production";
 
   return (
     <html
@@ -57,8 +58,12 @@ export default function RootLayout({
             </Providers>
           </ThemeProvider>
         </PlatformConfigProvider>
-        <Analytics />
-        <SpeedInsights />
+        {enableVercelTelemetry ? (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        ) : null}
       </body>
     </html>
   );
