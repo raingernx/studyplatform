@@ -88,6 +88,33 @@ function normalizeBatchItem(rawItem, index) {
   };
 }
 
+function normalizeBatchPolicy(rawPolicy) {
+  if (!rawPolicy) {
+    return null;
+  }
+  if (typeof rawPolicy !== "object" || Array.isArray(rawPolicy)) {
+    fail("Batch policy must be an object.");
+  }
+
+  const normalizeLimit = (value, label) => {
+    if (value === undefined || value === null) {
+      return null;
+    }
+    if (!Number.isInteger(value) || value < 0) {
+      fail(`Batch policy ${label} must be a non-negative integer when provided.`);
+    }
+    return value;
+  };
+
+  return {
+    allowExistingWikiUpdate: rawPolicy.allowExistingWikiUpdate ?? true,
+    allowBacklinkSeeding: rawPolicy.allowBacklinkSeeding ?? true,
+    allowSkipRawCapture: rawPolicy.allowSkipRawCapture ?? true,
+    maxReviewItems: normalizeLimit(rawPolicy.maxReviewItems, "maxReviewItems"),
+    maxReviewTargets: normalizeLimit(rawPolicy.maxReviewTargets, "maxReviewTargets"),
+  };
+}
+
 function loadInput() {
   const hasBatch = Boolean(values.batch);
   const hasSingleItemArgs = Boolean(
@@ -123,11 +150,13 @@ function loadInput() {
     }
 
     const wikiTargets = Array.isArray(parsed?.wikiTargets) ? parsed.wikiTargets : [];
+    const policyOverrides = normalizeBatchPolicy(parsed?.policy);
 
     return {
       isBatchMode: true,
       items: items.map((item, index) => normalizeBatchItem(item, index)),
       wikiTargets: wikiTargets.map((target, index) => normalizeBatchTarget(target, index)),
+      policyOverrides,
       batchPath,
     };
   }
@@ -149,6 +178,7 @@ function loadInput() {
       },
     ],
     wikiTargets: [],
+    policyOverrides: null,
     batchPath: null,
   };
 }
@@ -924,6 +954,7 @@ function buildPolicy(status, reasons) {
     autoApply: status === "auto_apply_safe",
     requiresReview: status !== "auto_apply_safe",
     reasons,
+    overrideViolations: [],
   };
 }
 
@@ -979,6 +1010,64 @@ function getWikiTargetPolicy(target, decision, confidence) {
   return buildPolicy("review_required", reasons);
 }
 
+function applyPolicyOverrides(serializedItems, serializedTargets, serializedBacklinkPlan, policyOverrides) {
+  if (!policyOverrides) {
+    return { itemViolations: new Map(), targetViolations: new Map(), summaryViolations: [] };
+  }
+
+  const itemViolations = new Map();
+  const targetViolations = new Map();
+  const summaryViolations = [];
+
+  const pushItemViolation = (index, reason) => {
+    if (!itemViolations.has(index)) {
+      itemViolations.set(index, []);
+    }
+    itemViolations.get(index).push(reason);
+  };
+
+  const pushTargetViolation = (id, reason) => {
+    if (!targetViolations.has(id)) {
+      targetViolations.set(id, []);
+    }
+    targetViolations.get(id).push(reason);
+  };
+
+  for (const item of serializedItems) {
+    if (!policyOverrides.allowSkipRawCapture && item.skipRawCapture) {
+      pushItemViolation(item.index, "skipRawCapture is disabled by batch policy");
+    }
+    if (!policyOverrides.allowExistingWikiUpdate && item.wikiTarget?.exists) {
+      pushItemViolation(item.index, "existing wiki updates are disabled by batch policy");
+    }
+  }
+
+  for (const target of serializedTargets) {
+    if (!policyOverrides.allowExistingWikiUpdate && target.exists) {
+      pushTargetViolation(target.id, "existing wiki updates are disabled by batch policy");
+    }
+    if (!policyOverrides.allowBacklinkSeeding && target.decision.actions.includes("seed_backlinks")) {
+      pushTargetViolation(target.id, "backlink seeding is disabled by batch policy");
+    }
+  }
+
+  if (!policyOverrides.allowBacklinkSeeding && serializedBacklinkPlan.length > 0) {
+    summaryViolations.push(`${serializedBacklinkPlan.length} backlink write${serializedBacklinkPlan.length === 1 ? "" : "s"} exceed allowBacklinkSeeding=false`);
+  }
+
+  const reviewItemCount = serializedItems.filter((item) => item.policy.requiresReview).length;
+  if (policyOverrides.maxReviewItems !== null && reviewItemCount > policyOverrides.maxReviewItems) {
+    summaryViolations.push(`review-required items ${reviewItemCount} exceed maxReviewItems=${policyOverrides.maxReviewItems}`);
+  }
+
+  const reviewTargetCount = serializedTargets.filter((target) => target.policy.requiresReview).length;
+  if (policyOverrides.maxReviewTargets !== null && reviewTargetCount > policyOverrides.maxReviewTargets) {
+    summaryViolations.push(`review-required wiki targets ${reviewTargetCount} exceed maxReviewTargets=${policyOverrides.maxReviewTargets}`);
+  }
+
+  return { itemViolations, targetViolations, summaryViolations };
+}
+
 function buildDecisionSummary(plan) {
   const itemActions = {
     createRaw: 0,
@@ -1020,7 +1109,7 @@ function buildDecisionSummary(plan) {
   return { itemActions, targetActions };
 }
 
-function buildPolicySummary(serializedItems, serializedTargets, serializedBacklinkPlan) {
+function buildPolicySummary(serializedItems, serializedTargets, serializedBacklinkPlan, policyOverrides) {
   const itemPolicies = {
     autoApplySafe: serializedItems.filter((item) => item.policy.autoApply).length,
     reviewRequired: serializedItems.filter((item) => item.policy.requiresReview).length,
@@ -1041,11 +1130,15 @@ function buildPolicySummary(serializedItems, serializedTargets, serializedBackli
     globalReasons.push(`${serializedBacklinkPlan.length} backlink write${serializedBacklinkPlan.length === 1 ? "" : "s"} will touch additional wiki pages`);
   }
 
+  const { summaryViolations } = applyPolicyOverrides(serializedItems, serializedTargets, serializedBacklinkPlan, policyOverrides);
+  const policyReasons = [...summaryViolations, ...globalReasons];
+
   return {
-    status: globalReasons.length === 0 ? "auto_apply_safe" : "review_required",
-    autoApply: globalReasons.length === 0,
-    requiresReview: globalReasons.length > 0,
-    reasons: globalReasons.length > 0 ? globalReasons : ["plan contains only high-confidence isolated writes"],
+    status: summaryViolations.length > 0 ? "blocked_by_policy" : globalReasons.length === 0 ? "auto_apply_safe" : "review_required",
+    autoApply: summaryViolations.length === 0 && globalReasons.length === 0,
+    requiresReview: policyReasons.length > 0,
+    reasons: policyReasons.length > 0 ? policyReasons : ["plan contains only high-confidence isolated writes"],
+    overrideViolations: summaryViolations,
     itemPolicies,
     targetPolicies,
   };
@@ -1107,11 +1200,46 @@ function serializeDryRunPlan(plan, input) {
     policy: buildPolicy("review_required", ["backlink writes touch existing wiki pages"]),
   }));
 
-  const policySummary = buildPolicySummary(serializedItems, serializedTargets, serializedBacklinkPlan);
+  const { itemViolations, targetViolations } = applyPolicyOverrides(
+    serializedItems,
+    serializedTargets,
+    serializedBacklinkPlan,
+    input.policyOverrides,
+  );
+
+  for (const item of serializedItems) {
+    const overrideViolations = itemViolations.get(item.index) ?? [];
+    if (overrideViolations.length > 0) {
+      item.policy.overrideViolations = overrideViolations;
+      item.policy.status = "blocked_by_policy";
+      item.policy.autoApply = false;
+      item.policy.requiresReview = true;
+      item.policy.reasons = [...item.policy.reasons, ...overrideViolations];
+    }
+  }
+
+  for (const target of serializedTargets) {
+    const overrideViolations = targetViolations.get(target.id) ?? [];
+    if (overrideViolations.length > 0) {
+      target.policy.overrideViolations = overrideViolations;
+      target.policy.status = "blocked_by_policy";
+      target.policy.autoApply = false;
+      target.policy.requiresReview = true;
+      target.policy.reasons = [...target.policy.reasons, ...overrideViolations];
+    }
+  }
+
+  const policySummary = buildPolicySummary(
+    serializedItems,
+    serializedTargets,
+    serializedBacklinkPlan,
+    input.policyOverrides,
+  );
 
   return {
     mode: input.isBatchMode ? "batch" : "single",
     batchPath: input.batchPath ? toPosixPath(path.relative(process.cwd(), input.batchPath)) : null,
+    policyOverrides: input.policyOverrides,
     items: serializedItems,
     wikiTargets: serializedTargets,
     backlinkPlan: serializedBacklinkPlan,

@@ -2,6 +2,7 @@
 
 ## 2026-04-06
 
+- added top-level batch `policy` overrides to `wiki:ingest` JSON dry-run previews so CI can forbid existing-page updates, backlink seeding, source-only merges, or plans that exceed review thresholds.
 - added `confidence`, `policy`, and `policySummary` hints to `wiki:ingest` JSON dry-run previews so CI and agents can gate auto-apply vs review without reverse-engineering merge intent from the plan.
 - enriched `wiki:ingest` JSON dry-run previews with per-item/per-target decision metadata (`actions`, `reasons`, `severity`) plus a top-level `decisionSummary` so CI and agents can branch on create/update/merge/backlink behavior directly.
 - added `--format json` plus `wiki:ingest:dry-run:json` helpers so dry-run ingest plans can be consumed programmatically by agents or CI.
