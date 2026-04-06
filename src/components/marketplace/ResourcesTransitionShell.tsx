@@ -1,12 +1,8 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
 import { ResourceDetailLoadingShell } from "@/components/resources/detail/ResourceDetailLoadingShell";
-import {
-  canonicalizeResourcesHref,
-  useResourcesNavigationState,
-} from "@/components/marketplace/resourcesNavigationState";
+import { useResourcesNavigationState } from "@/components/marketplace/resourcesNavigationState";
 
 function scrollViewportToTopInstantly() {
   const root = document.documentElement;
@@ -31,13 +27,7 @@ export function ResourcesTransitionShell({
 }: {
   children: ReactNode;
 }) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const navigationState = useResourcesNavigationState();
-  const currentSearch = searchParams.toString();
-  const currentHref = canonicalizeResourcesHref(
-    currentSearch ? `${pathname}?${currentSearch}` : pathname,
-  );
   const isPending = Boolean(navigationState.mode && navigationState.href);
   const isOverlayPending = isPending && navigationState.overlay;
   const shouldFreezePreviousRoute =

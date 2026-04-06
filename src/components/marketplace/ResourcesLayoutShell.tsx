@@ -6,9 +6,7 @@ import { ResourcesTransitionShell } from "@/components/marketplace/ResourcesTran
 export function ResourcesLayoutShell({ children }: { children: ReactNode }) {
   return (
     <>
-      <Suspense fallback={null}>
-        <ResourcesNavigationFeedback />
-      </Suspense>
+      <ResourcesNavigationFeedback />
       <Suspense fallback={<ResourcesTransitionFallback />}>
         <ResourcesTransitionShell>{children}</ResourcesTransitionShell>
       </Suspense>
