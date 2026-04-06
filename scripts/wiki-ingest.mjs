@@ -752,7 +752,126 @@ function printDryRun(plan, isBatchMode) {
   }
 }
 
+function getItemDecision(item) {
+  const actions = [];
+  const reasons = [];
+
+  if (item.skipRawCapture) {
+    actions.push("skip_raw_capture");
+    reasons.push("item merges canonical evidence directly into a wiki target");
+  } else {
+    actions.push("create_raw");
+    reasons.push("item creates a durable raw note capture");
+  }
+
+  if (item.wikiTarget) {
+    if (item.wikiTarget.wikiAlreadyExists) {
+      actions.push("update_existing_wiki");
+      reasons.push("wiki target already exists and will be refreshed");
+    } else {
+      actions.push("create_wiki");
+      reasons.push("wiki target does not exist yet and will be seeded");
+    }
+
+    if (item.wikiTarget.items.length > 1) {
+      actions.push("merge_into_shared_wiki");
+      reasons.push(`wiki target merges ${item.wikiTarget.items.length} source items`);
+    }
+
+    if (!item.wikiTarget.wikiAlreadyExists && item.wikiTarget.existingSuggestions.length > 0) {
+      actions.push("seed_backlinks");
+      reasons.push("new wiki page will seed backlinks into suggested existing pages");
+    }
+  }
+
+  if (item.totalSuggestionCount > 0) {
+    actions.push("review_related_pages");
+    reasons.push(`${item.totalSuggestionCount} related-page suggestion${item.totalSuggestionCount === 1 ? "" : "s"} detected`);
+  }
+
+  const severity = actions.some((action) =>
+    ["update_existing_wiki", "merge_into_shared_wiki", "seed_backlinks", "review_related_pages"].includes(action),
+  )
+    ? "review"
+    : "info";
+
+  return { actions, reasons, severity };
+}
+
+function getWikiTargetDecision(target) {
+  const actions = [target.wikiAlreadyExists ? "update_existing_wiki" : "create_wiki"];
+  const reasons = [target.wikiAlreadyExists ? "target page already exists and will be refreshed" : "target page will be created from the ingest plan"];
+
+  if (target.items.length > 1) {
+    actions.push("merge_multiple_sources");
+    reasons.push(`${target.items.length} source items converge on the same wiki target`);
+  }
+
+  const backlinkWrites = target.wikiAlreadyExists ? 0 : target.existingSuggestions.length;
+  if (backlinkWrites > 0) {
+    actions.push("seed_backlinks");
+    reasons.push(`${backlinkWrites} existing page backlink${backlinkWrites === 1 ? "" : "s"} will be seeded`);
+  }
+
+  const suggestionCount = target.existingSuggestions.length + target.plannedBatchSuggestions.length;
+  if (suggestionCount > 0) {
+    actions.push("review_related_pages");
+    reasons.push(`${suggestionCount} related-page suggestion${suggestionCount === 1 ? "" : "s"} attached to target`);
+  }
+
+  const severity = actions.some((action) =>
+    ["update_existing_wiki", "merge_multiple_sources", "seed_backlinks", "review_related_pages"].includes(action),
+  )
+    ? "review"
+    : "info";
+
+  return { actions, reasons, severity };
+}
+
+function buildDecisionSummary(plan) {
+  const itemActions = {
+    createRaw: 0,
+    skipRawCapture: 0,
+    attachToWikiTarget: 0,
+    mergeIntoSharedWiki: 0,
+    reviewRelatedPages: 0,
+  };
+  const targetActions = {
+    createWiki: 0,
+    updateExistingWiki: 0,
+    mergeMultipleSources: 0,
+    seedBacklinks: 0,
+    reviewRelatedPages: 0,
+  };
+
+  for (const item of plan.items) {
+    const decision = getItemDecision(item);
+    for (const action of decision.actions) {
+      if (action === "create_raw") itemActions.createRaw += 1;
+      if (action === "skip_raw_capture") itemActions.skipRawCapture += 1;
+      if (action === "create_wiki" || action === "update_existing_wiki") itemActions.attachToWikiTarget += 1;
+      if (action === "merge_into_shared_wiki") itemActions.mergeIntoSharedWiki += 1;
+      if (action === "review_related_pages") itemActions.reviewRelatedPages += 1;
+    }
+  }
+
+  for (const target of plan.wikiTargets) {
+    const decision = getWikiTargetDecision(target);
+    for (const action of decision.actions) {
+      if (action === "create_wiki") targetActions.createWiki += 1;
+      if (action === "update_existing_wiki") targetActions.updateExistingWiki += 1;
+      if (action === "merge_multiple_sources") targetActions.mergeMultipleSources += 1;
+      if (action === "seed_backlinks") targetActions.seedBacklinks += 1;
+      if (action === "review_related_pages") targetActions.reviewRelatedPages += 1;
+    }
+  }
+
+  return { itemActions, targetActions };
+}
+
 function serializeDryRunPlan(plan, input) {
+  const decisionSummary = buildDecisionSummary(plan);
+
   return {
     mode: input.isBatchMode ? "batch" : "single",
     batchPath: input.batchPath ? toPosixPath(path.relative(process.cwd(), input.batchPath)) : null,
@@ -771,6 +890,7 @@ function serializeDryRunPlan(plan, input) {
             itemCount: item.wikiTarget.items.length,
           }
         : null,
+      decision: getItemDecision(item),
       existingSuggestions: item.wikiTarget ? item.wikiTarget.existingSuggestions.map((page) => page.relativePath) : [],
       batchSuggestions: item.wikiTarget ? item.wikiTarget.plannedBatchSuggestions.map((page) => page.wikiRelativePath) : [],
       totalSuggestionCount: item.totalSuggestionCount,
@@ -780,6 +900,7 @@ function serializeDryRunPlan(plan, input) {
       relativePath: target.wikiRelativePath,
       exists: target.wikiAlreadyExists,
       sourceItems: target.items.map((item) => item.rawRelativePath ?? item.sourceRepoRelativePath ?? item.title),
+      decision: getWikiTargetDecision(target),
       existingSuggestions: target.existingSuggestions.map((page) => page.relativePath),
       batchSuggestions: target.plannedBatchSuggestions.map((page) => page.wikiRelativePath),
     })),
@@ -787,6 +908,8 @@ function serializeDryRunPlan(plan, input) {
       wikiPage: entry.wikiPage,
       label: entry.label,
       target: entry.target,
+      action: "seed_backlink",
+      severity: "review",
     })),
     summary: {
       rawNotes: plan.items.filter((item) => !item.skipRawCapture).length,
@@ -794,6 +917,7 @@ function serializeDryRunPlan(plan, input) {
       backlinkWrites: plan.backlinkPlans.length,
       knowledgeLogEntries: plan.logEntries.length,
     },
+    decisionSummary,
   };
 }
 

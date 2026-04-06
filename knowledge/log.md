@@ -2,6 +2,7 @@
 
 ## 2026-04-06
 
+- enriched `wiki:ingest` JSON dry-run previews with per-item/per-target decision metadata (`actions`, `reasons`, `severity`) plus a top-level `decisionSummary` so CI and agents can branch on create/update/merge/backlink behavior directly.
 - added `--format json` plus `wiki:ingest:dry-run:json` helpers so dry-run ingest plans can be consumed programmatically by agents or CI.
 - added `skipRawCapture: true` for batch ingest items so canonical source fragments can update a shared wiki target without generating standalone low-value raw notes.
 - upgraded `wiki:ingest:batch` so several raw captures can merge into one explicit shared wiki target via `wikiTargets` + `wikiTargetId`, including updates to existing wiki pages.

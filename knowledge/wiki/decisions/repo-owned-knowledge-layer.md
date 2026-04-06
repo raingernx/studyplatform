@@ -13,7 +13,7 @@ Krukraft keeps a lightweight repo-owned knowledge layer under `knowledge/` inste
 - `wiki:ingest:dry-run` previews raw/wiki targets, related-page suggestions, and backlink plans before any files are written.
 - `wiki:ingest:batch` and `wiki:ingest:batch:dry-run` support multi-source ingest plans, explicit shared wiki merge targets, and batch-level merge/backlink summaries before the batch lands.
 - `wiki:ingest:batch` now also supports source-only merge items through `skipRawCapture: true`, which lets a batch update durable wiki pages from canonical evidence without creating throwaway raw notes.
-- dry-run preview can now emit machine-readable JSON with `--format json`, so agent/CI workflows can consume merge plans without screen-scraping CLI text.
+- dry-run preview can now emit machine-readable JSON with `--format json`, including per-item/per-target `decision` hints plus a top-level `decisionSummary`, so agent/CI workflows can consume merge plans without screen-scraping CLI text or inferring create/update/merge intent from raw structure alone.
 - Canonical truth still remains subordinate to code, `AGENTS.md`, `krukraft-ai-contexts/`, `design-system.md`, and `figma-component-map.md`.
 
 ## Why It Matters
