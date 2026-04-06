@@ -459,13 +459,10 @@ async function runCreatorManagementPagesScenario({ browser }: ProbeContext) {
       assert: async (page) => {
         await expect(page).toHaveURL(/\/dashboard\/creator\/analytics(?:\?.*)?$/);
         await expect(
-          page
-            .locator("main")
-            .getByText(/Revenue, downloads, and top-performing resources for your creator business\./i)
-            .first(),
+          page.locator("main").getByText(/Gross revenue/i).first(),
         ).toBeVisible({ timeout: 20_000 });
         await expect(
-          page.locator("main").getByText(/Gross revenue/i).first(),
+          page.locator("main").getByText(/Creator share/i).first(),
         ).toBeVisible({ timeout: 20_000 });
         await expect(
           page.locator("main").getByText(/Total downloads/i).first(),
