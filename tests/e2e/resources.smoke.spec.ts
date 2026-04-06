@@ -18,9 +18,15 @@ test("resources homepage renders and reveals at least one card image", async ({
   await expect(
     page.locator('[data-hero-surface="discover"]').first(),
   ).toBeVisible();
-  await expect(page.getByText("Trending now").first()).toBeVisible();
+  await expect(page.getByText("Start with a clearer path").first()).toBeVisible();
 
-  const firstCardImage = page.locator("main article img").first();
+  await expect
+    .poll(() => page.locator('main a[href^="/resources/"] article img').count(), {
+      timeout: 20_000,
+    })
+    .toBeGreaterThan(0);
+
+  const firstCardImage = page.locator('main a[href^="/resources/"] article img').first();
   await expectImageLoaded(firstCardImage);
 
   await expectNoAxeViolations(page, { include: ["main"] });
@@ -79,7 +85,12 @@ test("navigating from a scrolled discover page to detail resets the viewport to 
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
 
   await page.goto("/resources");
-  await expect(page.getByText("Trending now").first()).toBeVisible();
+  await expect(page.getByText("Start with a clearer path").first()).toBeVisible();
+  await expect
+    .poll(() => page.locator('main a[href^="/resources/"]:not([href*="?"])').count(), {
+      timeout: 20_000,
+    })
+    .toBeGreaterThan(0);
 
   await page.evaluate(() => {
     window.scrollTo({ top: 2200, behavior: "auto" });
