@@ -1,0 +1,3 @@
+ALTER TABLE "PlatformSettings"
+ADD COLUMN IF NOT EXISTS "logoFullDarkUrl" TEXT,
+ADD COLUMN IF NOT EXISTS "logoIconDarkUrl" TEXT;

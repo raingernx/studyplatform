@@ -24,7 +24,9 @@ import type {
 
 export const PUBLIC_PLATFORM_ASSET_ROUTES = {
   logoFullUrl: "/brand-assets/full-logo",
+  logoFullDarkUrl: "/brand-assets/full-logo-dark",
   logoIconUrl: "/brand-assets/icon-logo",
+  logoIconDarkUrl: "/brand-assets/icon-logo-dark",
   logoOgUrl: "/brand-assets/og-logo",
   logoEmailUrl: "/brand-assets/email-logo",
   faviconUrl: "/brand-assets/favicon",
@@ -160,7 +162,11 @@ function sanitizeAdminStoredSettings(
     ...settings,
     logoUrl: normalizeStoredPlatformAssetUrl(settings.logoUrl) || null,
     logoFullUrl: normalizeStoredPlatformAssetUrl(settings.logoFullUrl) || null,
+    logoFullDarkUrl:
+      normalizeStoredPlatformAssetUrl(settings.logoFullDarkUrl) || null,
     logoIconUrl: normalizeStoredPlatformAssetUrl(settings.logoIconUrl) || null,
+    logoIconDarkUrl:
+      normalizeStoredPlatformAssetUrl(settings.logoIconDarkUrl) || null,
     logoOgUrl,
     logoEmailUrl,
     faviconUrl,
@@ -186,7 +192,13 @@ export function resolvePlatformConfig(
     PLATFORM_DEFAULTS.siteUrl;
   const legacyLogoUrl = normalizeStoredPlatformAssetUrl(settings?.logoUrl);
   const storedFullLogoUrl = normalizeStoredPlatformAssetUrl(settings?.logoFullUrl);
+  const storedFullDarkLogoUrl = normalizeStoredPlatformAssetUrl(
+    settings?.logoFullDarkUrl,
+  );
   const storedIconLogoUrl = normalizeStoredPlatformAssetUrl(settings?.logoIconUrl);
+  const storedIconDarkLogoUrl = normalizeStoredPlatformAssetUrl(
+    settings?.logoIconDarkUrl,
+  );
   const storedOgLogoUrl = normalizeStoredPlatformAssetUrl(settings?.logoOgUrl);
   const storedEmailLogoUrl = normalizeStoredPlatformAssetUrl(settings?.logoEmailUrl);
   const storedFaviconUrl = normalizeStoredPlatformAssetUrl(settings?.faviconUrl);
@@ -199,6 +211,18 @@ export function resolvePlatformConfig(
     logoFullUrl ||
     legacyLogoUrl ||
     PLATFORM_DEFAULTS.logoIconUrl;
+  const logoFullDarkUrl =
+    storedFullDarkLogoUrl ||
+    storedFullLogoUrl ||
+    legacyLogoUrl ||
+    logoFullUrl ||
+    PLATFORM_DEFAULTS.logoFullDarkUrl;
+  const logoIconDarkUrl =
+    storedIconDarkLogoUrl ||
+    storedIconLogoUrl ||
+    logoFullDarkUrl ||
+    logoIconUrl ||
+    PLATFORM_DEFAULTS.logoIconDarkUrl;
   const logoOgUrl =
     storedOgLogoUrl ||
     logoFullUrl ||
@@ -220,7 +244,9 @@ export function resolvePlatformConfig(
     platformShortName,
     platformDescription,
     logoFullUrl,
+    logoFullDarkUrl,
     logoIconUrl,
+    logoIconDarkUrl,
     logoOgUrl,
     logoEmailUrl,
     logoUrl: logoFullUrl,
@@ -268,7 +294,9 @@ export function getBuildSafePublicPlatformConfig(): PlatformConfig {
   return {
     ...platform,
     logoFullUrl: PUBLIC_PLATFORM_ASSET_ROUTES.logoFullUrl,
+    logoFullDarkUrl: PUBLIC_PLATFORM_ASSET_ROUTES.logoFullDarkUrl,
     logoIconUrl: PUBLIC_PLATFORM_ASSET_ROUTES.logoIconUrl,
+    logoIconDarkUrl: PUBLIC_PLATFORM_ASSET_ROUTES.logoIconDarkUrl,
     logoOgUrl: PUBLIC_PLATFORM_ASSET_ROUTES.logoOgUrl,
     logoEmailUrl: PUBLIC_PLATFORM_ASSET_ROUTES.logoEmailUrl,
     logoUrl: PUBLIC_PLATFORM_ASSET_ROUTES.logoFullUrl,

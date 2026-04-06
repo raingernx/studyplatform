@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
@@ -10,6 +10,7 @@ import {
   beginResourcesNavigation,
   isResourcesSubtreePath,
 } from "@/components/marketplace/resourcesNavigationState";
+import { PLATFORM_DEFAULTS } from "@/lib/platform/platform-defaults";
 import { routes } from "@/lib/routes";
 
 export type LogoVariant = "full" | "icon" | "email";
@@ -24,19 +25,19 @@ interface LogoProps {
 }
 
 const FULL_IMAGE_CLASS: Record<LogoSize, string> = {
-  sm: "h-8 max-w-[170px]",
-  sidebar: "h-8 max-w-[180px]",
-  md: "h-10 max-w-[220px]",
-  lg: "h-10 max-w-[240px]",
-  xl: "h-14 max-w-[320px]",
+  sm: "h-8 w-[170px]",
+  sidebar: "h-8 w-[180px]",
+  md: "h-10 w-[220px]",
+  lg: "h-10 w-[240px]",
+  xl: "h-14 w-[320px]",
 };
 
 const ICON_IMAGE_CLASS: Record<LogoSize, string> = {
-  sm: "h-8 max-w-8",
-  sidebar: "h-8 max-w-8",
-  md: "h-10 max-w-10",
-  lg: "h-10 max-w-10",
-  xl: "h-14 max-w-14",
+  sm: "h-8 w-8",
+  sidebar: "h-8 w-8",
+  md: "h-10 w-10",
+  lg: "h-10 w-10",
+  xl: "h-14 w-14",
 };
 
 const ICON_FALLBACK_CLASS: Record<LogoSize, string> = {
@@ -59,7 +60,16 @@ function isRuntimeBrandAsset(src: string) {
   return src.startsWith("/brand-assets/");
 }
 
-function renderLogoAsset(src: string, alt: string, className: string) {
+function renderLogoAsset(
+  src: string,
+  alt: string,
+  className: string,
+  options?: {
+    onLoad?: () => void;
+    priority?: boolean;
+    fetchPriority?: "high" | "low" | "auto";
+  },
+) {
   if (src.startsWith("/") && !isRuntimeBrandAsset(src)) {
     return (
       <Image
@@ -67,8 +77,9 @@ function renderLogoAsset(src: string, alt: string, className: string) {
         alt={alt}
         width={320}
         height={96}
-        priority
-        className={cn("w-auto object-contain flex-shrink-0", className)}
+        priority={options?.priority}
+        onLoad={options?.onLoad}
+        className={cn("h-full w-full object-contain object-left flex-shrink-0", className)}
       />
     );
   }
@@ -79,8 +90,67 @@ function renderLogoAsset(src: string, alt: string, className: string) {
       alt={alt}
       width={320}
       height={96}
-      className={cn("w-auto object-contain flex-shrink-0", className)}
+      loading={options?.priority ? "eager" : "lazy"}
+      decoding="async"
+      fetchPriority={options?.fetchPriority}
+      onLoad={options?.onLoad}
+      className={cn("h-full w-full object-contain object-left flex-shrink-0", className)}
     />
+  );
+}
+
+function ThemeAwareLogoAsset({
+  alt,
+  lightSrc,
+  darkSrc,
+  fallbackLightSrc,
+  fallbackDarkSrc,
+  wrapperClassName,
+  forceDark = false,
+}: {
+  alt: string;
+  lightSrc: string;
+  darkSrc: string;
+  fallbackLightSrc: string;
+  fallbackDarkSrc: string;
+  wrapperClassName: string;
+  forceDark?: boolean;
+}) {
+  const [lightLoaded, setLightLoaded] = useState(false);
+  const [darkLoaded, setDarkLoaded] = useState(false);
+
+  return (
+    <span
+      className={cn(
+        "theme-logo-stack",
+        forceDark ? "theme-logo-stack--force-dark" : "theme-logo-stack--auto",
+        wrapperClassName,
+      )}
+      data-light-loaded={lightLoaded}
+      data-dark-loaded={darkLoaded}
+      aria-hidden="true"
+    >
+      <span className="theme-logo-layer theme-logo-layer--fallback theme-logo-layer--light">
+        {renderLogoAsset(fallbackLightSrc, "", "", { priority: true })}
+      </span>
+      <span className="theme-logo-layer theme-logo-layer--fallback theme-logo-layer--dark">
+        {renderLogoAsset(fallbackDarkSrc, "", "", { priority: true })}
+      </span>
+      <span className="theme-logo-layer theme-logo-layer--custom theme-logo-layer--light">
+        {renderLogoAsset(lightSrc, alt, "", {
+          onLoad: () => setLightLoaded(true),
+          fetchPriority: "high",
+          priority: isRuntimeBrandAsset(lightSrc) ? false : true,
+        })}
+      </span>
+      <span className="theme-logo-layer theme-logo-layer--custom theme-logo-layer--dark">
+        {renderLogoAsset(darkSrc, alt, "", {
+          onLoad: () => setDarkLoaded(true),
+          fetchPriority: "high",
+          priority: isRuntimeBrandAsset(darkSrc) ? false : true,
+        })}
+      </span>
+    </span>
   );
 }
 
@@ -95,7 +165,9 @@ export function Logo({
   const platformName = platform.platformShortName;
   const textColor = dark ? "text-white" : "text-foreground";
   const fullLogoUrl = platform.logoFullUrl;
+  const fullLogoDarkUrl = platform.logoFullDarkUrl;
   const iconLogoUrl = platform.logoIconUrl;
+  const iconLogoDarkUrl = platform.logoIconDarkUrl;
   const emailLogoUrl = platform.logoEmailUrl;
   const brandInitial = platformName.trim().charAt(0).toUpperCase() || "K";
   const imageAlt = `${platformName} logo`;
@@ -121,14 +193,31 @@ export function Logo({
 
     if (variant === "icon") {
       if (iconLogoUrl) {
-        return renderLogoAsset(iconLogoUrl, imageAlt, ICON_IMAGE_CLASS[size]);
+        return (
+          <ThemeAwareLogoAsset
+            alt={imageAlt}
+            lightSrc={iconLogoUrl}
+            darkSrc={iconLogoDarkUrl || iconLogoUrl}
+            fallbackLightSrc={PLATFORM_DEFAULTS.logoIconUrl}
+            fallbackDarkSrc={PLATFORM_DEFAULTS.logoIconDarkUrl}
+            wrapperClassName={ICON_IMAGE_CLASS[size]}
+            forceDark={dark}
+          />
+        );
       }
 
       if (fullLogoUrl) {
-        return renderLogoAsset(
-          fullLogoUrl,
-          imageAlt,
-          cn(FULL_IMAGE_CLASS[size], "max-w-[132px]"),
+        return (
+          <ThemeAwareLogoAsset
+            alt={imageAlt}
+            lightSrc={fullLogoUrl}
+            darkSrc={fullLogoDarkUrl || fullLogoUrl}
+            fallbackLightSrc={PLATFORM_DEFAULTS.logoFullUrl}
+            fallbackDarkSrc={PLATFORM_DEFAULTS.logoFullDarkUrl}
+            wrapperClassName={cn(FULL_IMAGE_CLASS[size], "w-[132px]")
+            }
+            forceDark={dark}
+          />
         );
       }
 
@@ -146,13 +235,31 @@ export function Logo({
     }
 
     if (fullLogoUrl) {
-      return renderLogoAsset(fullLogoUrl, imageAlt, FULL_IMAGE_CLASS[size]);
+      return (
+        <ThemeAwareLogoAsset
+          alt={imageAlt}
+          lightSrc={fullLogoUrl}
+          darkSrc={fullLogoDarkUrl || fullLogoUrl}
+          fallbackLightSrc={PLATFORM_DEFAULTS.logoFullUrl}
+          fallbackDarkSrc={PLATFORM_DEFAULTS.logoFullDarkUrl}
+          wrapperClassName={FULL_IMAGE_CLASS[size]}
+          forceDark={dark}
+        />
+      );
     }
 
     if (iconLogoUrl) {
       return (
         <span className="inline-flex items-center justify-start gap-2.5">
-          {renderLogoAsset(iconLogoUrl, imageAlt, ICON_IMAGE_CLASS[size])}
+          <ThemeAwareLogoAsset
+            alt={imageAlt}
+            lightSrc={iconLogoUrl}
+            darkSrc={iconLogoDarkUrl || iconLogoUrl}
+            fallbackLightSrc={PLATFORM_DEFAULTS.logoIconUrl}
+            fallbackDarkSrc={PLATFORM_DEFAULTS.logoIconDarkUrl}
+            wrapperClassName={ICON_IMAGE_CLASS[size]}
+            forceDark={dark}
+          />
           <span
             className={cn(
               "flex items-center pb-0.5 font-heading font-semibold tracking-tight leading-none",

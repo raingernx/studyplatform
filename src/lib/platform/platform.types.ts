@@ -3,7 +3,9 @@ export type PlatformConfig = {
   platformShortName: string;
   platformDescription: string;
   logoFullUrl: string;
+  logoFullDarkUrl: string;
   logoIconUrl: string;
+  logoIconDarkUrl: string;
   logoOgUrl: string;
   logoEmailUrl: string;
   logoUrl: string;
@@ -28,7 +30,9 @@ export type PlatformSettingsInput = {
   ogSiteName?: string | null;
   logoUrl?: string | null;
   logoFullUrl?: string | null;
+  logoFullDarkUrl?: string | null;
   logoIconUrl?: string | null;
+  logoIconDarkUrl?: string | null;
   logoOgUrl?: string | null;
   logoEmailUrl?: string | null;
   faviconUrl?: string | null;
@@ -48,7 +52,9 @@ export type PlatformStoredSettings = {
   ogSiteName?: string | null;
   logoUrl?: string | null;
   logoFullUrl?: string | null;
+  logoFullDarkUrl?: string | null;
   logoIconUrl?: string | null;
+  logoIconDarkUrl?: string | null;
   logoOgUrl?: string | null;
   logoEmailUrl?: string | null;
   faviconUrl?: string | null;

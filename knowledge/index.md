@@ -59,6 +59,7 @@ Use this index as the first entry point for queries.
 - [CI Browser Smoke](wiki/operations/ci-browser-smoke.md)
 - [Knowledge Layer Operations](wiki/operations/knowledge-layer.md)
 - [Knowledge Layer Playbook](wiki/operations/knowledge-playbook.md)
+- [Platform Brand Asset Delivery](wiki/operations/platform-brand-assets.md)
 - [Post-Deploy Warm Workflow](wiki/operations/post-deploy-warm-workflow.md)
 
 ### Decisions

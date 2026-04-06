@@ -98,9 +98,11 @@ Marketplace hero note:
 - legacy admin hero management, hero analytics, and hero impression/click endpoints are no longer part of the active app surface
 
 Platform settings notes:
-- Full, icon, OG, email, and favicon assets can be edited independently
+- Full, full-dark, icon, icon-dark, OG, email, and favicon assets can be edited independently
 - Admin previews may show inherited fallback assets, but stored values must remain distinct from inherited preview state
 - Public metadata and tab/icon surfaces now read brand assets through runtime `/brand-assets/*` routes so uploads propagate without falling back to stale build-time defaults
+- Dark theme navigation and auth surfaces can now use dedicated dark logos rather than reusing the light assets
+- Navigation branding now keeps a repo-owned fallback asset in place until the active custom logo has loaded, so refreshes do not show an empty logo slot
 
 ## Payment Flow
 

@@ -47,6 +47,9 @@
 - `browser:probe:dashboard`: repo-owned dashboard runtime probe for `/dashboard/downloads`, `/dashboard/purchases`, and `/settings` transitions after entering the dashboard shell
 - `browser:probe:pages`: repo-owned direct-load probe for public/product informational pages (`/membership`, legal/support, checkout status) plus the remaining admin root/index pages (`/admin`, activity, audit, categories, orders, reviews, tags, users)
 - `browser:probe:management`: repo-owned authenticated management probe for `/admin/analytics`, `/admin/analytics/recommendations`, `/dashboard/creator/resources`, `/dashboard/creator/resources/new`, `/dashboard/creator/profile`, and `/dashboard/creator/analytics`
+- platform branding now includes dedicated `logoFullDarkUrl` / `logoIconDarkUrl` fields end-to-end (Prisma, admin settings, public config, and runtime `/brand-assets/*` aliases), so dark-theme logo swaps no longer need to reuse the light asset
+- `src/components/brand/Logo.tsx` now treats brand images as critical-path UI: it pre-renders a local fallback asset, layers theme-specific runtime logo images over that fallback, and hides the fallback only after the active custom asset has loaded
+- the logo stack now requests both the repo-owned fallback assets and the active light/dark runtime logo images at high priority from SSR markup, so navigation branding starts loading before most other route imagery without duplicating manual `<head>` preloads
 - `src/services/resources/index.ts`: top-level import surface intentionally exposes only public marketplace/detail reads plus viewer-state helpers; route handlers and admin/mutation paths must import `resource.service` / `mutations` subpaths directly so browser-facing bundles do not accidentally pull `server-only` or `next/cache` mutation code
 - `src/components/resources/detail/ResourceDetailLoadingShell.tsx`: the client loading shell is intentionally self-contained and must not import `ResourceDetailSections.tsx` or other service-backed section files, because that overlay path mounts in browser navigation flows
 - `knowledge/`: repo-owned LLM wiki split into `knowledge/raw/` evidence captures, `knowledge/wiki/` synthesized topic pages, and `knowledge/schema/` ingest/query/lint rules; the layer is intentionally lighter-weight than a full external RAG stack and is maintained inside the repo
@@ -63,6 +66,7 @@
 - `analyze`: Next bundle analyzer via `ANALYZE=true npm run build`
 - `/api/auth/viewer` now reads the signed NextAuth JWT through `next-auth/jwt` instead of `getServerSession`, which keeps lightweight auth-chrome checks off the Prisma pool
 - the marketplace/detail private viewer-state APIs now use the same JWT-token snapshot pattern instead of Prisma-backed `getServerSession` reads, which removes a second source of auth-related pool pressure on public routes
+- local fallback logo assets now include `/brand/krukraft-logo-dark.svg` and `/brand/krukraft-mark-dark.svg`, which act as the always-available first-paint branding layer whenever a custom uploaded logo has not loaded yet
 - local-only metadata/state folders `.byom/`, `.codex/environments/`, and ad-hoc `.agents/skills/*` copies are intentionally gitignored; only the tracked `.agents/skills/next-best-practices` subtree should remain under version control
 - `lint` now includes `npm run wiki:lint`, so repo-owned knowledge pages must stay structurally valid alongside the code/docs checks
 

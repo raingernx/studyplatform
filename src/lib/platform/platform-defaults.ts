@@ -6,7 +6,9 @@ export const PLATFORM_DEFAULTS: PlatformConfig = {
   platformDescription:
     "Krukraft is a marketplace for high-quality educational resources.",
   logoFullUrl: "/brand/krukraft-logo.svg",
+  logoFullDarkUrl: "/brand/krukraft-logo-dark.svg",
   logoIconUrl: "/brand/krukraft-mark.svg",
+  logoIconDarkUrl: "/brand/krukraft-mark-dark.svg",
   logoOgUrl: "/brand/krukraft-logo.svg",
   logoEmailUrl: "/brand/krukraft-logo.svg",
   logoUrl: "/brand/krukraft-logo.svg",

@@ -6,6 +6,7 @@ import { AlertCircle, ImageIcon, Upload } from "lucide-react";
 import { PickerActionButton, PickerActions } from "@/design-system";
 
 type BrandAssetPreviewVariant = "wide" | "square";
+type BrandAssetPreviewTone = "light" | "dark";
 
 interface BrandAssetFieldProps {
   label: string;
@@ -15,6 +16,7 @@ interface BrandAssetFieldProps {
   inheritedLabel?: string | null;
   platformName: string;
   previewVariant: BrandAssetPreviewVariant;
+  previewTone?: BrandAssetPreviewTone;
   isUploading: boolean;
   error?: string | null;
   onUpload: (file: File) => void;
@@ -30,6 +32,7 @@ function BrandAssetPreview({
   previewValue,
   platformName,
   previewVariant,
+  previewTone = "light",
   isUploading,
 }: {
   label: string;
@@ -37,21 +40,32 @@ function BrandAssetPreview({
   previewValue?: string;
   platformName: string;
   previewVariant: BrandAssetPreviewVariant;
+  previewTone?: BrandAssetPreviewTone;
   isUploading: boolean;
 }) {
   const effectiveValue = previewValue ?? value;
   const hasAsset = Boolean(effectiveValue);
   const isWide = previewVariant === "wide";
+  const isDarkTone = previewTone === "dark";
 
   return (
     <div
       className={[
         "relative overflow-hidden rounded-xl border border-border",
-        "bg-[radial-gradient(circle_at_1px_1px,rgba(148,163,184,0.14)_1px,transparent_0)] [background-size:12px_12px]",
+        isDarkTone
+          ? "bg-[radial-gradient(circle_at_1px_1px,rgba(148,163,184,0.16)_1px,transparent_0)] [background-size:12px_12px]"
+          : "bg-[radial-gradient(circle_at_1px_1px,rgba(148,163,184,0.14)_1px,transparent_0)] [background-size:12px_12px]",
         isWide ? "h-16 w-full sm:h-20 lg:h-24" : "h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24",
       ].join(" ")}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-muted/95 via-card/90 to-muted/80" />
+      <div
+        className={[
+          "absolute inset-0",
+          isDarkTone
+            ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950"
+            : "bg-gradient-to-br from-muted/95 via-card/90 to-muted/80",
+        ].join(" ")}
+      />
 
       <div className="relative flex h-full w-full items-center justify-center px-4 py-3">
         {hasAsset ? (
@@ -93,14 +107,27 @@ function BrandAssetPreview({
             ].join(" ")}
           >
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-card/80">
-              <ImageIcon className="h-4 w-4" aria-hidden />
+              <ImageIcon
+                className={["h-4 w-4", isDarkTone ? "text-slate-300" : ""].join(" ")}
+                aria-hidden
+              />
             </span>
             {isWide ? (
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">
+                <p
+                  className={[
+                    "text-sm font-medium",
+                    isDarkTone ? "text-white" : "text-foreground",
+                  ].join(" ")}
+                >
                   No asset uploaded
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p
+                  className={[
+                    "text-xs",
+                    isDarkTone ? "text-slate-300" : "text-muted-foreground",
+                  ].join(" ")}
+                >
                   Upload an image to preview it here.
                 </p>
               </div>
@@ -128,6 +155,7 @@ export function BrandAssetField({
   inheritedLabel,
   platformName,
   previewVariant,
+  previewTone = "light",
   isUploading,
   error,
   onUpload,
@@ -148,6 +176,7 @@ export function BrandAssetField({
           previewValue={previewValue}
           platformName={platformName}
           previewVariant={previewVariant}
+          previewTone={previewTone}
           isUploading={isUploading}
         />
       </div>

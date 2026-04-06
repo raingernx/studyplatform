@@ -41,7 +41,9 @@ interface AdminSettingsState {
   ogSiteName: string;
   logoUrl: string;
   logoFullUrl: string;
+  logoFullDarkUrl: string;
   logoIconUrl: string;
+  logoIconDarkUrl: string;
   logoOgUrl: string;
   logoEmailUrl: string;
   faviconUrl: string;
@@ -87,7 +89,9 @@ type PersistedPlatformState = Pick<
   | "ogSiteName"
   | "logoUrl"
   | "logoFullUrl"
+  | "logoFullDarkUrl"
   | "logoIconUrl"
+  | "logoIconDarkUrl"
   | "logoOgUrl"
   | "logoEmailUrl"
   | "faviconUrl"
@@ -99,7 +103,9 @@ type PersistedPlatformState = Pick<
 
 type BrandAssetFieldKey =
   | "logoFullUrl"
+  | "logoFullDarkUrl"
   | "logoIconUrl"
+  | "logoIconDarkUrl"
   | "logoOgUrl"
   | "logoEmailUrl"
   | "faviconUrl";
@@ -114,7 +120,9 @@ const DEFAULT_SETTINGS: AdminSettingsState = {
   ogSiteName: PLATFORM_DEFAULTS.ogSiteName,
   logoUrl: PLATFORM_DEFAULTS.logoUrl,
   logoFullUrl: PLATFORM_DEFAULTS.logoFullUrl,
+  logoFullDarkUrl: PLATFORM_DEFAULTS.logoFullDarkUrl,
   logoIconUrl: PLATFORM_DEFAULTS.logoIconUrl,
+  logoIconDarkUrl: PLATFORM_DEFAULTS.logoIconDarkUrl,
   logoOgUrl: PLATFORM_DEFAULTS.logoOgUrl,
   logoEmailUrl: PLATFORM_DEFAULTS.logoEmailUrl,
   faviconUrl: PLATFORM_DEFAULTS.faviconUrl,
@@ -170,7 +178,9 @@ function toPersistedPlatformState(
       normalizeStoredValue(stored?.logoFullUrl) ||
       normalizeStoredValue(stored?.logoUrl) ||
       platform.logoFullUrl,
+    logoFullDarkUrl: normalizeStoredValue(stored?.logoFullDarkUrl),
     logoIconUrl: normalizeStoredValue(stored?.logoIconUrl),
+    logoIconDarkUrl: normalizeStoredValue(stored?.logoIconDarkUrl),
     logoOgUrl: normalizeStoredValue(stored?.logoOgUrl),
     logoEmailUrl: normalizeStoredValue(stored?.logoEmailUrl),
     faviconUrl: normalizeStoredValue(stored?.faviconUrl),
@@ -194,24 +204,53 @@ function buildSettingsState(
 function resolveBrandAssetPreview(
   settings: Pick<
     AdminSettingsState,
-    "logoUrl" | "logoFullUrl" | "logoIconUrl" | "logoOgUrl" | "logoEmailUrl" | "faviconUrl"
+    | "logoUrl"
+    | "logoFullUrl"
+    | "logoFullDarkUrl"
+    | "logoIconUrl"
+    | "logoIconDarkUrl"
+    | "logoOgUrl"
+    | "logoEmailUrl"
+    | "faviconUrl"
   >,
   field: BrandAssetFieldKey,
 ) {
   const fullLogo =
     settings.logoFullUrl || settings.logoUrl || PLATFORM_DEFAULTS.logoFullUrl;
+  const fullDarkLogo =
+    settings.logoFullDarkUrl || fullLogo || PLATFORM_DEFAULTS.logoFullDarkUrl;
   const iconLogo =
     settings.logoIconUrl || fullLogo || PLATFORM_DEFAULTS.logoIconUrl;
+  const iconDarkLogo =
+    settings.logoIconDarkUrl ||
+    settings.logoIconUrl ||
+    fullDarkLogo ||
+    iconLogo ||
+    PLATFORM_DEFAULTS.logoIconDarkUrl;
 
   switch (field) {
     case "logoFullUrl":
       return { value: fullLogo, inheritedLabel: null };
+    case "logoFullDarkUrl":
+      return {
+        value: fullDarkLogo,
+        inheritedLabel: settings.logoFullDarkUrl
+          ? null
+          : "Using the default full logo until a dedicated dark-surface logo is uploaded.",
+      };
     case "logoIconUrl":
       return {
         value: settings.logoIconUrl || iconLogo,
         inheritedLabel: settings.logoIconUrl
           ? null
           : "Using full logo until an icon logo is uploaded.",
+      };
+    case "logoIconDarkUrl":
+      return {
+        value: iconDarkLogo,
+        inheritedLabel: settings.logoIconDarkUrl
+          ? null
+          : "Using the dark full logo until a dedicated dark icon logo is uploaded.",
       };
     case "logoOgUrl":
       return {
@@ -251,7 +290,9 @@ function getPersistedSettingsFromState(
     ogSiteName: settings.ogSiteName,
     logoUrl: settings.logoUrl,
     logoFullUrl: settings.logoFullUrl,
+    logoFullDarkUrl: settings.logoFullDarkUrl,
     logoIconUrl: settings.logoIconUrl,
+    logoIconDarkUrl: settings.logoIconDarkUrl,
     logoOgUrl: settings.logoOgUrl,
     logoEmailUrl: settings.logoEmailUrl,
     faviconUrl: settings.faviconUrl,
@@ -347,7 +388,9 @@ export function AdminSettingsClient({
           ogSiteName: nextSettings.ogSiteName,
           logoUrl: nextSettings.logoUrl,
           logoFullUrl: nextSettings.logoFullUrl,
+          logoFullDarkUrl: nextSettings.logoFullDarkUrl,
           logoIconUrl: nextSettings.logoIconUrl,
+          logoIconDarkUrl: nextSettings.logoIconDarkUrl,
           logoOgUrl: nextSettings.logoOgUrl,
           logoEmailUrl: nextSettings.logoEmailUrl,
           faviconUrl: nextSettings.faviconUrl,
@@ -583,7 +626,7 @@ export function AdminSettingsClient({
 
         <FormSection
           title="Brand Assets"
-          description="Manage dedicated logo assets for navigation, social previews, email, and browser surfaces."
+          description="Manage dedicated logo assets for navigation, dark surfaces, social previews, email, and browser surfaces."
           contentClassName="grid grid-cols-1 gap-4 xl:grid-cols-2"
         >
           <BrandAssetField
@@ -598,6 +641,19 @@ export function AdminSettingsClient({
             onUpload={(file) => handleBrandAssetUpload("logoFullUrl", file)}
           />
           <BrandAssetField
+            label="Full Logo (Dark)"
+            helperText="Used on dark surfaces before paint, including dark theme navigation and auth shells."
+            value={settings.logoFullDarkUrl}
+            previewValue={resolveBrandAssetPreview(settings, "logoFullDarkUrl").value}
+            inheritedLabel={resolveBrandAssetPreview(settings, "logoFullDarkUrl").inheritedLabel}
+            platformName={settings.platformName}
+            previewVariant="wide"
+            previewTone="dark"
+            isUploading={uploadingAsset === "logoFullDarkUrl"}
+            error={brandAssetErrors.logoFullDarkUrl}
+            onUpload={(file) => handleBrandAssetUpload("logoFullDarkUrl", file)}
+          />
+          <BrandAssetField
             label="Icon Logo"
             helperText="Used in mobile navigation, compact layouts, and fallback marks."
             value={settings.logoIconUrl}
@@ -608,6 +664,19 @@ export function AdminSettingsClient({
             isUploading={uploadingAsset === "logoIconUrl"}
             error={brandAssetErrors.logoIconUrl}
             onUpload={(file) => handleBrandAssetUpload("logoIconUrl", file)}
+          />
+          <BrandAssetField
+            label="Icon Logo (Dark)"
+            helperText="Used in compact dark-theme navigation and mobile brand surfaces."
+            value={settings.logoIconDarkUrl}
+            previewValue={resolveBrandAssetPreview(settings, "logoIconDarkUrl").value}
+            inheritedLabel={resolveBrandAssetPreview(settings, "logoIconDarkUrl").inheritedLabel}
+            platformName={settings.platformName}
+            previewVariant="square"
+            previewTone="dark"
+            isUploading={uploadingAsset === "logoIconDarkUrl"}
+            error={brandAssetErrors.logoIconDarkUrl}
+            onUpload={(file) => handleBrandAssetUpload("logoIconDarkUrl", file)}
           />
           <BrandAssetField
             label="Open Graph Logo"

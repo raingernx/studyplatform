@@ -195,7 +195,9 @@ model PlatformSettings {
   ogSiteName             String?
   logoUrl                String?
   logoFullUrl            String?
+  logoFullDarkUrl        String?
   logoIconUrl            String?
+  logoIconDarkUrl        String?
   logoOgUrl              String?
   logoEmailUrl           String?
   faviconUrl             String?

@@ -1,5 +1,9 @@
 # Knowledge Log
 
+## 2026-04-07
+
+- captured [Platform Brand Assets Dark Theme Baseline](raw/operations/platform-brand-assets-dark-theme-baseline.md) in `operations` and seeded [Platform Brand Asset Delivery](wiki/operations/platform-brand-assets.md) so dark-logo fields, runtime asset aliases, and first-paint fallback behavior have a durable shared reference.
+
 ## 2026-04-06
 
 - made `Codex triages first` the default knowledge-layer workflow so the agent decides skip/single/update/batch ingest shape first and reports that choice back to the user.

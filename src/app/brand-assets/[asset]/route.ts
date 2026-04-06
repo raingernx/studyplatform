@@ -6,7 +6,9 @@ export const dynamic = "force-dynamic";
 
 const ASSET_KEYS = {
   "full-logo": "logoFullUrl",
+  "full-logo-dark": "logoFullDarkUrl",
   "icon-logo": "logoIconUrl",
+  "icon-logo-dark": "logoIconDarkUrl",
   "og-logo": "logoOgUrl",
   "email-logo": "logoEmailUrl",
   favicon: "faviconUrl",
@@ -14,7 +16,9 @@ const ASSET_KEYS = {
 
 const ASSET_DEFAULTS = {
   "full-logo": PLATFORM_DEFAULTS.logoFullUrl,
+  "full-logo-dark": PLATFORM_DEFAULTS.logoFullDarkUrl,
   "icon-logo": PLATFORM_DEFAULTS.logoIconUrl,
+  "icon-logo-dark": PLATFORM_DEFAULTS.logoIconDarkUrl,
   "og-logo": PLATFORM_DEFAULTS.logoOgUrl,
   "email-logo": PLATFORM_DEFAULTS.logoEmailUrl,
   favicon: PLATFORM_DEFAULTS.faviconUrl,

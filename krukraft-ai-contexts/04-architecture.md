@@ -173,6 +173,7 @@ Admin settings note:
 - build-safe platform config is only for branding-only build surfaces
 - `/admin/settings` must read live DB-backed platform settings
 - admin brand-asset editing must distinguish stored values from inherited preview fallbacks
+- `/admin/settings` now also persists dedicated dark-surface logo fields (`logoFullDarkUrl`, `logoIconDarkUrl`) instead of overloading the light navigation logos
 
 ## Authentication
 
@@ -199,6 +200,9 @@ public logo / favicon / OG asset delivery
   → resolve latest DB-backed platform assets without forcing Prisma into build-time metadata generation
   → runtime asset delivery now guards against `/brand-assets/*` alias values stored in platform settings and falls back to concrete asset URLs instead of redirecting back to itself
   → runtime asset alias requests also bypass `src/proxy.ts`, so asset delivery no longer spends time in the ranking-cookie/proxy layer
+  → the alias surface now includes `full-logo-dark` and `icon-logo-dark` for theme-aware navigation branding
+  → the `Logo` stack requests fallback and active runtime logo images at high priority from SSR markup so branding assets are requested before most other route imagery without duplicating manual head preloads
+  → the `Logo` client component keeps a local repo-owned fallback asset mounted underneath the runtime logo image, so refreshes do not show a blank brand slot while the current custom light/dark asset is still loading
 ```
 
 This separation exists to avoid Prisma build-time warnings and DB dependency in static build paths.
