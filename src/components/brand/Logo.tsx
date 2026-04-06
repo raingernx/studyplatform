@@ -118,6 +118,11 @@ function ThemeAwareLogoAsset({
 }) {
   const [lightLoaded, setLightLoaded] = useState(false);
   const [darkLoaded, setDarkLoaded] = useState(false);
+  const usesDedicatedDarkAsset =
+    darkSrc !== lightSrc && !isRuntimeBrandAsset(darkSrc);
+  const effectiveFallbackDarkSrc = usesDedicatedDarkAsset
+    ? fallbackDarkSrc
+    : fallbackLightSrc;
 
   return (
     <span
@@ -134,7 +139,7 @@ function ThemeAwareLogoAsset({
         {renderLogoAsset(fallbackLightSrc, "", "", { priority: true })}
       </span>
       <span className="theme-logo-layer theme-logo-layer--fallback theme-logo-layer--dark">
-        {renderLogoAsset(fallbackDarkSrc, "", "", { priority: true })}
+        {renderLogoAsset(effectiveFallbackDarkSrc, "", "", { priority: true })}
       </span>
       <span className="theme-logo-layer theme-logo-layer--custom theme-logo-layer--light">
         {renderLogoAsset(lightSrc, alt, "", {

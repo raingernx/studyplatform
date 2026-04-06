@@ -203,6 +203,7 @@ public logo / favicon / OG asset delivery
   → the alias surface now includes `full-logo-dark` and `icon-logo-dark` for theme-aware navigation branding
   → the `Logo` stack requests fallback and active runtime logo images at high priority from SSR markup so branding assets are requested before most other route imagery without duplicating manual head preloads
   → the `Logo` client component keeps a local repo-owned fallback asset mounted underneath the runtime logo image, so refreshes do not show a blank brand slot while the current custom light/dark asset is still loading
+  → because `/brand-assets/*` dark aliases can still resolve to the same uploaded light logo, the dark-theme stack now reuses the light fallback for first paint on runtime-logo paths so refreshes do not flash a mismatched white/default-dark logo before settling on the uploaded asset
 ```
 
 This separation exists to avoid Prisma build-time warnings and DB dependency in static build paths.

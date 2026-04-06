@@ -103,6 +103,7 @@ Platform settings notes:
 - Public metadata and tab/icon surfaces now read brand assets through runtime `/brand-assets/*` routes so uploads propagate without falling back to stale build-time defaults
 - Dark theme navigation and auth surfaces can now use dedicated dark logos rather than reusing the light assets
 - Navigation branding now keeps a repo-owned fallback asset in place until the active custom logo has loaded, so refreshes do not show an empty logo slot
+- Because `/brand-assets/*` dark aliases can still resolve to the same uploaded light logo, first paint now stays on the light fallback for runtime-logo paths instead of flashing the repo dark fallback and then swapping back to the uploaded light asset
 
 ## Payment Flow
 

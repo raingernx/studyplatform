@@ -9,6 +9,7 @@ Krukraft now supports dedicated dark-theme brand assets for navigation surfaces 
 - `PlatformSettings` stores `logoFullDarkUrl` and `logoIconDarkUrl` alongside the light/default logo fields.
 - Build-safe public platform config exposes `/brand-assets/full-logo-dark` and `/brand-assets/icon-logo-dark` without making root layout or metadata DB-bound.
 - `Logo.tsx` mounts local repo-owned fallback assets first, then overlays theme-specific custom images and hides the fallback only after the active image has loaded.
+- because the runtime `/brand-assets/*` dark alias can still resolve to the same uploaded light logo, the dark-theme logo stack intentionally keeps using the light fallback for first paint on runtime-logo paths so refreshes do not flash a mismatched dark-default logo before the uploaded asset arrives.
 - the logo stack requests the fallback and active light/dark logo images at high priority from SSR markup because brand navigation is treated as critical-path UI.
 - Admin settings can now upload and preview both light and dark versions of full and icon logos.
 
