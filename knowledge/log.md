@@ -54,3 +54,4 @@
 - Updated platform brand-asset delivery rules so dark-theme first paint no longer flashes the repo-owned dark fallback when only a light custom logo is configured.
 - Strengthened perf regression gates by raising LHCI to two runs with blocking performance/TBT/CLS assertions and expanded the post-deploy warm/perf summary with rollup reporting for worst-route and nearest-budget visibility.
 - Added a repo-owned performance observability playbook that defines the review order after deploy: warmed perf summary first, Speed Insights second, runtime logs third.
+- Replaced the post-deploy perf workflow's heredoc summary append with a parser-safe inline Node command after a push-triggered YAML syntax failure on `.github/workflows/post-deploy-warm-cache.yml`.

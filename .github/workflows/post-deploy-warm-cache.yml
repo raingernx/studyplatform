@@ -299,45 +299,5 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
           if [ -f artifacts/perf-summary.json ]; then
-            node <<'EOF' >> "$GITHUB_STEP_SUMMARY"
-const fs = require("node:fs");
-
-const summary = JSON.parse(fs.readFileSync("artifacts/perf-summary.json", "utf8"));
-const rollup = summary.rollup ?? {};
-const results = Array.isArray(summary.results) ? summary.results : [];
-
-console.log("");
-console.log("### Perf rollup");
-console.log("");
-console.log(`- Suite: ${summary.suite ?? "unknown"}`);
-console.log(`- Status: ${(rollup.status ?? "unknown").toString().toUpperCase()}`);
-console.log(`- Passed routes: ${rollup.passedRouteCount ?? "n/a"}/${results.length}`);
-console.log(`- Failed routes: ${rollup.failedRouteCount ?? "n/a"}`);
-
-if (rollup.worstP95Route?.name) {
-  console.log(
-    `- Worst p95: ${rollup.worstP95Route.name} (${rollup.worstP95Route.p95Ms?.toFixed?.(2) ?? "n/a"}ms / ${rollup.worstP95Route.thresholdMs}ms budget)`,
-  );
-}
-
-if (rollup.nearestBudgetRoute?.name) {
-  const headroom = rollup.nearestBudgetRoute.headroomMs;
-  const formattedHeadroom =
-    typeof headroom === "number"
-      ? `${headroom >= 0 ? "+" : ""}${headroom.toFixed(2)}ms`
-      : "n/a";
-  console.log(
-    `- Nearest budget: ${rollup.nearestBudgetRoute.name} (${rollup.nearestBudgetRoute.p95Ms?.toFixed?.(2) ?? "n/a"}ms, headroom ${formattedHeadroom})`,
-  );
-}
-
-console.log("");
-console.log("| Route | p95 | Budget | Status |");
-console.log("| --- | ---: | ---: | --- |");
-for (const result of results) {
-  const p95 = typeof result.p95Ms === "number" ? `${result.p95Ms.toFixed(2)}ms` : "n/a";
-  const status = result.thresholdPassed ? "PASS" : "FAIL";
-  console.log(`| ${result.name} | ${p95} | ${result.thresholdMs}ms | ${status} |`);
-}
-EOF
+            node --input-type=module -e 'import fs from "node:fs"; const summary = JSON.parse(fs.readFileSync("artifacts/perf-summary.json", "utf8")); const rollup = summary.rollup ?? {}; const results = Array.isArray(summary.results) ? summary.results : []; console.log(""); console.log("### Perf rollup"); console.log(""); console.log(`- Suite: ${summary.suite ?? "unknown"}`); console.log(`- Status: ${(rollup.status ?? "unknown").toString().toUpperCase()}`); console.log(`- Passed routes: ${rollup.passedRouteCount ?? "n/a"}/${results.length}`); console.log(`- Failed routes: ${rollup.failedRouteCount ?? "n/a"}`); if (rollup.worstP95Route?.name) { console.log(`- Worst p95: ${rollup.worstP95Route.name} (${rollup.worstP95Route.p95Ms?.toFixed?.(2) ?? "n/a"}ms / ${rollup.worstP95Route.thresholdMs}ms budget)`); } if (rollup.nearestBudgetRoute?.name) { const headroom = rollup.nearestBudgetRoute.headroomMs; const formattedHeadroom = typeof headroom === "number" ? `${headroom >= 0 ? "+" : ""}${headroom.toFixed(2)}ms` : "n/a"; console.log(`- Nearest budget: ${rollup.nearestBudgetRoute.name} (${rollup.nearestBudgetRoute.p95Ms?.toFixed?.(2) ?? "n/a"}ms, headroom ${formattedHeadroom})`); } console.log(""); console.log("| Route | p95 | Budget | Status |"); console.log("| --- | ---: | ---: | --- |"); for (const result of results) { const p95 = typeof result.p95Ms === "number" ? `${result.p95Ms.toFixed(2)}ms` : "n/a"; const status = result.thresholdPassed ? "PASS" : "FAIL"; console.log(`| ${result.name} | ${p95} | ${result.thresholdMs}ms | ${status} |`); }' >> "$GITHUB_STEP_SUMMARY"
           fi
