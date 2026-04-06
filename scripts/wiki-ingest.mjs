@@ -27,6 +27,7 @@ const today = new Date().toISOString().slice(0, 10);
 const { values } = parseArgs({
   options: {
     batch: { type: "string" },
+    format: { type: "string", default: "text" },
     bucket: { type: "string" },
     slug: { type: "string" },
     title: { type: "string" },
@@ -38,6 +39,11 @@ const { values } = parseArgs({
     "dry-run": { type: "boolean", default: false },
   },
 });
+
+const outputFormat = values.format;
+if (!["text", "json"].includes(outputFormat)) {
+  fail(`--format must be one of: text, json`);
+}
 
 function fail(message) {
   console.error(`[wiki-ingest] ${message}`);
@@ -132,13 +138,13 @@ function loadInput() {
       {
         bucket: values.bucket,
         slug: values.slug,
-      title: values.title,
-      summary: values.summary,
-      source: values.source,
-      skipRawCapture: false,
-      wikiDir: values["wiki-dir"],
-      wikiSlug: values["wiki-slug"],
-      wikiTitle: values["wiki-title"],
+        title: values.title,
+        summary: values.summary,
+        source: values.source,
+        skipRawCapture: false,
+        wikiDir: values["wiki-dir"],
+        wikiSlug: values["wiki-slug"],
+        wikiTitle: values["wiki-title"],
         wikiTargetId: null,
       },
     ],
@@ -746,6 +752,51 @@ function printDryRun(plan, isBatchMode) {
   }
 }
 
+function serializeDryRunPlan(plan, input) {
+  return {
+    mode: input.isBatchMode ? "batch" : "single",
+    batchPath: input.batchPath ? toPosixPath(path.relative(process.cwd(), input.batchPath)) : null,
+    items: plan.items.map((item) => ({
+      index: item.index + 1,
+      title: item.title,
+      raw: item.rawRelativePath,
+      rawAlreadyExists: item.rawAlreadyExists,
+      skipRawCapture: item.skipRawCapture,
+      source: item.sourceRepoRelativePath,
+      wikiTarget: item.wikiTarget
+        ? {
+            id: item.wikiTarget.id,
+            relativePath: item.wikiTarget.wikiRelativePath,
+            exists: item.wikiTarget.wikiAlreadyExists,
+            itemCount: item.wikiTarget.items.length,
+          }
+        : null,
+      existingSuggestions: item.wikiTarget ? item.wikiTarget.existingSuggestions.map((page) => page.relativePath) : [],
+      batchSuggestions: item.wikiTarget ? item.wikiTarget.plannedBatchSuggestions.map((page) => page.wikiRelativePath) : [],
+      totalSuggestionCount: item.totalSuggestionCount,
+    })),
+    wikiTargets: plan.wikiTargets.map((target) => ({
+      id: target.id,
+      relativePath: target.wikiRelativePath,
+      exists: target.wikiAlreadyExists,
+      sourceItems: target.items.map((item) => item.rawRelativePath ?? item.sourceRepoRelativePath ?? item.title),
+      existingSuggestions: target.existingSuggestions.map((page) => page.relativePath),
+      batchSuggestions: target.plannedBatchSuggestions.map((page) => page.wikiRelativePath),
+    })),
+    backlinkPlan: plan.backlinkPlans.map((entry) => ({
+      wikiPage: entry.wikiPage,
+      label: entry.label,
+      target: entry.target,
+    })),
+    summary: {
+      rawNotes: plan.items.filter((item) => !item.skipRawCapture).length,
+      wikiTargets: plan.wikiTargets.length,
+      backlinkWrites: plan.backlinkPlans.length,
+      knowledgeLogEntries: plan.logEntries.length,
+    },
+  };
+}
+
 function writePlan(plan) {
   for (const item of plan.items) {
     if (!item.skipRawCapture) {
@@ -792,7 +843,11 @@ if (plan.conflicts.length > 0) {
 }
 
 if (dryRun) {
-  printDryRun(plan, input.isBatchMode);
+  if (outputFormat === "json") {
+    console.log(JSON.stringify(serializeDryRunPlan(plan, input), null, 2));
+  } else {
+    printDryRun(plan, input.isBatchMode);
+  }
   process.exit(0);
 }
 

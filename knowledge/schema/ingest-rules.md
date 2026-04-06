@@ -19,6 +19,8 @@ Repo workflow:
 - `npm run wiki:ingest:dry-run -- --bucket <bucket> --title "..." --source <path>` previews raw/wiki targets, related-page suggestions, and backlink changes without writing files
 - `npm run wiki:ingest:batch -- <json-file>` ingests a batch plan from JSON, pre-validates the whole write set first, appends grouped entries to `knowledge/log.md`, and regenerates `knowledge/index.md` once after the batch lands
 - `npm run wiki:ingest:batch:dry-run -- <json-file>` previews the batch merge plan, including raw/wiki targets, related-page suggestions, backlink writes, and log/index side effects, without touching files
+- add `--format json` to any dry-run command when another agent, CI step, or script needs the ingest plan as machine-readable JSON instead of text
+- `npm run wiki:ingest:dry-run:json` and `npm run wiki:ingest:batch:dry-run:json -- <json-file>` are the convenience wrappers for that machine-readable preview mode
 - use `--wiki-dir <category> --wiki-slug <slug>` only when the source deserves an immediate topic page
 - `wiki:ingest` now suggests related wiki pages from title/source overlap, can suggest related pages between newly created wiki pages in the same batch, and seeds backlinks when it creates a new wiki page
 - batch JSON accepts an array or an object with `items`; each item mirrors the single-ingest fields: `bucket`, `slug`, `title`, `summary`, `source`, `wikiDir`, `wikiSlug`, and `wikiTitle`

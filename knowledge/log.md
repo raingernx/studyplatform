@@ -2,6 +2,7 @@
 
 ## 2026-04-06
 
+- added `--format json` plus `wiki:ingest:dry-run:json` helpers so dry-run ingest plans can be consumed programmatically by agents or CI.
 - added `skipRawCapture: true` for batch ingest items so canonical source fragments can update a shared wiki target without generating standalone low-value raw notes.
 - upgraded `wiki:ingest:batch` so several raw captures can merge into one explicit shared wiki target via `wikiTargets` + `wikiTargetId`, including updates to existing wiki pages.
 - added `wiki:ingest:batch` and `wiki:ingest:batch:dry-run` so multiple raw captures/wiki stubs can land from one pre-validated merge plan with batch-level suggestion and backlink reporting.

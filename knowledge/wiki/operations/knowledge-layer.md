@@ -11,6 +11,7 @@ Krukraft maintains a repo-owned LLM wiki under `knowledge/` with explicit script
 - `knowledge/schema/` stores the maintenance rules.
 - `npm run wiki:ingest`, `npm run wiki:ingest:batch`, `npm run wiki:index`, `npm run wiki:lint`, `npm run wiki:stale`, and `npm run wiki:drift` are the operational commands for the layer.
 - `npm run wiki:ingest:dry-run` and `npm run wiki:ingest:batch:dry-run` preview ingest targets, related-page suggestions, backlink plans, and batch merge summaries without writing files.
+- dry-run preview commands now also support `--format json`, which emits the same merge plan as machine-readable JSON for agent orchestration or CI automation.
 - `wiki:lint` now includes both structural and semantic checks, and `wiki:coverage` reports raw-note citation coverage plus canonical-source coverage.
 - `wiki:ingest` now suggests related wiki pages from title/source overlap, can suggest links between new wiki pages inside the same batch, seeds backlinks when it creates a new wiki page, appends `knowledge/log.md`, and regenerates `knowledge/index.md` after successful writes.
 - `wiki:ingest:batch` now supports explicit shared merge targets through `wikiTargets` + `wikiTargetId`, so several raw captures can merge into one existing or new wiki page in a single pre-validated write plan.
@@ -39,6 +40,7 @@ Without an explicit maintenance workflow, the repo-owned wiki would drift into d
 - ingest a source note into `knowledge/raw/`
 - preview the ingest plan with `wiki:ingest:dry-run` when you want to inspect the write set first
 - preview a multi-source merge plan with `wiki:ingest:batch:dry-run` when several raw captures and wiki stubs should land together
+- switch dry-run to `--format json` when another workflow needs to consume the merge plan programmatically instead of reading CLI text
 - optionally seed a wiki page from the ingest command
 - define explicit `wikiTargets` when several sources should converge on one shared wiki page instead of creating one wiki page per item
 - use `skipRawCapture: true` when an item should only enrich a wiki target from a canonical source and does not deserve its own durable raw note
