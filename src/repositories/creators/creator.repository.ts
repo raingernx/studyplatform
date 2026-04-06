@@ -537,7 +537,7 @@ export async function findCreatorTopResources(
       COALESCE(rs.purchases, 0)::int AS "salesCount",
       COALESCE(rs.revenue, 0)::int AS revenue
     FROM "Resource" r
-    LEFT JOIN "ResourceStat" rs
+    LEFT JOIN "resource_stats" rs
       ON rs."resourceId" = r.id
     WHERE r."authorId" = ${userId}
       AND r."deletedAt" IS NULL

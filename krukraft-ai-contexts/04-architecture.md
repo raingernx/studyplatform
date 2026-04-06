@@ -10,6 +10,7 @@ API Route → Service → Repository → Prisma
 - Services own business logic and orchestration
 - Repositories own data access
 - This pattern is actively maintained in the repo
+- Repository raw SQL must use the database table names produced by Prisma `@@map(...)` / `@map(...)`, not the Prisma model names; creator analytics verification on 2026-04-06 caught a real runtime failure where a raw join still referenced `"ResourceStat"` instead of the mapped `"resource_stats"` table
 
 ## Key Architecture Constraints
 
