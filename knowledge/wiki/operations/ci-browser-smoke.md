@@ -48,6 +48,7 @@ This workflow is the main browser truth source when local browser environments a
 
 ## Sources
 
+- [Browser Smoke Workflow Baseline](../../raw/operations/browser-smoke-workflow-baseline.md)
 - [`krukraft-ai-contexts/03-tech-stack.md`](../../../krukraft-ai-contexts/03-tech-stack.md)
 - [`.github/workflows/browser-smoke.yml`](../../../.github/workflows/browser-smoke.yml)
 

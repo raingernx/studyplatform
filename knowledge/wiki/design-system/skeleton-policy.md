@@ -46,6 +46,7 @@ Skeleton drift causes misleading UX, transition flashes, and hard-to-debug regre
 
 ## Sources
 
+- [Skeleton Runtime Policy](../../raw/design/skeleton-runtime-policy.md)
 - [`AGENTS.md`](../../../AGENTS.md)
 - [`design-system.md`](../../../design-system.md)
 - [`krukraft-ai-contexts/06-design-system.md`](../../../krukraft-ai-contexts/06-design-system.md)

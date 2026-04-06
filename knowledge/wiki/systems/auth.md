@@ -47,6 +47,7 @@ Auth behavior affects route protection, viewer-state performance, browser smoke 
 
 ## Sources
 
+- [Auth Viewer And Route Protection Snapshot](../../raw/architecture/auth-viewer-and-route-protection-snapshot.md)
 - [`AGENTS.md`](../../../AGENTS.md)
 - [`krukraft-ai-contexts/04-architecture.md`](../../../krukraft-ai-contexts/04-architecture.md)
 - [`tests/e2e/helpers/auth.ts`](../../../tests/e2e/helpers/auth.ts)

@@ -10,6 +10,7 @@ Krukraft maintains a repo-owned LLM wiki under `knowledge/` with explicit script
 - `knowledge/wiki/` stores synthesized topic pages.
 - `knowledge/schema/` stores the maintenance rules.
 - `npm run wiki:ingest`, `npm run wiki:index`, `npm run wiki:lint`, and `npm run wiki:stale` are the operational commands for the layer.
+- The first raw evidence notes now cover browser smoke, skeleton policy, auth/viewer routing, browser verification split, and the decision to keep the knowledge layer repo-owned.
 
 ## Why It Matters
 
@@ -47,11 +48,13 @@ Without an explicit maintenance workflow, the repo-owned wiki would drift into d
 
 - [Browser Verification](../testing/browser-verification.md)
 - [CI Browser Smoke](./ci-browser-smoke.md)
+- [Repo-Owned Knowledge Layer](../decisions/repo-owned-knowledge-layer.md)
 
 ## Sources
 
 - [`AGENTS.md`](../../../AGENTS.md)
 - [`knowledge/schema/ingest-rules.md`](../../schema/ingest-rules.md)
+- [Repo-Owned Knowledge Layer Decision](../../raw/decisions/repo-owned-knowledge-layer-decision.md)
 - [`package.json`](../../../package.json)
 
 ## Last Reviewed

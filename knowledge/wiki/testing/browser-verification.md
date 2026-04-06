@@ -9,6 +9,7 @@ Krukraft uses a split browser-verification model: local repo-owned probes for de
 - Local verification prefers `browser:probe` over full `playwright test` on this macOS environment.
 - CI runs `smoke:browser:ci` plus dashboard/page/management probes.
 - Browser verification was recently hardened around auth login, route transitions, admin pages, and resource detail shell readiness.
+- The split model is now also captured as a raw evidence note so the wiki can cite a maintained snapshot instead of only canonical repo docs.
 
 ## Why It Matters
 
@@ -48,6 +49,7 @@ This split model keeps local debugging practical while giving the repo a stable 
 
 ## Sources
 
+- [Browser Verification Split Model](../../raw/repo-docs/browser-verification-split-model.md)
 - [`krukraft-ai-contexts/03-tech-stack.md`](../../../krukraft-ai-contexts/03-tech-stack.md)
 - [`tests/e2e/navigation-shells.spec.ts`](../../../tests/e2e/navigation-shells.spec.ts)
 - [`tests/e2e/resources.smoke.spec.ts`](../../../tests/e2e/resources.smoke.spec.ts)

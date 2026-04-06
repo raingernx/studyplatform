@@ -59,6 +59,10 @@ Use this index as the first entry point for queries.
 - [CI Browser Smoke](wiki/operations/ci-browser-smoke.md)
 - [Knowledge Layer Operations](wiki/operations/knowledge-layer.md)
 
+### Decisions
+
+- [Repo-Owned Knowledge Layer](wiki/decisions/repo-owned-knowledge-layer.md)
+
 ## Working Files
 
 - [Log](log.md)
