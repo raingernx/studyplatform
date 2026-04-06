@@ -35,7 +35,7 @@
 - `browser:probe` / `browser:probe:headed`: local repo-owned Playwright API probe path that bypasses `playwright test` and verifies launch, `/resources -> /dashboard/library`, `/dashboard/library -> /resources`, and `settings-theme` against a real local dev server
 - `smoke:local:browser`: local browser-debug entrypoint now mapped to the repo-owned `browser:probe` flow instead of the full Playwright Test CLI smoke bundle, because this macOS environment can still abort during `playwright test` browser launch even when direct Playwright API launch succeeds
 - `smoke:browser:ci`: GitHub Actions-safe Playwright smoke bundle for cloud runners; it keeps the public/auth/navigation/settings coverage but intentionally skips uploader specs that depend on storage configuration beyond the repo-owned local fallback path
-- `.github/workflows/browser-smoke.yml`: cloud CI workflow that provisions Postgres 16, runs `prisma db push` + `db:seed`, installs Playwright browsers, then runs lint, typecheck, and `npm run smoke:browser:ci`
+- `.github/workflows/browser-smoke.yml`: cloud CI workflow that provisions Postgres 16, explicitly enables `pg_trgm`, then runs `prisma db push` + `db:seed`, installs Playwright browsers, and runs lint, typecheck, and `npm run smoke:browser:ci`
 - `storybook:smoke`: build-based Storybook smoke for design-system primitives/components
 - `chromatic`: Chromatic CLI is installed as an optional visual-regression publish/review surface for Storybook once a `CHROMATIC_PROJECT_TOKEN` is configured
 - `skeleton:boneyard:build` / `skeleton:boneyard:build:force`: optional DOM-capture skeleton generation via `boneyard-js`, writing generated bones under `src/bones`

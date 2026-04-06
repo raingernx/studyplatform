@@ -62,6 +62,7 @@ jobs:
 
       - name: Prepare Database
         run: |
+          npx prisma db execute --url "$DIRECT_URL" --file prisma/sql/enable-pg-trgm.sql
           npx prisma db push --skip-generate
           npm run db:seed
 
