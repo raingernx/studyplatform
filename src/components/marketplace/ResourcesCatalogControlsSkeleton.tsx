@@ -148,10 +148,6 @@ export function ResourcesCatalogControlsBonesPreview() {
   );
 }
 
-export function ResourcesCatalogControlsSkeleton({
-  showDiscoverMeta: _showDiscoverMeta = false,
-}: {
-  showDiscoverMeta?: boolean;
-}) {
+export function ResourcesCatalogControlsSkeleton() {
   return <ManualResourcesCatalogControlsSkeleton />;
 }

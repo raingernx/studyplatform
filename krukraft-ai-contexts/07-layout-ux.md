@@ -213,6 +213,10 @@
   manual runtime geometry directly, while the matching `*BonesPreview` exports
   remain capture-only. `ResourcesRouteSkeleton` now wires its live navbar
   slots to those manual runtime components instead of the preview variants.
+- The browse-route secondary controls no longer take ad-hoc prop hints such as
+  `activeCount` or `showDiscoverMeta`. Discover vs listing differences are now
+  derived from the route mode and surrounding layout itself, while the shared
+  controls shell stays structurally identical across both modes.
 - Theme behavior on `/settings` is intentionally less aggressive now: opening
   the settings page no longer reapplies the persisted DB theme to the whole
   app just because `localStorage.user_theme` is empty. The live theme should

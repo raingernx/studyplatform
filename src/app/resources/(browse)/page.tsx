@@ -80,9 +80,6 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
     sort !== DEFAULT_SORT,
   );
   const isDiscoverMode = !hasListingIntent;
-  const mobileFilterActiveCount = isDiscoverMode
-    ? 0
-    : [Boolean(category && category !== "all"), Boolean(tag)].filter(Boolean).length;
 
   return withRequestPerformanceTrace(
     "route:/resources",
@@ -127,11 +124,8 @@ export default async function ResourcesPage({ searchParams }: ResourcesPageProps
               </Suspense>
             }
             secondaryRow={
-              <Suspense fallback={<ResourcesCatalogControlsSkeleton showDiscoverMeta={isDiscoverMode} />}>
-                <ResourcesCatalogControls
-                  activeCount={mobileFilterActiveCount}
-                  showDiscoverMeta={isDiscoverMode}
-                />
+              <Suspense fallback={<ResourcesCatalogControlsSkeleton />}>
+                <ResourcesCatalogControls />
               </Suspense>
             }
           />

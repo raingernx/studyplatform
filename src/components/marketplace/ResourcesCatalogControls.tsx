@@ -18,15 +18,7 @@ const CONTROLS_BAR_MAIN_CLASS_NAME = "flex min-w-0 items-center gap-2.5 overflow
 const CONTROLS_BAR_GROUP_CLASS_NAME =
   "flex min-w-0 items-center gap-2.5 overflow-hidden";
 
-type ResourcesCatalogControlsProps = {
-  activeCount: number;
-  showDiscoverMeta?: boolean;
-};
-
-export async function ResourcesCatalogControls({
-  activeCount: _activeCount,
-  showDiscoverMeta: _showDiscoverMeta = false,
-}: ResourcesCatalogControlsProps) {
+export async function ResourcesCatalogControls() {
   let categoriesWithCount: Awaited<ReturnType<typeof getDiscoverCategories>> = [];
 
   try {

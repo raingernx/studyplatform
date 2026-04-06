@@ -46,6 +46,11 @@ The discover page now mixes:
   - lavender hero stage with the same split-banner footprint as the live route
   - section header + resource-card skeletons
   - no extra discover-meta strip above the hero while loading
+- the shared secondary controls row is now mode-agnostic at the component
+  boundary: route mode still decides whether `/resources` is discover or
+  listing, but `ResourcesCatalogControls` and its skeleton no longer receive
+  prop hints such as active-filter counts or discover-meta toggles just to
+  differentiate those two shells
 
 ## Sorting Options
 
