@@ -42,9 +42,10 @@ This split model keeps local debugging practical while giving the repo a stable 
 
 ## Related Pages
 
-- [CI Browser Smoke](../operations/ci-browser-smoke.md)
 - [Auth System](../systems/auth.md)
+- [CI Browser Smoke](../operations/ci-browser-smoke.md)
 - [Dashboard Library](../routes/dashboard-library.md)
+- [Post-Deploy Warm Workflow](../operations/post-deploy-warm-workflow.md)
 - [Resource Detail](../routes/resource-detail.md)
 
 ## Sources

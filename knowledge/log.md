@@ -2,6 +2,8 @@
 
 ## 2026-04-06
 
+- captured [Post-Deploy Warm Workflow Baseline](raw/operations/post-deploy-warm-workflow-baseline.md) in `operations` from `.github/workflows/post-deploy-warm-cache.yml` and seeded [Post-Deploy Warm Workflow](wiki/operations/post-deploy-warm-workflow.md) with 3 related-page suggestions.
+
 - added a practical knowledge-layer playbook page that explains when ingest is worth doing, when to skip it, and how to keep the workflow from becoming overhead.
 - added GitHub-ready `githubStepSummary` and `annotations[]` inside bundle `ciHints` so Actions jobs can emit summaries and warnings/errors without custom field mapping.
 - added `ciHints` to bundle reports so CI can consume a ready-made headline, exit code, recommended actions, and markdown summary without mapping lower-level fields first.
