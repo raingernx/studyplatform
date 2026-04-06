@@ -828,6 +828,157 @@ function getWikiTargetDecision(target) {
   return { actions, reasons, severity };
 }
 
+function buildConfidence(level, reasons) {
+  return { level, reasons };
+}
+
+function getItemConfidence(item, decision) {
+  const reasons = [];
+  let score = 0;
+
+  if (item.sourceRepoRelativePath) {
+    score += 1;
+    reasons.push("item points to a canonical repo source");
+  }
+
+  if (!item.skipRawCapture) {
+    score += 1;
+    reasons.push("item preserves a durable raw capture");
+  } else {
+    reasons.push("item skips durable raw capture and relies on direct canonical merge");
+  }
+
+  if (item.wikiTarget?.wikiAlreadyExists) {
+    score -= 1;
+    reasons.push("item updates an existing wiki page");
+  }
+
+  if (item.wikiTarget && item.wikiTarget.items.length > 1) {
+    score -= 1;
+    reasons.push("item participates in a shared merge group");
+  }
+
+  if (item.totalSuggestionCount > 0) {
+    score -= 1;
+    reasons.push("item carries related-page suggestions that may need judgment");
+  }
+
+  if (decision.actions.includes("seed_backlinks")) {
+    score -= 1;
+    reasons.push("item seeds backlinks into existing pages");
+  }
+
+  if (score >= 2) {
+    return buildConfidence("high", reasons);
+  }
+  if (score >= 0) {
+    return buildConfidence("medium", reasons);
+  }
+  return buildConfidence("low", reasons);
+}
+
+function getWikiTargetConfidence(target, decision) {
+  const reasons = [];
+  let score = 0;
+
+  if (!target.wikiAlreadyExists) {
+    score += 1;
+    reasons.push("target creates a new wiki page instead of mutating an existing one");
+  } else {
+    reasons.push("target mutates an existing wiki page");
+  }
+
+  if (target.items.length === 1) {
+    score += 1;
+    reasons.push("target has a single source item");
+  } else {
+    score -= 1;
+    reasons.push("target merges multiple source items");
+  }
+
+  if (target.existingSuggestions.length === 0 && target.plannedBatchSuggestions.length === 0) {
+    score += 1;
+    reasons.push("target has no related-page suggestions to review");
+  } else {
+    score -= 1;
+    reasons.push("target carries related-page suggestions");
+  }
+
+  if (decision.actions.includes("seed_backlinks")) {
+    score -= 1;
+    reasons.push("target will seed backlinks into existing pages");
+  }
+
+  if (score >= 2) {
+    return buildConfidence("high", reasons);
+  }
+  if (score >= 0) {
+    return buildConfidence("medium", reasons);
+  }
+  return buildConfidence("low", reasons);
+}
+
+function buildPolicy(status, reasons) {
+  return {
+    status,
+    autoApply: status === "auto_apply_safe",
+    requiresReview: status !== "auto_apply_safe",
+    reasons,
+  };
+}
+
+function getItemPolicy(item, decision, confidence) {
+  const reasons = [];
+
+  if (decision.severity === "review") {
+    reasons.push("decision severity requires review");
+  }
+  if (confidence.level !== "high") {
+    reasons.push(`confidence is ${confidence.level}`);
+  }
+  if (item.wikiTarget?.wikiAlreadyExists) {
+    reasons.push("existing wiki targets should be reviewed before apply");
+  }
+  if (item.wikiTarget && item.wikiTarget.items.length > 1) {
+    reasons.push("shared wiki merges should be reviewed before apply");
+  }
+  if (item.skipRawCapture) {
+    reasons.push("source-only merges should be reviewed before apply");
+  }
+
+  if (reasons.length === 0) {
+    return buildPolicy("auto_apply_safe", ["new raw/wiki capture with high confidence and no review signals"]);
+  }
+
+  return buildPolicy("review_required", reasons);
+}
+
+function getWikiTargetPolicy(target, decision, confidence) {
+  const reasons = [];
+
+  if (decision.severity === "review") {
+    reasons.push("decision severity requires review");
+  }
+  if (confidence.level !== "high") {
+    reasons.push(`confidence is ${confidence.level}`);
+  }
+  if (target.wikiAlreadyExists) {
+    reasons.push("existing wiki targets should be reviewed before apply");
+  }
+  if (target.items.length > 1) {
+    reasons.push("multi-source wiki merges should be reviewed before apply");
+  }
+  if (decision.actions.includes("seed_backlinks")) {
+    reasons.push("backlink seeding touches additional wiki pages");
+  }
+
+  if (reasons.length === 0) {
+    return buildPolicy("auto_apply_safe", ["new wiki target with isolated source coverage and no backlink side effects"]);
+  }
+
+  return buildPolicy("review_required", reasons);
+}
+
 function buildDecisionSummary(plan) {
   const itemActions = {
     createRaw: 0,
@@ -869,13 +1020,44 @@ function buildDecisionSummary(plan) {
   return { itemActions, targetActions };
 }
 
-function serializeDryRunPlan(plan, input) {
-  const decisionSummary = buildDecisionSummary(plan);
+function buildPolicySummary(serializedItems, serializedTargets, serializedBacklinkPlan) {
+  const itemPolicies = {
+    autoApplySafe: serializedItems.filter((item) => item.policy.autoApply).length,
+    reviewRequired: serializedItems.filter((item) => item.policy.requiresReview).length,
+  };
+  const targetPolicies = {
+    autoApplySafe: serializedTargets.filter((target) => target.policy.autoApply).length,
+    reviewRequired: serializedTargets.filter((target) => target.policy.requiresReview).length,
+  };
+  const globalReasons = [];
+
+  if (itemPolicies.reviewRequired > 0) {
+    globalReasons.push(`${itemPolicies.reviewRequired} item policy decision${itemPolicies.reviewRequired === 1 ? "" : "s"} require review`);
+  }
+  if (targetPolicies.reviewRequired > 0) {
+    globalReasons.push(`${targetPolicies.reviewRequired} wiki target policy decision${targetPolicies.reviewRequired === 1 ? "" : "s"} require review`);
+  }
+  if (serializedBacklinkPlan.length > 0) {
+    globalReasons.push(`${serializedBacklinkPlan.length} backlink write${serializedBacklinkPlan.length === 1 ? "" : "s"} will touch additional wiki pages`);
+  }
 
   return {
-    mode: input.isBatchMode ? "batch" : "single",
-    batchPath: input.batchPath ? toPosixPath(path.relative(process.cwd(), input.batchPath)) : null,
-    items: plan.items.map((item) => ({
+    status: globalReasons.length === 0 ? "auto_apply_safe" : "review_required",
+    autoApply: globalReasons.length === 0,
+    requiresReview: globalReasons.length > 0,
+    reasons: globalReasons.length > 0 ? globalReasons : ["plan contains only high-confidence isolated writes"],
+    itemPolicies,
+    targetPolicies,
+  };
+}
+
+function serializeDryRunPlan(plan, input) {
+  const decisionSummary = buildDecisionSummary(plan);
+  const serializedItems = plan.items.map((item) => {
+    const decision = getItemDecision(item);
+    const confidence = getItemConfidence(item, decision);
+
+    return {
       index: item.index + 1,
       title: item.title,
       raw: item.rawRelativePath,
@@ -890,27 +1072,49 @@ function serializeDryRunPlan(plan, input) {
             itemCount: item.wikiTarget.items.length,
           }
         : null,
-      decision: getItemDecision(item),
+      decision,
+      confidence,
+      policy: getItemPolicy(item, decision, confidence),
       existingSuggestions: item.wikiTarget ? item.wikiTarget.existingSuggestions.map((page) => page.relativePath) : [],
       batchSuggestions: item.wikiTarget ? item.wikiTarget.plannedBatchSuggestions.map((page) => page.wikiRelativePath) : [],
       totalSuggestionCount: item.totalSuggestionCount,
-    })),
-    wikiTargets: plan.wikiTargets.map((target) => ({
+    };
+  });
+
+  const serializedTargets = plan.wikiTargets.map((target) => {
+    const decision = getWikiTargetDecision(target);
+    const confidence = getWikiTargetConfidence(target, decision);
+
+    return {
       id: target.id,
       relativePath: target.wikiRelativePath,
       exists: target.wikiAlreadyExists,
       sourceItems: target.items.map((item) => item.rawRelativePath ?? item.sourceRepoRelativePath ?? item.title),
-      decision: getWikiTargetDecision(target),
+      decision,
+      confidence,
+      policy: getWikiTargetPolicy(target, decision, confidence),
       existingSuggestions: target.existingSuggestions.map((page) => page.relativePath),
       batchSuggestions: target.plannedBatchSuggestions.map((page) => page.wikiRelativePath),
-    })),
-    backlinkPlan: plan.backlinkPlans.map((entry) => ({
-      wikiPage: entry.wikiPage,
-      label: entry.label,
-      target: entry.target,
-      action: "seed_backlink",
-      severity: "review",
-    })),
+    };
+  });
+
+  const serializedBacklinkPlan = plan.backlinkPlans.map((entry) => ({
+    wikiPage: entry.wikiPage,
+    label: entry.label,
+    target: entry.target,
+    action: "seed_backlink",
+    severity: "review",
+    policy: buildPolicy("review_required", ["backlink writes touch existing wiki pages"]),
+  }));
+
+  const policySummary = buildPolicySummary(serializedItems, serializedTargets, serializedBacklinkPlan);
+
+  return {
+    mode: input.isBatchMode ? "batch" : "single",
+    batchPath: input.batchPath ? toPosixPath(path.relative(process.cwd(), input.batchPath)) : null,
+    items: serializedItems,
+    wikiTargets: serializedTargets,
+    backlinkPlan: serializedBacklinkPlan,
     summary: {
       rawNotes: plan.items.filter((item) => !item.skipRawCapture).length,
       wikiTargets: plan.wikiTargets.length,
@@ -918,6 +1122,7 @@ function serializeDryRunPlan(plan, input) {
       knowledgeLogEntries: plan.logEntries.length,
     },
     decisionSummary,
+    policySummary,
   };
 }
 

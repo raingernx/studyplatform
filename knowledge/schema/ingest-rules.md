@@ -22,6 +22,7 @@ Repo workflow:
 - add `--format json` to any dry-run command when another agent, CI step, or script needs the ingest plan as machine-readable JSON instead of text
 - `npm run wiki:ingest:dry-run:json` and `npm run wiki:ingest:batch:dry-run:json -- <json-file>` are the convenience wrappers for that machine-readable preview mode
 - JSON dry-run preview now includes per-item and per-target `decision` metadata with `actions`, `reasons`, and `severity`, plus a top-level `decisionSummary` for automation that needs to branch on create/update/merge/backlink behavior
+- JSON dry-run preview now also includes `confidence` and `policy` metadata plus a top-level `policySummary`, so CI or another agent can decide whether a plan is safe to auto-apply or should stop for review
 - use `--wiki-dir <category> --wiki-slug <slug>` only when the source deserves an immediate topic page
 - `wiki:ingest` now suggests related wiki pages from title/source overlap, can suggest related pages between newly created wiki pages in the same batch, and seeds backlinks when it creates a new wiki page
 - batch JSON accepts an array or an object with `items`; each item mirrors the single-ingest fields: `bucket`, `slug`, `title`, `summary`, `source`, `wikiDir`, `wikiSlug`, and `wikiTitle`
