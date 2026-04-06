@@ -2,6 +2,7 @@
 
 ## 2026-04-06
 
+- added `--report-format bundle` so `--report-file` can emit a richer JSON artifact containing `textSummary`, structured sections, and the raw plan for CI diagnostics.
 - added `--report-file` support so preview and blocked write flows can persist the resolved ingest plan as a JSON artifact for CI diagnostics.
 - extended `--enforce-policy` into write mode so `wiki:ingest:enforce` and `wiki:ingest:batch:enforce` block forbidden plans before creating or mutating any knowledge files.
 - added `--enforce-policy` plus `*:enforce` wrappers so `wiki:ingest` dry-run can fail CI automatically when a plan resolves to `blocked_by_policy`.

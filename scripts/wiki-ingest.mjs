@@ -28,6 +28,7 @@ const { values } = parseArgs({
   options: {
     batch: { type: "string" },
     format: { type: "string", default: "text" },
+    "report-format": { type: "string", default: "plan" },
     bucket: { type: "string" },
     slug: { type: "string" },
     title: { type: "string" },
@@ -45,6 +46,11 @@ const { values } = parseArgs({
 const outputFormat = values.format;
 if (!["text", "json"].includes(outputFormat)) {
   fail(`--format must be one of: text, json`);
+}
+
+const reportFormat = values["report-format"];
+if (!["plan", "bundle"].includes(reportFormat)) {
+  fail(`--report-format must be one of: plan, bundle`);
 }
 
 function fail(message) {
@@ -1256,6 +1262,75 @@ function serializeDryRunPlan(plan, input) {
   };
 }
 
+function renderPlanTextSummary(plan, input, serializedPlan) {
+  const lines = [
+    `[wiki-ingest] Mode: ${input.isBatchMode ? "batch" : "single"} (${plan.items.length} item${plan.items.length === 1 ? "" : "s"})`,
+    `[wiki-ingest] Policy status: ${serializedPlan.policySummary.status}`,
+    `[wiki-ingest] Summary: ${serializedPlan.summary.rawNotes} raw note${
+      serializedPlan.summary.rawNotes === 1 ? "" : "s"
+    }, ${serializedPlan.summary.wikiTargets} wiki target${serializedPlan.summary.wikiTargets === 1 ? "" : "s"}, ${
+      serializedPlan.summary.backlinkWrites
+    } backlink write${serializedPlan.summary.backlinkWrites === 1 ? "" : "s"}, ${
+      serializedPlan.summary.knowledgeLogEntries
+    } knowledge-log entr${serializedPlan.summary.knowledgeLogEntries === 1 ? "y" : "ies"}.`,
+  ];
+
+  if (serializedPlan.policySummary.reasons.length > 0) {
+    lines.push("[wiki-ingest] Policy reasons:");
+    for (const reason of serializedPlan.policySummary.reasons) {
+      lines.push(`- ${reason}`);
+    }
+  }
+
+  if (plan.wikiTargets.length > 0) {
+    lines.push("[wiki-ingest] Wiki targets:");
+    for (const target of serializedPlan.wikiTargets) {
+      lines.push(
+        `- ${target.relativePath}${target.exists ? " (existing)" : " (new)"} <= ${target.sourceItems.join(", ")}`,
+      );
+    }
+  }
+
+  if (serializedPlan.backlinkPlan.length > 0) {
+    lines.push("[wiki-ingest] Backlink plan:");
+    for (const entry of serializedPlan.backlinkPlan) {
+      lines.push(`- ${entry.wikiPage} <= [${entry.label}](${entry.target})`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+function buildSerializedPlanReport(plan, input, serializedPlan) {
+  if (reportFormat === "plan") {
+    return serializedPlan;
+  }
+
+  return {
+    reportVersion: 1,
+    kind: "wiki-ingest-report",
+    generatedAt: new Date().toISOString(),
+    command: {
+      mode: input.isBatchMode ? "batch" : "single",
+      dryRun: values["dry-run"],
+      outputFormat,
+      reportFormat,
+      enforcePolicy: values["enforce-policy"],
+      batchPath: input.batchPath ? toPosixPath(path.relative(process.cwd(), input.batchPath)) : null,
+    },
+    textSummary: renderPlanTextSummary(plan, input, serializedPlan),
+    sections: {
+      summary: serializedPlan.summary,
+      decisionSummary: serializedPlan.decisionSummary,
+      policySummary: serializedPlan.policySummary,
+      items: serializedPlan.items,
+      wikiTargets: serializedPlan.wikiTargets,
+      backlinkPlan: serializedPlan.backlinkPlan,
+    },
+    plan: serializedPlan,
+  };
+}
+
 function enforcePolicyIfNeeded(serializedPlan) {
   if (!values["enforce-policy"]) {
     return;
@@ -1265,7 +1340,7 @@ function enforcePolicyIfNeeded(serializedPlan) {
     if (outputFormat === "json" && !values["dry-run"]) {
       console.log(JSON.stringify(serializedPlan, null, 2));
     }
-    console.error("[wiki-ingest] Dry-run plan is blocked by batch policy overrides.");
+    console.error("[wiki-ingest] Resolved ingest plan is blocked by batch policy overrides.");
     process.exit(2);
   }
 }
@@ -1327,7 +1402,7 @@ if (plan.conflicts.length > 0) {
 
 if (dryRun) {
   const serializedPlan = serializeDryRunPlan(plan, input);
-  writeSerializedPlanReport(serializedPlan);
+  writeSerializedPlanReport(buildSerializedPlanReport(plan, input, serializedPlan));
   if (outputFormat === "json") {
     console.log(JSON.stringify(serializedPlan, null, 2));
   } else {
@@ -1338,7 +1413,7 @@ if (dryRun) {
 }
 
 const serializedPlan = serializeDryRunPlan(plan, input);
-writeSerializedPlanReport(serializedPlan);
+writeSerializedPlanReport(buildSerializedPlanReport(plan, input, serializedPlan));
 enforcePolicyIfNeeded(serializedPlan);
 
 writePlan(plan);
