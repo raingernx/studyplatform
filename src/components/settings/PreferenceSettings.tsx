@@ -6,7 +6,7 @@ import { Sun, Coins, Clock4 } from "lucide-react";
 import { Button, FormSection, Select } from "@/design-system";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
-import { readStoredTheme } from "@/lib/theme";
+import { persistTheme, readStoredTheme } from "@/lib/theme";
 
 type ThemeValue = "light" | "dark" | "system";
 type CurrencyValue = "THB" | "USD";
@@ -72,7 +72,7 @@ export function PreferenceSettings({
   timezone: initialTimezone,
 }: PreferenceSettingsProps) {
   const platform = usePlatformConfig();
-  const { setTheme } = useTheme();
+  const { theme: runtimeTheme, setTheme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<{
     tone: "saved" | "error";
@@ -89,15 +89,20 @@ export function PreferenceSettings({
     initialPreferences,
   );
 
-  useEffect(() => {
-    if (readStoredTheme() !== null) return;
-    setTheme(initialPreferences.theme ?? "light", { persist: false });
-  }, [initialPreferences.theme, setTheme]);
-
   const hasChanges =
     pendingPreferences.theme !== initialPreferences.theme ||
     pendingPreferences.currency !== initialPreferences.currency ||
     pendingPreferences.timezone !== initialPreferences.timezone;
+
+  useEffect(() => {
+    if (readStoredTheme() !== null) return;
+
+    // Lock the currently rendered theme as the local source of truth before the
+    // user explicitly saves a different preference. This prevents `/settings`
+    // from feeling like it "auto-switched" just because the DB preference
+    // differs from the runtime bootstrap baseline.
+    persistTheme(runtimeTheme);
+  }, [runtimeTheme]);
 
   function handleThemeChange(value: ThemeValue) {
     if (saveFeedback !== null) {

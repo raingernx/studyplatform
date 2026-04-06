@@ -3,6 +3,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { loginAsCreator } from "./helpers/auth";
 import { collectRuntimeErrors } from "./helpers/browser";
 
+const LIBRARY_NAV_TIMEOUT_MS = 15_000;
+
 async function startNavigationProbe(page: Page) {
   await page.evaluate(() => {
     type NavSample = {
@@ -99,6 +101,31 @@ function expectNoBlankGap(
   expect(blankSample).toBeUndefined();
 }
 
+async function openLibraryFromResources(page: Page) {
+  const directLibraryLink = page
+    .getByRole("link", { name: /^(คลังของฉัน|My Library)$/ })
+    .first();
+
+  await page.getByRole("banner").hover();
+
+  if (await directLibraryLink.isVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS }).catch(() => false)) {
+    await Promise.all([
+      page.waitForURL(/\/dashboard\/library$/),
+      directLibraryLink.click(),
+    ]);
+    return;
+  }
+
+  const accountButton = page.getByRole("button", { name: "เปิดเมนูบัญชี" });
+  await expect(accountButton).toBeVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS });
+  await accountButton.click();
+
+  await Promise.all([
+    page.waitForURL(/\/dashboard\/library$/),
+    page.getByRole("link", { name: /^My Library$/ }).click(),
+  ]);
+}
+
 test("resources to dashboard library does not expose a blank gap during transition", async ({
   page,
 }) => {
@@ -106,14 +133,10 @@ test("resources to dashboard library does not expose a blank gap during transiti
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
 
   await expect(page).toHaveURL(/\/resources$/);
-  await expect(page.getByRole("link", { name: "คลังของฉัน" })).toBeVisible();
 
   await startNavigationProbe(page);
 
-  await Promise.all([
-    page.waitForURL(/\/dashboard\/library$/),
-    page.getByRole("link", { name: "คลังของฉัน" }).click(),
-  ]);
+  await openLibraryFromResources(page);
 
   await expect(page).toHaveURL(/\/dashboard\/library$/);
   await expect(page.locator("main").first()).toBeVisible();

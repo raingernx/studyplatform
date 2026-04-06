@@ -93,17 +93,34 @@ async function loginWithCredentials(
   nextPath: string,
 ) {
   await ensureAuthFixturesOnce();
-  await page.goto(`/auth/login?next=${encodeURIComponent(nextPath)}`);
+  await page.goto(`/auth/login?next=${encodeURIComponent(nextPath)}`, {
+    timeout: AUTH_NAVIGATION_TIMEOUT_MS,
+    waitUntil: "domcontentloaded",
+  });
 
-  await expect(page.getByRole("heading", { name: /Welcome back/i })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /Welcome back/i }),
+  ).toBeVisible({
+    timeout: AUTH_NAVIGATION_TIMEOUT_MS,
+  });
+  const form = page.locator("form").first();
+  await expect(form).toBeVisible({ timeout: AUTH_NAVIGATION_TIMEOUT_MS });
+  await expect(form).toHaveAttribute("data-auth-form-ready", "true", {
+    timeout: AUTH_NAVIGATION_TIMEOUT_MS,
+  });
+
   await page.getByLabel("Email address").fill(credentials.email);
   await page.getByLabel("Password").fill(credentials.password);
 
   const targetUrlPattern = new RegExp(
     `${nextPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:$|\\?)`,
   );
-  const submitButton = page.getByRole("button", { name: "Sign in" });
+  const submitButton = form.getByRole("button", { name: /^Sign in$/ });
   const loginError = page.getByText(LOGIN_ERROR_TEXT);
+
+  await expect(submitButton).toBeEnabled({
+    timeout: AUTH_NAVIGATION_TIMEOUT_MS,
+  });
 
   await submitButton.click();
 

@@ -44,25 +44,39 @@ async function verifyUploaderFlow(
 
   if (beforeInputCount === 0) {
     const lazyShell = uploaderRoot.getByRole("button", { name: "Load image uploader" }).first();
-    const shellCount = await lazyShell.count();
+    const shellVisible = await lazyShell.isVisible({ timeout: 1_500 }).catch(
+      () => false,
+    );
 
-    if (shellCount > 0) {
+    if (shellVisible) {
+      await lazyShell.scrollIntoViewIfNeeded().catch(() => {});
+      await lazyShell.hover().catch(() => {});
+      await lazyShell.focus().catch(() => {});
+
       try {
-        await lazyShell.click({ timeout: 5_000 });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (
-          !message.includes("detached from the DOM") &&
-          !message.includes("waiting for locator")
-        ) {
-          throw error;
+        await expect
+          .poll(async () => imageFileInputs.count(), { timeout: 5_000 })
+          .toBeGreaterThan(0);
+      } catch {
+        try {
+          await lazyShell.click({ timeout: 2_000 });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (
+            !message.includes("detached from the DOM") &&
+            !message.includes("waiting for locator") &&
+            !message.includes("element is not attached") &&
+            !message.includes("Target page, context or browser has been closed")
+          ) {
+            throw error;
+          }
         }
       }
     }
   }
 
   await expect
-    .poll(async () => imageFileInputs.count())
+    .poll(async () => imageFileInputs.count(), { timeout: 20_000 })
     .toBeGreaterThan(0);
 
   pageErrors.length = 0;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -52,6 +52,11 @@ function LoginForm() {
   const [loading, setLoading]   = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError]       = useState("");
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -106,8 +111,9 @@ function LoginForm() {
           {/* Google OAuth */}
           <button
             type="button"
-            disabled={loading || googleLoading}
+            disabled={!isHydrated || loading || googleLoading}
             onClick={() => void handleGoogleSignIn()}
+            data-auth-google-ready={isHydrated ? "true" : "false"}
             className="flex w-full items-center justify-center gap-3 rounded-xl border border-border
                        bg-card px-4 py-2.5 text-[13px] font-medium text-foreground shadow-card
                        transition-all hover:border-border hover:bg-muted hover:shadow-card-md active:scale-[0.99]
@@ -130,7 +136,11 @@ function LoginForm() {
           </div>
 
           {/* Email / password form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4"
+            data-auth-form-ready={isHydrated ? "true" : "false"}
+          >
             {hasVerifiedEmail ? (
               <div className="flex items-start gap-2.5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 ring-1 ring-emerald-200">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
@@ -210,7 +220,13 @@ function LoginForm() {
               />
             </div>
 
-            <Button type="submit" loading={loading} disabled={googleLoading} fullWidth size="lg">
+            <Button
+              type="submit"
+              loading={loading}
+              disabled={!isHydrated || googleLoading}
+              fullWidth
+              size="lg"
+            >
               Sign in
             </Button>
           </form>

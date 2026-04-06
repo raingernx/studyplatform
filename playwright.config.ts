@@ -4,6 +4,13 @@ const PORT = Number(process.env.PORT ?? 3000);
 const BASE_URL = process.env.BASE_URL ?? `http://127.0.0.1:${PORT}`;
 const PLAYWRIGHT_BROWSER_CHANNEL =
   process.env.PLAYWRIGHT_BROWSER_CHANNEL ?? "chromium";
+const PLAYWRIGHT_EXECUTABLE_PATH = process.env.PLAYWRIGHT_EXECUTABLE_PATH;
+const STABLE_CHROMIUM_ARGS = [
+  "--disable-breakpad",
+  "--disable-crash-reporter",
+  "--no-default-browser-check",
+  "--no-first-run",
+];
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -37,7 +44,23 @@ export default defineConfig({
         // most stable option on this macOS setup. Override only when you want
         // to reproduce browser-specific behavior, e.g.
         // PLAYWRIGHT_BROWSER_CHANNEL=chrome.
-        channel: PLAYWRIGHT_BROWSER_CHANNEL as "chromium" | "chrome",
+        ...(PLAYWRIGHT_EXECUTABLE_PATH
+          ? {}
+          : {
+              channel: PLAYWRIGHT_BROWSER_CHANNEL as "chromium" | "chrome",
+            }),
+        launchOptions: {
+          ...(PLAYWRIGHT_EXECUTABLE_PATH
+            ? { executablePath: PLAYWRIGHT_EXECUTABLE_PATH }
+            : {}),
+          args: STABLE_CHROMIUM_ARGS,
+        },
+      },
+    },
+    {
+      name: "webkit",
+      use: {
+        ...devices["Desktop Safari"],
       },
     },
   ],

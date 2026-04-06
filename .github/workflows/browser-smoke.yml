@@ -1,0 +1,85 @@
+name: Browser Smoke
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: browser-smoke-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser_smoke:
+    name: Browser Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: krukraft_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d krukraft_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CI: "1"
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/krukraft_ci?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/krukraft_ci?schema=public
+      NEXTAUTH_URL: http://127.0.0.1:3000
+      NEXTAUTH_SECRET: ci-nextauth-secret
+      STRIPE_SECRET_KEY: sk_test_ci_dummy
+      STRIPE_WEBHOOK_SECRET: whsec_ci_dummy
+      STRIPE_PRO_MONTHLY_PRICE_ID: price_ci_monthly
+      STRIPE_PRO_ANNUAL_PRICE_ID: price_ci_annual
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/ms-playwright
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Prepare Database
+        run: |
+          npx prisma db push --skip-generate
+          npm run db:seed
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run Browser Smoke
+        run: npm run smoke:browser:ci
+
+      - name: Upload Playwright Artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: browser-smoke-artifacts
+          path: |
+            playwright-report/**
+            test-results/**
+          if-no-files-found: warn

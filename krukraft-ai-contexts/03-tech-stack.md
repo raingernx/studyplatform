@@ -32,7 +32,10 @@
 - the post-deploy warm/perf workflow now installs on Node 24, matching the current local `npm ci` / lockfile resolver behavior and avoiding the old Node 20/npm 10 mismatch
 - the post-deploy warm/perf workflow now uses `actions/checkout@v6`, `actions/setup-node@v6`, and `actions/upload-artifact@v6`, which all declare `node24` runtimes upstream; `grafana/setup-k6-action@v1` remains unchanged because no newer upstream action line with explicit Node 24 guidance was available
 - `test:e2e`: Playwright browser verification for `/resources`, canonical search flows, no-result recovery, and resource detail image rendering
-- `smoke:local:browser`: repo-owned pre-merge Playwright smoke path for key public/auth/uploader browser flows, including authenticated preview-image upload on admin and creator resource forms
+- `browser:probe` / `browser:probe:headed`: local repo-owned Playwright API probe path that bypasses `playwright test` and verifies launch, `/resources -> /dashboard/library`, `/dashboard/library -> /resources`, and `settings-theme` against a real local dev server
+- `smoke:local:browser`: local browser-debug entrypoint now mapped to the repo-owned `browser:probe` flow instead of the full Playwright Test CLI smoke bundle, because this macOS environment can still abort during `playwright test` browser launch even when direct Playwright API launch succeeds
+- `smoke:browser:ci`: GitHub Actions-safe Playwright smoke bundle for cloud runners; it keeps the public/auth/navigation/settings coverage but intentionally skips uploader specs that depend on storage configuration beyond the repo-owned local fallback path
+- `.github/workflows/browser-smoke.yml`: cloud CI workflow that provisions Postgres 16, runs `prisma db push` + `db:seed`, installs Playwright browsers, then runs lint, typecheck, and `npm run smoke:browser:ci`
 - `storybook:smoke`: build-based Storybook smoke for design-system primitives/components
 - `chromatic`: Chromatic CLI is installed as an optional visual-regression publish/review surface for Storybook once a `CHROMATIC_PROJECT_TOKEN` is configured
 - `skeleton:boneyard:build` / `skeleton:boneyard:build:force`: optional DOM-capture skeleton generation via `boneyard-js`, writing generated bones under `src/bones`
@@ -63,9 +66,11 @@ Important: build must stay schema-mutation-free. Migration deploy is a separate 
 ## Browser / UI Verification Surfaces
 
 - Playwright is configured in `playwright.config.ts`; the local project name remains `chromium`, and it now defaults to `channel: "chromium"` so local verification uses Playwright's bundled Chromium browser instead of the bundled headless shell or installed Chrome stable. Set `PLAYWRIGHT_BROWSER_CHANNEL=chrome` only when you intentionally want installed-Chrome coverage. The default local base URL resolves to `http://127.0.0.1:3000`.
+- On this current macOS local machine, `playwright test` browser launch is still less stable than direct Playwright API launch. For high-signal local debugging, prefer `npm run browser:probe -- <scenario...>` or `npm run smoke:local:browser`; keep the full Playwright Test suite as the CI/cloud verification surface.
+- GitHub Actions browser smoke now uses the same Playwright config surface but runs in cloud Linux with a repo-owned Postgres service and seeded demo data, which gives the project a browser verification path that does not depend on the quirks of a specific local macOS browser runtime.
 - Storybook is intentionally scoped to `src/design-system/primitives/**/*.stories.*` and `src/design-system/components/**/*.stories.*`.
 - Chromatic is available on top of that same Storybook surface for hosted visual review, but it is not wired into CI or usable until a project token is provisioned.
-- Theme bootstrap now defaults first paint to `light`; stored `dark` and user-selected `system` preferences still override that baseline at runtime, and the Prisma `UserPreference.theme` default now matches that same `light` baseline for newly created rows.
+- Theme bootstrap now defaults first paint to `light`; stored `dark` and user-selected `system` preferences still override that baseline at runtime, and the Prisma `UserPreference.theme` default now matches that same `light` baseline for newly created rows. The `/settings` preference form now materializes the current runtime theme into `localStorage` when no stored theme exists yet, so opening settings no longer feels like it auto-switches to a DB-backed theme behind the user's back.
 - Accessibility checks are available through `@axe-core/playwright`.
 - Lighthouse CI is configured through `.lighthouserc.json`.
 - Bundle inspection is available through `@next/bundle-analyzer`.
