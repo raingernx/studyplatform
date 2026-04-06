@@ -2,6 +2,7 @@
 
 ## 2026-04-06
 
+- added GitHub-ready `githubStepSummary` and `annotations[]` inside bundle `ciHints` so Actions jobs can emit summaries and warnings/errors without custom field mapping.
 - added `ciHints` to bundle reports so CI can consume a ready-made headline, exit code, recommended actions, and markdown summary without mapping lower-level fields first.
 - extended `--report-format bundle` so report artifacts also include path-level `artifacts` hints and review-oriented `annotations` for CI summaries.
 - added `--report-format bundle` so `--report-file` can emit a richer JSON artifact containing `textSummary`, structured sections, and the raw plan for CI diagnostics.

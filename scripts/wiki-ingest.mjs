@@ -1342,6 +1342,25 @@ function buildCiHints(serializedPlan) {
     }
   }
 
+  const annotations = [
+    ...serializedPlan.items
+      .filter((item) => item.policy.requiresReview)
+      .map((item) => ({
+        level: item.policy.status === "blocked_by_policy" ? "error" : "warning",
+        title: `Wiki ingest item ${item.index}: ${item.title}`,
+        message: item.policy.reasons.join("; "),
+        path: item.source ?? item.raw ?? null,
+      })),
+    ...serializedPlan.wikiTargets
+      .filter((target) => target.policy.requiresReview)
+      .map((target) => ({
+        level: target.policy.status === "blocked_by_policy" ? "error" : "warning",
+        title: `Wiki ingest target: ${target.relativePath}`,
+        message: target.policy.reasons.join("; "),
+        path: target.relativePath,
+      })),
+  ];
+
   return {
     headline,
     status: serializedPlan.policySummary.status,
@@ -1351,6 +1370,8 @@ function buildCiHints(serializedPlan) {
     reviewRequired,
     recommendedActions,
     markdownSummary: markdownLines.join("\n"),
+    githubStepSummary: markdownLines.join("\n"),
+    annotations,
   };
 }
 
