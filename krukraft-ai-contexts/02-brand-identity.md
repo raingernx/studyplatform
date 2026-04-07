@@ -83,6 +83,14 @@
 3. Monochrome version (black/white)
 4. Transparent background version + solid background version
 
+### Repo-Owned Asset Set
+
+- The active repo-owned fallback brand assets now live under `public/brand/*`.
+- The dark-theme fallback pair is maintained as:
+  - `public/brand/krukraft-logo-dark.svg`
+  - `public/brand/krukraft-mark-dark.svg`
+- The older `public/logo/*` export tree is no longer the canonical in-repo asset source and has been removed from the active asset set.
+
 ### Font Analysis (Craft word)
 
 The "Craft" script is custom lettering based on Pacifico/Lobster family with:

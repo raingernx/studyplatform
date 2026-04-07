@@ -106,6 +106,7 @@ Platform settings notes:
 - Dark theme navigation and auth surfaces can now use dedicated dark logos rather than reusing the light assets
 - Navigation branding now keeps a repo-owned fallback asset in place until the active custom logo has loaded, so refreshes do not show an empty logo slot
 - If no dedicated dark logo is stored, dark-theme runtime branding now stays on the repo-owned dark fallback instead of resolving back to the uploaded light logo after refresh
+- The repo-owned fallback asset set is now centered on `public/brand/*`; legacy `public/logo/*` exports are no longer treated as the canonical fallback source
 
 ## Payment Flow
 

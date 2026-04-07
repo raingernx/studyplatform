@@ -10,6 +10,7 @@
 - [ ] Continue refining detail-page CTA/trust/review timing if new regressions appear
 - [ ] Recheck preview/production LCP after major marketplace image or layout changes; local dev reruns on 2026-04-02 stopped reproducing the old Next `loading="eager"` advice, but dev-mode LHCI is still not production truth
 - [ ] Verify uploaded favicon and OG logo changes propagate correctly through `/brand-assets/*` in production browsers and social crawlers
+- [ ] Recheck that the trimmed repo-owned fallback asset set (`public/brand/*` without legacy `public/logo/*`) still covers every favicon / metadata surface that should remain first-party
 
 ## Product / UX Follow-Ups
 
