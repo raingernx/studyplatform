@@ -45,7 +45,6 @@ export function ResourcesEntryNavigationOverlay() {
   const pathname = usePathname();
   const navigationState = useResourcesNavigationState();
   const previousPathRef = useRef(pathname);
-  const [armedOverlayId, setArmedOverlayId] = useState(0);
   const [forcedOverlay, setForcedOverlay] = useState(false);
   const targetHref = navigationState.href;
   const isCrossingIntoResources =
@@ -68,22 +67,6 @@ export function ResourcesEntryNavigationOverlay() {
   }, [crossedIntoResources, pathname]);
 
   useEffect(() => {
-    if (!isCrossingIntoResources) {
-      setArmedOverlayId(0);
-      return;
-    }
-
-    const currentId = navigationState.id;
-    const frameId = window.requestAnimationFrame(() => {
-      setArmedOverlayId(currentId);
-    });
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-    };
-  }, [isCrossingIntoResources, navigationState.id]);
-
-  useEffect(() => {
     if (!forcedOverlay) {
       return;
     }
@@ -102,7 +85,7 @@ export function ResourcesEntryNavigationOverlay() {
     );
   }, [forcedOverlay, navigationState.startedAt, pathname]);
 
-  const stateDrivenOverlay = isCrossingIntoResources && armedOverlayId === navigationState.id;
+  const stateDrivenOverlay = isCrossingIntoResources;
 
   if (!stateDrivenOverlay && !forcedOverlay && !crossedIntoResources) {
     return null;
