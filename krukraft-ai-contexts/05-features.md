@@ -105,6 +105,7 @@ Platform settings notes:
 - Public metadata and tab/icon surfaces now read brand assets through runtime `/brand-assets/*` routes so uploads propagate without falling back to stale build-time defaults
 - Dark theme navigation and auth surfaces can now use dedicated dark logos rather than reusing the light assets
 - Navigation branding now renders the active theme-specific uploaded logo directly and only falls back to the repo-owned asset if that upload fails, which avoids refresh-time position jumps caused by swapping between different logo artboards
+- The navbar brand is now intentionally stricter than other branding surfaces: it uses the repo-owned local light/dark logo pair so the first visible chrome stays stable on hard refreshes instead of waiting on uploaded remote assets
 - The marketplace navbar Suspense fallback now reserves both the top-row chrome and the category-row height so refreshes do not collapse to a shorter header before the live navbar mounts
 - If no dedicated dark logo is stored, dark-theme runtime branding now stays on the repo-owned dark fallback instead of resolving back to the uploaded light logo after refresh
 - The repo-owned fallback asset set is now centered on `public/brand/*`; legacy `public/logo/*` exports are no longer treated as the canonical fallback source

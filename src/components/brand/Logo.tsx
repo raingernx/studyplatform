@@ -21,6 +21,7 @@ interface LogoProps {
   size?: LogoSize;
   dark?: boolean;
   className?: string;
+  preferRepoAsset?: boolean;
 }
 
 const FULL_IMAGE_CLASS: Record<LogoSize, string> = {
@@ -145,15 +146,24 @@ export function Logo({
   size = "sm",
   dark = false,
   className,
+  preferRepoAsset = false,
 }: LogoProps) {
   const pathname = usePathname();
   const platform = usePlatformConfig();
   const platformName = platform.platformShortName;
   const textColor = dark ? "text-white" : "text-foreground";
-  const fullLogoUrl = platform.logoFullUrl;
-  const fullLogoDarkUrl = platform.logoFullDarkUrl;
-  const iconLogoUrl = platform.logoIconUrl;
-  const iconLogoDarkUrl = platform.logoIconDarkUrl;
+  const fullLogoUrl = preferRepoAsset
+    ? PLATFORM_DEFAULTS.logoFullUrl
+    : platform.logoFullUrl;
+  const fullLogoDarkUrl = preferRepoAsset
+    ? PLATFORM_DEFAULTS.logoFullDarkUrl
+    : platform.logoFullDarkUrl;
+  const iconLogoUrl = preferRepoAsset
+    ? PLATFORM_DEFAULTS.logoIconUrl
+    : platform.logoIconUrl;
+  const iconLogoDarkUrl = preferRepoAsset
+    ? PLATFORM_DEFAULTS.logoIconDarkUrl
+    : platform.logoIconDarkUrl;
   const emailLogoUrl = platform.logoEmailUrl;
   const brandInitial = platformName.trim().charAt(0).toUpperCase() || "K";
   const imageAlt = `${platformName} logo`;
