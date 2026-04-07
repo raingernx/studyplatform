@@ -38,6 +38,7 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -52,6 +53,10 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
     }
     document.addEventListener("mousedown", onOutsideClick);
     return () => document.removeEventListener("mousedown", onOutsideClick);
+  }, []);
+
+  useEffect(() => {
+    setIsHydrated(true);
   }, []);
 
   function handleDashboardNavigation(href: string) {
@@ -150,13 +155,22 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
       rightClassName="gap-1.5"
       right={
         <>
-          <Link
-            href={routes.marketplace}
-            onClick={(event) => handleMarketplaceLinkClick(event, routes.marketplace)}
-            className="hidden items-center rounded-xl border border-border bg-card px-3 py-2 text-small font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground sm:flex"
-          >
-            Browse resources
-          </Link>
+          {isHydrated ? (
+            <Link
+              href={routes.marketplace}
+              onClick={(event) => handleMarketplaceLinkClick(event, routes.marketplace)}
+              className="hidden items-center rounded-xl border border-border bg-card px-3 py-2 text-small font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground sm:flex"
+            >
+              Browse resources
+            </Link>
+          ) : (
+            <span
+              aria-hidden="true"
+              className="hidden items-center rounded-xl border border-border bg-card px-3 py-2 text-small font-medium text-muted-foreground sm:flex"
+            >
+              Browse resources
+            </span>
+          )}
 
           <button
             type="button"
