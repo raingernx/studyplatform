@@ -2,6 +2,7 @@
 
 ## 2026-04-07
 
+- corrected the new admin refresh probes after CI showed `/admin` finished with `routeReady: ["dashboard", "admin-overview"]`; that combination is valid because admin routes live inside the shared dashboard chrome, so the probe now treats the generic `dashboard` marker as allowed context instead of flagging it as a wrong-family fallback.
 - extended the same refresh-shell verification sweep into the main admin family entry surfaces, so `/admin` and `/admin/analytics` now have explicit hard-refresh probes and route-ready markers instead of depending only on direct-load page smoke.
 - expanded the same dashboard refresh-shell verification sweep again so `/dashboard/downloads`, `/dashboard/purchases`, `/settings`, and `/subscription` now have explicit hard-refresh probes too, closing the remaining gap where those routes had ready markers but still depended on manual repeated-refresh checks.
 - extended the dashboard route-ready / handoff model into the main creator workspace surfaces (`/dashboard/creator`, analytics, resources, sales, profile, apply) after noticing those routes still cleared overlays from generic dashboard readiness instead of target-route readiness.

@@ -34,6 +34,7 @@ This split model keeps local debugging practical while giving the repo a stable 
 - creator resource editor refresh now has its own repo-owned probe path as well, so `/dashboard/creator/resources/new` can verify the dedicated editor route-ready marker instead of inheriting only the generic creator-shell checks
 - dashboard overview, library, downloads, purchases, settings, and membership hard refreshes now have their own repo-owned probe paths too, so the main authenticated dashboard surfaces can assert family-specific readiness directly and catch wrong-level app-root fallback without relying on manual repeated refresh testing
 - admin overview and admin analytics now also have explicit hard-refresh probes, so the main admin family entry surfaces can prove admin-scoped readiness instead of relying only on direct-load smoke coverage
+- admin refresh probes should tolerate the shared `dashboard` shell-ready marker when admin routes are rendered inside the shared dashboard chrome, as long as the admin-specific route-ready marker is also present and the route does not finish on the app-root fallback
 - close-out for browser verification work now requires both a `Verification:` summary and a `Knowledge triage:` decision; "green" workflow status alone is not enough for a stable close-out
 
 ## Invariants

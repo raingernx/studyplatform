@@ -976,7 +976,9 @@ async function runAdminRefreshShellScenario(
     ).toBeGreaterThan(0);
 
     const wrongFamilyRouteSample = routeSamples.find((sample) =>
-      sample.routeReady.some((marker) => marker !== options.expectedRouteReady),
+      sample.routeReady.some(
+        (marker) => marker !== "dashboard" && marker !== options.expectedRouteReady,
+      ),
     );
     expect(wrongFamilyRouteSample).toBeUndefined();
 
