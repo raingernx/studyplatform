@@ -11,11 +11,17 @@ function SidebarSection({
   itemWidths: string[];
 }) {
   return (
-    <div className="space-y-2.5">
-      <LoadingSkeleton className={`h-3 ${labelWidth}`} />
+    <div className="space-y-0">
+      <LoadingSkeleton className={`mb-2.5 ml-2 h-3 ${labelWidth}`} />
       <div className="space-y-1.5">
         {itemWidths.map((width, index) => (
-          <LoadingSkeleton key={index} className={`h-10 rounded-lg ${width}`} />
+          <div
+            key={index}
+            className="flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5"
+          >
+            <LoadingSkeleton className="h-[18px] w-[18px] shrink-0 rounded" />
+            <LoadingSkeleton className={`h-4 ${width}`} />
+          </div>
         ))}
       </div>
     </div>
@@ -104,11 +110,11 @@ export function DashboardGroupLoadingShell({
         </div>
 
         <div className="border-b border-border px-5 py-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
             <LoadingSkeleton className="h-9 w-9 rounded-full ring-1 ring-border" />
             <div className="min-w-0 flex-1 space-y-1.5">
               <LoadingSkeleton className="h-4 w-24" />
-              <LoadingSkeleton className="h-3 w-32" />
+              <LoadingSkeleton className="h-3 w-36" />
             </div>
           </div>
         </div>
@@ -140,9 +146,10 @@ export function DashboardGroupLoadingShell({
             <LoadingSkeleton className="h-9 w-9 rounded-xl lg:hidden" />
             <LoadingSkeleton className="hidden h-10 max-w-lg flex-1 rounded-xl sm:block" />
           </div>
-          <div className="ml-3 flex shrink-0 items-center gap-2">
-            <LoadingSkeleton className="hidden h-9 w-32 rounded-xl sm:block" />
+          <div className="ml-3 flex shrink-0 items-center gap-1.5">
+            <LoadingSkeleton className="hidden h-10 w-36 rounded-xl sm:block" />
             <LoadingSkeleton className="h-9 w-9 rounded-full" />
+            <LoadingSkeleton className="hidden h-10 w-[88px] rounded-full sm:block" />
           </div>
         </header>
 
