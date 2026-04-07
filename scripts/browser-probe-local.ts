@@ -53,11 +53,8 @@ type ThemeLogoLayerState = {
 
 type ThemeLogoProbeState = {
   theme: string | null;
-  darkLoaded: string | null;
-  lightFallback: ThemeLogoLayerState;
-  darkFallback: ThemeLogoLayerState;
-  lightCustom: ThemeLogoLayerState;
-  darkCustom: ThemeLogoLayerState;
+  light: ThemeLogoLayerState;
+  dark: ThemeLogoLayerState;
 } | null;
 
 const VALID_SCENARIOS: ProbeScenarioName[] = [
@@ -731,11 +728,8 @@ async function runDarkThemeLogoScenario({ browser }: ProbeContext) {
 
         return {
           theme: document.documentElement.dataset.theme ?? null,
-          darkLoaded: node.getAttribute("data-dark-loaded"),
-          lightFallback: readLayer(".theme-logo-layer--fallback.theme-logo-layer--light"),
-          darkFallback: readLayer(".theme-logo-layer--fallback.theme-logo-layer--dark"),
-          lightCustom: readLayer(".theme-logo-layer--custom.theme-logo-layer--light"),
-          darkCustom: readLayer(".theme-logo-layer--custom.theme-logo-layer--dark"),
+          light: readLayer(".theme-logo-layer--light"),
+          dark: readLayer(".theme-logo-layer--dark"),
         };
       })()
     `)) as ThemeLogoProbeState;
@@ -746,13 +740,11 @@ async function runDarkThemeLogoScenario({ browser }: ProbeContext) {
     }
 
     expect(state.theme).toBe("dark");
-    expect(state.darkLoaded).not.toBe("true");
-    expect((state.darkFallback.opacity ?? 0) > 0.5).toBeTruthy();
-    expect((state.lightFallback.opacity ?? 1) < 0.1).toBeTruthy();
-    expect((state.lightCustom.opacity ?? 1) < 0.1).toBeTruthy();
+    expect((state.dark.opacity ?? 0) > 0.5).toBeTruthy();
+    expect((state.light.opacity ?? 1) < 0.1).toBeTruthy();
 
-    const fallbackDarkSrc = `${state.darkFallback.src ?? ""} ${state.darkFallback.currentSrc ?? ""}`;
-    expect(/krukraft-(logo|mark)-dark/i.test(fallbackDarkSrc)).toBeTruthy();
+    const darkSrc = `${state.dark.src ?? ""} ${state.dark.currentSrc ?? ""}`;
+    expect(/krukraft-(logo|mark)-dark/i.test(darkSrc)).toBeTruthy();
 
     expect(pageErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);
