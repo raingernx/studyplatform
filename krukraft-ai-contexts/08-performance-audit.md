@@ -156,6 +156,9 @@ Current perf-hardening baseline for the production UX initiative is:
 - `listing_recommended_smoke`
   - main class: the treatment/recommended listing route can still show cold-instance tail latency if warm only touches one worker, even when the control/newest path is already aligned
   - current mitigation: warm against `ranking_variant=B` and match the smoke route's 5-VU fanout with `repeat: 2` plus `burst: 5`
+- post-deploy warm endpoint layering
+  - when `PERFORMANCE_WARM_SECRET` is available, the warm script should call `/api/internal/performance/warm` before the public HTTP fanout pass
+  - intent: prime service-level Redis/precomputed listing caches first, then let route-level warming handle page shells, streamed HTML bodies, and image-optimizer hints
 - `resources_home_smoke`
   - main class: discover-home stream and page shell were still seeing fresh-instance tails after deploy
   - current mitigation: repeated warm pass plus a small concurrent burst on `/resources`

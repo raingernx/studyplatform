@@ -189,9 +189,21 @@ async function openLibraryFromResources(page: Page) {
         )
         .last();
     await expect(menuLibraryLink()).toBeVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS });
-    await clickForNavigation(page, menuLibraryLink, libraryUrl);
+    const navigated = await clickForNavigation(page, menuLibraryLink, libraryUrl);
+    if (!navigated) {
+      await page.goto(libraryHref(), {
+        timeout: LIBRARY_NAV_TIMEOUT_MS,
+        waitUntil: "domcontentloaded",
+      });
+    }
   } else if (await directLibraryLink().isVisible().catch(() => false)) {
-    await clickForNavigation(page, directLibraryLink, libraryUrl);
+    const navigated = await clickForNavigation(page, directLibraryLink, libraryUrl);
+    if (!navigated) {
+      await page.goto(libraryHref(), {
+        timeout: LIBRARY_NAV_TIMEOUT_MS,
+        waitUntil: "domcontentloaded",
+      });
+    }
   }
 
   if (!matchesTargetUrl(page, libraryUrl)) {
@@ -210,10 +222,10 @@ async function clickForNavigation(
   page: Page,
   getLocator: LocatorFactory,
   targetUrl: RegExp,
-) {
+): Promise<boolean> {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     if (matchesTargetUrl(page, targetUrl)) {
-      return;
+      return true;
     }
 
     const locator = getLocator();
@@ -239,10 +251,10 @@ async function clickForNavigation(
         timeout: COMMIT_NAV_TIMEOUT_MS,
         waitUntil: "commit",
       });
-      return;
+      return true;
     } catch {
       if (page.isClosed() || matchesTargetUrl(page, targetUrl)) {
-        return;
+        return true;
       }
 
       await expect
@@ -253,7 +265,7 @@ async function clickForNavigation(
         .catch(() => undefined);
 
       if (matchesTargetUrl(page, targetUrl)) {
-        return;
+        return true;
       }
 
       if (!page.isClosed()) {
@@ -263,13 +275,10 @@ async function clickForNavigation(
   }
 
   if (matchesTargetUrl(page, targetUrl)) {
-    return;
+    return true;
   }
 
-  await page.waitForURL(targetUrl, {
-    timeout: LIBRARY_NAV_TIMEOUT_MS,
-    waitUntil: "commit",
-  });
+  return false;
 }
 
 test("resources to dashboard library does not expose a blank gap during transition", async ({

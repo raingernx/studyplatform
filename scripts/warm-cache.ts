@@ -318,10 +318,54 @@ async function fetchHotSlugs(limit = 20): Promise<string[]> {
   }
 }
 
+async function triggerInternalWarm(): Promise<void> {
+  if (!warmSecret) {
+    return;
+  }
+
+  const url = new URL("/api/internal/performance/warm", baseUrl);
+  const startedAt = Date.now();
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "user-agent": userAgent,
+        "x-warm-secret": warmSecret,
+      },
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    if (!response.ok) {
+      console.warn(
+        `[warm-cache] internal warm endpoint returned ${response.status} after ${Date.now() - startedAt}ms`,
+      );
+      return;
+    }
+
+    await response.arrayBuffer().catch(() => undefined);
+    console.log(
+      `[warm-cache] internal warm endpoint completed in ${Date.now() - startedAt}ms`,
+    );
+  } catch (error) {
+    console.warn(
+      `[warm-cache] internal warm endpoint failed after ${Date.now() - startedAt}ms: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+}
+
 async function main() {
   console.log(
     `[warm-cache] Starting public cache warm-up against ${baseUrl}`,
   );
+
+  // Prime service-level/precomputed caches first when the internal warm secret
+  // is available. The later public-route fanout still warms route shells and
+  // image optimizer hints, but it should no longer be responsible for the
+  // first expensive listing/detail cache fill by itself.
+  await triggerInternalWarm();
 
   // Fetch the top-N resource slugs and append them as warm routes.
   // The static HOT_SLUG route (resource-detail-hot) is already in the routes

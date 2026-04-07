@@ -3,6 +3,7 @@
 ## 2026-04-08
 
 - matched the recommended/treatment listing warm path to its actual smoke shape too: `/resources?category=all&sort=recommended` with `ranking_variant=B` now repeats and uses a burst of `5`, after post-deploy perf still showed `listing_recommended_smoke` failing even though the control/newest listing had already been stabilized.
+- layered post-deploy warming so the script now calls the internal performance warm endpoint first when `PERFORMANCE_WARM_SECRET` is configured; this primes service-level Redis/precomputed caches before the public route warm fanout heats page shells and image optimizer hints.
 - started the production-UX perf hardening pass by locking the first incident-ledger routes (`/resources`, `/resources/[slug]`, `/creators/[slug]`, `/categories/[slug]`, and the warmed listing-control routes) into shared docs and by tightening hot public cache reuse where it was still weakest: marketplace listing reads and creator public-profile reads now keep a stable `unstable_cache` wrapper per normalized route key / creator slug instead of recreating the wrapper on every call.
 
 ## 2026-04-07
