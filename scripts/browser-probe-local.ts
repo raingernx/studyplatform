@@ -248,10 +248,24 @@ function expectLoadingScope(
   const sawExpectedScope = samples.some((sample) =>
     scopes.some((scope) => sample.loadingScopes.includes(scope)),
   );
+  const uniqueScopes = Array.from(
+    new Set(samples.flatMap((sample) => sample.loadingScopes)),
+  ).sort();
+  const sampleSummary = {
+    sampleCount: samples.length,
+    uniqueScopes,
+    firstHref: samples[0]?.href ?? null,
+    lastHref: samples.at(-1)?.href ?? null,
+    targetSampleCount: samples.filter((sample) =>
+      scenario === "resources-to-library"
+        ? /\/dashboard\/library$/.test(sample.href)
+        : /\/resources$/.test(sample.href)
+    ).length,
+  };
 
   expect(
     sawExpectedScope,
-    `${scenario} probe did not capture any of the expected loading scopes: ${scopes.join(", ")}`,
+    `${scenario} probe did not capture any of the expected loading scopes: ${scopes.join(", ")}. ${JSON.stringify(sampleSummary)}`,
   ).toBeTruthy();
 }
 

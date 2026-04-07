@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { MouseEventHandler } from "react";
 import { cn } from "@/lib/utils";
 
 type NavbarItemVariant = "default" | "active" | "primary" | "secondary";
@@ -8,7 +9,7 @@ type NavbarItemVariant = "default" | "active" | "primary" | "secondary";
 interface NavbarItemProps {
   href: string;
   children: React.ReactNode;
-  onClick?: () => void;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
   mobile?: boolean;
   className?: string;
   variant?: NavbarItemVariant;

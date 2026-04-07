@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, type ReactNode } from "react";
+import { Suspense, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useCallback, useId, useRef, useState } from "react";
 import {
@@ -24,6 +24,7 @@ import {
   isResourcesSubtreePath,
 } from "@/components/marketplace/resourcesNavigationState";
 import { beginDashboardNavigation } from "@/components/layout/dashboard/dashboardNavigationState";
+import { isDashboardGroupPath } from "@/components/providers/dashboardNavigationOverlayShared";
 import {
   clearCachedAuthViewer,
   primeAuthViewer,
@@ -207,6 +208,7 @@ function NavbarInner({
   headerSearch?: ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const authViewer = useAuthViewer({ strategy: "idle", idleTimeoutMs: 800 });
   const authUser = authViewer.user;
@@ -265,6 +267,58 @@ function NavbarInner({
     closeMobileMoreMenu();
   }
 
+  function shouldIgnoreLinkEvent(event: ReactMouseEvent<HTMLAnchorElement>) {
+    return (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    );
+  }
+
+  function handleProtectedAreaLinkClick(
+    event: ReactMouseEvent<HTMLAnchorElement>,
+    href: string,
+    afterNavigation?: () => void,
+  ) {
+    if (shouldIgnoreLinkEvent(event)) {
+      return;
+    }
+
+    handleProtectedAreaNavigation(href);
+    afterNavigation?.();
+
+    if (isDashboardGroupPath(pathname)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    window.requestAnimationFrame(() => {
+      router.push(href);
+    });
+  }
+
+  function handlePrimaryLinkClick(
+    event: ReactMouseEvent<HTMLAnchorElement>,
+    href: string,
+    afterNavigation?: () => void,
+  ) {
+    if (shouldIgnoreLinkEvent(event)) {
+      return;
+    }
+
+    if (href === routes.marketplace) {
+      handlePrimaryNavigation(href);
+      afterNavigation?.();
+      return;
+    }
+
+    handleProtectedAreaLinkClick(event, href, afterNavigation);
+  }
+
   async function handleSignOut() {
     if (isSigningOut) {
       return;
@@ -319,9 +373,10 @@ function NavbarInner({
             <div className="my-1 border-t border-border-subtle" />
             <Link
               href={routes.dashboard}
-              onClick={() => {
-                handleProtectedAreaNavigation(routes.dashboard);
-                setUserMenuOpen(false);
+              onClick={(event) => {
+                handleProtectedAreaLinkClick(event, routes.dashboard, () => {
+                  setUserMenuOpen(false);
+                });
               }}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
@@ -332,9 +387,10 @@ function NavbarInner({
             </Link>
             <Link
               href={routes.library}
-              onClick={() => {
-                handleProtectedAreaNavigation(routes.library);
-                setUserMenuOpen(false);
+              onClick={(event) => {
+                handleProtectedAreaLinkClick(event, routes.library, () => {
+                  setUserMenuOpen(false);
+                });
               }}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
@@ -345,9 +401,10 @@ function NavbarInner({
             </Link>
             <Link
               href={routes.purchases}
-              onClick={() => {
-                handleProtectedAreaNavigation(routes.purchases);
-                setUserMenuOpen(false);
+              onClick={(event) => {
+                handleProtectedAreaLinkClick(event, routes.purchases, () => {
+                  setUserMenuOpen(false);
+                });
               }}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
@@ -361,9 +418,10 @@ function NavbarInner({
 
             <Link
               href={routes.settings}
-              onClick={() => {
-                handleProtectedAreaNavigation(routes.settings);
-                setUserMenuOpen(false);
+              onClick={(event) => {
+                handleProtectedAreaLinkClick(event, routes.settings, () => {
+                  setUserMenuOpen(false);
+                });
               }}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
@@ -410,7 +468,7 @@ function NavbarInner({
                   <>
                     <Link
                       href={routes.library}
-                      onClick={() => handleProtectedAreaNavigation(routes.library)}
+                      onClick={(event) => handleProtectedAreaLinkClick(event, routes.library)}
                       className={MARKETPLACE_ACTION_LINK_CLASS_NAME}
                     >
                       คลังของฉัน
@@ -459,7 +517,7 @@ function NavbarInner({
                 {authUser ? (
                   <Link
                     href={routes.library}
-                    onClick={() => handleProtectedAreaNavigation(routes.library)}
+                    onClick={(event) => handleProtectedAreaLinkClick(event, routes.library)}
                     className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] leading-[22px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
                   >
                     คลังของฉัน
@@ -617,7 +675,7 @@ function NavbarInner({
                 <NavbarItem
                   key={href}
                   href={href}
-                  onClick={() => handlePrimaryNavigation(href)}
+                  onClick={(event) => handlePrimaryLinkClick(event, href)}
                   variant="default"
                   className="h-10 rounded-full px-4 text-[14px] leading-[22px] font-semibold"
                 >
@@ -681,9 +739,8 @@ function NavbarInner({
               <NavbarItem
                 key={href}
                 href={href}
-                onClick={() => {
-                  handlePrimaryNavigation(href);
-                  closeAll();
+                onClick={(event) => {
+                  handlePrimaryLinkClick(event, href, closeAll);
                 }}
                 variant="default"
                 mobile
@@ -721,9 +778,8 @@ function NavbarInner({
 
                 <Link
                   href={routes.dashboard}
-                  onClick={() => {
-                    handleProtectedAreaNavigation(routes.dashboard);
-                    closeAll();
+                  onClick={(event) => {
+                    handleProtectedAreaLinkClick(event, routes.dashboard, closeAll);
                   }}
                   className="flex items-center gap-2.5 rounded-lg border border-border-strong px-4 py-2.5 text-sm font-medium text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
                 >
