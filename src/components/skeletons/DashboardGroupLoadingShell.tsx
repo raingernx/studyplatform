@@ -98,7 +98,7 @@ export function DashboardGroupLoadingShell({
 }) {
   return (
     <div data-loading-scope="dashboard-group" className="flex min-h-screen bg-background">
-      <aside className="hidden w-72 shrink-0 border-r border-border bg-card lg:flex lg:flex-col">
+      <aside className="sticky top-0 hidden h-screen w-[272px] shrink-0 border-r border-border bg-card lg:flex lg:flex-col">
         <div className="flex h-14 items-center border-b border-border px-5 lg:px-6">
           <Logo variant="full" size="md" />
         </div>
@@ -115,7 +115,7 @@ export function DashboardGroupLoadingShell({
 
         <DashboardSidebarTopSlotSkeleton />
 
-        <div className="space-y-6 px-5 py-4">
+        <div className="space-y-6 px-4 py-4">
           <SidebarSection
             labelWidth="w-16"
             itemWidths={["w-full", "w-full", "w-4/5"]}

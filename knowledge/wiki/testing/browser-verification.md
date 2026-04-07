@@ -39,6 +39,7 @@ This split model keeps local debugging practical while giving the repo a stable 
 - Entry overlays that prove transition coverage should stay visible long enough to survive fast route commits; zero-duration handoff overlays are prone to disappearing before CI sampling can observe the intended scope.
 - Entry overlays must also avoid intercepting the source click that starts the transition; when a public-route link begins dashboard navigation, arm the overlay after the click frame rather than before the originating pointer event finishes.
 - For public-to-dashboard links that both prove shell coverage and avoid click interception, the safest timing is: prevent default, let the click finish, arm dashboard navigation in a microtask, then `router.push(...)` on the next animation frame.
+- Dashboard shell loading geometry must match the real shell width and padding, not just the content hierarchy; even when `data-loading-scope="dashboard-group"` is present, a wider sidebar shell (for example `w-72` instead of the real `272px`) still produces visible shift on handoff.
 - Theme tests should assert runtime theme stability after navigation commit and explicit page assertions, not rely on slower document lifecycle milestones when the route can compile on first hit.
 
 ## Known Risks
