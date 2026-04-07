@@ -14,6 +14,7 @@ import { routes } from "@/lib/routes";
 
 const RESOURCE_DETAIL_SHELL_SELECTOR = '[data-route-shell-ready="resource-detail"]';
 const RESOURCES_BROWSE_SHELL_SELECTOR = '[data-route-shell-ready="resources-browse"]';
+const MIN_ENTRY_PENDING_MS = 260;
 
 function resolveResourcesOverlayMode(
   pathname: string | null,
@@ -96,10 +97,10 @@ export function ResourcesEntryNavigationOverlay() {
       () => {
         setForcedOverlay(false);
       },
-      0,
-      Date.now(),
+      MIN_ENTRY_PENDING_MS,
+      navigationState.startedAt || Date.now(),
     );
-  }, [forcedOverlay, pathname]);
+  }, [forcedOverlay, navigationState.startedAt, pathname]);
 
   const stateDrivenOverlay = isCrossingIntoResources && armedOverlayId === navigationState.id;
 
