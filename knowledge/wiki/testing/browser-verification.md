@@ -32,6 +32,7 @@ This split model keeps local debugging practical while giving the repo a stable 
 - repo-owned page, dashboard, and management probe passes after Playwright smoke
 - creator workspace refresh verification now also has a repo-owned probe path, so wrong-level app-root fallback on `/dashboard/creator/*` can be caught without depending only on manual repeated refresh checks
 - creator resource editor refresh now has its own repo-owned probe path as well, so `/dashboard/creator/resources/new` can verify the dedicated editor route-ready marker instead of inheriting only the generic creator-shell checks
+- dashboard library hard refresh now has its own repo-owned probe path too, so `/dashboard/library` can assert `dashboard-library` readiness directly and catch wrong-level app-root fallback without relying on manual repeated refresh testing
 - close-out for browser verification work now requires both a `Verification:` summary and a `Knowledge triage:` decision; "green" workflow status alone is not enough for a stable close-out
 
 ## Invariants
