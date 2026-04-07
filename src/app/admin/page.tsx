@@ -31,7 +31,7 @@ export default async function AdminDashboardPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-7">
+    <div data-route-shell-ready="admin-overview" className="space-y-7">
       <AdminPageHeader
         title="Admin dashboard"
         description="Track marketplace health, operational activity, and the metrics that matter most."

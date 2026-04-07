@@ -27,6 +27,8 @@ type ProbeScenarioName =
   | "dashboard-purchases-refresh-shell"
   | "dashboard-settings-refresh-shell"
   | "dashboard-subscription-refresh-shell"
+  | "admin-overview-refresh-shell"
+  | "admin-analytics-refresh-shell"
   | "dark-theme-logo"
   | "settings-theme"
   | "public-product-pages"
@@ -83,6 +85,8 @@ const VALID_SCENARIOS: ProbeScenarioName[] = [
   "dashboard-purchases-refresh-shell",
   "dashboard-settings-refresh-shell",
   "dashboard-subscription-refresh-shell",
+  "admin-overview-refresh-shell",
+  "admin-analytics-refresh-shell",
   "dark-theme-logo",
   "settings-theme",
   "public-product-pages",
@@ -874,6 +878,16 @@ type DashboardRefreshShellOptions = {
   expectedRouteReady: string;
 };
 
+type AdminRefreshShellOptions = {
+  scenario:
+    | "admin-overview-refresh-shell"
+    | "admin-analytics-refresh-shell";
+  initialPath: string;
+  urlPattern: RegExp;
+  headingName: RegExp;
+  expectedRouteReady: string;
+};
+
 async function runDashboardRefreshShellScenario(
   probeContext: ProbeContext,
   options: DashboardRefreshShellOptions,
@@ -915,6 +929,62 @@ async function runDashboardRefreshShellScenario(
     );
     expect(
       dashboardShellSample,
+      `${options.scenario} probe did not observe ${options.expectedRouteReady} readiness after reload`,
+    ).toBeDefined();
+
+    expect(routeSamples.at(-1)?.rootLoadingVisible).not.toBe(true);
+
+    expect(pageErrors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  } catch (error) {
+    const screenshot = await saveFailureScreenshot(page, options.scenario);
+    throw new Error(
+      `${options.scenario} probe failed. Screenshot: ${screenshot}. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  } finally {
+    await closeContext(context);
+  }
+}
+
+async function runAdminRefreshShellScenario(
+  probeContext: ProbeContext,
+  options: AdminRefreshShellOptions,
+) {
+  const context = await createContext(probeContext.browser);
+  const page = await context.newPage();
+  const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
+
+  try {
+    await loginAsAdmin(page, options.initialPath);
+    await expect(page).toHaveURL(options.urlPattern);
+    await expect(page.getByRole("heading", { name: options.headingName }).first()).toBeVisible();
+
+    await startRefreshProbe(page);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(options.urlPattern);
+    await expect(page.getByRole("heading", { name: options.headingName }).first()).toBeVisible();
+    await page.waitForTimeout(500);
+
+    const samples = await stopRefreshProbe(page);
+    const routeSamples = samples.filter((sample) => options.urlPattern.test(sample.href));
+
+    expect(
+      routeSamples.length,
+      `${options.scenario} probe did not capture route samples after reload`,
+    ).toBeGreaterThan(0);
+
+    const wrongFamilyRouteSample = routeSamples.find((sample) =>
+      sample.routeReady.some((marker) => marker !== options.expectedRouteReady),
+    );
+    expect(wrongFamilyRouteSample).toBeUndefined();
+
+    const readySample = routeSamples.find((sample) =>
+      sample.routeReady.includes(options.expectedRouteReady),
+    );
+    expect(
+      readySample,
       `${options.scenario} probe did not observe ${options.expectedRouteReady} readiness after reload`,
     ).toBeDefined();
 
@@ -1008,6 +1078,32 @@ async function runDashboardSubscriptionRefreshShellScenario(context: ProbeContex
       urlPattern: /\/subscription(?:\?.*)?$/,
       headingName: /^Membership$/i,
       expectedRouteReady: "dashboard-subscription",
+    },
+  );
+}
+
+async function runAdminOverviewRefreshShellScenario(context: ProbeContext) {
+  return runAdminRefreshShellScenario(
+    context,
+    {
+      scenario: "admin-overview-refresh-shell",
+      initialPath: "/admin",
+      urlPattern: /\/admin(?:\?.*)?$/,
+      headingName: /^Admin dashboard$/i,
+      expectedRouteReady: "admin-overview",
+    },
+  );
+}
+
+async function runAdminAnalyticsRefreshShellScenario(context: ProbeContext) {
+  return runAdminRefreshShellScenario(
+    context,
+    {
+      scenario: "admin-analytics-refresh-shell",
+      initialPath: "/admin/analytics",
+      urlPattern: /\/admin\/analytics(?:\?.*)?$/,
+      headingName: /^Analytics$/i,
+      expectedRouteReady: "admin-analytics",
     },
   );
 }
@@ -1206,6 +1302,8 @@ const scenarioHandlers: Record<ProbeScenarioName, (context: ProbeContext) => Pro
   "dashboard-purchases-refresh-shell": runDashboardPurchasesRefreshShellScenario,
   "dashboard-settings-refresh-shell": runDashboardSettingsRefreshShellScenario,
   "dashboard-subscription-refresh-shell": runDashboardSubscriptionRefreshShellScenario,
+  "admin-overview-refresh-shell": runAdminOverviewRefreshShellScenario,
+  "admin-analytics-refresh-shell": runAdminAnalyticsRefreshShellScenario,
   "dashboard-to-downloads": (context) =>
     runDashboardRouteScenario(context, {
       scenario: "dashboard-to-downloads",

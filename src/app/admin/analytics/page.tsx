@@ -103,7 +103,7 @@ export default async function AdminAnalyticsPage() {
       );
 
       return (
-        <div className="space-y-5">
+        <div data-route-shell-ready="admin-analytics" className="space-y-5">
       <AdminPageHeader
         title="Analytics"
         description="High-level metrics and trends for your marketplace."
