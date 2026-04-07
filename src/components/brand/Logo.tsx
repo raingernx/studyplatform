@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState, type MouseEvent } from "react";
 import { usePathname } from "next/navigation";
@@ -70,20 +69,6 @@ function renderLogoAsset(
     fetchPriority?: "high" | "low" | "auto";
   },
 ) {
-  if (src.startsWith("/") && !isRuntimeBrandAsset(src)) {
-    return (
-      <Image
-        src={src}
-        alt={alt}
-        width={320}
-        height={96}
-        priority={options?.priority}
-        onLoad={options?.onLoad}
-        className={cn("h-full w-full object-contain object-left flex-shrink-0", className)}
-      />
-    );
-  }
-
   return (
     <img
       src={src}
@@ -94,7 +79,10 @@ function renderLogoAsset(
       decoding="async"
       fetchPriority={options?.fetchPriority}
       onLoad={options?.onLoad}
-      className={cn("h-full w-full object-contain object-left flex-shrink-0", className)}
+      className={cn(
+        "block h-full w-full flex-shrink-0 object-contain object-left",
+        className,
+      )}
     />
   );
 }
