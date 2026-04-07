@@ -3,8 +3,11 @@ import { expect, test, type Page } from "@playwright/test";
 import { loginAsCreator } from "./helpers/auth";
 import { collectRuntimeErrors } from "./helpers/browser";
 
-const LIBRARY_NAV_TIMEOUT_MS = 15_000;
-const COMMIT_NAV_TIMEOUT_MS = 7_500;
+// This suite runs against `next dev` in CI, so the first hit to `/dashboard/library`
+// can include route compile latency after a code change. These transitions are meant
+// to prove shell coverage / no blank gap, not to enforce a 15s compile budget.
+const LIBRARY_NAV_TIMEOUT_MS = 30_000;
+const COMMIT_NAV_TIMEOUT_MS = 12_000;
 
 test.describe.configure({ timeout: 75_000 });
 
