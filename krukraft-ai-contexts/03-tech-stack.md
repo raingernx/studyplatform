@@ -65,6 +65,7 @@
 - `storybook:smoke`: build-based Storybook smoke for design-system primitives/components
 - `chromatic`: Chromatic CLI is installed as an optional visual-regression publish/review surface for Storybook once a `CHROMATIC_PROJECT_TOKEN` is configured
 - `skeleton:boneyard:build` / `skeleton:boneyard:build:force`: optional DOM-capture skeleton generation via `boneyard-js`, writing generated bones under `src/bones`
+- the repo now pins `boneyard-js` at `^1.6.7`; skeleton capture flows should assume the newer registry-import detection and route-scanning behavior from the 1.6.7 line rather than the older 1.6.2 baseline
 - `repomix` / `repomix:split`: local repo-pack scripts for AI handoff/research workflows; output is intentionally excluded from git, and `.repomixignore` strips secrets, artifacts, and local tool state from packed context
 - the package/lockfile identity now uses `krukraft`, matching the repo folder rename and local service naming
 - `lhci:*`: Lighthouse CI collection/assertion flow backed by `.lighthouserc.json`
