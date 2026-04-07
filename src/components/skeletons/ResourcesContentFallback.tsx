@@ -386,5 +386,9 @@ export function ResourcesContentFallback({
     return <ResourcesDiscoverSectionsSkeleton />;
   }
 
-  return <ResourcesListingContentManualFallback />;
+  return (
+    <div data-loading-scope="resources-browse">
+      <ResourcesListingContentManualFallback />
+    </div>
+  );
 }

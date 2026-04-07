@@ -283,5 +283,9 @@ export function ResourcesDiscoverSectionsBonesPreview() {
 }
 
 export function ResourcesDiscoverSectionsSkeleton() {
-  return <ResourcesDiscoverSectionsManualSkeleton />;
+  return (
+    <div data-loading-scope="resources-browse">
+      <ResourcesDiscoverSectionsManualSkeleton />
+    </div>
+  );
 }
