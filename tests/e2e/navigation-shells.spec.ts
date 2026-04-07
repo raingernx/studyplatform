@@ -28,6 +28,8 @@ async function startNavigationProbe(page: Page) {
     const samples: NavSample[] = [];
     let stopped = false;
     let rafId = 0;
+    let observer: MutationObserver | null = null;
+    let queuedMutationSample = false;
 
     const sample = () => {
       const main = document.querySelector("main");
@@ -51,6 +53,20 @@ async function startNavigationProbe(page: Page) {
       }
     };
 
+    const queueMutationSample = () => {
+      if (queuedMutationSample || stopped) {
+        return;
+      }
+
+      queuedMutationSample = true;
+      queueMicrotask(() => {
+        queuedMutationSample = false;
+        if (!stopped) {
+          sample();
+        }
+      });
+    };
+
     (window as Window & {
       __krukraftNavProbe?: {
         stop: () => NavSample[];
@@ -59,10 +75,22 @@ async function startNavigationProbe(page: Page) {
       stop: () => {
         stopped = true;
         window.cancelAnimationFrame(rafId);
+        observer?.disconnect();
         return samples;
       },
     };
 
+    observer = new MutationObserver(() => {
+      queueMutationSample();
+    });
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["data-loading-scope", "data-route-shell-ready", "class"],
+    });
+
+    sample();
     rafId = window.requestAnimationFrame(sample);
   });
 }
