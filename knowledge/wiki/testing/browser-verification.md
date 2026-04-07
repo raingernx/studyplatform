@@ -38,6 +38,7 @@ This split model keeps local debugging practical while giving the repo a stable 
 - Cross-group navigation links that drive shell-coverage tests should not become interactable before hydration if that risks falling back to hard navigation or inconsistent overlay state.
 - Entry overlays that prove transition coverage should stay visible long enough to survive fast route commits; zero-duration handoff overlays are prone to disappearing before CI sampling can observe the intended scope.
 - Entry overlays must also avoid intercepting the source click that starts the transition; when a public-route link begins dashboard navigation, arm the overlay after the click frame rather than before the originating pointer event finishes.
+- For public-to-dashboard links that both prove shell coverage and avoid click interception, the safest timing is: prevent default, let the click finish, arm dashboard navigation in a microtask, then `router.push(...)` on the next animation frame.
 - Theme tests should assert runtime theme stability after navigation commit and explicit page assertions, not rely on slower document lifecycle milestones when the route can compile on first hit.
 
 ## Known Risks

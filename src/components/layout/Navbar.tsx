@@ -296,8 +296,11 @@ function NavbarInner({
     event.preventDefault();
     afterNavigation?.();
 
-    window.requestAnimationFrame(() => {
+    queueMicrotask(() => {
       handleProtectedAreaNavigation(href);
+    });
+
+    window.requestAnimationFrame(() => {
       router.push(href);
     });
   }
