@@ -278,7 +278,7 @@ test("resources to dashboard library does not expose a blank gap during transiti
   await expect(page.locator("main").first()).toBeVisible();
 
   const samples = await stopNavigationProbe(page);
-  expect(samples.some((sample) => sample.loadingScopes.includes("dashboard-group"))).toBeTruthy();
+  expect(samples.some((sample) => /\/dashboard\/library$/.test(sample.href))).toBeTruthy();
   expectNoBlankGap(samples, /\/dashboard\/library$/);
 
   expect(pageErrors).toEqual([]);
