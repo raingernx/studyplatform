@@ -55,16 +55,12 @@ const TEXT_SIZE_CLASS: Record<LogoSize, string> = {
   xl: "text-4xl",
 };
 
-function isRuntimeBrandAsset(src: string) {
-  return src.startsWith("/brand-assets/");
-}
-
 function renderLogoAsset(
   src: string,
   alt: string,
   className: string,
   options?: {
-    onLoad?: () => void;
+    onError?: () => void;
     priority?: boolean;
     fetchPriority?: "high" | "low" | "auto";
   },
@@ -78,7 +74,7 @@ function renderLogoAsset(
       loading={options?.priority ? "eager" : "lazy"}
       decoding="async"
       fetchPriority={options?.fetchPriority}
-      onLoad={options?.onLoad}
+      onError={options?.onError}
       className={cn(
         "block h-full w-full flex-shrink-0 object-contain object-left",
         className,
@@ -104,12 +100,10 @@ function ThemeAwareLogoAsset({
   wrapperClassName: string;
   forceDark?: boolean;
 }) {
-  const [lightLoaded, setLightLoaded] = useState(false);
-  const [darkLoaded, setDarkLoaded] = useState(false);
-  const usesDedicatedDarkAsset = darkSrc !== lightSrc;
-  const effectiveFallbackDarkSrc = usesDedicatedDarkAsset
-    ? fallbackDarkSrc
-    : fallbackLightSrc;
+  const [lightFailed, setLightFailed] = useState(false);
+  const [darkFailed, setDarkFailed] = useState(false);
+  const resolvedLightSrc = lightFailed ? fallbackLightSrc : lightSrc;
+  const resolvedDarkSrc = darkFailed ? fallbackDarkSrc : darkSrc;
 
   return (
     <span
@@ -118,28 +112,28 @@ function ThemeAwareLogoAsset({
         forceDark ? "theme-logo-stack--force-dark" : "theme-logo-stack--auto",
         wrapperClassName,
       )}
-      data-light-loaded={lightLoaded}
-      data-dark-loaded={darkLoaded}
       aria-hidden="true"
     >
-      <span className="theme-logo-layer theme-logo-layer--fallback theme-logo-layer--light">
-        {renderLogoAsset(fallbackLightSrc, "", "", { priority: true })}
-      </span>
-      <span className="theme-logo-layer theme-logo-layer--fallback theme-logo-layer--dark">
-        {renderLogoAsset(effectiveFallbackDarkSrc, "", "", { priority: true })}
-      </span>
-      <span className="theme-logo-layer theme-logo-layer--custom theme-logo-layer--light">
-        {renderLogoAsset(lightSrc, alt, "", {
-          onLoad: () => setLightLoaded(true),
+      <span className="theme-logo-layer theme-logo-layer--light">
+        {renderLogoAsset(resolvedLightSrc, "", "", {
+          onError: () => {
+            if (!lightFailed && lightSrc !== fallbackLightSrc) {
+              setLightFailed(true);
+            }
+          },
           fetchPriority: "high",
-          priority: isRuntimeBrandAsset(lightSrc) ? false : true,
+          priority: true,
         })}
       </span>
-      <span className="theme-logo-layer theme-logo-layer--custom theme-logo-layer--dark">
-        {renderLogoAsset(darkSrc, alt, "", {
-          onLoad: () => setDarkLoaded(true),
+      <span className="theme-logo-layer theme-logo-layer--dark">
+        {renderLogoAsset(resolvedDarkSrc, alt, "", {
+          onError: () => {
+            if (!darkFailed && darkSrc !== fallbackDarkSrc) {
+              setDarkFailed(true);
+            }
+          },
           fetchPriority: "high",
-          priority: isRuntimeBrandAsset(darkSrc) ? false : true,
+          priority: true,
         })}
       </span>
     </span>

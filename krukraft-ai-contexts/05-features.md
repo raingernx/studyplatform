@@ -104,7 +104,7 @@ Platform settings notes:
 - Admin previews may show inherited fallback assets, but stored values must remain distinct from inherited preview state
 - Public metadata and tab/icon surfaces now read brand assets through runtime `/brand-assets/*` routes so uploads propagate without falling back to stale build-time defaults
 - Dark theme navigation and auth surfaces can now use dedicated dark logos rather than reusing the light assets
-- Navigation branding now keeps a repo-owned fallback asset in place until the active custom logo has loaded, so refreshes do not show an empty logo slot
+- Navigation branding now renders the active theme-specific uploaded logo directly and only falls back to the repo-owned asset if that upload fails, which avoids refresh-time position jumps caused by swapping between different logo artboards
 - If no dedicated dark logo is stored, dark-theme runtime branding now stays on the repo-owned dark fallback instead of resolving back to the uploaded light logo after refresh
 - The repo-owned fallback asset set is now centered on `public/brand/*`; legacy `public/logo/*` exports are no longer treated as the canonical fallback source
 

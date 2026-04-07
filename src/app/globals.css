@@ -246,14 +246,6 @@
     opacity: 0;
   }
 
-  .theme-logo-layer--custom {
-    z-index: 2;
-  }
-
-  .theme-logo-layer--fallback {
-    z-index: 1;
-  }
-
   .theme-logo-stack--auto .theme-logo-layer--light,
   .theme-logo-stack--force-dark .theme-logo-layer--dark {
     opacity: 1;
@@ -265,18 +257,6 @@
 
   :root[data-theme="dark"] .theme-logo-stack--auto .theme-logo-layer--dark {
     opacity: 1;
-  }
-
-  :root:not([data-theme="dark"]) .theme-logo-stack--auto[data-light-loaded="true"] .theme-logo-layer--fallback.theme-logo-layer--light {
-    opacity: 0;
-  }
-
-  :root[data-theme="dark"] .theme-logo-stack--auto[data-dark-loaded="true"] .theme-logo-layer--fallback.theme-logo-layer--dark {
-    opacity: 0;
-  }
-
-  .theme-logo-stack--force-dark[data-dark-loaded="true"] .theme-logo-layer--fallback.theme-logo-layer--dark {
-    opacity: 0;
   }
 
   /* Input */

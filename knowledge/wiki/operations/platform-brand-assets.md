@@ -2,15 +2,15 @@
 
 ## Summary
 
-Krukraft now supports dedicated dark-theme brand assets for navigation surfaces and keeps an always-visible local fallback under the active custom logo so branding does not disappear during refreshes.
+Krukraft now supports dedicated dark-theme brand assets for navigation surfaces and uses repo-owned local assets as a true failure fallback instead of cross-fading from local fallback artwork into uploaded runtime logos on every refresh.
 
 ## Current Truth
 
 - `PlatformSettings` stores `logoFullDarkUrl` and `logoIconDarkUrl` alongside the light/default logo fields.
 - Build-safe public platform config exposes `/brand-assets/full-logo-dark` and `/brand-assets/icon-logo-dark` without making root layout or metadata DB-bound.
-- `Logo.tsx` mounts local repo-owned fallback assets first, then overlays theme-specific custom images and hides the fallback only after the active image has loaded.
+- `Logo.tsx` renders the active theme-specific uploaded logo directly and only swaps to the repo-owned fallback asset if that uploaded image fails to load.
 - dark runtime logo resolution no longer falls back to uploaded light logos; if no dedicated dark asset is stored, the stack now stays on the repo-owned dark fallback so dark refreshes do not settle onto a light wordmark after load.
-- the logo stack requests the fallback and active light/dark logo images at high priority from SSR markup because brand navigation is treated as critical-path UI.
+- the logo stack requests the active light/dark runtime logo images at high priority from SSR markup because brand navigation is treated as critical-path UI, while local repo assets remain a failure-only escape hatch.
 - Admin settings can now upload and preview both light and dark versions of full and icon logos.
 
 ## Why It Matters
@@ -32,8 +32,8 @@ Navigation branding is visible on nearly every route. If the logo waits on a run
 - admin uploads light/dark full or icon logos from `/admin/settings`
 - platform settings persist dedicated dark-logo URLs
 - build-safe public config exposes runtime alias routes for light/dark full + icon logos
-- SSR markup requests both the repo-owned fallback assets and the current light/dark runtime logo images at high priority
-- `Logo` renders local fallback assets immediately and overlays the active runtime logo image for the current theme
+- SSR markup requests the current light/dark runtime logo images at high priority
+- `Logo` keeps the light/dark runtime asset mounted as the steady-state layer and only switches to the repo-owned fallback if that asset errors
 
 ## Invariants
 
@@ -45,7 +45,8 @@ Navigation branding is visible on nearly every route. If the logo waits on a run
 ## Known Risks
 
 - runtime alias routes still use `no-store`, so the custom logo image itself remains network-bound until a stronger versioned asset strategy is introduced
-- preloading both light and dark logo routes increases request count slightly in exchange for faster theme-ready branding
+- requesting both light and dark runtime logo routes still increases request count slightly in exchange for faster theme-ready branding
+- if the uploaded light/dark logo files themselves use different whitespace or artboards, theme switches can still look visually inconsistent even though refresh-time fallback jumps are removed
 - dark-theme branding still depends on an explicit dark upload if the repo-owned fallback is not good enough for the brand
 
 ## Related Pages
