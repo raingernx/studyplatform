@@ -287,16 +287,17 @@ function NavbarInner({
       return;
     }
 
-    handleProtectedAreaNavigation(href);
-    afterNavigation?.();
-
     if (isDashboardGroupPath(pathname)) {
+      handleProtectedAreaNavigation(href);
+      afterNavigation?.();
       return;
     }
 
     event.preventDefault();
+    afterNavigation?.();
 
     window.requestAnimationFrame(() => {
+      handleProtectedAreaNavigation(href);
       router.push(href);
     });
   }
