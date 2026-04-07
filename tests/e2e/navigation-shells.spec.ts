@@ -174,25 +174,21 @@ async function openLibraryFromResources(page: Page) {
     )
     .toBeTruthy();
 
-  if (await directLibraryLink().isVisible().catch(() => false)) {
+  if (await accountButton().isVisible().catch(() => false)) {
+    await expect(accountButton()).toBeVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS });
+    await accountButton().click();
+
+    const menuLibraryLink = () =>
+      page
+        .locator(
+          '[role="menu"] a[href="/dashboard/library"]:visible, a[href="/dashboard/library"]:visible',
+        )
+        .last();
+    await expect(menuLibraryLink()).toBeVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS });
+    await clickForNavigation(page, menuLibraryLink, libraryUrl);
+  } else if (await directLibraryLink().isVisible().catch(() => false)) {
     await clickForNavigation(page, directLibraryLink, libraryUrl);
-    if (matchesTargetUrl(page, libraryUrl)) {
-      return;
-    }
   }
-
-  await expect(accountButton()).toBeVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS });
-  await accountButton().click();
-
-  const menuLibraryLink = () =>
-    page
-      .locator(
-        '[role="menu"] a[href="/dashboard/library"]:visible, a[href="/dashboard/library"]:visible',
-      )
-      .last();
-  await expect(menuLibraryLink()).toBeVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS });
-
-  await clickForNavigation(page, menuLibraryLink, libraryUrl);
 
   if (!matchesTargetUrl(page, libraryUrl)) {
     await page.goto("/dashboard/library", {
@@ -200,6 +196,10 @@ async function openLibraryFromResources(page: Page) {
       waitUntil: "commit",
     });
   }
+
+  await expect(page).toHaveURL(libraryUrl, {
+    timeout: LIBRARY_NAV_TIMEOUT_MS,
+  });
 }
 
 async function clickForNavigation(

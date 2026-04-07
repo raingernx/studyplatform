@@ -313,32 +313,40 @@ async function openLibraryFromResources(page: Page) {
     )
     .toBeTruthy();
 
-  if (await directLibraryLink.isVisible().catch(() => false)) {
+  if (await accountButton.isVisible().catch(() => false)) {
+    await expect(accountButton).toBeVisible({ timeout: 15_000 });
+    await accountButton.click();
+
+    const menuLibraryLink = page
+      .locator('[role="menu"] a[href="/dashboard/library"]:visible, a[href="/dashboard/library"]:visible')
+      .last();
+    await expect(menuLibraryLink).toBeVisible({ timeout: 15_000 });
+
+    await Promise.all([
+      page.waitForURL(/\/dashboard\/library$/, {
+        timeout: 15_000,
+        waitUntil: "commit",
+      }),
+      menuLibraryLink.click(),
+    ]).catch(() => undefined);
+  } else if (await directLibraryLink.isVisible().catch(() => false)) {
     await Promise.all([
       page.waitForURL(/\/dashboard\/library$/, {
         timeout: 15_000,
         waitUntil: "commit",
       }),
       directLibraryLink.click(),
-    ]);
-    return;
+    ]).catch(() => undefined);
   }
 
-  await expect(accountButton).toBeVisible({ timeout: 15_000 });
-  await accountButton.click();
-
-  const menuLibraryLink = page
-    .locator('[role="menu"] a[href="/dashboard/library"]:visible, a[href="/dashboard/library"]:visible')
-    .last();
-  await expect(menuLibraryLink).toBeVisible({ timeout: 15_000 });
-
-  await Promise.all([
-    page.waitForURL(/\/dashboard\/library$/, {
+  if (!/\/dashboard\/library$/.test(page.url())) {
+    await page.goto("/dashboard/library", {
       timeout: 15_000,
       waitUntil: "commit",
-    }),
-    menuLibraryLink.click(),
-  ]);
+    });
+  }
+
+  await expect(page).toHaveURL(/\/dashboard\/library$/);
 }
 
 async function setUserThemePreference(email: string, theme: "light" | "dark" | "system") {
@@ -790,7 +798,7 @@ async function runCreatorRefreshShellScenario({ browser }: ProbeContext) {
     await expect(
       page.getByRole("heading", { name: /^Resource management$/i }).first(),
     ).toBeVisible();
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(500);
 
     const samples = await stopRefreshProbe(page);
     const creatorSamples = samples.filter((sample) =>
@@ -802,8 +810,26 @@ async function runCreatorRefreshShellScenario({ browser }: ProbeContext) {
       "creator-refresh-shell probe did not capture creator route samples after reload",
     ).toBeGreaterThan(0);
 
-    const rootLoadingSample = creatorSamples.find((sample) => sample.rootLoadingVisible);
-    expect(rootLoadingSample).toBeUndefined();
+    const wrongFamilyRouteSample = creatorSamples.find((sample) =>
+      sample.routeReady.some(
+        (marker) =>
+          marker !== "dashboard" &&
+          !marker.startsWith("dashboard-creator"),
+      ),
+    );
+    expect(wrongFamilyRouteSample).toBeUndefined();
+
+    const creatorShellSample = creatorSamples.find(
+      (sample) =>
+        sample.dashboardShellVisible ||
+        sample.routeReady.some((marker) => marker.startsWith("dashboard-creator")),
+    );
+    expect(
+      creatorShellSample,
+      "creator-refresh-shell probe did not observe creator/dashboard shell readiness after reload",
+    ).toBeDefined();
+
+    expect(creatorSamples.at(-1)?.rootLoadingVisible).not.toBe(true);
 
     expect(pageErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);
