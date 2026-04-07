@@ -77,6 +77,8 @@ export const CACHE_KEYS = {
   resourceTrustSummary: (resourceId: string) => `resource_trust_summary:${resourceId}`,
   resourceTrust: (resourceId: string) => `resource_trust:${resourceId}`,
   creatorStats: (creatorId: string) => `creator_stats:${creatorId}`,
+  creatorPublicProfile: (identifier: string) =>
+    `creator_public_profile:${encodeURIComponent(identifier)}`,
   behaviorProfile: (userId: string) => `behavior_profile:${userId}`,
   userLearningProfile: (userId: string, take: number) =>
     `user_learning_profile:${userId}:${take}`,

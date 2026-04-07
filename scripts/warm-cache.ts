@@ -8,6 +8,9 @@ const baseUrl =
 const hotSlug =
   process.env.HOT_SLUG?.trim() ||
   "middle-school-science-quiz-assessment-set";
+const hotCreator =
+  process.env.HOT_CREATOR?.trim() ||
+  "kru-mint";
 const categorySlug = process.env.CATEGORY?.trim() || "science";
 
 const warmSecret = process.env.PERFORMANCE_WARM_SECRET?.trim();
@@ -80,10 +83,19 @@ const routes: WarmRoute[] = [
   {
     label: "listing-newest",
     path: "/resources?category=all&sort=newest",
+    headers: { Cookie: "ranking_variant=A" },
+    repeat: 2,
+    required: true,
   },
   {
     label: "resource-detail-hot",
     path: `/resources/${encodeURIComponent(hotSlug)}`,
+  },
+  {
+    label: "creator-detail-hot",
+    path: `/creators/${encodeURIComponent(hotCreator)}`,
+    repeat: 2,
+    required: true,
   },
   {
     label: "category-listing",

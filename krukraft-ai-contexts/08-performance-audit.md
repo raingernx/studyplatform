@@ -118,6 +118,7 @@ Primary bottleneck class is now:
 - pricing and buy-button CTA components now reuse idle auth-viewer resolution and explicitly prime on user intent, which removes the remaining eager auth probe from those public CTAs without making first interaction feel dead
 - `PriceLabel` now resolves through theme-aware DS text tokens instead of hardcoded dark text, which removed the dark-detail purchase-rail price contrast regression without needing per-page overrides
 - category smoke route now matches its actual page intent and is warmed explicitly
+- the post-deploy warm script now warms the control-arm newest listing with `ranking_variant=A` and explicitly warms the hot creator public profile route; creator public profiles also gained a Redis-backed cross-instance cache layer on top of `unstable_cache`, reducing post-deploy cold-tail variance on `creator_detail_smoke`
 - `/resources` discover fallback no longer swaps in fake CTA content while data resolves
 - discover hero loading now falls back to the same lavender stage and split-banner geometry as the live route; discover sections fall back to section/card skeletons that match final geometry
 - route-level `/resources/loading` now matches the discover UI more closely instead of showing a stale meta strip or a generic card wall

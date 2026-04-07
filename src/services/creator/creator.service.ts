@@ -8,6 +8,7 @@ import {
   CACHE_TTLS,
   getCreatorPublicCacheTag,
   rememberJson,
+  runSingleFlight,
 } from "@/lib/cache";
 import { logPerformanceEvent } from "@/lib/performance/observability";
 import { logActivity } from "@/lib/activity";
@@ -1205,61 +1206,74 @@ export async function updateCreatorProfile(userId: string, input: unknown) {
 export async function getCreatorPublicProfile(slug: string) {
   return unstable_cache(
     async function _getCreatorPublicProfile() {
-      logPerformanceEvent("cache_execute:getCreatorPublicProfile");
-      const creator =
-        (await findCreatorProfileBySlug(slug)) ??
-        (await findCreatorPublicProfileById(slug));
+      const cacheKey = CACHE_KEYS.creatorPublicProfile(slug);
 
-      if (!creator) {
-        return null;
-      }
+      return rememberJson(
+        cacheKey,
+        CACHE_TTLS.publicPage,
+        () =>
+          runSingleFlight(cacheKey, async () => {
+            logPerformanceEvent("cache_execute:getCreatorPublicProfile");
+            const creator =
+              (await findCreatorProfileBySlug(slug)) ??
+              (await findCreatorPublicProfileById(slug));
 
-      const creatorStat = await findCreatorStatByCreatorId(creator.id);
-      const statusBadge =
-        creatorStat &&
-        (creatorStat.last7dRevenue > 0 ||
-          creatorStat.last30dDownloads > 0 ||
-          creatorStat.totalSales > 0)
-          ? creatorStat.last7dRevenue > 0 &&
-              (creatorStat.last30dDownloads >= 100 ||
-                creatorStat.totalSales >= 25)
-            ? {
-                label: "Top creator",
-                description:
-                  "Leading recent creator performance across revenue and learner demand.",
-              }
-            : creatorStat.last30dDownloads >= 50 || creatorStat.totalSales >= 10
-              ? {
-                  label: "Rising creator",
-                  description:
-                    "Building momentum quickly with strong recent learner activity.",
-                }
-              : null
-          : null;
-
-      return {
-        id: creator.id,
-        displayName: creator.creatorDisplayName ?? creator.name ?? "Creator",
-        image: creator.image,
-        banner: creator.creatorBanner,
-        bio: creator.creatorBio,
-        slug: creator.creatorSlug,
-        status: creator.creatorStatus,
-        socialLinks: parseSocialLinks(creator.creatorSocialLinks),
-        resourceCount: creator._count.resources,
-        statusBadge,
-        momentum: creatorStat
-          ? {
-              totalSales: creatorStat.totalSales,
-              last30dDownloads: creatorStat.last30dDownloads,
-              last7dRevenue: creatorStat.last7dRevenue,
+            if (!creator) {
+              return null;
             }
-          : null,
-        resources: creator.resources.map((resource) => ({
-          ...resource,
-          previewUrl: resource.previewUrl ?? resource.previews[0]?.imageUrl ?? null,
-        })),
-      };
+
+            const creatorStat = await findCreatorStatByCreatorId(creator.id);
+            const statusBadge =
+              creatorStat &&
+              (creatorStat.last7dRevenue > 0 ||
+                creatorStat.last30dDownloads > 0 ||
+                creatorStat.totalSales > 0)
+                ? creatorStat.last7dRevenue > 0 &&
+                    (creatorStat.last30dDownloads >= 100 ||
+                      creatorStat.totalSales >= 25)
+                  ? {
+                      label: "Top creator",
+                      description:
+                        "Leading recent creator performance across revenue and learner demand.",
+                    }
+                  : creatorStat.last30dDownloads >= 50 || creatorStat.totalSales >= 10
+                    ? {
+                        label: "Rising creator",
+                        description:
+                          "Building momentum quickly with strong recent learner activity.",
+                      }
+                    : null
+                : null;
+
+            return {
+              id: creator.id,
+              displayName: creator.creatorDisplayName ?? creator.name ?? "Creator",
+              image: creator.image,
+              banner: creator.creatorBanner,
+              bio: creator.creatorBio,
+              slug: creator.creatorSlug,
+              status: creator.creatorStatus,
+              socialLinks: parseSocialLinks(creator.creatorSocialLinks),
+              resourceCount: creator._count.resources,
+              statusBadge,
+              momentum: creatorStat
+                ? {
+                    totalSales: creatorStat.totalSales,
+                    last30dDownloads: creatorStat.last30dDownloads,
+                    last7dRevenue: creatorStat.last7dRevenue,
+                  }
+                : null,
+              resources: creator.resources.map((resource) => ({
+                ...resource,
+                previewUrl: resource.previewUrl ?? resource.previews[0]?.imageUrl ?? null,
+              })),
+            };
+          }),
+        {
+          metricName: "creator.publicProfile",
+          details: { identifier: slug },
+        },
+      );
     },
     ["creator-public-profile", slug],
     {
