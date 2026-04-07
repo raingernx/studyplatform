@@ -10,6 +10,8 @@ const forwardedArgs = process.argv.slice(2);
 const originalHome = process.env.HOME ?? os.homedir();
 
 const MAX_ATTEMPTS = Number(process.env.PLAYWRIGHT_LAUNCH_RETRY_ATTEMPTS ?? 3);
+const DISABLE_WEBKIT_FALLBACK =
+  process.env.PLAYWRIGHT_DISABLE_WEBKIT_FALLBACK === "1";
 const BROWSERS_PATH =
   process.env.PLAYWRIGHT_BROWSERS_PATH ??
   path.join(originalHome, "Library", "Caches", "ms-playwright");
@@ -56,6 +58,10 @@ function resolveHeadlessShellExecutable() {
 }
 
 function shouldUseWebkitFallback() {
+  if (DISABLE_WEBKIT_FALLBACK) {
+    return false;
+  }
+
   const specArgs = getSpecArgs();
   return (
     specArgs.length > 0 &&

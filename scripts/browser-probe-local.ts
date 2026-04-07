@@ -10,6 +10,8 @@ import { loginAsAdmin, loginAsCreator } from "../tests/e2e/helpers/auth";
 const BASE_URL = process.env.BASE_URL ?? "http://127.0.0.1:3000";
 const HEADLESS = process.env.HEADLESS !== "0";
 const ALLOW_READY_TIMEOUT = process.env.BROWSER_PROBE_ALLOW_READY_TIMEOUT === "1";
+const DISABLE_WEBKIT_FALLBACK =
+  process.env.PLAYWRIGHT_DISABLE_WEBKIT_FALLBACK === "1";
 const OUTPUT_DIR = path.join(process.cwd(), "test-results", "browser-probe");
 const READY_TIMEOUT_MS = 120_000;
 const READY_POLL_INTERVAL_MS = 2_000;
@@ -127,10 +129,14 @@ async function launchBrowser() {
       name: "chromium",
       launch: () => chromium.launch({ headless: HEADLESS }),
     },
-    {
-      name: "webkit",
-      launch: () => webkit.launch({ headless: HEADLESS }),
-    },
+    ...(DISABLE_WEBKIT_FALLBACK
+      ? []
+      : [
+          {
+            name: "webkit" as const,
+            launch: () => webkit.launch({ headless: HEADLESS }),
+          },
+        ]),
   ];
 
   const failures: string[] = [];

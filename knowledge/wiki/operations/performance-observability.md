@@ -13,6 +13,7 @@ Krukraft treats performance review as a layered workflow: block obvious regressi
 - Browser telemetry comes from production-only Vercel Analytics and Speed Insights in `src/app/layout.tsx`.
 - Runtime investigation for slow or unstable server paths should use Vercel runtime logs after the warmed perf summary and browser smoke outputs have already narrowed the failing route.
 - Workflow edits now have a repo-owned parser gate: `npm run workflow:check` parses all `.github/workflows/*.yml` files, and `npm run lint` includes that gate so broken YAML should fail before push.
+- Browser Smoke CI now caches the Playwright browser bundle and installs Chromium only; WebKit fallback remains a local-debugging escape hatch instead of a cloud-runner dependency, which trims the slowest repeated setup step in GitHub Actions.
 
 ## Why It Matters
 

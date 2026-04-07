@@ -8,6 +8,7 @@ Krukraft uses a split browser-verification model: local repo-owned probes for de
 
 - Local verification prefers `browser:probe` over full `playwright test` on this macOS environment.
 - CI runs `smoke:browser:ci` plus dashboard/page/management probes.
+- GitHub Actions browser smoke is intentionally Chromium-only now; WebKit remains a local fallback path for macOS/browser-launch instability, not a browser that cloud CI should install on every run.
 - Browser verification was recently hardened around auth login, route transitions, admin pages, and resource detail shell readiness.
 - The split model is now also captured as a raw evidence note so the wiki can cite a maintained snapshot instead of only canonical repo docs.
 - Recent Browser Smoke flakes clustered around three patterns: pre-hydration dashboard/public links that were visible before they were safe to click, shell-coverage assertions that needed one retry-safe navigation helper, and `/settings` theme verification waiting too deep into route load (`domcontentloaded`) instead of proving the contract after navigation commit.
