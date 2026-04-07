@@ -2,6 +2,7 @@
 
 ## 2026-04-07
 
+- hardened three Browser Smoke flake classes that surfaced even on a passing run: dashboard/public transition links now avoid unsafe pre-hydration clicks, `navigation-shells.spec.ts` uses retry-safe navigation waits instead of assuming the first click always commits, and `settings-theme.spec.ts` now waits for `/settings` navigation at `commit` with a longer timeout so first-compile latency does not masquerade as a theme regression.
 - added a lightweight root-level resources entry overlay so dashboard/public -> `/resources` transitions can reserve `resources-browse` coverage before the resources route group mounts; this closes the blind spot that left `library-to-resources` without a loading scope in CI.
 - strengthened the repo-owned browser probe so it now catches two regression classes that recently slipped through manual review: `resources-to-library` / `library-to-resources` sample `data-loading-scope` frames and fail on blank-gap transitions, while the new `dark-theme-logo` scenario delays dark-logo asset delivery and asserts the dark fallback layer stays visible on first paint.
 - updated the shared performance/route docs for the 2026-04-07 performance initiative baseline: Phase A captured analyzer/Lighthouse signal that client-JS overhead is still a primary bottleneck on `/resources` routes, and Phase B moved dashboard/resources navigation overlays out of `src/app/layout.tsx` into their route-group layouts to trim unrelated public-route hydration work.

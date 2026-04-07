@@ -134,13 +134,7 @@ async function openLibraryFromResources(page: Page) {
     .toBeTruthy();
 
   if (await directLibraryLink.isVisible().catch(() => false)) {
-    await Promise.all([
-      page.waitForURL(/\/dashboard\/library$/, {
-        timeout: LIBRARY_NAV_TIMEOUT_MS,
-        waitUntil: "commit",
-      }),
-      directLibraryLink.click(),
-    ]);
+    await clickForNavigation(page, directLibraryLink, /\/dashboard\/library$/);
     return;
   }
 
@@ -152,13 +146,33 @@ async function openLibraryFromResources(page: Page) {
     .last();
   await expect(menuLibraryLink).toBeVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS });
 
-  await Promise.all([
-    page.waitForURL(/\/dashboard\/library$/, {
-      timeout: LIBRARY_NAV_TIMEOUT_MS,
-      waitUntil: "commit",
-    }),
-    menuLibraryLink.click(),
-  ]);
+  await clickForNavigation(page, menuLibraryLink, /\/dashboard\/library$/);
+}
+
+async function clickForNavigation(
+  page: Page,
+  locator: ReturnType<Page["locator"]>,
+  targetUrl: RegExp,
+) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await locator.click();
+
+    try {
+      await page.waitForURL(targetUrl, {
+        timeout: 5_000,
+        waitUntil: "commit",
+      });
+      return;
+    } catch {
+      // Retry once when the first click loses the race to hydration or route
+      // registration in CI. The follow-up attempt reuses the same visible node.
+    }
+  }
+
+  await page.waitForURL(targetUrl, {
+    timeout: LIBRARY_NAV_TIMEOUT_MS,
+    waitUntil: "commit",
+  });
 }
 
 test("resources to dashboard library does not expose a blank gap during transition", async ({
@@ -199,17 +213,15 @@ test("dashboard library back to resources keeps shell coverage during transition
   });
   await expect(
     page.getByRole("link", { name: /Browse resources/i }).first(),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS });
 
   await startNavigationProbe(page);
 
-  await Promise.all([
-    page.waitForURL(/\/resources$/, {
-      timeout: LIBRARY_NAV_TIMEOUT_MS,
-      waitUntil: "commit",
-    }),
-    page.getByRole("link", { name: /Browse resources/i }).first().click(),
-  ]);
+  await clickForNavigation(
+    page,
+    page.getByRole("link", { name: /Browse resources/i }).first(),
+    /\/resources$/,
+  );
 
   await expect(page).toHaveURL(/\/resources$/, {
     timeout: LIBRARY_NAV_TIMEOUT_MS,

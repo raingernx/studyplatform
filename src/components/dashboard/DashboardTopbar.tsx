@@ -155,22 +155,18 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
       rightClassName="gap-1.5"
       right={
         <>
-          {isHydrated ? (
-            <Link
-              href={routes.marketplace}
-              onClick={(event) => handleMarketplaceLinkClick(event, routes.marketplace)}
-              className="hidden items-center rounded-xl border border-border bg-card px-3 py-2 text-small font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground sm:flex"
-            >
-              Browse resources
-            </Link>
-          ) : (
-            <span
-              aria-hidden="true"
-              className="hidden items-center rounded-xl border border-border bg-card px-3 py-2 text-small font-medium text-muted-foreground sm:flex"
-            >
-              Browse resources
-            </span>
-          )}
+          <Link
+            href={routes.marketplace}
+            aria-disabled={!isHydrated}
+            tabIndex={isHydrated ? undefined : -1}
+            onClick={isHydrated ? (event) => handleMarketplaceLinkClick(event, routes.marketplace) : undefined}
+            className={cn(
+              "hidden items-center rounded-xl border border-border bg-card px-3 py-2 text-small font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground sm:flex",
+              !isHydrated && "pointer-events-none",
+            )}
+          >
+            Browse resources
+          </Link>
 
           <button
             type="button"

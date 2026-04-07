@@ -41,6 +41,8 @@ async function setUserThemePreference(email: string, theme: "light" | "dark" | "
 test("settings does not flip runtime theme when DB preference differs from local default", async ({
   page,
 }) => {
+  test.setTimeout(60_000);
+
   await setUserThemePreference(CREATOR_EMAIL, "dark");
 
   await page.addInitScript(() => {
@@ -52,7 +54,7 @@ test("settings does not flip runtime theme when DB preference differs from local
   await expect(page).toHaveURL(/\/resources$/);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 
-  await page.goto("/settings", { waitUntil: "domcontentloaded" }).catch((error) => {
+  await page.goto("/settings", { waitUntil: "commit" }).catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
     if (!message.includes("ERR_ABORTED")) {
       throw error;
