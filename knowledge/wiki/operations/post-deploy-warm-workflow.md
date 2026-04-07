@@ -42,6 +42,7 @@ This workflow is the repo-owned production perf truth source after deploy. It ve
 - `/resources` is also expected to receive a concurrent warm burst; sequential single-request repeats alone are not sufficient evidence that later multi-VU smoke traffic will avoid cold-tail stream variance.
 - `listing_newest_smoke`, `creator_detail_smoke`, and `category_listing_smoke` are expected to be warmed against the same control cookie / creator slug / category slug that the k6 suite measures; warming only adjacent routes is not sufficient evidence of stability.
 - When those smoke routes ramp to 5 VUs, the warm burst should match that fanout. Sequential repeats alone are not enough evidence that later multi-instance smoke traffic will avoid cold tails.
+- If a hot public route already uses `unstable_cache`, keep the wrapper function itself stable per route key or slug; recreating the wrapper on every call weakens same-instance reuse and can still leave warmed smoke routes vulnerable to cold-tail variance even when the Redis layer is hot.
 - The smoke perf suite is a blocking gate: route budgets are not advisory.
 - `Warm Public Cache` passing does not mean the workflow passed; when later perf verification fails, the failure class is usually warmed-route instability, target-shape mismatch, or fresh-instance variance, not a generic warm-step failure.
 - Artifact JSON and GitHub step summary should tell the same story about which route was worst and which routes failed.
@@ -68,4 +69,4 @@ This workflow is the repo-owned production perf truth source after deploy. It ve
 
 ## Last Reviewed
 
-- 2026-04-07
+- 2026-04-08

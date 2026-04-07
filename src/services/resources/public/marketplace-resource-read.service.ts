@@ -596,6 +596,14 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
   };
 }
 
+type MarketplaceResourcesResult = Awaited<
+  ReturnType<typeof loadMarketplaceResources>
+>;
+const _marketplaceResourcesCacheMap = new Map<
+  string,
+  () => Promise<MarketplaceResourcesResult>
+>();
+
 export async function getMarketplaceResources(filters: MarketplaceFilters) {
   const normalizedFilters = normalizeMarketplaceFilters(filters);
   const cacheKey = getMarketplaceCacheKey(normalizedFilters);
@@ -632,37 +640,46 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
     return loadMarketplaceResources(normalizedFilters);
   }
 
-  return unstable_cache(
-    async function _getMarketplaceResourcesByKey() {
-      recordCacheMiss("getMarketplaceResources", {
-        cacheKey,
-        category: normalizedFilters.category ?? "all",
-        page: normalizedFilters.page,
-        sort: normalizedFilters.sort,
-      });
-      logPerformanceEvent("cache_execute:getMarketplaceResources", {
-        category: normalizedFilters.category ?? "all",
-        page: normalizedFilters.page,
-        pageSize: normalizedFilters.pageSize,
-        sort: normalizedFilters.sort,
-      });
-      if (
-        normalizedFilters.sort === "newest" ||
-        normalizedFilters.sort === "recommended"
-      ) {
-        return runSingleFlight(singleFlightKey, () =>
-          loadMarketplaceResources(normalizedFilters),
-        );
-      }
+  let cachedFn = _marketplaceResourcesCacheMap.get(cacheKey);
+  if (!cachedFn) {
+    // Keep one unstable_cache wrapper per normalized listing key. Recreating
+    // the wrapper on every call weakens same-instance deduplication and can
+    // reintroduce cold-tail variance even when the underlying Redis layer is hot.
+    cachedFn = unstable_cache(
+      async function _getMarketplaceResourcesByKey() {
+        recordCacheMiss("getMarketplaceResources", {
+          cacheKey,
+          category: normalizedFilters.category ?? "all",
+          page: normalizedFilters.page,
+          sort: normalizedFilters.sort,
+        });
+        logPerformanceEvent("cache_execute:getMarketplaceResources", {
+          category: normalizedFilters.category ?? "all",
+          page: normalizedFilters.page,
+          pageSize: normalizedFilters.pageSize,
+          sort: normalizedFilters.sort,
+        });
+        if (
+          normalizedFilters.sort === "newest" ||
+          normalizedFilters.sort === "recommended"
+        ) {
+          return runSingleFlight(singleFlightKey, () =>
+            loadMarketplaceResources(normalizedFilters),
+          );
+        }
 
-      return loadMarketplaceResources(normalizedFilters);
-    },
-    ["marketplace-resources", cacheKey],
-    {
-      revalidate: revalidateSeconds,
-      tags: [CACHE_TAGS.discover],
-    },
-  )();
+        return loadMarketplaceResources(normalizedFilters);
+      },
+      ["marketplace-resources", cacheKey],
+      {
+        revalidate: revalidateSeconds,
+        tags: [CACHE_TAGS.discover],
+      },
+    );
+    _marketplaceResourcesCacheMap.set(cacheKey, cachedFn);
+  }
+
+  return cachedFn();
 }
 
 // ── Single resource detail ────────────────────────────────────────────────────

@@ -36,6 +36,13 @@ Primary bottleneck class is now:
 
 **client personalization latency after hydration plus global client-JS overhead on public routes and cold-instance cache misses on heavy query paths**, not basic bundle size or simple rendering overhead.
 
+Current perf-hardening baseline for the production UX initiative is:
+
+- prioritize `/resources`, `/resources/[slug]`, `/creators/[slug]`, `/categories/[slug]`, and the warmed listing-control routes before broader infra changes
+- treat warm failures as route-class incidents, not generic "deploy was slow" noise
+- keep current p95 budgets as the baseline while cache-path and warm-shape mismatches are still being removed
+- prefer code/cache/streaming fixes first; infra changes should only be discussed after the same route still shows tail spikes once warm targets and cache layers are aligned
+
 ---
 
 ## Important Fixes Already Landed
@@ -134,6 +141,24 @@ Primary bottleneck class is now:
 ---
 
 ## Current High-Value Optimization Areas
+
+### Route-Class Incident Ledger Baseline
+
+- `listing_newest_smoke`
+  - main class: cold-instance fanout mismatch on the control/newest listing route
+  - current mitigation: warm against `ranking_variant=A` and match the later smoke-VU fanout with a burst of `5`
+- `creator_detail_smoke`
+  - main class: creator public-profile cache reuse across fresh instances was weaker than intended
+  - current mitigation: Redis-backed shared cache plus a stable `unstable_cache` wrapper per slug, then warm against the hot creator slug with burst-aligned fanout
+- `category_listing_smoke`
+  - main class: fresh-instance tail on category listing renders under the 5-VU smoke ramp
+  - current mitigation: explicit category warm target with `repeat: 2` and `burst: 5`
+- `resources_home_smoke`
+  - main class: discover-home stream and page shell were still seeing fresh-instance tails after deploy
+  - current mitigation: repeated warm pass plus a small concurrent burst on `/resources`
+- public route request-binding audit (2026-04-08)
+  - `/resources`, `/resources/[slug]`, `/creators/[slug]`, and `/categories/[slug]` do not currently read `cookies()`, `headers()`, or server-session state at the page level
+  - the remaining perf work should therefore focus on cache reuse, streaming shape, and hydration scope rather than re-removing obvious page-level request binding
 
 ### 1. Cold-tail variance on warmed routes
 

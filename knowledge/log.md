@@ -1,5 +1,9 @@
 # Knowledge Log
 
+## 2026-04-08
+
+- started the production-UX perf hardening pass by locking the first incident-ledger routes (`/resources`, `/resources/[slug]`, `/creators/[slug]`, `/categories/[slug]`, and the warmed listing-control routes) into shared docs and by tightening hot public cache reuse where it was still weakest: marketplace listing reads and creator public-profile reads now keep a stable `unstable_cache` wrapper per normalized route key / creator slug instead of recreating the wrapper on every call.
+
 ## 2026-04-07
 
 - added repo shorthand policy to `AGENTS.md`: `CPD` means commit/push/deploy, `CL` means inspect CI logs, `WARM` means inspect warm/perf logs, and `KT` means perform knowledge triage; shorthand requests do not bypass verification or close-out rules.

@@ -154,6 +154,14 @@ export class CreatorServiceError extends Error {
   }
 }
 
+type CreatorPublicProfileResult = Awaited<
+  ReturnType<typeof loadCreatorPublicProfile>
+>;
+const _creatorPublicProfileCacheMap = new Map<
+  string,
+  () => Promise<CreatorPublicProfileResult>
+>();
+
 export type CreatorAnalyticsRange = "7d" | "30d" | "90d" | "all";
 export type CreatorResourceSort = "latest" | "downloads" | "revenue";
 
@@ -1203,84 +1211,94 @@ export async function updateCreatorProfile(userId: string, input: unknown) {
   });
 }
 
-export async function getCreatorPublicProfile(slug: string) {
-  return unstable_cache(
-    async function _getCreatorPublicProfile() {
-      const cacheKey = CACHE_KEYS.creatorPublicProfile(slug);
+async function loadCreatorPublicProfile(slug: string) {
+  const cacheKey = CACHE_KEYS.creatorPublicProfile(slug);
 
-      return rememberJson(
-        cacheKey,
-        CACHE_TTLS.publicPage,
-        () =>
-          runSingleFlight(cacheKey, async () => {
-            logPerformanceEvent("cache_execute:getCreatorPublicProfile");
-            const creator =
-              (await findCreatorProfileBySlug(slug)) ??
-              (await findCreatorPublicProfileById(slug));
+  return rememberJson(
+    cacheKey,
+    CACHE_TTLS.publicPage,
+    () =>
+      runSingleFlight(cacheKey, async () => {
+        logPerformanceEvent("cache_execute:getCreatorPublicProfile");
+        const creator =
+          (await findCreatorProfileBySlug(slug)) ??
+          (await findCreatorPublicProfileById(slug));
 
-            if (!creator) {
-              return null;
-            }
+        if (!creator) {
+          return null;
+        }
 
-            const creatorStat = await findCreatorStatByCreatorId(creator.id);
-            const statusBadge =
-              creatorStat &&
-              (creatorStat.last7dRevenue > 0 ||
-                creatorStat.last30dDownloads > 0 ||
-                creatorStat.totalSales > 0)
-                ? creatorStat.last7dRevenue > 0 &&
-                    (creatorStat.last30dDownloads >= 100 ||
-                      creatorStat.totalSales >= 25)
-                  ? {
-                      label: "Top creator",
-                      description:
-                        "Leading recent creator performance across revenue and learner demand.",
-                    }
-                  : creatorStat.last30dDownloads >= 50 || creatorStat.totalSales >= 10
-                    ? {
-                        label: "Rising creator",
-                        description:
-                          "Building momentum quickly with strong recent learner activity.",
-                      }
-                    : null
-                : null;
-
-            return {
-              id: creator.id,
-              displayName: creator.creatorDisplayName ?? creator.name ?? "Creator",
-              image: creator.image,
-              banner: creator.creatorBanner,
-              bio: creator.creatorBio,
-              slug: creator.creatorSlug,
-              status: creator.creatorStatus,
-              socialLinks: parseSocialLinks(creator.creatorSocialLinks),
-              resourceCount: creator._count.resources,
-              statusBadge,
-              momentum: creatorStat
+        const creatorStat = await findCreatorStatByCreatorId(creator.id);
+        const statusBadge =
+          creatorStat &&
+          (creatorStat.last7dRevenue > 0 ||
+            creatorStat.last30dDownloads > 0 ||
+            creatorStat.totalSales > 0)
+            ? creatorStat.last7dRevenue > 0 &&
+                (creatorStat.last30dDownloads >= 100 ||
+                  creatorStat.totalSales >= 25)
+              ? {
+                  label: "Top creator",
+                  description:
+                    "Leading recent creator performance across revenue and learner demand.",
+                }
+              : creatorStat.last30dDownloads >= 50 || creatorStat.totalSales >= 10
                 ? {
-                    totalSales: creatorStat.totalSales,
-                    last30dDownloads: creatorStat.last30dDownloads,
-                    last7dRevenue: creatorStat.last7dRevenue,
+                    label: "Rising creator",
+                    description:
+                      "Building momentum quickly with strong recent learner activity.",
                   }
-                : null,
-              resources: creator.resources.map((resource) => ({
-                ...resource,
-                previewUrl: resource.previewUrl ?? resource.previews[0]?.imageUrl ?? null,
-              })),
-            };
-          }),
-        {
-          metricName: "creator.publicProfile",
-          details: { identifier: slug },
-        },
-      );
-    },
-    ["creator-public-profile", slug],
+                : null
+            : null;
+
+        return {
+          id: creator.id,
+          displayName: creator.creatorDisplayName ?? creator.name ?? "Creator",
+          image: creator.image,
+          banner: creator.creatorBanner,
+          bio: creator.creatorBio,
+          slug: creator.creatorSlug,
+          status: creator.creatorStatus,
+          socialLinks: parseSocialLinks(creator.creatorSocialLinks),
+          resourceCount: creator._count.resources,
+          statusBadge,
+          momentum: creatorStat
+            ? {
+                totalSales: creatorStat.totalSales,
+                last30dDownloads: creatorStat.last30dDownloads,
+                last7dRevenue: creatorStat.last7dRevenue,
+              }
+            : null,
+          resources: creator.resources.map((resource) => ({
+            ...resource,
+            previewUrl: resource.previewUrl ?? resource.previews[0]?.imageUrl ?? null,
+          })),
+        };
+      }),
     {
-      revalidate: CACHE_TTLS.publicPage,
-      tags: [CACHE_TAGS.creatorPublic, getCreatorPublicCacheTag(slug)],
+      metricName: "creator.publicProfile",
+      details: { identifier: slug },
     },
-  )();
+  );
+}
+
+export async function getCreatorPublicProfile(slug: string) {
+  let cachedFn = _creatorPublicProfileCacheMap.get(slug);
+  if (!cachedFn) {
+    cachedFn = unstable_cache(
+      async function _getCreatorPublicProfile() {
+        return loadCreatorPublicProfile(slug);
+      },
+      ["creator-public-profile", slug],
+      {
+        revalidate: CACHE_TTLS.publicPage,
+        tags: [CACHE_TAGS.creatorPublic, getCreatorPublicCacheTag(slug)],
+      },
+    );
+    _creatorPublicProfileCacheMap.set(slug, cachedFn);
+  }
+
+  return cachedFn();
 }
 
 export async function getCreatorResourceForEdit(userId: string, resourceId: string) {
