@@ -1,13 +1,17 @@
-import type { ReactNode } from "react";
-import { AdminLayout } from "@/components/layout/AdminLayout";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
-import { routes } from "@/lib/routes";
+import { Suspense, type ReactNode } from "react";
+
+import { AdminDashboardLoadingShell } from "@/components/skeletons/AdminCoreRouteSkeletons";
+
+import AdminLayoutContent from "./AdminLayoutContent";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
-export default async function AdminLayoutRoute({ children }: LayoutProps) {
-  await requireAdminSession(routes.admin);
-  return <AdminLayout>{children}</AdminLayout>;
+export default function AdminLayoutRoute({ children }: LayoutProps) {
+  return (
+    <Suspense fallback={<AdminDashboardLoadingShell />}>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </Suspense>
+  );
 }

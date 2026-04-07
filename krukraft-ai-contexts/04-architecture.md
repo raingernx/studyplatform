@@ -128,6 +128,7 @@ Root rendering note:
 - the root layout now injects a pre-hydration theme bootstrap script that sets `data-theme` / `color-scheme` before React hydration, preventing the old white-first flash on returning dark sessions
 - the theme baseline for users with no stored preference is now `light`; `dark` and `system` remain opt-in user preferences rather than the default initial state
 - `UserPreference.theme` now also defaults to `light` at the Prisma/database layer, so new preference rows created outside the client bootstrap path cannot drift back to `system`
+- the app root `src/app/loading.tsx` is now intentionally neutral and centered rather than page-shaped; if the root fallback still appears before a route-family shell resolves, it should not read as discover/library/dashboard UI
 - the root client provider tree no longer mounts `SessionProvider`; public routes avoid the NextAuth client-session baseline by using targeted auth-viewer fetches only where auth-aware UI is needed
 - the root layout no longer mounts the full route-specific dashboard/resources overlay stack; `ResourcesNavigationOverlay` still lives in `src/app/resources/layout.tsx` and `DashboardGroupNavigationOverlay` still lives in `src/app/(dashboard)/layout.tsx`, while lighter root-level entry overlays now cover cross-group jumps only: `DashboardEntryNavigationOverlay` handles public → dashboard transitions and `ResourcesEntryNavigationOverlay` handles dashboard/public → `/resources` transitions without rehydrating the full in-group overlay logic on every route
 - `/api/auth/viewer` now resolves directly from the signed JWT token via `next-auth/jwt` instead of `getServerSession`, so lightweight auth chrome does not spend Prisma connections just to confirm the signed-in snapshot
@@ -175,6 +176,8 @@ Admin settings note:
 - `/admin/settings` must read live DB-backed platform settings
 - admin brand-asset editing must distinguish stored values from inherited preview fallbacks
 - `/admin/settings` now also persists dedicated dark-surface logo fields (`logoFullDarkUrl`, `logoIconDarkUrl`) instead of overloading the light navigation logos
+- both `src/app/(dashboard)/layout.tsx` and `src/app/admin/layout.tsx` now keep session/auth-driven shell resolution behind family-scoped `Suspense` boundaries (`DashboardGroupLoadingShell`, `AdminDashboardLoadingShell`) instead of awaiting that work directly in the async layout entrypoint
+- this route-family boundary change exists to keep hard refreshes inside dashboard/admin loading shells rather than falling back to the global app-level loading UI while layout-level auth/viewer state resolves
 
 ## Authentication
 

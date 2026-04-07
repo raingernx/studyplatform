@@ -12,11 +12,13 @@
 - [ ] Verify uploaded favicon and OG logo changes propagate correctly through `/brand-assets/*` in production browsers and social crawlers
 - [ ] Recheck that the trimmed repo-owned fallback asset set (`public/brand/*` without legacy `public/logo/*`) still covers every favicon / metadata surface that should remain first-party
 - [ ] Recheck production refresh behavior after the latest navbar fallback-height and logo-flicker fixes to confirm the remaining brand chrome feels visually stable on cold loads
+- [ ] Finish route-family fallback cleanup on public routes so hard refreshes on `/resources` and other public pages stay inside family-specific or neutral shells without route-agnostic navbar/page chrome reading as another page
 
 ## Product / UX Follow-Ups
 
 - [ ] Keep discover fallbacks aligned with final section intent; avoid misleading placeholder destinations
 - [ ] Audit live search, filter/sidebar fallbacks, and creator-profile fallbacks for usable-but-consistent loading states
+- [ ] Verify dashboard/admin hard refreshes no longer show the global app-root fallback before their family loading shells under repeated refresh stress
 - [ ] Pilot `boneyard-js` on one high-value flow before considering wider skeleton replacement; keep route-level loading/error/empty-state contracts explicit even if DOM-captured bones are adopted
 - [ ] Keep Playwright search smoke aligned with real canonical submit flows as marketplace search UX evolves
 - [ ] Re-audit brand asset previews if legacy stored values from earlier fallback behavior still exist in the database

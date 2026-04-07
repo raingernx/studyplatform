@@ -94,6 +94,7 @@ search, filters, pagination, or a non-default sort are active.
 - User and order management
 - Platform settings including brand assets
 - Admin audit/history tables now keep pagination outside the table element itself so browser verification does not hit hydration mismatches from invalid `<table>` descendants
+- Admin hard refreshes now keep their auth/session wait inside the admin loading shell instead of dropping back to the app-root fallback while `requireAdminSession()` resolves
 
 Marketplace hero note:
 - `/resources` discover hero is currently a fixed repo-owned design surface
@@ -109,6 +110,7 @@ Platform settings notes:
 - The marketplace navbar Suspense fallback now reserves both the top-row chrome and the category-row height so refreshes do not collapse to a shorter header before the live navbar mounts
 - If no dedicated dark logo is stored, dark-theme runtime branding now stays on the repo-owned dark fallback instead of resolving back to the uploaded light logo after refresh
 - The repo-owned fallback asset set is now centered on `public/brand/*`; legacy `public/logo/*` exports are no longer treated as the canonical fallback source
+- Dashboard hard refreshes now keep session/creator-shell loading inside the dashboard family shell instead of showing a page-shaped app-root fallback before the route-level dashboard loading UI arrives
 
 ## Payment Flow
 
