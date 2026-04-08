@@ -88,7 +88,7 @@ Used heavily in:
 - resource detail shell/body/footer/purchase meta
 - reviews / related content
 - platform settings
-- the post-deploy route warm pass now burst-aligns the hot `/resources` home shell, resource-detail, creator-detail, category, and listing-control routes to the same 5-VU class that the production smoke suite later measures, and it reheats `/resources` home plus the hot resource-detail, category, creator-detail, and listing-control routes again at the tail of the warm sequence so those route classes are freshest when k6 starts
+- the post-deploy route warm pass now burst-aligns the hot `/resources` home shell, resource-detail, creator-detail, category, and listing-control routes to the same 5-VU class that the production smoke suite later measures, and it reheats the hot resource-detail, category, creator-detail, listing-control routes, plus `/resources` home again at the tail of the warm sequence so those route classes are freshest when k6 starts, with `/resources` home now closing the final warm band
 
 Database search note:
 - marketplace/admin text search still uses Postgres `ILIKE`/Prisma `contains`

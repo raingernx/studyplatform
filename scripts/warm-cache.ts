@@ -166,17 +166,6 @@ const routes: WarmRoute[] = [
     required: true,
   },
   {
-    label: "resources-home-tail",
-    path: "/resources",
-    // Discover-home now also gets a final reheat near suite start. Manual
-    // baseline runs showed `/resources` can still become the stalest warmed
-    // public shell because its main warm fanout happens at the top of the
-    // sequence while every other measured route class is reheated later.
-    burst: 5,
-    repeat: 2,
-    required: true,
-  },
-  {
     label: "category-listing-tail",
     path: `/categories/${encodeURIComponent(categorySlug)}`,
     // Mirror the same tail reheat for the category listing route so every
@@ -191,6 +180,16 @@ const routes: WarmRoute[] = [
     // Creator detail now finishes the final warm band so the creator smoke
     // arm does not arrive after a later category-tail pass has already become
     // the freshest public route class in the sequence.
+    burst: 5,
+    repeat: 2,
+    required: true,
+  },
+  {
+    label: "resources-home-tail",
+    path: "/resources",
+    // Discover-home now closes the final warm band. Manual baseline runs
+    // showed `/resources` could still become the stalest warmed public shell
+    // when its tail reheat happened before later category/creator passes.
     burst: 5,
     repeat: 2,
     required: true,
