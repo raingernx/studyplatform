@@ -212,6 +212,7 @@ Admin settings note:
 - `/admin/settings` must read live DB-backed platform settings
 - admin brand-asset editing must distinguish stored values from inherited preview fallbacks
 - `/admin/settings` now also persists dedicated dark-surface logo fields (`logoFullDarkUrl`, `logoIconDarkUrl`) instead of overloading the light navigation logos
+- the `src/app/admin/layout.tsx` subtree is now explicitly `force-dynamic`, so admin overview/resources/orders/users/activity pages cannot be statically prerendered during `next build` and accidentally spend Prisma pool connections on build-time admin reads
 - both `src/app/(dashboard)/layout.tsx` and `src/app/admin/layout.tsx` now keep session/auth-driven shell resolution behind family-scoped `Suspense` boundaries (`DashboardGroupLoadingShell`, `AdminDashboardLoadingShell`) instead of awaiting that work directly in the async layout entrypoint
 - this route-family boundary change exists to keep hard refreshes inside dashboard/admin loading shells rather than falling back to the global app-level loading UI while layout-level auth/viewer state resolves
 - `/dashboard`, `/settings`, `/subscription`, `/dashboard/library`, `/dashboard/purchases`, `/dashboard/downloads`, and the legacy `/purchases` redirect alias now live in a dedicated dashboard-lite route group that reuses the dashboard shell/overlay loading family but resolves its shell from the cached session only; these routes no longer wait on `getCreatorAccessState()` before the shell or redirect can render

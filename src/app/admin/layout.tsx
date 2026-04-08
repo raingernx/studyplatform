@@ -4,6 +4,8 @@ import { AdminDashboardLoadingShell } from "@/components/skeletons/AdminCoreRout
 
 import AdminLayoutContent from "./AdminLayoutContent";
 
+export const dynamic = "force-dynamic";
+
 interface LayoutProps {
   children: ReactNode;
 }
