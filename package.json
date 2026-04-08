@@ -73,6 +73,7 @@
     "lhci:assert": "lhci assert",
     "warm:cache": "tsx scripts/warm-cache.ts",
     "performance:warm": "tsx scripts/warm-public-cache.ts",
+    "cpd:verify": "node scripts/check-cpd-state.mjs",
     "context:check": "node scripts/check-ai-context.mjs --worktree",
     "context:check:staged": "node scripts/check-ai-context.mjs --staged",
     "context:check:staged:strict": "node scripts/check-ai-context.mjs --staged --strict",

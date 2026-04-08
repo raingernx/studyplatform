@@ -753,3 +753,4 @@ When a shorthand request is used, agents should follow the same verification and
 
 - `CL` and `WARM` still require log review for hidden `flaky`, `retry #`, timeout, and threshold-failure signals
 - `CPD` does not bypass verification, impact review, or knowledge triage requirements
+- `CPD` is not complete from `git push` output alone; before claiming it is done, verify that `origin` points to the canonical GitHub repo (`https://github.com/raingernx/KRUKRAFT.git`), that `HEAD` matches `origin/main`, and that deployment evidence exists for the pushed commit. The repo-owned check is `npm run cpd:verify`.

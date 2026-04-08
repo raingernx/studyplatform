@@ -39,6 +39,7 @@
 - default workflow is now `Codex triages first`: the agent should decide whether a change should be skipped, ingested as single-source knowledge, merged into an existing wiki page, or handled as a batch topic, then report that decision back to the user
 - `db:deploy`: `prisma migrate deploy`
 - `perf:post-deploy`: warm cache + smoke perf suite
+- `cpd:verify`: repo-owned CPD guardrail that fails unless `origin` points at the canonical GitHub repo (`https://github.com/raingernx/KRUKRAFT.git`), `HEAD` matches `origin/main`, and GitHub deployment evidence exists for the pushed commit
 - post-deploy perf review is now a layered workflow: use LHCI for local regression floors, then the warmed k6 summary/rollup in GitHub Actions, then Vercel Speed Insights and runtime logs for production-only drift
 - GitHub post-deploy warm workflow supports both `deployment_status` and manual `workflow_dispatch` runs, which covers direct CLI production deploys
 - the post-deploy warm workflow now retries `npm ci` and uploads install logs alongside warm artifacts, so failed warm runs do not die without diagnostics
