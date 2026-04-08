@@ -38,8 +38,9 @@ import {
   findPublicResourceDetailBodyContentBySlug,
   findMarketplaceResourceCards,
   findPublicResourceDetailFooterContentBySlug,
+  findPublicResourceDetailMetadataBySlug,
   findPublicResourceDetailPurchaseMetaBySlug,
-  findPublicResourceDetailBySlug,
+  findPublicResourceDetailShellBySlug,
   findRelatedListedResources,
   type FindActivationRankedResourcesRow,
   type RankedSearchResourceRow,
@@ -722,12 +723,13 @@ const RESOURCE_DETAIL_REVALIDATE_SECONDS = CACHE_TTLS.resourceDetail;
 // would defeat unstable_cache deduplication (it keys partly on function identity).
 // Per-slug tags are preserved so revalidateTag(getResourceCacheTag(slug)) still works.
 type CachedFn<T> = () => Promise<T>;
-const _resourceDetailCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceDetailBySlug>>>>();
+const _resourceDetailCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceDetailShellBySlug>>>>();
+const _resourceMetadataCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceDetailMetadataBySlug>>>>();
 const _resourcePurchaseMetaCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceDetailPurchaseMetaBySlug>>>>();
 const _resourceDetailBodyContentCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceDetailBodyContentBySlug>>>>();
 const _resourceDetailFooterContentCacheMap = new Map<string, CachedFn<Awaited<ReturnType<typeof findPublicResourceDetailFooterContentBySlug>>>>();
 
-/** Returns a fully-hydrated Resource row by slug, or null if not found. */
+/** Returns the public detail shell data by slug, or null if not found. */
 export async function getResourceBySlug(slug: string) {
   recordCacheCall("getResourceBySlug", { slug });
 
@@ -739,14 +741,15 @@ export async function getResourceBySlug(slug: string) {
         recordCacheMiss("getResourceBySlug", { slug });
         logPerformanceEvent("cache_execute:getResourceBySlug", { slug });
         // rememberJson adds a Redis cross-instance layer on top of unstable_cache.
-        // Cold Vercel lambda instances return the cached resource in <10 ms instead
-        // of running the full DB fetch.  Only public, non-user-specific data is
-        // stored here — slug, title, price, author, category, previews, stats.
+        // Cold Vercel lambda instances return the cached resource shell in <10 ms
+        // instead of running the full DB fetch. Only public, non-user-specific
+        // shell data is stored here — title, pricing, author, category, previews,
+        // and the stats needed above the fold.
         return rememberJson(
           CACHE_KEYS.resourceDetail(slug),
           RESOURCE_DETAIL_REVALIDATE_SECONDS,
           () => runSingleFlight(singleFlightKey, () =>
-            findPublicResourceDetailBySlug(slug),
+            findPublicResourceDetailShellBySlug(slug),
           ),
           { metricName: "resource.getResourceBySlug", details: { slug } },
         );
@@ -764,13 +767,40 @@ export async function getResourceBySlug(slug: string) {
 }
 
 export async function getResourceMetadataBySlug(slug: string) {
-  const resource = await getResourceBySlug(slug);
-  return resource
-    ? {
-        title: resource.title,
-        description: resource.description,
-      }
-    : null;
+  recordCacheCall("getResourceMetadataBySlug", { slug });
+
+  let cachedFn = _resourceMetadataCacheMap.get(slug);
+  if (!cachedFn) {
+    const singleFlightKey = `resource-metadata:${slug}`;
+    cachedFn = unstable_cache(
+      async function _getResourceMetadataBySlug() {
+        recordCacheMiss("getResourceMetadataBySlug", { slug });
+        logPerformanceEvent("cache_execute:getResourceMetadataBySlug", {
+          slug,
+        });
+        return rememberJson(
+          CACHE_KEYS.resourceMetadata(slug),
+          RESOURCE_DETAIL_REVALIDATE_SECONDS,
+          () =>
+            runSingleFlight(singleFlightKey, () =>
+              findPublicResourceDetailMetadataBySlug(slug),
+            ),
+          {
+            metricName: "resource.metadata",
+            details: { slug },
+          },
+        );
+      },
+      ["public-resource-detail-metadata", slug],
+      {
+        revalidate: RESOURCE_DETAIL_REVALIDATE_SECONDS,
+        tags: [getResourceCacheTag(slug)],
+      },
+    );
+    _resourceMetadataCacheMap.set(slug, cachedFn);
+  }
+
+  return cachedFn();
 }
 
 export async function getResourceDetailPurchaseMetaBySlug(slug: string) {

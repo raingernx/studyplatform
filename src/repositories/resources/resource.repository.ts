@@ -106,10 +106,9 @@ const CREATOR_DASHBOARD_RESOURCE_SELECT = {
   },
 } as const;
 
-const RESOURCE_DETAIL_SELECT = {
+const RESOURCE_DETAIL_SHELL_SELECT = {
   id: true,
   title: true,
-  description: true,
   slug: true,
   type: true,
   status: true,
@@ -151,6 +150,11 @@ const RESOURCE_DETAIL_SELECT = {
       purchases: true,
     },
   },
+} as const;
+
+const RESOURCE_DETAIL_METADATA_SELECT = {
+  title: true,
+  description: true,
 } as const;
 
 const RESOURCE_DETAIL_PURCHASE_META_SELECT = {
@@ -1369,10 +1373,17 @@ export async function countMarketplaceResources(where: Prisma.ResourceWhereInput
   return prisma.resource.count({ where });
 }
 
-export async function findPublicResourceDetailBySlug(slug: string) {
+export async function findPublicResourceDetailShellBySlug(slug: string) {
   return prisma.resource.findUnique({
     where: { slug },
-    select: RESOURCE_DETAIL_SELECT,
+    select: RESOURCE_DETAIL_SHELL_SELECT,
+  });
+}
+
+export async function findPublicResourceDetailMetadataBySlug(slug: string) {
+  return prisma.resource.findUnique({
+    where: { slug },
+    select: RESOURCE_DETAIL_METADATA_SELECT,
   });
 }
 

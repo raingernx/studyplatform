@@ -169,13 +169,14 @@ Root rendering note:
     → public reviews deferred
     → lightweight auth viewer now defers to idle time on the detail route
     → client detail viewer-state hydrates ownership/success first after auth viewer readiness
-    → detail params/searchParams now resolve in parallel and route metadata reads the lighter metadata loader instead of the full detail payload
+    → detail params/searchParams now resolve in parallel and route metadata reads its own lighter cached metadata loader instead of the public detail shell payload
     → the detail viewer-state provider is now scoped to the success/purchase/owner-review subtree instead of wrapping the whole page shell, so gallery/header/public body sections stay outside the personalization boundary
     → detail base viewer-state now reuses a short-lived browser cache keyed by resource + viewer
     → owner review form hydrates in a second client fetch after ownership is known
     → the owner-review form bundle is now lazy-loaded only after the base viewer-state confirms the signed-in viewer owns the resource, so anonymous and non-owner detail visits do not pay that review-form client payload up front
     → refresh polling can bypass the short-lived private ownership cache after checkout
     → related section deferred separately
+    → the route-entry shell cache no longer carries the long-form description field; description now lives in the deferred body-content cache and the metadata cache only
 ```
 
 Key details:

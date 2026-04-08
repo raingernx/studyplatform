@@ -50,6 +50,7 @@ Current perf-hardening baseline for the production UX initiative is:
 - `npm run build` no longer runs `prisma migrate deploy`
 - post-deploy warm + smoke workflow is active, and can now be triggered manually when production deploys bypass GitHub deployment events
 - resource detail route was decomposed into shell + deferred purchase/body/footer/review/related paths
+- `/resources/[slug]` now keeps the route-entry shell cache separate from the metadata cache, so the blocking detail-shell read no longer carries the long-form description field that already streams later in the body section
 - optional session work was pushed off several anonymous critical paths
 - public remote preview image delivery now keeps optimizer-compatible hosts on Next Image, while still bypassing the optimizer for GIFs, non-HTTPS assets, and non-allowlisted hosts
 - build-time Prisma warning from `platformSettings.findFirst()` was removed by separating build-safe platform config from admin live config
@@ -217,7 +218,7 @@ Current perf-hardening baseline for the production UX initiative is:
 ### 4. First query on resource detail pages
 
 - Resource detail shell/body/footer/purchase decomposition is in place.
-- The first `getResourceBySlug()` path is still the main blocking query to inspect if detail TTFB regresses again.
+- The first `getResourceBySlug()` path is still the main blocking query to inspect if detail TTFB regresses again, but it now serves a narrower shell projection while metadata and description live in separate cached reads.
 - The old route-level optional session bottleneck was removed, and ownership/success state no longer waits on the owner-review query.
 - Signed-in detail personalization still depends on client viewer-state fetches after hydration, but owner review is now a secondary fetch instead of part of the purchase-critical path.
 - Anonymous detail visits no longer spend a client request on ownership state they cannot have.

@@ -2,6 +2,7 @@ import {
   getResourceDetailBodyContent,
   getResourceBySlug,
   getResourceDetailFooterContent,
+  getResourceMetadataBySlug,
   getResourceDetailPurchaseMetaBySlug,
 } from "./marketplace-resource-read.service";
 import {
@@ -23,13 +24,7 @@ export async function getResourceDetailPageResource(slug: string) {
 }
 
 export async function getResourceDetailPageMetadata(slug: string) {
-  const resource = await getResourceBySlug(slug);
-  return resource
-    ? {
-        title: resource.title,
-        description: resource.description,
-      }
-    : null;
+  return getResourceMetadataBySlug(slug);
 }
 
 export async function getResourceDetailPageBodyContent(slug: string) {
