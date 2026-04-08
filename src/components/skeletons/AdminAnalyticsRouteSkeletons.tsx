@@ -315,6 +315,23 @@ export function AdminAnalyticsOverviewSkeleton() {
   return makeRuntimeSkeleton(ADMIN_ANALYTICS_OVERVIEW_NAME, <OverviewPreview />);
 }
 
+export function AdminAnalyticsReportingSkeleton() {
+  return (
+    <section className="space-y-2.5">
+      <div>
+        <LoadingSkeleton className="h-6 w-28" />
+        <LoadingSkeleton className="mt-1 h-4 w-64" />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
+        <AnalyticsCardPreview />
+        <AnalyticsCardPreview />
+        <AnalyticsCardPreview />
+        <AnalyticsCardPreview />
+      </div>
+    </section>
+  );
+}
+
 export function AdminAnalyticsRecommendationsBonesPreview() {
   return makePreviewSkeleton(
     ADMIN_ANALYTICS_RECOMMENDATIONS_NAME,

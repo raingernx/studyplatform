@@ -36,6 +36,7 @@ import { findAdminOrders, findAdminResourcePurchaseSummaries, getAdminOrdersToda
 import { getUserPurchaseHistory } from "@/services/purchases";
 import { getUserMembershipOverview } from "@/services/subscriptions/subscription.service";
 import { toSlug } from "@/lib/slug";
+import { getUserPreferences } from "@/lib/preferences";
 
 type AdminResourceRow = {
   id: string;
@@ -466,9 +467,7 @@ export async function deleteAdminTag(tagId: string) {
 export async function getDashboardSettingsPageData(userId: string) {
   const [user, preferences] = await Promise.all([
     findUserSettingsProfile(userId),
-    import("@/lib/preferences").then(({ getUserPreferences }) =>
-      getUserPreferences(userId),
-    ),
+    getUserPreferences(userId),
   ]);
 
   return { user, preferences };

@@ -50,46 +50,78 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   marketingEmails: false,
 };
 
-export async function getUserPreferences(userId: string): Promise<UserPreferences> {
-  // Guard: ensure the User row exists before touching UserPreference.
-  // A missing user usually means the session is stale in local/dev. Return
-  // safe defaults so settings can render instead of crashing the page.
-  const userExists = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true },
-  });
-
-  if (!userExists) {
-    if (env.NODE_ENV !== "production") {
-      console.warn(`getUserPreferences: user ${userId} not found; returning defaults`);
-    }
-
+function normalizeUserPreferences(
+  preferences: Partial<Record<keyof UserPreferences, string | boolean>> | null,
+): UserPreferences {
+  if (!preferences) {
     return DEFAULT_USER_PREFERENCES;
   }
 
-  // upsert instead of findUnique → create:
-  //  - avoids a FK violation when userId is valid but preferences don't exist yet
-  //  - eliminates the TOCTOU race if two requests arrive simultaneously
-  const preferences = await prisma.userPreference.upsert({
+  return {
+    language: isOneOf(
+      typeof preferences.language === "string"
+        ? preferences.language
+        : DEFAULT_USER_PREFERENCES.language,
+      ALLOWED_LANGUAGES,
+    )
+      ? (preferences.language as Language)
+      : DEFAULT_USER_PREFERENCES.language,
+    theme: isOneOf(
+      typeof preferences.theme === "string"
+        ? preferences.theme
+        : DEFAULT_USER_PREFERENCES.theme,
+      ALLOWED_THEMES,
+    )
+      ? (preferences.theme as Theme)
+      : DEFAULT_USER_PREFERENCES.theme,
+    currency: isOneOf(
+      typeof preferences.currency === "string"
+        ? preferences.currency
+        : DEFAULT_USER_PREFERENCES.currency,
+      ALLOWED_CURRENCIES,
+    )
+      ? (preferences.currency as Currency)
+      : DEFAULT_USER_PREFERENCES.currency,
+    timezone: isOneOf(
+      typeof preferences.timezone === "string"
+        ? preferences.timezone
+        : DEFAULT_USER_PREFERENCES.timezone,
+      ALLOWED_TIMEZONES,
+    )
+      ? (preferences.timezone as Timezone)
+      : DEFAULT_USER_PREFERENCES.timezone,
+    emailNotifications:
+      typeof preferences.emailNotifications === "boolean"
+        ? preferences.emailNotifications
+        : DEFAULT_USER_PREFERENCES.emailNotifications,
+    purchaseReceipts:
+      typeof preferences.purchaseReceipts === "boolean"
+        ? preferences.purchaseReceipts
+        : DEFAULT_USER_PREFERENCES.purchaseReceipts,
+    productUpdates:
+      typeof preferences.productUpdates === "boolean"
+        ? preferences.productUpdates
+        : DEFAULT_USER_PREFERENCES.productUpdates,
+    marketingEmails:
+      typeof preferences.marketingEmails === "boolean"
+        ? preferences.marketingEmails
+        : DEFAULT_USER_PREFERENCES.marketingEmails,
+  };
+}
+
+export async function getUserPreferences(userId: string): Promise<UserPreferences> {
+  const preferences = await prisma.userPreference.findUnique({
     where: { userId },
-    update: {},
-    create: {
-      userId,
-      ...DEFAULT_USER_PREFERENCES,
-    },
     select: USER_PREFERENCE_SELECT,
   });
 
-  return {
-    language: isOneOf(preferences.language, ALLOWED_LANGUAGES) ? preferences.language : DEFAULT_USER_PREFERENCES.language,
-    theme: isOneOf(preferences.theme, ALLOWED_THEMES) ? preferences.theme : DEFAULT_USER_PREFERENCES.theme,
-    currency: isOneOf(preferences.currency, ALLOWED_CURRENCIES) ? preferences.currency : DEFAULT_USER_PREFERENCES.currency,
-    timezone: isOneOf(preferences.timezone, ALLOWED_TIMEZONES) ? preferences.timezone : DEFAULT_USER_PREFERENCES.timezone,
-    emailNotifications: preferences.emailNotifications,
-    purchaseReceipts: preferences.purchaseReceipts,
-    productUpdates: preferences.productUpdates,
-    marketingEmails: preferences.marketingEmails,
-  };
+  if (!preferences && env.NODE_ENV !== "production") {
+    console.warn(
+      `getUserPreferences: no preference row for user ${userId}; returning defaults`,
+    );
+  }
+
+  return normalizeUserPreferences(preferences);
 }
 
 export async function updateUserPreferences(userId: string, data: PreferenceUpdate) {

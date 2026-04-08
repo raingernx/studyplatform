@@ -140,6 +140,18 @@ export function AdminDashboardLoadingShell() {
   );
 }
 
+export function AdminDashboardRecentActivitySkeleton() {
+  return (
+    <section className="space-y-3">
+      <div>
+        <LoadingSkeleton className="h-8 w-44 rounded-2xl" />
+        <LoadingSkeleton className="mt-1 h-4 w-[28rem]" />
+      </div>
+      <AdminTableShell columns={5} rows={6} />
+    </section>
+  );
+}
+
 export function AdminActivityLoadingShell() {
   return (
     <div className="space-y-8">

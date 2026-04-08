@@ -210,6 +210,11 @@ Admin settings note:
 - `/admin/settings` now also persists dedicated dark-surface logo fields (`logoFullDarkUrl`, `logoIconDarkUrl`) instead of overloading the light navigation logos
 - both `src/app/(dashboard)/layout.tsx` and `src/app/admin/layout.tsx` now keep session/auth-driven shell resolution behind family-scoped `Suspense` boundaries (`DashboardGroupLoadingShell`, `AdminDashboardLoadingShell`) instead of awaiting that work directly in the async layout entrypoint
 - this route-family boundary change exists to keep hard refreshes inside dashboard/admin loading shells rather than falling back to the global app-level loading UI while layout-level auth/viewer state resolves
+- `/dashboard`, `/settings`, `/subscription`, `/dashboard/library`, `/dashboard/purchases`, `/dashboard/downloads`, and the legacy `/purchases` redirect alias now live in a dedicated dashboard-lite route group that reuses the dashboard shell/overlay loading family but resolves its shell from the cached session only; these routes no longer wait on `getCreatorAccessState()` before the shell or redirect can render
+- `/settings` now renders its page shell immediately after `requireSession()` and streams the settings sections through an in-page `Suspense` boundary with a structural tabs-only fallback instead of blocking the whole page on profile/preferences data
+- dashboard settings preference reads are now read-only on entry: `getUserPreferences()` no longer does `user.findUnique()` plus `userPreference.upsert()` on every visit, and the dashboard settings service imports that reader directly instead of adding a dynamic import hop in the hot path
+- `/admin` overview now treats admin auth as a layout concern only: the page no longer repeats `requireAdminSession()`, starts metrics and recent-activity reads in parallel, renders the metrics shell first, and streams the recent-activity table through an in-page `Suspense` fallback instead of blocking the whole overview on both data groups
+- `/admin/analytics` now splits platform analytics into summary and reporting surfaces: the page renders all-time/30-day KPI sections from a lighter summary reader first, then streams chart/top-resource reporting cards through a dedicated `Suspense` fallback while preserving the same admin analytics shell and experiment links
 
 ## Authentication
 
