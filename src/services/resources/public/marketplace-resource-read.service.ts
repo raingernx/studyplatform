@@ -305,9 +305,22 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
   //   (b) the categories sidebar list returned in every response path.
   // Staleness: a newly created category will not appear for up to 120 s —
   // consistent with the existing cache behaviour for the sidebar list.
-  const categories = await getCachedMarketplaceCategories();
+  const categoriesPromise = getCachedMarketplaceCategories();
+  let categories:
+    | Awaited<ReturnType<typeof getCachedMarketplaceCategories>>
+    | null = null;
+
+  const loadCategories = async () => {
+    if (categories) {
+      return categories;
+    }
+
+    categories = await categoriesPromise;
+    return categories;
+  };
+
   const categoryId = category
-    ? categories.find((c) => c.slug === category)?.id
+    ? (await loadCategories()).find((c) => c.slug === category)?.id
     : undefined;
 
   if (category && !categoryId) {
@@ -315,35 +328,38 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
       resources: [],
       total: 0,
       totalPages: 1,
-      categories,
+      categories: await loadCategories(),
     };
   }
 
   if (search) {
-    const { rows, total } = await traceServerStep(
-      "marketplace.findRankedSearchResources",
-      () =>
-        findMarketplaceSearchResources({
-          query: search,
+    const [resolvedCategories, { rows, total }] = await Promise.all([
+      loadCategories(),
+      traceServerStep(
+        "marketplace.findRankedSearchResources",
+        () =>
+          findMarketplaceSearchResources({
+            query: search,
+            page,
+            pageSize,
+            category: category ?? undefined,
+            sort,
+          }),
+        {
           page,
           pageSize,
-          category: category ?? undefined,
           sort,
-        }),
-      {
-        page,
-        pageSize,
-        sort,
-        category: category ?? "all",
-      },
-    );
+          category: category ?? "all",
+        },
+      ),
+    ]);
 
     const resources = rows.map((row) => withPreview(toRankedSearchCardShape(row)));
     return {
       resources,
       total,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
-      categories,
+      categories: resolvedCategories,
     };
   }
 
@@ -392,30 +408,33 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
         };
       };
 
-      const { resources, total } = await rememberJson(
-        precomputedRecommendedListingCacheKey,
-        CACHE_TTLS.homepageList,
-        () =>
-          runSingleFlight(
-            precomputedRecommendedListingCacheKey,
-            loadRecommendedLanding,
-          ),
-        {
-          metricName: "marketplace.recommendedResources.precomputed",
-          details: {
-            page,
-            pageSize,
-            categorySlug: category ?? "all",
-            scope: "listing",
+      const [resolvedCategories, { resources, total }] = await Promise.all([
+        loadCategories(),
+        rememberJson(
+          precomputedRecommendedListingCacheKey,
+          CACHE_TTLS.homepageList,
+          () =>
+            runSingleFlight(
+              precomputedRecommendedListingCacheKey,
+              loadRecommendedLanding,
+            ),
+          {
+            metricName: "marketplace.recommendedResources.precomputed",
+            details: {
+              page,
+              pageSize,
+              categorySlug: category ?? "all",
+              scope: "listing",
+            },
           },
-        },
-      );
+        ),
+      ]);
 
       return {
         resources,
         total,
         totalPages: Math.max(1, Math.ceil(total / pageSize)),
-        categories,
+        categories: resolvedCategories,
       };
     }
 
@@ -430,17 +449,20 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
     // fires per instance.  NOTE: this is same-instance deduplication only.
     // Cross-instance thundering herd (separate Vercel function processes)
     // cannot be solved here without distributed locking.
-    const { rows, total } = search
-      ? await loadRankedRows()
-      : await rememberJson(
-          recommendedCacheKey,
-          CACHE_TTLS.homepageList,
-          () => runSingleFlight(recommendedCacheKey, loadRankedRows),
-          {
-            metricName: "marketplace.recommendedResources",
-            details: { page, pageSize, categoryId: categoryId ?? "all" },
-          },
-        );
+    const [resolvedCategories, { rows, total }] = await Promise.all([
+      loadCategories(),
+      search
+        ? loadRankedRows()
+        : rememberJson(
+            recommendedCacheKey,
+            CACHE_TTLS.homepageList,
+            () => runSingleFlight(recommendedCacheKey, loadRankedRows),
+            {
+              metricName: "marketplace.recommendedResources",
+              details: { page, pageSize, categoryId: categoryId ?? "all" },
+            },
+          ),
+    ]);
 
     // Recommended listing cards can render without trust metadata, so avoid
     // blocking the strict first render on batched review/sales enrichment.
@@ -450,7 +472,7 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
       resources,
       total,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
-      categories,
+      categories: resolvedCategories,
     };
   }
   // ── All other sort values use the standard Prisma path ─────────────────────
@@ -509,22 +531,26 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
         { page, pageSize, categoryId: categoryId ?? "all" },
       );
 
-    const { items: newestItems, count: newestTotal } = await rememberJson(
-      newestCacheKey,
-      CACHE_TTLS.publicPage,
-      () => runSingleFlight(newestCacheKey, loadNewestRows),
-      {
-        metricName: "marketplace.newestResources",
-        details: { page, pageSize, categoryId: categoryId ?? "all" },
-      },
-    );
+    const [resolvedCategories, { items: newestItems, count: newestTotal }] =
+      await Promise.all([
+        loadCategories(),
+        rememberJson(
+          newestCacheKey,
+          CACHE_TTLS.publicPage,
+          () => runSingleFlight(newestCacheKey, loadNewestRows),
+          {
+            metricName: "marketplace.newestResources",
+            details: { page, pageSize, categoryId: categoryId ?? "all" },
+          },
+        ),
+      ]);
 
     const resources = newestItems.map(withPreview);
     return {
       resources,
       total: newestTotal,
       totalPages: Math.max(1, Math.ceil(newestTotal / pageSize)),
-      categories,
+      categories: resolvedCategories,
     };
   }
 
@@ -557,26 +583,31 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
         { sort, page, pageSize, categoryId: categoryId ?? "all" },
       );
 
-    const { items: sortedItems, count: sortedTotal } = await rememberJson(
-      sortCacheKey,
-      CACHE_TTLS.publicPage,
-      () => runSingleFlight(sortCacheKey, loadSortRows),
-      {
-        metricName: "marketplace.sortedResources",
-        details: { sort, page, pageSize, categoryId: categoryId ?? "all" },
-      },
-    );
+    const [resolvedCategories, { items: sortedItems, count: sortedTotal }] =
+      await Promise.all([
+        loadCategories(),
+        rememberJson(
+          sortCacheKey,
+          CACHE_TTLS.publicPage,
+          () => runSingleFlight(sortCacheKey, loadSortRows),
+          {
+            metricName: "marketplace.sortedResources",
+            details: { sort, page, pageSize, categoryId: categoryId ?? "all" },
+          },
+        ),
+      ]);
 
     const resources = sortedItems.map(withPreview);
     return {
       resources,
       total: sortedTotal,
       totalPages: Math.max(1, Math.ceil(sortedTotal / pageSize)),
-      categories,
+      categories: resolvedCategories,
     };
   }
 
-  const [rawItems, total] = await Promise.all([
+  const [resolvedCategories, rawItems, total] = await Promise.all([
+    loadCategories(),
     findMarketplaceResourceCards({
       where,
       orderBy,
@@ -592,7 +623,7 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
     resources,
     total,
     totalPages: Math.max(1, Math.ceil(total / pageSize)),
-    categories,
+    categories: resolvedCategories,
   };
 }
 

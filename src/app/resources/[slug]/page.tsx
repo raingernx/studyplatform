@@ -27,6 +27,7 @@ import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import {
   getResourceDetailPageBodyContent,
   getResourceDetailPageFooterContent,
+  getResourceDetailPageMetadata,
   getResourceDetailPagePurchaseMeta,
   getResourceDetailPageResource,
   getResourceDetailPageReviewList,
@@ -125,10 +126,10 @@ function buildOutcomeHint(resource: {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const resource = await getResourceDetailPageResource(slug);
+  const resource = await getResourceDetailPageMetadata(slug);
 
   return {
-    title: resource ? resource.title : "Resource",
+    title: resource?.title ?? "Resource",
     description: resource?.description?.slice(0, 155) ?? "",
   };
 }
@@ -136,8 +137,10 @@ export async function generateMetadata({ params }: Props) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function ResourceDetailPage({ params, searchParams }: Props) {
-  const { slug } = await params;
-  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const [{ slug }, resolvedSearchParams] = await Promise.all([
+    params,
+    searchParams ?? Promise.resolve({} as Record<string, string | string[] | undefined>),
+  ]);
   const paymentStatus =
     typeof resolvedSearchParams.payment === "string"
       ? resolvedSearchParams.payment
@@ -150,17 +153,15 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
       slug,
     },
     async () => {
-      const resourceSettled = await Promise.allSettled([
-        traceServerStep(
+      let resource;
+
+      try {
+        resource = await traceServerStep(
           "resource_detail.getResourceBySlug",
           () => getResourceDetailPageResource(slug),
           { slug },
-        ),
-      ]);
-      const resourceResult = resourceSettled[0];
-
-      if (resourceResult.status === "rejected") {
-        const error = resourceResult.reason;
+        );
+      } catch (error) {
         logResourceDetailFailure(
           {
             critical: true,
@@ -174,8 +175,6 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
         // Resource table missing (local dev schema drift) — render 404.
         notFound();
       }
-
-      const resource = resourceResult.value;
 
       if (!resource || resource.status !== "PUBLISHED") {
         notFound();
@@ -289,12 +288,9 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
   const levelLabel = formatLevel(resource.level);
   const outcomeHint = buildOutcomeHint(resource);
 
-  return (
-    <ResourceDetailViewerStateProvider resourceId={resource.id}>
-    <ResourceDetailShell>
-      <div className="space-y-6 lg:space-y-9">
-
-            {/* ── Full-width header ───────────────────────────────────────── */}
+      return (
+        <ResourceDetailShell>
+          <div className="space-y-6 lg:space-y-9">
             <ResourceHeader
               breadcrumb={[
                 { label: "Home", href: "/" },
@@ -309,107 +305,87 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
               downloadCount={resource.resourceStat?.downloads ?? resource.downloadCount}
             />
 
-            {/* Payment feedback banners */}
-            {/*
-              Confirmed — webhook already processed before the user landed.
-              Show a brief reassurance notice. The PurchaseCard below already
-              displays the Download button in owned state.
-            */}
-            {isReturningFromCheckout && (
-              <Suspense fallback={<ResourceDetailSuccessSkeleton hasFile={hasFile} />}>
-                <ResourceDetailSuccessShell
-                  hasFile={hasFile}
-                  resourceId={resource.id}
-                  resourceTitle={resource.title}
-                />
-              </Suspense>
-            )}
-
-            {paymentStatus === "cancelled" && (
-              <div className="flex items-start gap-3 rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4">
-                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
-                <p className="text-[13px] text-amber-700">
-                  Payment was cancelled. You have not been charged.
-                </p>
-              </div>
-            )}
-
-            {/* ── Main two-column grid ────────────────────────────────────── */}
-            {/*
-              Desktop: col-1 row-1 = Gallery, col-1 row-2 = content,
-                       col-2 rows 1-2 = sticky PurchaseCard
-              Mobile:  Gallery (order-1) → PurchaseCard (order-2) → content (order-3)
-            */}
-            <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-10">
-
-              {/* GALLERY — order-1 mobile, col-1 row-1 desktop */}
-              <div className="order-1 lg:col-start-1 lg:row-start-1">
-                <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[80px_minmax(0,1fr)]">
-                  <ResourceGallery
-                    previews={resource.previews}
-                    resourceTitle={resource.title}
-                    fallbackImageUrl={fallbackPreviewUrl}
-                  />
-                </div>
-              </div>
-
-              {/* CONTENT — order-3 mobile, col-1 row-2 desktop */}
-              <div className="order-3 space-y-7 lg:col-start-1 lg:row-start-2">
-
-                {/* 4. About + 5. Included files */}
-                <Suspense fallback={<ResourceDetailBodyFallback />}>
-                  <ResourceDetailBodySection
-                    bodyContentPromise={bodyContentPromise}
-                  />
-                </Suspense>
-
-                {/* 6. Reviews */}
-                <Suspense fallback={<ResourceDetailReviewsFallback />}>
-                  <ResourceDetailPublicReviewsSection
-                    reviewListPromise={reviewListPromise}
-                    resourceTitle={resource.title}
-                  />
-                </Suspense>
-
-                <Suspense fallback={<ResourceDetailOwnerReviewFallback />}>
-                  <ResourceDetailOwnerReviewSection
+            <ResourceDetailViewerStateProvider resourceId={resource.id}>
+              {isReturningFromCheckout && (
+                <Suspense fallback={<ResourceDetailSuccessSkeleton hasFile={hasFile} />}>
+                  <ResourceDetailSuccessShell
+                    hasFile={hasFile}
                     resourceId={resource.id}
                     resourceTitle={resource.title}
                   />
                 </Suspense>
+              )}
 
-                {/* 8. Tags + 9. Creator */}
-                <Suspense fallback={<ResourceDetailFooterFallback />}>
-                  <ResourceDetailFooterSection
-                    footerContentPromise={footerContentPromise}
-                  />
-                </Suspense>
+              {paymentStatus === "cancelled" && (
+                <div className="flex items-start gap-3 rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+                  <p className="text-[13px] text-amber-700">
+                    Payment was cancelled. You have not been charged.
+                  </p>
+                </div>
+              )}
 
-              </div>
-
-              {/* PURCHASE CARD — order-2 mobile, col-2 rows 1–2 desktop */}
-              <aside id="purchase-card" className="order-2 self-start lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-24">
-                <Suspense
-                  fallback={
-                    <PurchaseCardSkeleton
-                      variant={isReturningFromCheckout ? "pending-purchase" : "viewer-pending"}
+              <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-10">
+                <div className="order-1 lg:col-start-1 lg:row-start-1">
+                  <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[80px_minmax(0,1fr)]">
+                    <ResourceGallery
+                      previews={resource.previews}
+                      resourceTitle={resource.title}
+                      fallbackImageUrl={fallbackPreviewUrl}
                     />
-                  }
-                >
-                  <ResourceDetailPurchaseCard
-                    resource={resource}
-                    purchaseMetaPromise={purchaseMetaPromise}
-                    trustSummaryPromise={trustSummaryPromise}
-                    isReturningFromCheckout={isReturningFromCheckout}
-                    hasFile={hasFile}
-                    levelLabel={levelLabel}
-                    outcomeHint={outcomeHint}
-                  />
-                </Suspense>
-              </aside>
-            </div>
+                  </div>
+                </div>
 
-            {/* ── Related resources — outside the two-column grid ─────────── */}
+                <div className="order-3 space-y-7 lg:col-start-1 lg:row-start-2">
+                  <Suspense fallback={<ResourceDetailBodyFallback />}>
+                    <ResourceDetailBodySection
+                      bodyContentPromise={bodyContentPromise}
+                    />
+                  </Suspense>
+
+                  <Suspense fallback={<ResourceDetailReviewsFallback />}>
+                    <ResourceDetailPublicReviewsSection
+                      reviewListPromise={reviewListPromise}
+                      resourceTitle={resource.title}
+                    />
+                  </Suspense>
+
+                  <Suspense fallback={<ResourceDetailOwnerReviewFallback />}>
+                    <ResourceDetailOwnerReviewSection
+                      resourceId={resource.id}
+                      resourceTitle={resource.title}
+                    />
+                  </Suspense>
+
+                  <Suspense fallback={<ResourceDetailFooterFallback />}>
+                    <ResourceDetailFooterSection
+                      footerContentPromise={footerContentPromise}
+                    />
+                  </Suspense>
+                </div>
+
+                <aside id="purchase-card" className="order-2 self-start lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-24">
+                  <Suspense
+                    fallback={
+                      <PurchaseCardSkeleton
+                        variant={isReturningFromCheckout ? "pending-purchase" : "viewer-pending"}
+                      />
+                    }
+                  >
+                    <ResourceDetailPurchaseCard
+                      resource={resource}
+                      purchaseMetaPromise={purchaseMetaPromise}
+                      trustSummaryPromise={trustSummaryPromise}
+                      isReturningFromCheckout={isReturningFromCheckout}
+                      hasFile={hasFile}
+                      levelLabel={levelLabel}
+                      outcomeHint={outcomeHint}
+                    />
+                  </Suspense>
+                </aside>
+              </div>
+            </ResourceDetailViewerStateProvider>
+
             <Suspense
               fallback={
                 <ResourceDetailRelatedQuickLinks
@@ -477,7 +453,6 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
               </div>
             </section>
 
-            {/* Back link */}
             <div className="border-t border-border pt-6">
               <IntentPrefetchLink
                 href={routes.marketplace}
@@ -491,11 +466,9 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
                 Discover more resources
               </IntentPrefetchLink>
             </div>
-
-      </div>
-    </ResourceDetailShell>
-    </ResourceDetailViewerStateProvider>
-  );
+          </div>
+        </ResourceDetailShell>
+      );
     },
   );
 }

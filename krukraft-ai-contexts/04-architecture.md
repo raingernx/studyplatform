@@ -110,7 +110,9 @@ Database search note:
     → the public discover hero no longer has a dedicated admin CMS, analytics write path, or hero-specific cache-selection layer
     → listing/discover content streamed separately
     → listing caches keyed by sort/category/page
+    → marketplace listing reads now only await category cache before the query when category slug resolution is actually needed; unfiltered listing/search paths can load sidebar categories in parallel with the primary listing read
     → client viewer-state hydration restores owned badges first
+    → the `/resources` viewer-state provider is now scoped to viewer-aware card and personalization subtrees instead of wrapping the whole browse shell, so headings/filter chrome can stay outside the owned-state hydration boundary
     → signed-in discover personalization now hydrates in a second client fetch after owned-state is ready
     → viewer-state can start before any heavier personalized discover work is resolved
     → `/api/resources/viewer-state` serves `scope=base|discover` so ownership and recommendation work stay decoupled
@@ -148,6 +150,8 @@ Root rendering note:
     → public reviews deferred
     → lightweight auth viewer now defers to idle time on the detail route
     → client detail viewer-state hydrates ownership/success first after auth viewer readiness
+    → detail params/searchParams now resolve in parallel and route metadata reads the lighter metadata loader instead of the full detail payload
+    → the detail viewer-state provider is now scoped to the success/purchase/owner-review subtree instead of wrapping the whole page shell, so gallery/header/public body sections stay outside the personalization boundary
     → detail base viewer-state now reuses a short-lived browser cache keyed by resource + viewer
     → owner review form hydrates in a second client fetch after ownership is known
     → refresh polling can bypass the short-lived private ownership cache after checkout
