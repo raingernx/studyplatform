@@ -140,6 +140,7 @@ Current perf-hardening baseline for the production UX initiative is:
 - category smoke route now matches its actual page intent and is warmed explicitly
 - the post-deploy warm script now warms the control-arm newest listing with `ranking_variant=A` plus a concurrent burst sized to the smoke route's 5-VU ceiling, explicitly warms the hot creator public profile route and category listing route with the same burst-aligned strategy, and sends `/resources` through a small concurrent warm burst instead of sequential-only repeats; creator public profiles also gained a Redis-backed cross-instance cache layer on top of `unstable_cache`, reducing post-deploy cold-tail variance on `creator_detail_smoke`
 - `/creators/[slug]` metadata now uses its own lighter cached metadata reader instead of reusing the full creator public-profile payload, the full creator-profile cache now inlines creator momentum/status-badge fields from the main profile query rather than issuing a second `creatorStat` lookup inside the cached loader, and the internal creator warm path now seeds both metadata and full-profile caches for the hot creator identifiers
+- `/categories/[slug]` now starts its marketplace listing read once and streams the hero count plus listing section behind structural `Suspense` fallbacks, so the category hero shell no longer waits on the full category listing payload before first render
 - `/resources` discover fallback no longer swaps in fake CTA content while data resolves
 - discover hero loading now falls back to a neutral reserved stage that keeps the live hero footprint without previewing fake banner content; discover sections still fall back to section/card skeletons that match final geometry
 - route-level `/resources/loading` now matches the discover UI more closely instead of showing a stale meta strip or a generic card wall
@@ -160,8 +161,8 @@ Current perf-hardening baseline for the production UX initiative is:
   - main class: creator public-profile tails can still appear on fresh instances when the route has to pay both metadata/profile work and the full creator page render under load
   - current mitigation: Redis-backed shared cache plus a stable `unstable_cache` wrapper per slug, lighter cached metadata reads for `/creators/[slug]`, inlined creator-stat fields inside the main profile query, and burst-aligned warm coverage against the hot creator slug
 - `category_listing_smoke`
-  - main class: fresh-instance tail on category listing renders under the 5-VU smoke ramp
-  - current mitigation: explicit category warm target with `repeat: 2` and `burst: 5`
+  - main class: fresh-instance tail on category listing renders under the 5-VU smoke ramp and the route shell used to wait on the full listing payload before returning HTML
+  - current mitigation: explicit category warm target with `repeat: 2` and `burst: 5`, plus streamed category shell/listing separation with structural in-page fallbacks
 - `listing_recommended_smoke`
   - main class: the treatment/recommended listing route can still show cold-instance tail latency if warm only touches one worker, even when the control/newest path is already aligned
   - current mitigation: warm against `ranking_variant=B` and match the smoke route's 5-VU fanout with `repeat: 2` plus `burst: 5`

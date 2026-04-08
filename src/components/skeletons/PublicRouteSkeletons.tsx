@@ -59,6 +59,42 @@ export function CategoryPageLoadingShell() {
   );
 }
 
+export function CategoryPageResourceCountFallback() {
+  return <LoadingSkeleton className="h-8 w-32 rounded-full bg-white/20" />;
+}
+
+export function CategoryPageResourcesSectionFallback() {
+  return (
+    <div className="rounded-[32px] border border-border bg-[hsl(var(--card)/0.85)] p-4 shadow-card sm:p-5 lg:p-6">
+      <div className="mb-6 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
+          <LoadingSkeleton className="h-3 w-28" />
+          <LoadingSkeleton className="h-8 w-56 rounded-2xl" />
+          <LoadingSkeleton className="h-4 w-[32rem] max-w-[75vw]" />
+        </div>
+        <LoadingSkeleton className="h-4 w-24" />
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={index}
+            className="overflow-hidden rounded-xl border border-border-subtle bg-card"
+          >
+            <LoadingSkeleton className="aspect-[4/3] w-full rounded-none" />
+            <div className="space-y-2 p-4">
+              <LoadingSkeleton className="h-4 w-4/5" />
+              <LoadingSkeleton className="h-4 w-2/3" />
+              <LoadingSkeleton className="h-3 w-1/2" />
+              <LoadingSkeleton className="h-5 w-16" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function CreatorPublicProfileLoadingShell() {
   return (
     <div className="min-h-screen bg-background">

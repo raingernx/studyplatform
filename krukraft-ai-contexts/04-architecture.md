@@ -136,6 +136,10 @@ Public creator route note:
 - the full creator public-profile cache now reads the creator momentum/status-badge fields from the main profile query itself instead of issuing a second `creatorStat` repository call inside the cached loader
 - this keeps creator detail page and metadata requests on separate lighter cache keys while preserving the shared creator-public revalidation tags
 
+Public category route note:
+- `/categories/[slug]` now starts the marketplace listing read once at the route entry and streams the hero count pill plus listing section through separate `Suspense` subtrees instead of awaiting the full category listing before any shell HTML can render
+- the streamed category fallback surfaces are structural now; the in-page listing boundary no longer uses `fallback={null}` while the category resource grid is still resolving
+
 Root rendering note:
 - the root app layout uses build-safe public platform config only and does not read the authenticated server session
 - the root layout now injects a pre-hydration theme bootstrap script that sets `data-theme` / `color-scheme` before React hydration, preventing the old white-first flash on returning dark sessions

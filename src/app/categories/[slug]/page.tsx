@@ -3,8 +3,11 @@ import { Navbar } from "@/components/layout/Navbar";
 import { MarketplaceNavbarSearch } from "@/components/marketplace/MarketplaceNavbarSearch";
 import { Container } from "@/design-system";
 import { Badge } from "@/design-system";
-import { ResourceGrid, RESOURCE_GRID_CLASSES } from "@/components/resources/ResourceGrid";
-import { ResourceCardSkeleton } from "@/components/resources/ResourceCardSkeleton";
+import { ResourceGrid } from "@/components/resources/ResourceGrid";
+import {
+  CategoryPageResourceCountFallback,
+  CategoryPageResourcesSectionFallback,
+} from "@/components/skeletons/PublicRouteSkeletons";
 import Link from "next/link";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import { routes } from "@/lib/routes";
@@ -77,7 +80,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   };
 
   const categoryName = slug.charAt(0).toUpperCase() + slug.slice(1);
-  const { items, total } = await getCategoryResources(slug);
+  const categoryResourcesPromise = getCategoryResources(slug);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -108,12 +111,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="bg-white/20 text-white ring-white/20">
-              <BookOpen className="mr-1.5 h-3 w-3" />
-              {total} resource{total !== 1 ? "s" : ""}
-            </Badge>
-          </div>
+          <Suspense fallback={<CategoryPageResourceCountFallback />}>
+            <CategoryResourceCount categoryResourcesPromise={categoryResourcesPromise} />
+          </Suspense>
         </Container>
       </div>
 
@@ -121,35 +121,69 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <main className="flex-1">
         <Container className="py-12 sm:py-14 lg:py-16">
           <div className="space-y-6">
-            <div className="rounded-[32px] border border-border bg-[hsl(var(--card)/0.85)] p-4 shadow-card sm:p-5 lg:p-6">
-              <div className="mb-6 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
-                <div className="space-y-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Curated collection
-                  </p>
-                  <h2 className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                    Latest in {categoryName}
-                  </h2>
-                  <p className="text-sm leading-6 text-muted-foreground">
-                    Browse the newest and most useful resources in this category with the same calm rhythm as the wider marketplace.
-                  </p>
-                </div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  {total} resource{total !== 1 ? "s" : ""}
-                </p>
-              </div>
-              <Suspense fallback={null}>
-                <ResourceGrid
-                  resources={items}
-                  total={total}
-                  page={1}
-                  totalPages={1}
-                />
-              </Suspense>
-            </div>
+            <Suspense fallback={<CategoryPageResourcesSectionFallback />}>
+              <CategoryResourcesSection
+                categoryName={categoryName}
+                categoryResourcesPromise={categoryResourcesPromise}
+              />
+            </Suspense>
           </div>
         </Container>
       </main>
+    </div>
+  );
+}
+
+async function CategoryResourceCount({
+  categoryResourcesPromise,
+}: {
+  categoryResourcesPromise: ReturnType<typeof getCategoryResources>;
+}) {
+  const { total } = await categoryResourcesPromise;
+
+  return (
+    <div className="flex items-center gap-3">
+      <Badge variant="secondary" className="bg-white/20 text-white ring-white/20">
+        <BookOpen className="mr-1.5 h-3 w-3" />
+        {total} resource{total !== 1 ? "s" : ""}
+      </Badge>
+    </div>
+  );
+}
+
+async function CategoryResourcesSection({
+  categoryName,
+  categoryResourcesPromise,
+}: {
+  categoryName: string;
+  categoryResourcesPromise: ReturnType<typeof getCategoryResources>;
+}) {
+  const { items, total } = await categoryResourcesPromise;
+
+  return (
+    <div className="rounded-[32px] border border-border bg-[hsl(var(--card)/0.85)] p-4 shadow-card sm:p-5 lg:p-6">
+      <div className="mb-6 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Curated collection
+          </p>
+          <h2 className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+            Latest in {categoryName}
+          </h2>
+          <p className="text-sm leading-6 text-muted-foreground">
+            Browse the newest and most useful resources in this category with the same calm rhythm as the wider marketplace.
+          </p>
+        </div>
+        <p className="text-sm font-medium text-muted-foreground">
+          {total} resource{total !== 1 ? "s" : ""}
+        </p>
+      </div>
+      <ResourceGrid
+        resources={items}
+        total={total}
+        page={1}
+        totalPages={1}
+      />
     </div>
   );
 }
