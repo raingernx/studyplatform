@@ -87,6 +87,7 @@ export async function getAdminResourcesPageData(input: {
     where.categoryId = input.categoryIdFilter;
   }
 
+  const hasFilters = Boolean(input.q || input.statusFilter || input.categoryIdFilter);
   const skip = (input.currentPage - 1) * input.pageSize;
 
   const resourcesPromise = findAdminResourcesPage({
@@ -148,7 +149,34 @@ export async function getAdminResourcesPageData(input: {
     categories: categories.map((category) => ({ id: category.id, name: category.name })),
     totalCount,
     totalPages: Math.max(1, Math.ceil(totalCount / input.pageSize)),
-    hasFilters: Boolean(input.q || input.statusFilter || input.categoryIdFilter),
+    hasFilters,
+  };
+}
+
+export async function getAdminResourcesFilterData() {
+  const categories = await findCategoriesOrderedByName();
+
+  return {
+    categories: categories.map((category) => ({ id: category.id, name: category.name })),
+  };
+}
+
+export async function getAdminResourcesListingData(input: {
+  q: string;
+  statusFilter: string;
+  categoryIdFilter: string;
+  freeOnly: boolean;
+  minRevenueCents: number;
+  currentPage: number;
+  pageSize: number;
+}) {
+  const data = await getAdminResourcesPageData(input);
+
+  return {
+    rows: data.rows,
+    totalCount: data.totalCount,
+    totalPages: data.totalPages,
+    hasFilters: data.hasFilters,
   };
 }
 

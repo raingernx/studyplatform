@@ -215,6 +215,7 @@ Admin settings note:
 - dashboard settings preference reads are now read-only on entry: `getUserPreferences()` no longer does `user.findUnique()` plus `userPreference.upsert()` on every visit, and the dashboard settings service imports that reader directly instead of adding a dynamic import hop in the hot path
 - `/admin` overview now treats admin auth as a layout concern only: the page no longer repeats `requireAdminSession()`, starts metrics and recent-activity reads in parallel, renders the metrics shell first, and streams the recent-activity table through an in-page `Suspense` fallback instead of blocking the whole overview on both data groups
 - `/admin/analytics` now splits platform analytics into summary and reporting surfaces: the page renders all-time/30-day KPI sections from a lighter summary reader first, then streams chart/top-resource reporting cards through a dedicated `Suspense` fallback while preserving the same admin analytics shell and experiment links
+- `/admin/resources` now treats admin auth as a layout concern only and splits category-filter data from listing results: the page renders its header and filter toolbar after the lighter category read, then streams the table/empty-state/pagination section through an in-page `Suspense` fallback instead of blocking the whole route on rows, counts, and purchase-summary joins
 
 ## Authentication
 

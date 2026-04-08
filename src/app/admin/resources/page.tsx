@@ -1,18 +1,21 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { BookOpen, Plus, Upload } from "lucide-react";
+import dynamic from "next/dynamic";
 
-import { Button } from "@/design-system";
+import { Button, EmptyState } from "@/design-system";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { EmptyState } from "@/design-system";
 import { AdminResourcesFilters } from "./AdminResourcesFilters";
-import { getAdminResourcesPageData } from "@/services/admin";
+import {
+  getAdminResourcesFilterData,
+  getAdminResourcesListingData,
+} from "@/services/admin";
 import {
   traceServerStep,
   withRequestPerformanceTrace,
 } from "@/lib/performance/observability";
 import { routes } from "@/lib/routes";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
-import dynamic from "next/dynamic";
+import { AdminResourcesResultsSkeleton } from "@/components/skeletons/AdminResourcesRouteSkeletons";
 import type { AdminResourceRow } from "@/components/admin/resources";
 
 const ResourceTable = dynamic(() =>
@@ -54,6 +57,89 @@ function buildQueryString(base: {
   return qs ? `?${qs}` : "";
 }
 
+async function AdminResourcesResultsSection({
+  dataPromise,
+  categories,
+  currentPage,
+  q,
+  statusFilter,
+  categoryIdFilter,
+}: {
+  dataPromise: ReturnType<typeof getAdminResourcesListingData>;
+  categories: { id: string; name: string }[];
+  currentPage: number;
+  q: string;
+  statusFilter: string;
+  categoryIdFilter: string;
+}) {
+  const { rows, totalPages, hasFilters } = await dataPromise;
+
+  if (rows.length === 0) {
+    return (
+      <EmptyState
+        className="min-h-0 border-border bg-muted/50 px-6 py-12"
+        icon={
+          <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-50">
+            <BookOpen className="h-6 w-6 text-primary-700" />
+          </span>
+        }
+        title="No resources found"
+        description={
+          hasFilters
+            ? "Try adjusting your search or filters."
+            : "Create your first resource to populate the library."
+        }
+      />
+    );
+  }
+
+  return (
+    <>
+      <ResourceTable resources={rows as AdminResourceRow[]} categories={categories} />
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/70 px-4 py-2.5 text-small text-muted-foreground">
+        <span className="min-w-0">
+          Page {currentPage} of {totalPages}
+        </span>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm" disabled={currentPage <= 1}>
+            <Link
+              href={
+                currentPage <= 1
+                  ? "#"
+                  : `${routes.adminResources}${buildQueryString({
+                      q,
+                      status: statusFilter,
+                      categoryId: categoryIdFilter,
+                      page: currentPage - 1,
+                    })}`
+              }
+            >
+              Previous
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" disabled={currentPage >= totalPages}>
+            <Link
+              href={
+                currentPage >= totalPages
+                  ? "#"
+                  : `${routes.adminResources}${buildQueryString({
+                      q,
+                      status: statusFilter,
+                      categoryId: categoryIdFilter,
+                      page: currentPage + 1,
+                    })}`
+              }
+            >
+              Next
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default async function AdminResourcesPage({
   searchParams,
 }: AdminResourcesPageProps) {
@@ -76,37 +162,22 @@ export default async function AdminResourcesPage({
       statusFilter: statusFilter || "all",
     },
     async () => {
-      await traceServerStep(
-        "admin_resources.requireAdminSession",
-        () => requireAdminSession(routes.adminResources),
+      const filtersPromise = traceServerStep("admin_resources.getAdminResourcesFilterData", () =>
+        getAdminResourcesFilterData(),
+      );
+      const listingPromise = traceServerStep("admin_resources.getAdminResourcesListingData", () =>
+        getAdminResourcesListingData({
+          q,
+          statusFilter,
+          categoryIdFilter,
+          freeOnly,
+          minRevenueCents,
+          currentPage,
+          pageSize: PAGE_SIZE,
+        }),
       );
 
-      const {
-        rows,
-        totalCount,
-        totalPages,
-        categories,
-        hasFilters,
-      } = await traceServerStep(
-        "admin_resources.getAdminResourcesPageData",
-        () =>
-          getAdminResourcesPageData({
-            q,
-            statusFilter,
-            categoryIdFilter,
-            freeOnly,
-            minRevenueCents,
-            currentPage,
-            pageSize: PAGE_SIZE,
-          }),
-        {
-          currentPage,
-          freeOnly,
-          hasSearch: Boolean(q),
-          minRevenueCents,
-          statusFilter: statusFilter || "all",
-        },
-      );
+      const { categories } = await filtersPromise;
 
       return (
         <div className="min-w-0 space-y-7">
@@ -154,76 +225,16 @@ export default async function AdminResourcesPage({
             categories={categories}
           />
 
-          {rows.length === 0 ? (
-            <EmptyState
-              className="min-h-0 border-border bg-muted/50 px-6 py-12"
-              icon={
-                <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-50">
-                  <BookOpen className="h-6 w-6 text-primary-700" />
-                </span>
-              }
-              title="No resources found"
-              description={
-                hasFilters
-                  ? "Try adjusting your search or filters."
-                  : "Create your first resource to populate the library."
-              }
+          <Suspense fallback={<AdminResourcesResultsSkeleton />}>
+            <AdminResourcesResultsSection
+              dataPromise={listingPromise}
+              categories={categories}
+              currentPage={currentPage}
+              q={q}
+              statusFilter={statusFilter}
+              categoryIdFilter={categoryIdFilter}
             />
-          ) : (
-            <>
-              <ResourceTable resources={rows} categories={categories} />
-
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/70 px-4 py-2.5 text-small text-muted-foreground">
-                <span className="min-w-0">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage <= 1}
-                  >
-                    <Link
-                      href={
-                        currentPage <= 1
-                          ? "#"
-                          : `${routes.adminResources}${buildQueryString({
-                              q,
-                              status: statusFilter,
-                              categoryId: categoryIdFilter,
-                              page: currentPage - 1,
-                            })}`
-                      }
-                    >
-                      Previous
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage >= totalPages}
-                  >
-                    <Link
-                      href={
-                        currentPage >= totalPages
-                          ? "#"
-                          : `${routes.adminResources}${buildQueryString({
-                              q,
-                              status: statusFilter,
-                              categoryId: categoryIdFilter,
-                              page: currentPage + 1,
-                            })}`
-                      }
-                    >
-                      Next
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
+          </Suspense>
         </div>
       );
     },

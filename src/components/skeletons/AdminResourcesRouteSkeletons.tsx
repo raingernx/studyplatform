@@ -169,9 +169,17 @@ export function AdminResourcesIndexLoadingShell() {
     <div className="min-w-0 space-y-7">
       <HeaderBlock titleWidth="w-44" copyWidth="w-80" actions={3} />
       <ResourcesFilterBarSkeleton />
+      <AdminResourcesResultsSkeleton />
+    </div>
+  );
+}
+
+export function AdminResourcesResultsSkeleton() {
+  return (
+    <>
       <AdminResourcesTableShell columns={6} rows={6} />
       <AdminResourcesPaginationSkeleton />
-    </div>
+    </>
   );
 }
 
