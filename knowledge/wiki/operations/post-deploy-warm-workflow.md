@@ -38,10 +38,10 @@ This workflow is the repo-owned production perf truth source after deploy. It ve
 ## Invariants
 
 - Warm targets and perf targets must stay aligned; otherwise the workflow can report cold-path regressions as if they were warmed-route failures.
-- `/resources` is expected to receive an extra warm pass; removing it without replacing the stabilization strategy reintroduces noisy first-hit perf failures after deploy.
-- `/resources` is also expected to receive a concurrent warm burst; sequential single-request repeats alone are not sufficient evidence that later multi-VU smoke traffic will avoid cold-tail stream variance.
+- `/resources` is expected to receive extra warm passes; removing them without replacing the stabilization strategy reintroduces noisy first-hit perf failures after deploy.
+- `/resources` is also expected to receive a concurrent warm burst that matches the 5-VU smoke fanout, and the route is treated as required. Sequential single-request repeats alone are not sufficient evidence that later multi-VU smoke traffic will avoid cold-tail stream variance.
 - `listing_recommended_smoke`, `listing_newest_smoke`, `creator_detail_smoke`, and `category_listing_smoke` are expected to be warmed against the same treatment/control cookie / creator slug / category slug that the k6 suite measures; warming only adjacent routes is not sufficient evidence of stability.
-- When those smoke routes ramp to 5 VUs, the warm burst should match that fanout. Sequential repeats alone are not enough evidence that later multi-instance smoke traffic will avoid cold tails.
+- When those smoke routes ramp to 5 VUs, the warm burst should match that fanout. Sequential repeats alone are not enough evidence that later multi-instance smoke traffic will avoid cold tails, and historically noisy routes such as `/resources` and `listing_newest_smoke` may still need an extra third pass to catch late fresh-instance shells.
 - If a hot public route already uses `unstable_cache`, keep the wrapper function itself stable per route key or slug; recreating the wrapper on every call weakens same-instance reuse and can still leave warmed smoke routes vulnerable to cold-tail variance even when the Redis layer is hot.
 - If `PERFORMANCE_WARM_SECRET` is configured, the post-deploy script should trigger `/api/internal/performance/warm` before the route-level HTTP fanout. The internal warm primes service-level/precomputed caches; the route-level pass then warms streamed page shells and image optimizer paths on top.
 - The smoke perf suite is a blocking gate: route budgets are not advisory.

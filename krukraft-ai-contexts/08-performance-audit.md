@@ -161,7 +161,10 @@ Current perf-hardening baseline for the production UX initiative is:
   - intent: prime service-level Redis/precomputed listing caches first, then let route-level warming handle page shells, streamed HTML bodies, and image-optimizer hints
 - `resources_home_smoke`
   - main class: discover-home stream and page shell were still seeing fresh-instance tails after deploy
-  - current mitigation: repeated warm pass plus a small concurrent burst on `/resources`
+  - current mitigation: `/resources` now warms as a required route with `repeat: 3` and `burst: 5` so the discover-home shell sees the same 5-VU fanout shape the smoke suite later measures
+- `listing_newest_smoke`
+  - main class: the control/newest listing can still leave one late fresh instance cold even after the first burst-aligned pass
+  - current mitigation: keep `ranking_variant=A`, retain `burst: 5`, and add a third warm pass before k6 begins
 - public route request-binding audit (2026-04-08)
   - `/resources`, `/resources/[slug]`, `/creators/[slug]`, and `/categories/[slug]` do not currently read `cookies()`, `headers()`, or server-session state at the page level
   - the remaining perf work should therefore focus on cache reuse, streaming shape, and hydration scope rather than re-removing obvious page-level request binding

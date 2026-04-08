@@ -189,7 +189,14 @@ async function openLibraryFromResources(page: Page) {
         )
         .last();
     await expect(menuLibraryLink()).toBeVisible({ timeout: LIBRARY_NAV_TIMEOUT_MS });
-    const navigated = await clickForNavigation(page, menuLibraryLink, libraryUrl);
+    await menuLibraryLink().click({ timeout: 5_000 });
+    const navigated = await expect
+      .poll(() => matchesTargetUrl(page, libraryUrl), {
+        timeout: COMMIT_NAV_TIMEOUT_MS,
+      })
+      .toBeTruthy()
+      .then(() => true)
+      .catch(() => false);
     if (!navigated) {
       await page.goto(libraryHref(), {
         timeout: LIBRARY_NAV_TIMEOUT_MS,
@@ -197,7 +204,14 @@ async function openLibraryFromResources(page: Page) {
       });
     }
   } else if (await directLibraryLink().isVisible().catch(() => false)) {
-    const navigated = await clickForNavigation(page, directLibraryLink, libraryUrl);
+    await directLibraryLink().click({ timeout: 5_000 });
+    const navigated = await expect
+      .poll(() => matchesTargetUrl(page, libraryUrl), {
+        timeout: COMMIT_NAV_TIMEOUT_MS,
+      })
+      .toBeTruthy()
+      .then(() => true)
+      .catch(() => false);
     if (!navigated) {
       await page.goto(libraryHref(), {
         timeout: LIBRARY_NAV_TIMEOUT_MS,

@@ -64,11 +64,12 @@ const routes: WarmRoute[] = [
     // Hit the public home shell twice so the deployment-status workflow is
     // less likely to hand the k6 smoke suite a just-born instance on its
     // first measured request.
-    repeat: 2,
+    repeat: 3,
     // k6 ramps `/resources` up to 5 VUs. A small concurrent burst warms more
     // than one fresh instance so the later ramp is less likely to hit an
     // unwarmed discover-home stream on a newly scaled worker.
-    burst: 3,
+    burst: 5,
+    required: true,
   },
   {
     label: "listing-default",
@@ -105,7 +106,7 @@ const routes: WarmRoute[] = [
     // warm. Match the warm burst to the later smoke-VU ceiling so the page
     // shell and query path are both hot across the small fresh-instance fanout.
     burst: 5,
-    repeat: 2,
+    repeat: 3,
     required: true,
   },
   {
