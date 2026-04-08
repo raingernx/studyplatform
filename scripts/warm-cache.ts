@@ -83,10 +83,6 @@ const routes: WarmRoute[] = [
   {
     label: "listing-recommended",
     path: "/resources?category=all&sort=recommended",
-    // ranking_variant=B → effectiveSort="recommended" in page.tsx.
-    // Without this cookie the route silently falls back to effectiveSort="newest",
-    // warming the wrong cache key and leaving the "recommended" Redis entry cold.
-    headers: { Cookie: "ranking_variant=B" },
     // The smoke suite ramps the treatment/recommended listing to 5 VUs too.
     // A single warm pass left the Redis/data path hot on one worker, but later
     // smoke VUs could still land on fresh instances and spike p95. Treat this
@@ -99,7 +95,6 @@ const routes: WarmRoute[] = [
   {
     label: "listing-newest",
     path: "/resources?category=all&sort=newest",
-    headers: { Cookie: "ranking_variant=A" },
     // The smoke suite ramps the control/newest listing to 5 VUs. A burst of 3
     // still left room for 1-2 fresh instances to take their first hit during
     // k6 and spike p95 even though the Redis listing query itself was already
@@ -130,6 +125,26 @@ const routes: WarmRoute[] = [
     // Category listing uses the same 5-VU smoke ramp as creator/newest. Warm
     // it with the same concurrent fanout so one cold worker does not take its
     // first category render during k6 and spike p95.
+    burst: 5,
+    repeat: 2,
+    required: true,
+  },
+  {
+    label: "listing-recommended-tail",
+    path: "/resources?category=all&sort=recommended",
+    // Reheat the highest-risk listing route immediately before the perf suite
+    // starts. In recent failing runs the main warm pass succeeded, but the
+    // recommended/newest control routes were no longer the freshest warmed
+    // surfaces by the time k6 measured them.
+    burst: 5,
+    repeat: 2,
+    required: true,
+  },
+  {
+    label: "listing-newest-tail",
+    path: "/resources?category=all&sort=newest",
+    // Mirror the same end-of-sequence reheat for the control route so both
+    // listing variants finish as the last warmed public pages before k6.
     burst: 5,
     repeat: 2,
     required: true,

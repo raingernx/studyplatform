@@ -142,6 +142,7 @@ Public category route note:
 - `/categories/[slug]` now starts the marketplace listing read once at the route entry and streams the hero count pill plus listing section through separate `Suspense` subtrees instead of awaiting the full category listing before any shell HTML can render
 - the streamed category fallback surfaces are structural now; the in-page listing boundary no longer uses `fallback={null}` while the category resource grid is still resolving
 - the category page now renders its resource cards through a static server-led grid instead of mounting the heavier `ResourceGrid` client pagination/filter machinery on a route that does not expose in-page progressive loading
+- the post-deploy public warm script now reheats `/resources?category=all&sort=recommended` and `/resources?category=all&sort=newest` again as the final warm step before k6, so the highest-risk listing control routes finish as the freshest warmed public pages instead of being cooled behind later creator/category warm passes
 
 Root rendering note:
 - the root app layout uses build-safe public platform config only and does not read the authenticated server session

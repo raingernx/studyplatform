@@ -141,6 +141,7 @@ Current perf-hardening baseline for the production UX initiative is:
 - the post-deploy warm script now warms the control-arm newest listing with `ranking_variant=A` plus a concurrent burst sized to the smoke route's 5-VU ceiling, explicitly warms the hot creator public profile route and category listing route with the same burst-aligned strategy, and sends `/resources` through a small concurrent warm burst instead of sequential-only repeats; creator public profiles also gained a Redis-backed cross-instance cache layer on top of `unstable_cache`, reducing post-deploy cold-tail variance on `creator_detail_smoke`
 - `/creators/[slug]` metadata now uses its own lighter cached metadata reader instead of reusing the full creator public-profile payload, the full creator-profile cache now inlines creator momentum/status-badge fields from the main profile query rather than issuing a second `creatorStat` lookup inside the cached loader, and the internal creator warm path now seeds both metadata and full-profile caches for the hot creator identifiers
 - `/creators/[slug]` now also splits creator shell data from the published-resource grid on the server path: the route starts both cache-backed promises together, only blocks the page root on the lighter shell read, and streams the published-resource section behind a structural fallback while the creator warm path primes the new shell/resource caches too
+- the post-deploy public warm script now reheats `listing_recommended` and `listing_newest` as the final route-class warm step before k6, after creator/category pages have already been warmed, so the two control-arm listing routes that have shown the most frequent fresh-instance tail spikes finish as the freshest warmed surfaces
 - `/categories/[slug]` now starts its marketplace listing read once and streams the hero count plus listing section behind structural `Suspense` fallbacks, so the category hero shell no longer waits on the full category listing payload before first render
 - the same category route now renders a static server-led card grid instead of hydrating `ResourceGrid`'s progressive-load/search-context client machinery, trimming client work from the public category listing surface
 - `/resources` discover fallback no longer swaps in fake CTA content while data resolves
@@ -177,7 +178,10 @@ Current perf-hardening baseline for the production UX initiative is:
   - current mitigation: `/resources` now warms as a required route with `repeat: 3` and `burst: 5` so the discover-home shell sees the same 5-VU fanout shape the smoke suite later measures
 - `listing_newest_smoke`
   - main class: the control/newest listing can still leave one late fresh instance cold even after the first burst-aligned pass
-  - current mitigation: keep `ranking_variant=A`, retain `burst: 5`, and add a third warm pass before k6 begins
+  - current mitigation: retain `burst: 5`, keep repeated warm passes, and reheat the listing route again as one of the last warm steps immediately before k6 begins
+- `listing_recommended_smoke`
+  - main class: the recommended listing can still spike when it was warmed successfully earlier in the sequence but is no longer the freshest route-class surface by the time k6 starts
+  - current mitigation: retain `burst: 5`, keep repeated warm passes, and reheat the listing route again as one of the last warm steps immediately before k6 begins
 - public route request-binding audit (2026-04-08)
   - `/resources`, `/resources/[slug]`, `/creators/[slug]`, and `/categories/[slug]` do not currently read `cookies()`, `headers()`, or server-session state at the page level
   - the remaining perf work should therefore focus on cache reuse, streaming shape, and hydration scope rather than re-removing obvious page-level request binding
