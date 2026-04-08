@@ -1,8 +1,7 @@
-"use client";
-
 import { Skeleton } from "boneyard-js/react";
 import Link from "next/link";
 import { Compass, Search, Sparkles } from "lucide-react";
+import { LoadingSkeleton } from "@/design-system";
 import { routes } from "@/lib/routes";
 import type { SearchRecoveryData } from "@/services/search";
 
@@ -112,6 +111,53 @@ export function SearchRecoveryPanel({
           <Search className="h-4 w-4 text-brand-600" />
           <span className="text-sm font-medium text-foreground">Return to discover</span>
         </Link>
+      </section>
+    </div>
+  );
+}
+
+export function SearchRecoveryPanelFallback() {
+  return (
+    <div className="space-y-5 rounded-[28px] border border-border bg-card p-6 shadow-card sm:p-7">
+      <div className="flex flex-col items-center justify-center py-1 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-border-subtle bg-muted">
+          <Search className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <LoadingSkeleton className="mt-4 h-6 w-full max-w-sm rounded-lg" />
+        <LoadingSkeleton className="mt-2 h-4 w-full max-w-2xl rounded" />
+        <LoadingSkeleton className="mt-2 h-4 w-11/12 max-w-xl rounded" />
+      </div>
+
+      <section className="space-y-2.5">
+        <LoadingSkeleton className="h-3 w-32 rounded" />
+        <div className="flex flex-wrap gap-2">
+          <LoadingSkeleton className="h-9 w-28 rounded-full" />
+          <LoadingSkeleton className="h-9 w-32 rounded-full" />
+          <LoadingSkeleton className="h-9 w-24 rounded-full" />
+        </div>
+      </section>
+
+      <section className="space-y-2.5">
+        <LoadingSkeleton className="h-3 w-36 rounded" />
+        <div className="flex flex-wrap gap-2">
+          <LoadingSkeleton className="h-9 w-32 rounded-full" />
+          <LoadingSkeleton className="h-9 w-28 rounded-full" />
+        </div>
+      </section>
+
+      <section className="space-y-2.5">
+        <LoadingSkeleton className="h-3 w-24 rounded" />
+        <div className="flex flex-wrap gap-2">
+          <LoadingSkeleton className="h-9 w-20 rounded-full" />
+          <LoadingSkeleton className="h-9 w-24 rounded-full" />
+          <LoadingSkeleton className="h-9 w-28 rounded-full" />
+        </div>
+      </section>
+
+      <section className="grid gap-3 border-t border-border-subtle pt-4 sm:grid-cols-3">
+        <LoadingSkeleton className="h-14 rounded-2xl" />
+        <LoadingSkeleton className="h-14 rounded-2xl" />
+        <LoadingSkeleton className="h-14 rounded-2xl" />
       </section>
     </div>
   );

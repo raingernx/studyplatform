@@ -7,7 +7,10 @@ import { ResourcesViewerStateProvider } from "@/components/resources/ResourcesVi
 import type { ResourceCardData } from "@/components/resources/ResourceCard";
 import { ViewerAwareResourceCard } from "@/components/resources/ViewerAwareResourceCard";
 import { ViewerAwareResourceGrid } from "@/components/resources/ViewerAwareResourceGrid";
-import { SearchRecoveryPanel } from "@/components/resources/SearchRecoveryPanel";
+import {
+  SearchRecoveryPanel,
+  SearchRecoveryPanelFallback,
+} from "@/components/resources/SearchRecoveryPanel";
 import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import { HeroBanner } from "@/components/marketplace/HeroBanner";
 import { FilterBar } from "@/components/marketplace/FilterBar";
@@ -106,7 +109,6 @@ async function ResourcesListingContent({
   let total = 0;
   let totalPages = 1;
   let safePage = 1;
-  let searchRecovery = null as Awaited<ReturnType<typeof getSearchRecoveryData>> | null;
 
   try {
     const data = await traceServerStep(
@@ -139,13 +141,16 @@ async function ResourcesListingContent({
     }
   }
 
-  if (normalizedSearch && total === 0) {
-    searchRecovery = await traceServerStep(
-      "resources.getSearchRecoveryData",
-      () => getSearchRecoveryData(normalizedSearch),
-      { query: normalizedSearch },
-    );
-  }
+  const isEmptySearchResults = normalizedSearch.length > 0 && total === 0;
+  const searchRecoveryPromise = isEmptySearchResults
+    ? trackRequestWork(
+        traceServerStep(
+          "resources.getSearchRecoveryData",
+          () => getSearchRecoveryData(normalizedSearch),
+          { query: normalizedSearch },
+        ),
+      )
+    : null;
 
   const activeCategoryName =
     category === "all"
@@ -276,105 +281,108 @@ async function ResourcesListingContent({
               <FilterBar total={total} />
             </Suspense>
 
-            <ResourcesViewerStateProvider>
-              {spotlightResource ? (
-                <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/12 via-card to-card p-4 shadow-sm sm:p-5">
-                  <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:items-start">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <p className="font-ui text-caption tracking-[0.12em] text-primary">
-                          {spotlightLabel}
-                        </p>
-                        <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                          Start with the strongest pick first
-                        </h2>
-                        <p className="max-w-2xl text-small leading-6 text-muted-foreground">
-                          Use this highlighted pick as your first stop in {(activeCategoryName ?? "the marketplace").toLowerCase()} before
-                          you scan the rest of the collection.
-                        </p>
-                      </div>
+            {isSearchResults ? (
+              <p className="text-small text-muted-foreground">
+                {total === 0 ? (
+                  <>
+                    No results for{" "}
+                    <strong className="text-foreground">&ldquo;{normalizedSearch}&rdquo;</strong>.
+                  </>
+                ) : (
+                  <>
+                    Showing results for{" "}
+                    <strong className="text-foreground">&ldquo;{normalizedSearch}&rdquo;</strong>.
+                  </>
+                )}
+              </p>
+            ) : null}
 
-                      <div className="flex flex-wrap gap-2">
-                        <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/12 px-3 py-1 text-xs font-medium text-primary">
-                          {sortLabel}
-                        </span>
-                        {activeCategoryName ? (
-                          <span className="inline-flex items-center rounded-full border border-border-strong bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground">
-                            {activeCategoryName}
+            {isEmptySearchResults ? (
+              <Suspense fallback={<SearchRecoveryPanelFallback />}>
+                {searchRecoveryPromise ? (
+                  <SearchRecoveryPanelDeferred
+                    query={normalizedSearch}
+                    recoveryPromise={searchRecoveryPromise}
+                  />
+                ) : null}
+              </Suspense>
+            ) : (
+              <ResourcesViewerStateProvider>
+                {spotlightResource ? (
+                  <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/12 via-card to-card p-4 shadow-sm sm:p-5">
+                    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:items-start">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <p className="font-ui text-caption tracking-[0.12em] text-primary">
+                            {spotlightLabel}
+                          </p>
+                          <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                            Start with the strongest pick first
+                          </h2>
+                          <p className="max-w-2xl text-small leading-6 text-muted-foreground">
+                            Use this highlighted pick as your first stop in {(activeCategoryName ?? "the marketplace").toLowerCase()} before
+                            you scan the rest of the collection.
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/12 px-3 py-1 text-xs font-medium text-primary">
+                            {sortLabel}
                           </span>
-                        ) : null}
+                          {activeCategoryName ? (
+                            <span className="inline-flex items-center rounded-full border border-border-strong bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground">
+                              {activeCategoryName}
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <IntentPrefetchLink
+                          href={routes.resource(spotlightResource.slug)}
+                          prefetchMode="intent"
+                          prefetchScope="spotlight-resource"
+                          prefetchLimit={1}
+                          resourcesNavigationMode="detail"
+                          className="inline-flex items-center gap-1 text-small font-medium text-primary transition hover:text-primary"
+                        >
+                          View resource
+                          <ArrowRight className="h-4 w-4" />
+                        </IntentPrefetchLink>
                       </div>
 
-                      <IntentPrefetchLink
-                        href={routes.resource(spotlightResource.slug)}
-                        prefetchMode="intent"
-                        prefetchScope="spotlight-resource"
-                        prefetchLimit={1}
-                        resourcesNavigationMode="detail"
-                        className="inline-flex items-center gap-1 text-small font-medium text-primary transition hover:text-primary"
-                      >
-                        View resource
-                        <ArrowRight className="h-4 w-4" />
-                      </IntentPrefetchLink>
-                    </div>
-
-                    <div className="w-full max-w-[320px] justify-self-start lg:justify-self-end">
-                      <div className="rounded-[1.35rem] border border-border-strong bg-background/85 p-2 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.48)]">
-                        <ViewerAwareResourceCard
-                          resource={{
-                            ...spotlightResource,
-                            highlightBadge: spotlightLabel,
-                          }}
-                          variant="marketplace"
-                          linkPrefetchMode="viewport"
-                          imageLoading="eager"
-                        />
+                      <div className="w-full max-w-[320px] justify-self-start lg:justify-self-end">
+                        <div className="rounded-[1.35rem] border border-border-strong bg-background/85 p-2 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.48)]">
+                          <ViewerAwareResourceCard
+                            resource={{
+                              ...spotlightResource,
+                              highlightBadge: spotlightLabel,
+                            }}
+                            variant="marketplace"
+                            linkPrefetchMode="viewport"
+                            imageLoading="eager"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null}
 
-              {isSearchResults ? (
-                <p className="text-small text-muted-foreground">
-                  {total === 0 ? (
-                    <>
-                      No results for{" "}
-                      <strong className="text-foreground">&ldquo;{normalizedSearch}&rdquo;</strong>.
-                    </>
-                  ) : (
-                    <>
-                      Showing results for{" "}
-                      <strong className="text-foreground">&ldquo;{normalizedSearch}&rdquo;</strong>.
-                    </>
-                  )}
-                </p>
-              ) : null}
-
-              <ViewerAwareResourceGrid
-                resources={rankedResources}
-                total={total}
-                page={safePage}
-                totalPages={totalPages}
-                hasActiveFilters={hasActiveFilters}
-                progressiveLoad
-                cardPrefetchMode="viewport"
-                emptyState={
-                  normalizedSearch && searchRecovery ? (
-                    <SearchRecoveryPanel
-                      query={normalizedSearch}
-                      recovery={searchRecovery}
-                    />
-                  ) : undefined
-                }
-                routeContext={{
-                  queryKey: resourceGridQueryKey,
-                  clearFiltersHref,
-                  exploreAllHref: routes.marketplace,
-                  cardPrefetchScope: `resource-card-grid:${resourceGridQueryKey}`,
-                }}
-              />
-            </ResourcesViewerStateProvider>
+                <ViewerAwareResourceGrid
+                  resources={rankedResources}
+                  total={total}
+                  page={safePage}
+                  totalPages={totalPages}
+                  hasActiveFilters={hasActiveFilters}
+                  progressiveLoad
+                  cardPrefetchMode="viewport"
+                  routeContext={{
+                    queryKey: resourceGridQueryKey,
+                    clearFiltersHref,
+                    exploreAllHref: routes.marketplace,
+                    cardPrefetchScope: `resource-card-grid:${resourceGridQueryKey}`,
+                  }}
+                />
+              </ResourcesViewerStateProvider>
+            )}
           </div>
         </div>
       </section>
@@ -583,6 +591,18 @@ async function ResourcesDiscoverDeferredSections({
       <EmailSignup />
     </div>
   );
+}
+
+async function SearchRecoveryPanelDeferred({
+  query,
+  recoveryPromise,
+}: {
+  query: string;
+  recoveryPromise: Promise<Awaited<ReturnType<typeof getSearchRecoveryData>>>;
+}) {
+  const recovery = await recoveryPromise;
+
+  return <SearchRecoveryPanel query={query} recovery={recovery} />;
 }
 
 async function loadDiscoverDataSafe(): Promise<DiscoverData | null> {

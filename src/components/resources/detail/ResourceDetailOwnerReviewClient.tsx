@@ -1,10 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
-import { ResourceReviewForm } from "./ResourceReviewForm";
 import type { ResourceDetailViewerReview } from "@/lib/resources/resource-detail-viewer-state";
 import { useFetchJson } from "@/lib/use-fetch-json";
 import { useResourceDetailViewerState } from "./ResourceDetailViewerStateProvider";
+
+const ResourceReviewForm = dynamic(
+  () =>
+    import("./ResourceReviewForm").then((module) => ({
+      default: module.ResourceReviewForm,
+    })),
+  {
+    loading: () => <ResourceDetailOwnerReviewSlotSkeleton />,
+  },
+);
 
 export function ResourceDetailOwnerReviewSlotSkeleton() {
   return (
