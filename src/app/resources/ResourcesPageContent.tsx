@@ -495,19 +495,17 @@ async function ResourcesDiscoverLeadDeferredSection({
 
   return (
     <>
-      <ResourcesViewerStateProvider>
-        <LazyResourcesDiscoverPersonalizedSection
-          fallbackCards={discoverFallbackCards}
+      <LazyResourcesDiscoverPersonalizedSection
+        fallbackCards={discoverFallbackCards}
+        eagerCardCount={eagerDiscoverCardCount}
+        eagerPreviewUrls={[]}
+      >
+        <ResourcesDiscoverTopPicksSection
+          resources={discoverFallbackCards}
           eagerCardCount={eagerDiscoverCardCount}
           eagerPreviewUrls={[]}
-        >
-          <ResourcesDiscoverTopPicksSection
-            resources={discoverFallbackCards}
-            eagerCardCount={eagerDiscoverCardCount}
-            eagerPreviewUrls={[]}
-          />
-        </LazyResourcesDiscoverPersonalizedSection>
-      </ResourcesViewerStateProvider>
+        />
+      </LazyResourcesDiscoverPersonalizedSection>
 
       {trendingResources.length > 0 ? (
         <section className="space-y-5">

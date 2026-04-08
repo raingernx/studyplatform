@@ -7,7 +7,8 @@ import {
   type ReactNode,
 } from "react";
 import type { ResourceCardData } from "@/components/resources/ResourceCard";
-import { useResourcesViewerState } from "./ResourcesViewerStateProvider";
+import { useAuthViewer } from "@/lib/auth/use-auth-viewer";
+import { ResourcesViewerStateProvider } from "./ResourcesViewerStateProvider";
 
 type ResourcesDiscoverPersonalizedSectionProps = {
   fallbackCards: ResourceCardData[];
@@ -39,7 +40,7 @@ export function LazyResourcesDiscoverPersonalizedSection({
   eagerPreviewUrls?: string[];
   children: ReactNode;
 }) {
-  const { isAuthenticated, isReady } = useResourcesViewerState();
+  const authViewer = useAuthViewer({ strategy: "idle", idleTimeoutMs: 800 });
   const [
     ResourcesDiscoverPersonalizedSection,
     setResourcesDiscoverPersonalizedSection,
@@ -50,7 +51,7 @@ export function LazyResourcesDiscoverPersonalizedSection({
   useEffect(() => {
     let cancelled = false;
 
-    if (!isReady || !isAuthenticated) {
+    if (!authViewer.isReady || !authViewer.authenticated) {
       return () => {
         cancelled = true;
       };
@@ -65,21 +66,23 @@ export function LazyResourcesDiscoverPersonalizedSection({
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, isReady]);
+  }, [authViewer.authenticated, authViewer.isReady]);
 
   if (
-    !isReady ||
-    !isAuthenticated ||
+    !authViewer.isReady ||
+    !authViewer.authenticated ||
     !ResourcesDiscoverPersonalizedSection
   ) {
     return <>{children}</>;
   }
 
   return (
-    <ResourcesDiscoverPersonalizedSection
-      fallbackCards={fallbackCards}
-      eagerCardCount={eagerCardCount}
-      eagerPreviewUrls={eagerPreviewUrls}
-    />
+    <ResourcesViewerStateProvider>
+      <ResourcesDiscoverPersonalizedSection
+        fallbackCards={fallbackCards}
+        eagerCardCount={eagerCardCount}
+        eagerPreviewUrls={eagerPreviewUrls}
+      />
+    </ResourcesViewerStateProvider>
   );
 }
