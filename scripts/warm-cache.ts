@@ -165,6 +165,25 @@ const routes: WarmRoute[] = [
     repeat: 2,
     required: true,
   },
+  {
+    label: "creator-detail-hot-tail",
+    path: `/creators/${encodeURIComponent(hotCreator)}`,
+    // Keep the creator-detail route in the same final reheat band as the
+    // listing/detail routes so the 5-VU creator smoke arm is not depending on
+    // a much earlier warm pass by the time k6 reaches it.
+    burst: 5,
+    repeat: 2,
+    required: true,
+  },
+  {
+    label: "category-listing-tail",
+    path: `/categories/${encodeURIComponent(categorySlug)}`,
+    // Mirror the same tail reheat for the category listing route so every
+    // warmed public route class measured by k6 finishes close to suite start.
+    burst: 5,
+    repeat: 2,
+    required: true,
+  },
 ];
 
 type WarmResult = {
