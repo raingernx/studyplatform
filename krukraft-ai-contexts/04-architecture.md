@@ -219,6 +219,7 @@ Admin settings note:
 - `/admin/resources` now treats admin auth as a layout concern only and splits category-filter data from listing results: the page renders its header and filter toolbar after the lighter category read, then streams the table/empty-state/pagination section through an in-page `Suspense` fallback instead of blocking the whole route on rows, counts, and purchase-summary joins
 - `/admin/orders` now also treats admin auth as a layout concern only; the page renders its header and filter toolbar first, then streams the stats cards plus orders table behind an in-page `Suspense` fallback instead of blocking the full route on order queries and aggregate totals
 - `/admin/users` now also treats admin auth as a layout concern only; the page renders its header and search toolbar first, then streams the users table through an in-page `Suspense` fallback instead of blocking the full route on the user lookup query
+- creator protected routes now also rely on the creator protected layout as the single workspace-access gate first; the creator overview, creator resources list, and new-resource entry pages no longer repeat `getCreatorAccessState()` at the page level just to decide whether an already-admitted creator can see create actions
 
 ## Authentication
 

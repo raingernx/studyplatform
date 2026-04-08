@@ -13,7 +13,7 @@ import { CreatorResourceStatusButton } from "@/components/creator/CreatorResourc
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { formatDate, formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
-import { getCreatorAccessState, getCreatorResourceManagementData } from "@/services/creator";
+import { getCreatorResourceManagementData } from "@/services/creator";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
 
 export const metadata = {
@@ -34,8 +34,6 @@ export default async function CreatorResourcesPage({
   searchParams,
 }: CreatorResourcesPageProps) {
   const { userId } = await requireSession(routes.creatorResources);
-
-  const access = await getCreatorAccessState(userId);
 
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const status = firstValue(resolvedSearchParams.status);
@@ -79,14 +77,12 @@ export default async function CreatorResourcesPage({
           </p>
         </div>
 
-        {access.canCreate && (
-          <Button asChild size="sm" className="inline-flex items-center gap-2">
-            <Link href={routes.creatorNewResource}>
-              <Plus className="h-4 w-4" />
-              Create resource
-            </Link>
-          </Button>
-        )}
+        <Button asChild size="sm" className="inline-flex items-center gap-2">
+          <Link href={routes.creatorNewResource}>
+            <Plus className="h-4 w-4" />
+            Create resource
+          </Link>
+        </Button>
       </div>
 
       {/* Stats */}
@@ -198,18 +194,14 @@ export default async function CreatorResourcesPage({
               <FolderOpen className="mx-auto h-10 w-10 text-muted-foreground" />
               <p className="mt-4 text-sm font-semibold text-foreground">No resources yet</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                {access.canCreate
-                  ? "Start building your catalog by creating your first marketplace listing."
-                  : "This account can manage existing resources but cannot create new listings."}
+                Start building your catalog by creating your first marketplace listing.
               </p>
-              {access.canCreate && (
-                <Button className="mt-6" asChild>
-                  <Link href={routes.creatorNewResource}>
-                    <Plus className="h-4 w-4" />
-                    Create your first resource
-                  </Link>
-                </Button>
-              )}
+              <Button className="mt-6" asChild>
+                <Link href={routes.creatorNewResource}>
+                  <Plus className="h-4 w-4" />
+                  Create your first resource
+                </Link>
+              </Button>
             </div>
           )
         ) : (

@@ -5,7 +5,7 @@ import { CreatorResourceProgress } from "@/components/creator/CreatorResourcePro
 import { CreatorResourceHelperCard } from "@/components/creator/CreatorResourceHelperCard";
 import { CreatorResourceFormLoadingShell } from "@/components/creator/CreatorResourceFormLoadingShell";
 import { routes } from "@/lib/routes";
-import { getCreatorAccessState, getCreatorResourceFormData } from "@/services/creator";
+import { getCreatorResourceFormData } from "@/services/creator";
 import { getCreatorSetupState } from "@/services/creator";
 import { logActivity } from "@/lib/activity";
 
@@ -27,15 +27,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CreatorNewResourcePage() {
   const { userId } = await requireSession(routes.creatorNewResource);
-
-  const [access, setupState] = await Promise.all([
-    getCreatorAccessState(userId),
-    getCreatorSetupState(userId),
-  ]);
-
-  if (!access.canCreate) {
-    redirect(routes.creatorResources);
-  }
+  const setupState = await getCreatorSetupState(userId);
 
   const isFirstResource = setupState.totalResources === 0;
 

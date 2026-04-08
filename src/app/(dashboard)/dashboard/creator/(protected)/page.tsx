@@ -33,7 +33,6 @@ import { formatDate, formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
 import {
-  getCreatorAccessState,
   getCreatorBalance,
   getCreatorDashboardPerformance,
   getCreatorDashboardStats,
@@ -113,11 +112,7 @@ function buildQualityFeedback(resource: {
 
 export default async function CreatorDashboardPage() {
   const { userId, session } = await requireSession(routes.creatorDashboard);
-
-  const [access, setupState] = await Promise.all([
-    getCreatorAccessState(userId),
-    getCreatorSetupState(userId),
-  ]);
+  const setupState = await getCreatorSetupState(userId);
 
   if (setupState.isFirstRun) {
     void logActivity({
@@ -139,10 +134,10 @@ export default async function CreatorDashboardPage() {
           description="Review the resources you own in the marketplace. This dashboard is read-only and shows only listings attached to your account."
         />
 
-        <CreatorWelcomeCard creatorName={session.user.name} canCreate={access.canCreate} />
+        <CreatorWelcomeCard creatorName={session.user.name} canCreate />
 
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <CreatorSetupChecklist steps={setupState.steps} canCreate={access.canCreate} />
+          <CreatorSetupChecklist steps={setupState.steps} canCreate />
           <CreatorQuickTipsCard />
         </div>
       </div>
@@ -183,14 +178,12 @@ export default async function CreatorDashboardPage() {
             <Button variant="outline" asChild>
               <Link href={routes.creatorResources}>Open resource manager</Link>
             </Button>
-            {access.canCreate && (
-              <Button asChild>
-                <Link href={routes.creatorNewResource}>
-                  <Plus className="h-4 w-4" />
-                  Create resource
-                </Link>
-              </Button>
-            )}
+            <Button asChild>
+              <Link href={routes.creatorNewResource}>
+                <Plus className="h-4 w-4" />
+                Create resource
+              </Link>
+            </Button>
           </div>
         }
       />
@@ -460,14 +453,12 @@ export default async function CreatorDashboardPage() {
             <p className="mt-2 text-sm text-muted-foreground">
               Start your creator catalog by adding your first marketplace listing.
             </p>
-            {access.canCreate && (
-              <Button className="mt-6" asChild>
-                <Link href={routes.creatorNewResource}>
-                  <Plus className="h-4 w-4" />
-                  Create your first resource
-                </Link>
-              </Button>
-            )}
+            <Button className="mt-6" asChild>
+              <Link href={routes.creatorNewResource}>
+                <Plus className="h-4 w-4" />
+                Create your first resource
+              </Link>
+            </Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
