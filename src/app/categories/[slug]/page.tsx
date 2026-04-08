@@ -3,7 +3,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { MarketplaceNavbarSearch } from "@/components/marketplace/MarketplaceNavbarSearch";
 import { Container } from "@/design-system";
 import { Badge } from "@/design-system";
-import { ResourceCard } from "@/components/resources/ResourceCard";
+import { PublicResourceCard } from "@/components/resources/PublicResourceCard";
 import {
   CategoryPageResourceCountFallback,
   CategoryPageResourcesSectionFallback,
@@ -199,13 +199,10 @@ async function CategoryResourcesSection({
       ) : (
         <div className="grid items-stretch gap-5 lg:gap-6 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
           {items.map((resource, index) => (
-            <ResourceCard
+            <PublicResourceCard
               key={resource.id}
               resource={resource}
-              variant="marketplace"
               imageLoading={index < 4 ? "eager" : "lazy"}
-              linkPrefetchMode="viewport"
-              linkPrefetchScope={`category-grid:${categoryName.toLowerCase()}`}
             />
           ))}
         </div>

@@ -6,7 +6,7 @@ import { BadgeCheck, FileText, Globe, Instagram, Layers3, Linkedin, Sparkles, Yo
 import { Navbar } from "@/components/layout/Navbar";
 import { MarketplaceNavbarSearch } from "@/components/marketplace/MarketplaceNavbarSearch";
 import { Avatar, PageContainer, PageContentWide } from "@/design-system";
-import { ResourceCard } from "@/components/resources/ResourceCard";
+import { PublicResourceCard } from "@/components/resources/PublicResourceCard";
 import { CreatorPublicResourcesSectionFallback } from "@/components/skeletons/PublicRouteSkeletons";
 import {
   getCreatorPublicMetadata,
@@ -232,10 +232,9 @@ async function CreatorResourcesSection({
       ) : (
         <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {resources.map((resource) => (
-            <ResourceCard
+            <PublicResourceCard
               key={resource.id}
               resource={resource}
-              variant="marketplace"
             />
           ))}
         </div>

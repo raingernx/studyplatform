@@ -138,6 +138,7 @@ Public creator route note:
 - creator page metadata now uses a lighter cached metadata reader instead of reusing the full public-profile payload
 - the full creator public-profile cache now reads the creator momentum/status-badge fields from the main profile query itself instead of issuing a second `creatorStat` repository call inside the cached loader
 - the creator public route now splits its cached data path into a lighter shell reader plus a separate published-resource reader; the page starts both promises together, awaits only the shell at the route entry, and streams the published-resources section behind its own structural `Suspense` fallback
+- the creator published-resource grid now renders those cards through a server-led public card shell instead of the generic client `ResourceCard`, so the route avoids hydrating marketplace overlay/prefetch logic for static creator-card lists
 - creator warm coverage now seeds creator metadata, shell, and published-resource caches directly in addition to the compatibility full-profile cache, so the live route and warm path prime the same public cache surfaces
 - this keeps creator detail page and metadata requests on separate lighter cache keys while preserving the shared creator-public revalidation tags
 
@@ -145,6 +146,7 @@ Public category route note:
 - `/categories/[slug]` now starts the marketplace listing read once at the route entry and streams the hero count pill plus listing section through separate `Suspense` subtrees instead of awaiting the full category listing before any shell HTML can render
 - the streamed category fallback surfaces are structural now; the in-page listing boundary no longer uses `fallback={null}` while the category resource grid is still resolving
 - the category page now renders its resource cards through a static server-led grid instead of mounting the heavier `ResourceGrid` client pagination/filter machinery on a route that does not expose in-page progressive loading
+- the category listing now uses the same server-led public card shell for those cards instead of the generic client `ResourceCard`, keeping the static category grid out of marketplace overlay/prefetch client logic entirely
 - the post-deploy public warm script now reheats `/resources?category=all&sort=recommended` and `/resources?category=all&sort=newest` again as the final warm step before k6, so the highest-risk listing control routes finish as the freshest warmed public pages instead of being cooled behind later creator/category warm passes
 
 Root rendering note:
