@@ -9,7 +9,6 @@ import { routes } from "@/lib/routes";
 import { getDashboardNav } from "@/lib/dashboard/getDashboardNav";
 import { getDashboardShellVariant } from "@/lib/dashboard/dashboard-permissions";
 import { DashboardShell as SharedDashboardShell } from "@/components/layout/dashboard/DashboardShell";
-import { DashboardOverlayReady } from "@/components/layout/dashboard/DashboardOverlayReady";
 import { usePlatformConfig } from "@/components/providers/PlatformConfigProvider";
 import { beginDashboardNavigation } from "@/components/layout/dashboard/dashboardNavigationState";
 
@@ -60,7 +59,6 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
 
   return (
     <>
-      <DashboardOverlayReady />
       <SharedDashboardShell
         variant={shellVariant}
         sections={getDashboardNav({
