@@ -578,15 +578,37 @@ export function DashboardSubscriptionSkeleton() {
 export function DashboardSubscriptionResultsSkeleton() {
   return runtimeSkeleton(
     <div className="space-y-5">
-      <div className="relative overflow-hidden rounded-2xl p-6">
-        <LoadingSkeleton className="h-[220px] w-full rounded-2xl" />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-blue-600 to-blue-500 p-6 text-white shadow-glow-violet">
+        <div className="absolute right-0 top-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-white/5" />
+        <div className="absolute bottom-0 left-0 h-24 w-24 -translate-x-6 translate-y-6 rounded-full bg-white/5" />
+        <div className="relative flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <LoadingSkeleton className="h-4 w-24 rounded-full bg-white/15" />
+            <LoadingSkeleton className="h-8 w-52 rounded-xl bg-white/15" />
+            <LoadingSkeleton className="h-4 w-72 max-w-full rounded-xl bg-white/10" />
+          </div>
+          <LoadingSkeleton className="h-12 w-12 rounded-2xl bg-white/15" />
+        </div>
+        <div className="relative mt-6 flex items-center justify-between rounded-xl bg-white/10 px-4 py-3">
+          <LoadingSkeleton className="h-3 w-20 rounded-full bg-white/15" />
+          <LoadingSkeleton className="h-4 w-24 rounded-full bg-white/15" />
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <LoadingSkeleton className="h-[142px] rounded-2xl" />
-        <LoadingSkeleton className="h-[142px] rounded-2xl" />
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+          <LoadingSkeleton className="h-3 w-20" />
+          <LoadingSkeleton className="mt-3 h-9 w-16" />
+          <LoadingSkeleton className="mt-2 h-4 w-28" />
+          <LoadingSkeleton className="mt-3 h-4 w-24" />
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+          <LoadingSkeleton className="h-3 w-14" />
+          <LoadingSkeleton className="mt-3 h-7 w-24" />
+          <LoadingSkeleton className="mt-2 h-4 w-28" />
+        </div>
       </div>
       <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
-        <LoadingSkeleton className="h-5 w-32" />
+        <LoadingSkeleton className="h-5 w-28" />
         <div className="mt-4 space-y-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="flex items-start gap-3">
@@ -597,6 +619,15 @@ export function DashboardSubscriptionResultsSkeleton() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <LoadingSkeleton className="h-4 w-28" />
+            <LoadingSkeleton className="h-4 w-56 max-w-full" />
+          </div>
+          <LoadingSkeleton className="h-9 w-36 rounded-xl" />
         </div>
       </div>
     </div>,

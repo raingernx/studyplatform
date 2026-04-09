@@ -13,6 +13,7 @@ import {
   Star,
 } from "lucide-react";
 import { getCachedServerSession } from "@/lib/auth";
+import { getServerAuthTokenSnapshot } from "@/lib/auth/token-snapshot";
 import { formatDate } from "@/lib/format";
 import { PageContentNarrow } from "@/design-system";
 import { getDashboardSubscriptionPageData } from "@/services/admin";
@@ -50,12 +51,18 @@ const PRO_BENEFITS = [
 ];
 
 async function SubscriptionContent() {
-  const session = await getCachedServerSession();
-  if (!session?.user?.id) {
+  const tokenSnapshot = await getServerAuthTokenSnapshot();
+  const session =
+    !tokenSnapshot.authenticated || !tokenSnapshot.userId
+      ? await getCachedServerSession()
+      : null;
+
+  const userId = tokenSnapshot.userId ?? session?.user?.id ?? null;
+
+  if (!userId) {
     redirect(routes.loginWithNext(routes.subscription));
   }
 
-  const userId = session.user.id;
   const platform = getBuildSafePlatformConfig();
   const user = await getDashboardSubscriptionPageData(userId);
 

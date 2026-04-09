@@ -1,8 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardGroupLoadingShell } from "@/components/skeletons/DashboardGroupLoadingShell";
-import { useDashboardNavigationState } from "@/components/layout/dashboard/dashboardNavigationState";
+import {
+  clearDashboardNavigation,
+  useDashboardNavigationState,
+} from "@/components/layout/dashboard/dashboardNavigationState";
 import { ResourceDetailLoadingShell } from "@/components/resources/detail/ResourceDetailLoadingShell";
 import { ResourcesRouteSkeleton } from "@/components/skeletons/ResourcesRouteSkeleton";
 import {
@@ -10,10 +14,15 @@ import {
   useResourcesNavigationState,
 } from "@/components/marketplace/resourcesNavigationState";
 import {
+  getDashboardReadySelector,
   isDashboardGroupHref,
   isDashboardGroupPath,
   renderDashboardOverlayContent,
+  shouldWrapDashboardOverlayInShell,
 } from "@/components/providers/dashboardNavigationOverlayShared";
+import { waitForNavigationSurfaceReady } from "@/components/providers/navigationDomReady";
+
+const MIN_PENDING_MS = 220;
 
 function renderResourcesOverlayContent(href: string | null) {
   const mode = href ? inferResourcesNavigationMode(href) : null;
@@ -50,6 +59,29 @@ export function DashboardGroupNavigationOverlay() {
   const overlayContent = renderDashboardOverlayContent(pathname, navigationState.href);
   const resourcesOverlay = renderResourcesOverlayContent(resourcesNavigationState.href);
 
+  useEffect(() => {
+    if (!stateDrivenOverlay) {
+      return;
+    }
+
+    const readySelector = getDashboardReadySelector(pathname, navigationState.href);
+
+    return waitForNavigationSurfaceReady(
+      readySelector,
+      () => {
+        clearDashboardNavigation(navigationState.id);
+      },
+      MIN_PENDING_MS,
+      navigationState.startedAt,
+    );
+  }, [
+    navigationState.href,
+    navigationState.id,
+    navigationState.startedAt,
+    pathname,
+    stateDrivenOverlay,
+  ]);
+
   if (
     !stateDrivenOverlay &&
     !resourcesStateDrivenOverlay
@@ -68,7 +100,9 @@ export function DashboardGroupNavigationOverlay() {
     );
   }
 
-  const shouldWrapInDashboardShell = overlayContent.type !== DashboardGroupLoadingShell;
+  const shouldWrapInDashboardShell =
+    overlayContent.type !== DashboardGroupLoadingShell &&
+    shouldWrapDashboardOverlayInShell(pathname, navigationState.href);
 
   return (
     <div

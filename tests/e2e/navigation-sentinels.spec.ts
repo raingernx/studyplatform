@@ -60,6 +60,9 @@ test("public account dropdown reaches dashboard routes without shell hangs", asy
     await expect(page.getByRole("heading", { name: target.heading }).first()).toBeVisible({
       timeout: 20_000,
     });
+    await expect(page.locator('[data-loading-scope="dashboard-group"]:visible')).toHaveCount(0, {
+      timeout: 20_000,
+    });
   }
 
   expect(pageErrors).toEqual([]);
@@ -74,7 +77,9 @@ test("dashboard avatar menu reaches library purchases and settings", async ({ pa
   await expect(page.getByRole("heading", { name: /Welcome back/i }).first()).toBeVisible();
 
   const avatarButton = page
-    .locator('header button[data-dashboard-account-trigger="true"]:visible')
+    .locator(
+      'header button[data-dashboard-account-trigger="true"][data-dashboard-account-ready="true"]:visible',
+    )
     .first();
 
   await expect(avatarButton).toBeVisible({ timeout: 20_000 });
@@ -91,6 +96,7 @@ test("dashboard avatar menu reaches library purchases and settings", async ({ pa
       timeout: 20_000,
     });
 
+    await avatarButton.scrollIntoViewIfNeeded();
     await avatarButton.click();
 
     const link = page
@@ -106,6 +112,9 @@ test("dashboard avatar menu reaches library purchases and settings", async ({ pa
     ]);
 
     await expect(page.getByRole("heading", { name: target.heading }).first()).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.locator('[data-loading-scope="dashboard-group"]:visible')).toHaveCount(0, {
       timeout: 20_000,
     });
   }

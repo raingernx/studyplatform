@@ -1,10 +1,9 @@
-import type { ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-interface LayoutPrimitiveProps {
+interface LayoutPrimitiveProps extends ComponentPropsWithoutRef<"div"> {
   children: ReactNode;
-  className?: string;
 }
 
 export interface ContainerProps extends LayoutPrimitiveProps {
@@ -26,9 +25,10 @@ export const PAGE_CONTENT_WIDE_MAX_WIDTH_CLASS_NAME =
 export const PAGE_CONTENT_NARROW_MAX_WIDTH_CLASS_NAME =
   "max-w-[var(--page-content-narrow-max-width)]";
 
-export function Container({ children, className, narrow = false }: ContainerProps) {
+export function Container({ children, className, narrow = false, ...props }: ContainerProps) {
   return (
     <div
+      {...props}
       className={cn(
         CONTAINER_CLASS_NAME,
         narrow && CONTAINER_NARROW_MAX_WIDTH_CLASS_NAME,
@@ -48,37 +48,57 @@ function PageWidth({
   children,
   className,
   maxWidthClassName,
+  ...props
 }: PageWidthProps) {
   return (
-    <div className={cn(CONTAINER_BASE_CLASS_NAME, maxWidthClassName, className)}>
+    <div
+      {...props}
+      className={cn(CONTAINER_BASE_CLASS_NAME, maxWidthClassName, className)}
+    >
       {children}
     </div>
   );
 }
 
-export function PageContainer({ children, className }: LayoutPrimitiveProps) {
-  return <div className={cn("w-full", CONTAINER_PADDING_CLASS_NAME, className)}>{children}</div>;
+export function PageContainer({ children, className, ...props }: LayoutPrimitiveProps) {
+  return (
+    <div {...props} className={cn("w-full", CONTAINER_PADDING_CLASS_NAME, className)}>
+      {children}
+    </div>
+  );
 }
 
-export function PageContent({ children, className }: LayoutPrimitiveProps) {
+export function PageContent({ children, className, ...props }: LayoutPrimitiveProps) {
   return (
-    <PageWidth maxWidthClassName={PAGE_CONTENT_MAX_WIDTH_CLASS_NAME} className={className}>
+    <PageWidth
+      maxWidthClassName={PAGE_CONTENT_MAX_WIDTH_CLASS_NAME}
+      className={className}
+      {...props}
+    >
       {children}
     </PageWidth>
   );
 }
 
-export function PageContentWide({ children, className }: LayoutPrimitiveProps) {
+export function PageContentWide({ children, className, ...props }: LayoutPrimitiveProps) {
   return (
-    <PageWidth maxWidthClassName={PAGE_CONTENT_WIDE_MAX_WIDTH_CLASS_NAME} className={className}>
+    <PageWidth
+      maxWidthClassName={PAGE_CONTENT_WIDE_MAX_WIDTH_CLASS_NAME}
+      className={className}
+      {...props}
+    >
       {children}
     </PageWidth>
   );
 }
 
-export function PageContentNarrow({ children, className }: LayoutPrimitiveProps) {
+export function PageContentNarrow({ children, className, ...props }: LayoutPrimitiveProps) {
   return (
-    <PageWidth maxWidthClassName={PAGE_CONTENT_NARROW_MAX_WIDTH_CLASS_NAME} className={className}>
+    <PageWidth
+      maxWidthClassName={PAGE_CONTENT_NARROW_MAX_WIDTH_CLASS_NAME}
+      className={className}
+      {...props}
+    >
       {children}
     </PageWidth>
   );

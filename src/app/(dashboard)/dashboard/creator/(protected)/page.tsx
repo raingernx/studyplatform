@@ -21,7 +21,6 @@ import {
   CardTitle,
   SectionHeader,
 } from "@/design-system";
-import { requireSession } from "@/lib/auth/require-session";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { CreatorResourceStatusButton } from "@/components/creator/CreatorResourceStatusButton";
 import { CreatorWelcomeCard } from "@/components/creator/CreatorWelcomeCard";
@@ -44,6 +43,7 @@ import {
   getCreatorSetupState,
 } from "@/services/creator";
 import { logActivity } from "@/lib/activity";
+import { getCreatorProtectedUserContext } from "./creatorProtectedUser";
 
 export const metadata = {
   title: "Creator Dashboard",
@@ -113,7 +113,7 @@ function buildQualityFeedback(resource: {
 }
 
 export default async function CreatorDashboardPage() {
-  const { userId, session } = await requireSession(routes.creatorDashboard);
+  const { userId, userName } = await getCreatorProtectedUserContext(routes.creatorDashboard);
   const setupState = await getCreatorSetupState(userId);
 
   if (setupState.isFirstRun) {
@@ -136,7 +136,7 @@ export default async function CreatorDashboardPage() {
           description="Review the resources you own in the marketplace. This dashboard is read-only and shows only listings attached to your account."
         />
 
-        <CreatorWelcomeCard creatorName={session.user.name} canCreate />
+        <CreatorWelcomeCard creatorName={userName} canCreate />
 
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <CreatorSetupChecklist steps={setupState.steps} canCreate />

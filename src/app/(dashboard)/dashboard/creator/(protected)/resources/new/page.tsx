@@ -1,7 +1,5 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 import nextDynamic from "next/dynamic";
-import { requireSession } from "@/lib/auth/require-session";
 import { CreatorResourceProgress } from "@/components/creator/CreatorResourceProgress";
 import { CreatorResourceHelperCard } from "@/components/creator/CreatorResourceHelperCard";
 import { CreatorResourceFormLoadingShell } from "@/components/creator/CreatorResourceFormLoadingShell";
@@ -9,6 +7,7 @@ import { routes } from "@/lib/routes";
 import { getCreatorResourceFormData } from "@/services/creator";
 import { getCreatorSetupState } from "@/services/creator";
 import { logActivity } from "@/lib/activity";
+import { getCreatorProtectedUserContext } from "../../creatorProtectedUser";
 
 const CreatorResourceForm = nextDynamic(
   () =>
@@ -27,7 +26,7 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function CreatorNewResourcePage() {
-  const { userId } = await requireSession(routes.creatorNewResource);
+  const { userId } = await getCreatorProtectedUserContext(routes.creatorNewResource);
   const setupState = await getCreatorSetupState(userId);
 
   const isFirstResource = setupState.totalResources === 0;

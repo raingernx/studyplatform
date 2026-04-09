@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
-import { requireSession } from "@/lib/auth/require-session";
 import { CreatorProfileForm } from "@/components/creator/CreatorProfileForm";
 import { PageContent } from "@/design-system";
 import { routes } from "@/lib/routes";
@@ -11,6 +10,7 @@ import {
   CreatorDashboardProfileFormSkeleton,
   CreatorDashboardProfileLinkFallback,
 } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
+import { getCreatorProtectedUserContext } from "../creatorProtectedUser";
 
 export const metadata = {
   title: "Creator Profile",
@@ -19,7 +19,7 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function CreatorProfilePage() {
-  const { userId } = await requireSession(routes.creatorProfile);
+  const { userId } = await getCreatorProtectedUserContext(routes.creatorProfile);
   const profilePromise = getCreatorProfile(userId);
 
   return (

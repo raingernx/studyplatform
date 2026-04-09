@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { BarChart2, DollarSign, Download, FileText, MessageSquare, ShoppingBag, Star } from "lucide-react";
 import { Badge, Button, Card, CardContent, SectionHeader } from "@/design-system";
-import { requireSession } from "@/lib/auth/require-session";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { formatDate, formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
@@ -12,6 +11,7 @@ import {
 } from "@/services/creator";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
 import { CreatorDashboardAnalyticsResultsSkeleton } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
+import { getCreatorProtectedUserContext } from "../creatorProtectedUser";
 
 export const metadata = {
   title: "Creator Analytics",
@@ -48,7 +48,7 @@ function rangeLink(range: string, currentRange: string) {
 export default async function CreatorAnalyticsPage({
   searchParams,
 }: CreatorAnalyticsPageProps) {
-  const { userId } = await requireSession(routes.creatorAnalytics);
+  const { userId } = await getCreatorProtectedUserContext(routes.creatorAnalytics);
 
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const rangeParam = firstValue(resolvedSearchParams.range);

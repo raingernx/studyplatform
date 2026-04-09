@@ -314,7 +314,21 @@ function NavbarInner({
     }
     
     afterNavigation?.();
-    handleProtectedAreaNavigation(href);
+    const useDashboardEntryOverlay =
+      !isDashboardGroupPath(pathname) &&
+      href !== routes.settings &&
+      href !== routes.subscription;
+
+    if (
+      href === routes.dashboard ||
+      href === routes.library ||
+      href === routes.purchases ||
+      href === routes.settings ||
+      href === routes.subscription ||
+      href.startsWith("/dashboard/")
+    ) {
+      beginDashboardNavigation(href, { overlay: useDashboardEntryOverlay });
+    }
   }
 
   function handlePrimaryLinkClick(

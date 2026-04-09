@@ -8,7 +8,6 @@ import {
   FolderOpen,
   Plus,
 } from "lucide-react";
-import { requireSession } from "@/lib/auth/require-session";
 import { Button, Select, RowActionButton, RowActions } from "@/design-system";
 import { CreatorResourceStatusButton } from "@/components/creator/CreatorResourceStatusButton";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -17,6 +16,7 @@ import { formatDate, formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { getCreatorResourceManagementData } from "@/services/creator";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
+import { getCreatorProtectedUserContext } from "../creatorProtectedUser";
 
 export const metadata = {
   title: "Creator Resources",
@@ -35,7 +35,7 @@ function firstValue(value: string | string[] | undefined) {
 export default async function CreatorResourcesPage({
   searchParams,
 }: CreatorResourcesPageProps) {
-  const { userId } = await requireSession(routes.creatorResources);
+  const { userId } = await getCreatorProtectedUserContext(routes.creatorResources);
 
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const status = firstValue(resolvedSearchParams.status);

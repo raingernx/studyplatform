@@ -1,12 +1,12 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { DollarSign, Receipt, ShoppingBag, Wallet } from "lucide-react";
-import { requireSession } from "@/lib/auth/require-session";
 import { formatDate, formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { getCreatorSales } from "@/services/creator";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
 import { CreatorDashboardSalesResultsSkeleton } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
+import { getCreatorProtectedUserContext } from "../creatorProtectedUser";
 
 export const metadata = {
   title: "Creator Sales",
@@ -15,7 +15,7 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function CreatorSalesPage() {
-  const { userId } = await requireSession(routes.creatorSales);
+  const { userId } = await getCreatorProtectedUserContext(routes.creatorSales);
 
   const salesDataPromise = getCreatorSales(userId);
 

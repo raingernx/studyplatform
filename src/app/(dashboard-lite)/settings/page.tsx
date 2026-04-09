@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { getCachedServerSession } from "@/lib/auth";
+import { getServerAuthTokenSnapshot } from "@/lib/auth/token-snapshot";
 import { PageContentNarrow, SectionHeader } from "@/design-system";
 import { SettingsTabs } from "@/components/settings/SettingsTabs";
 import { SettingsTabsSkeleton } from "@/components/skeletons/SettingsPageSkeleton";
@@ -15,18 +16,24 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 async function SettingsTabsContent() {
-  const session = await getCachedServerSession();
+  const tokenSnapshot = await getServerAuthTokenSnapshot();
+  const session =
+    !tokenSnapshot.authenticated || !tokenSnapshot.userId
+      ? await getCachedServerSession()
+      : null;
 
-  if (!session?.user?.id) {
+  const userId = tokenSnapshot.userId ?? session?.user?.id ?? null;
+
+  if (!userId) {
     redirect(routes.loginWithNext(routes.settings));
   }
 
   const { user, preferences } = await getDashboardSettingsPageData({
-    userId: session.user.id,
+    userId,
     fallbackUser: {
-      name: session.user.name ?? null,
-      email: session.user.email ?? null,
-      image: session.user.image ?? null,
+      name: tokenSnapshot.name ?? session?.user?.name ?? null,
+      email: tokenSnapshot.email ?? session?.user?.email ?? null,
+      image: tokenSnapshot.image ?? session?.user?.image ?? null,
     },
   });
 

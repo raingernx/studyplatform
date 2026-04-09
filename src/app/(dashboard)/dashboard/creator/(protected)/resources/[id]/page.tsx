@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import nextDynamic from "next/dynamic";
-import { requireSession } from "@/lib/auth/require-session";
 import { CreatorResourceFormLoadingShell } from "@/components/creator/CreatorResourceFormLoadingShell";
 import { PageContent } from "@/design-system";
 import { routes } from "@/lib/routes";
@@ -9,6 +8,7 @@ import {
   getCreatorResourceForEdit,
   getCreatorResourceFormData,
 } from "@/services/creator";
+import { getCreatorProtectedUserContext } from "../../creatorProtectedUser";
 
 const CreatorResourceForm = nextDynamic(
   () =>
@@ -35,7 +35,7 @@ export default async function CreatorEditResourcePage({
   params,
   searchParams,
 }: CreatorEditResourcePageProps) {
-  const { userId } = await requireSession(routes.creatorResources);
+  const { userId } = await getCreatorProtectedUserContext(routes.creatorResources);
 
   const [{ id }, { focus }] = await Promise.all([params, searchParams]);
   const VALID_FOCUS_FIELDS = ["title", "description", "price", "file"] as const;

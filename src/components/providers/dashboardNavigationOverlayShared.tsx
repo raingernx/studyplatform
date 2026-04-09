@@ -20,6 +20,8 @@ import { SettingsPageSkeleton } from "@/components/skeletons/SettingsPageSkeleto
 import { routes } from "@/lib/routes";
 
 const DASHBOARD_ROUTE_SHELL_SELECTOR = '[data-route-shell-ready="dashboard"]';
+const DASHBOARD_CREATOR_ROUTE_SHELL_SELECTOR =
+  '[data-route-shell-ready^="dashboard-creator"]';
 
 export function isDashboardGroupHref(href: string) {
   return (
@@ -113,6 +115,32 @@ export function renderDashboardOverlayContent(
   return <DashboardGroupLoadingShell />;
 }
 
+export function shouldWrapDashboardOverlayInShell(
+  pathname: string | null,
+  href: string | null,
+) {
+  const target = href ?? pathname ?? "";
+  const targetPathname = target
+    ? new URL(target, "http://dashboard.local").pathname
+    : "";
+
+  if (
+    targetPathname === routes.creatorApply ||
+    targetPathname === routes.creatorDashboard ||
+    targetPathname === routes.creatorAnalytics ||
+    targetPathname === routes.creatorResources ||
+    targetPathname === routes.creatorSales ||
+    targetPathname === routes.creatorProfile ||
+    targetPathname === "/dashboard/creator/settings" ||
+    targetPathname === routes.creatorNewResource ||
+    targetPathname.startsWith(`${routes.creatorResources}/`)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 export function getDashboardReadySelector(pathname: string | null, href: string | null) {
   const target = href ?? pathname ?? "";
   const targetPathname = target
@@ -175,6 +203,10 @@ export function getDashboardReadySelector(pathname: string | null, href: string 
     targetPathname === "/dashboard/creator/settings"
   ) {
     return '[data-route-shell-ready="dashboard-creator-profile"]';
+  }
+
+  if (targetPathname.startsWith("/dashboard/creator")) {
+    return DASHBOARD_CREATOR_ROUTE_SHELL_SELECTOR;
   }
 
   return DASHBOARD_ROUTE_SHELL_SELECTOR;

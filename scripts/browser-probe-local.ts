@@ -431,16 +431,38 @@ async function navigateViaPublicAccountMenu(
   await expect(page.getByRole("heading", { name: target.heading }).first()).toBeVisible({
     timeout: 20_000,
   });
+  await expect(page.locator('[data-loading-scope="dashboard-group"]:visible')).toHaveCount(0, {
+    timeout: 20_000,
+  });
 }
 
 async function openDashboardAvatarMenu(page: Page) {
   const avatarButton = page
-    .locator('[data-dashboard-account-trigger="true"]:visible')
+    .locator(
+      '[data-dashboard-account-trigger="true"][data-dashboard-account-ready="true"]:visible',
+    )
     .first();
 
   await expect(avatarButton).toBeVisible({ timeout: 15_000 });
-  await avatarButton.hover();
-  await avatarButton.click();
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await avatarButton.scrollIntoViewIfNeeded();
+    await avatarButton.hover();
+    await avatarButton.click();
+
+    const menuVisible = await page
+      .locator(
+        '[data-dashboard-account-menu="true"] [data-dashboard-account-link="/dashboard/library"]:visible',
+      )
+      .isVisible()
+      .catch(() => false);
+
+    if (menuVisible) {
+      break;
+    }
+
+    await page.waitForTimeout(250);
+  }
 
   await expect(
     page.locator(
@@ -478,6 +500,9 @@ async function navigateViaDashboardAvatarMenu(
 
   await expect(page).toHaveURL(new RegExp(`${target.href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\?.*)?$`));
   await expect(page.getByRole("heading", { name: target.heading }).first()).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(page.locator('[data-loading-scope="dashboard-group"]:visible')).toHaveCount(0, {
     timeout: 20_000,
   });
 }

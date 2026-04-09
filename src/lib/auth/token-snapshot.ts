@@ -1,8 +1,10 @@
 import "server-only";
 
+import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
 import type { JWT } from "next-auth/jwt";
+import { getToken } from "next-auth/jwt";
+import { NextRequest as ServerNextRequest } from "next/server";
 
 type AppUserRole = "ADMIN" | "INSTRUCTOR" | "STUDENT";
 
@@ -41,4 +43,19 @@ export async function getAuthTokenSnapshot(
 ): Promise<AuthTokenSnapshot> {
   const token = await getToken({ req });
   return toSnapshot(token);
+}
+
+export async function getServerAuthTokenSnapshot(): Promise<AuthTokenSnapshot> {
+  const requestHeaders = new Headers(await headers());
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? "https";
+  const host =
+    requestHeaders.get("x-forwarded-host") ??
+    requestHeaders.get("host") ??
+    "dashboard.local";
+
+  const req = new ServerNextRequest(`${protocol}://${host}/auth/token-snapshot`, {
+    headers: requestHeaders,
+  });
+
+  return getAuthTokenSnapshot(req);
 }

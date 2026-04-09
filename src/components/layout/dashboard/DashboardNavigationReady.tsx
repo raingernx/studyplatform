@@ -27,10 +27,6 @@ export function DashboardNavigationReady() {
       return;
     }
 
-    if (navigationState.overlay) {
-      return;
-    }
-
     if (currentHref !== navigationState.href) {
       return;
     }

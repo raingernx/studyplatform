@@ -3,13 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardGroupLoadingShell } from "@/components/skeletons/DashboardGroupLoadingShell";
-import { useDashboardNavigationState } from "@/components/layout/dashboard/dashboardNavigationState";
+import {
+  clearDashboardNavigation,
+  useDashboardNavigationState,
+} from "@/components/layout/dashboard/dashboardNavigationState";
 import { waitForNavigationSurfaceReady } from "@/components/providers/navigationDomReady";
 import {
   getDashboardReadySelector,
   isDashboardGroupHref,
   isDashboardGroupPath,
   renderDashboardOverlayContent,
+  shouldWrapDashboardOverlayInShell,
 } from "@/components/providers/dashboardNavigationOverlayShared";
 const MIN_ENTRY_PENDING_MS = 220;
 
@@ -26,6 +30,7 @@ export function DashboardEntryNavigationOverlay() {
     isDashboardGroupHref(targetHref ?? "") &&
     !isDashboardGroupPath(pathname);
   const crossedIntoDashboard =
+    Boolean(navigationState.overlay) &&
     isDashboardGroupPath(pathname) && !isDashboardGroupPath(previousPathRef.current);
 
   useEffect(() => {
@@ -51,6 +56,7 @@ export function DashboardEntryNavigationOverlay() {
       readySelector,
       () => {
         setForcedOverlay(false);
+        clearDashboardNavigation(navigationState.id);
       },
       MIN_ENTRY_PENDING_MS,
       forcedOverlayStartedAtRef.current || navigationState.startedAt || Date.now(),
@@ -64,7 +70,9 @@ export function DashboardEntryNavigationOverlay() {
   }
 
   const overlayContent = renderDashboardOverlayContent(pathname, navigationState.href);
-  const shouldWrapInDashboardShell = overlayContent.type !== DashboardGroupLoadingShell;
+  const shouldWrapInDashboardShell =
+    overlayContent.type !== DashboardGroupLoadingShell &&
+    shouldWrapDashboardOverlayInShell(pathname, navigationState.href);
 
   return (
     <div

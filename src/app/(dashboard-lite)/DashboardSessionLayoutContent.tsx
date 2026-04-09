@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { getCachedServerSession } from "@/lib/auth";
+import { getServerAuthTokenSnapshot } from "@/lib/auth/token-snapshot";
 import { traceServerStep } from "@/lib/performance/observability";
+import { routes } from "@/lib/routes";
 
 interface DashboardSessionLayoutContentProps {
   children: ReactNode;
@@ -15,19 +18,33 @@ interface DashboardSessionLayoutContentProps {
 export default async function DashboardSessionLayoutContent({
   children,
 }: DashboardSessionLayoutContentProps) {
-  const session = await traceServerStep(
-    "dashboard_layout_lite.getServerSession",
-    () => getCachedServerSession(),
+  const tokenSnapshot = await traceServerStep(
+    "dashboard_layout_lite.getTokenSnapshot",
+    () => getServerAuthTokenSnapshot(),
   );
 
-  const role = session?.user?.role ?? null;
+  const session =
+    !tokenSnapshot.authenticated || !tokenSnapshot.userId
+      ? await traceServerStep("dashboard_layout_lite.getServerSessionFallback", () =>
+          getCachedServerSession(),
+        )
+      : null;
+
+  if (!tokenSnapshot.authenticated && !session?.user?.id) {
+    redirect(routes.loginWithNext(routes.dashboard));
+  }
+
+  const role = tokenSnapshot.role ?? session?.user?.role ?? null;
   const isCreator = role === "INSTRUCTOR";
 
   const user = {
-    name: session?.user?.name ?? null,
-    email: session?.user?.email ?? null,
-    image: session?.user?.image ?? null,
-    subscriptionStatus: session?.user?.subscriptionStatus ?? "INACTIVE",
+    name: tokenSnapshot.name ?? session?.user?.name ?? null,
+    email: tokenSnapshot.email ?? session?.user?.email ?? null,
+    image: tokenSnapshot.image ?? session?.user?.image ?? null,
+    subscriptionStatus:
+      tokenSnapshot.subscriptionStatus ??
+      session?.user?.subscriptionStatus ??
+      "INACTIVE",
     role,
     isCreator,
     canCreateResources: isCreator || role === "ADMIN",

@@ -213,6 +213,7 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
               aria-haspopup="menu"
               aria-expanded={avatarOpen}
               data-dashboard-account-trigger="true"
+              data-dashboard-account-ready={isHydrated ? "true" : "false"}
               onClick={() => {
                 if (!avatarOpen) {
                   warmAvatarMenuTargets();
