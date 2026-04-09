@@ -3,6 +3,7 @@ import nextDynamic from "next/dynamic";
 import { CreatorResourceProgress } from "@/components/creator/CreatorResourceProgress";
 import { CreatorResourceHelperCard } from "@/components/creator/CreatorResourceHelperCard";
 import { CreatorResourceFormLoadingShell } from "@/components/creator/CreatorResourceFormLoadingShell";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { routes } from "@/lib/routes";
 import { getCreatorResourceFormData } from "@/services/creator";
 import { getCreatorSetupState } from "@/services/creator";
@@ -43,20 +44,17 @@ export default async function CreatorNewResourcePage() {
   return (
     <div
       data-route-shell-ready="dashboard-creator-resource-editor"
-      className="space-y-6"
+      className="space-y-8"
     >
-      {/* Page header */}
-      <div className="border-b border-border pb-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-500">Creator</p>
-        <h1 className="mt-2 font-display text-h2 font-semibold tracking-tight text-foreground">
-          {isFirstResource ? "Create your first resource" : "New resource"}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {isFirstResource
+      <DashboardPageHeader
+        eyebrow="Creator"
+        title={isFirstResource ? "Create your first resource" : "New resource"}
+        description={
+          isFirstResource
             ? "Fill in the details below. You can save a draft first and publish when you're ready."
-            : "Complete the form below and save as a draft or publish directly."}
-        </p>
-      </div>
+            : "Complete the form below and save as a draft or publish directly."
+        }
+      />
 
       {/* Step progress */}
       <CreatorResourceProgress activeStep={1} />

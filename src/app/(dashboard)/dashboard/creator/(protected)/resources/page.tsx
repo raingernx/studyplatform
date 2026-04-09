@@ -17,6 +17,7 @@ import { routes } from "@/lib/routes";
 import { getCreatorResourceManagementData } from "@/services/creator";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
 import { getCreatorProtectedUserContext } from "../creatorProtectedUser";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 
 export const metadata = {
   title: "Creator Resources",
@@ -53,27 +54,19 @@ export default async function CreatorResourcesPage({
 
   return (
     <div data-route-shell-ready="dashboard-creator-resources" className="min-w-0 space-y-8">
-      {/* Header */}
-      <div className="flex min-w-0 flex-wrap items-end justify-between gap-4 border-b border-border pb-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-tightest text-brand-600">
-            Creator
-          </p>
-          <h1 className="mt-1 font-display text-h2 font-semibold tracking-tight text-foreground">
-            Resource management
-          </h1>
-          <p className="mt-1 text-meta text-muted-foreground">
-            Filter, publish, and monitor the listings you own in the marketplace.
-          </p>
-        </div>
-
-        <Button asChild size="sm" className="inline-flex items-center gap-2">
-          <Link href={routes.creatorNewResource}>
-            <Plus className="h-4 w-4" />
-            Create resource
-          </Link>
-        </Button>
-      </div>
+      <DashboardPageHeader
+        eyebrow="Creator"
+        title="Resource management"
+        description="Filter, publish, and monitor the listings you own in the marketplace."
+        actions={
+          <Button asChild size="sm" className="inline-flex items-center gap-2">
+            <Link href={routes.creatorNewResource}>
+              <Plus className="h-4 w-4" />
+              Create resource
+            </Link>
+          </Button>
+        }
+      />
 
       <Suspense fallback={<CreatorDashboardResourcesResultsSkeleton />}>
         <CreatorResourcesResultsSection

@@ -10,6 +10,7 @@ import { routes } from "@/lib/routes";
 import { getUserDownloadHistory } from "@/services/purchases";
 import { EmptyState } from "@/design-system";
 import { DashboardDownloadsResultsSkeleton } from "@/components/skeletons/DashboardUserRouteSkeletons";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 
 export const metadata = {
   title: "Downloads",
@@ -148,17 +149,11 @@ export default async function DownloadsPage() {
   const downloadsPromise = getUserDownloadHistory(userId);
 
   return (
-    <div data-route-shell-ready="dashboard-downloads">
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
-            Download history
-          </h1>
-          <p className="mt-1 text-[14px] text-muted-foreground">
-            Files you&apos;ve actually downloaded. Re-download any owned resource from your library any time.
-          </p>
-        </div>
-      </div>
+    <div data-route-shell-ready="dashboard-downloads" className="min-w-0 space-y-8">
+      <DashboardPageHeader
+        title="Download history"
+        description="Files you've actually downloaded. Re-download any owned resource from your library any time."
+      />
 
       <Suspense fallback={<DashboardDownloadsResultsSkeleton />}>
         <DownloadsResultsSection downloadsPromise={downloadsPromise} />

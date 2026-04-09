@@ -20,6 +20,7 @@ import { getDashboardSubscriptionPageData } from "@/services/admin";
 import { getBuildSafePlatformConfig } from "@/services/platform";
 import { routes } from "@/lib/routes";
 import { DashboardSubscriptionResultsSkeleton } from "@/components/skeletons/DashboardUserRouteSkeletons";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 
 export const metadata = {
   title: "Membership",
@@ -265,14 +266,10 @@ export default function SubscriptionPage() {
 
   return (
     <PageContentNarrow data-route-shell-ready="dashboard-subscription" className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
-          Membership
-        </h1>
-        <p className="text-[14px] text-muted-foreground">
-          Manage your plan and unlock full access to {platform.platformShortName}.
-        </p>
-      </div>
+      <DashboardPageHeader
+        title="Membership"
+        description={`Manage your plan and unlock full access to ${platform.platformShortName}.`}
+      />
 
       <Suspense fallback={<DashboardSubscriptionResultsSkeleton />}>
         <SubscriptionContent />

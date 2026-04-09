@@ -11,6 +11,7 @@ import {
   CreatorDashboardProfileLinkFallback,
 } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
 import { getCreatorProtectedUserContext } from "../creatorProtectedUser";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 
 export const metadata = {
   title: "Creator Profile",
@@ -24,23 +25,16 @@ export default async function CreatorProfilePage() {
 
   return (
     <PageContent data-route-shell-ready="dashboard-creator-profile" className="space-y-8">
-      <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-500">
-            Creator
-          </p>
-          <h1 className="mt-2 font-display text-h2 font-semibold tracking-tight text-foreground">
-            Creator Profile
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Build the public identity learners see across your creator page and resource listings.
-          </p>
-        </div>
-
-        <Suspense fallback={<CreatorDashboardProfileLinkFallback />}>
-          <CreatorProfileLink profilePromise={profilePromise} />
-        </Suspense>
-      </div>
+      <DashboardPageHeader
+        eyebrow="Creator"
+        title="Creator Profile"
+        description="Build the public identity learners see across your creator page and resource listings."
+        actions={
+          <Suspense fallback={<CreatorDashboardProfileLinkFallback />}>
+            <CreatorProfileLink profilePromise={profilePromise} />
+          </Suspense>
+        }
+      />
 
       <Suspense fallback={<CreatorDashboardProfileFormSkeleton />}>
         <CreatorProfileContent profilePromise={profilePromise} />

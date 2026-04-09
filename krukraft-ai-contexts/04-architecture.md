@@ -83,6 +83,10 @@ Upstash Redis (cross-instance cache)
   → runSingleFlight (same-instance dedup)
 ```
 
+- the marketplace now treats `/resources?category=all&sort=recommended` and `/resources?category=all&sort=newest` as dedicated first-page landing shapes: those routes keep their precomputed listing payloads in a stronger `listingLanding` cache tier and split exact result totals into a separate cached count key so a cold instance does not have to recompute both the heavy rows and the full `COUNT(*)` in the same hot path
+- the recommended all-category first page now uses a rows-only activation-ranking query plus a separately cached listing-total read; the newest all-category first page does the same for `findMany + count(*)`, while filtered/category/search shapes keep their existing paths
+- discover/marketplace cache invalidation now also clears the new listing-total Redis keys alongside the fixed recommended/newest landing keys so publish/unpublish changes do not leave the first-page totals stale longer than the route payload itself
+
 Used heavily in:
 - marketplace listing variants
 - discover sections
@@ -371,6 +375,8 @@ This separation exists to avoid Prisma build-time warnings and DB dependency in 
 - admin analytics long-tail routes that do not need per-page session data now also rely on the admin layout auth gate instead of repeating their own page-level admin-session check (`/admin/analytics/purchases`, `/admin/analytics/ranking-experiment`), reducing one extra auth hop from those request paths without changing admin access semantics
 - the remaining admin analytics report routes now follow the same shell-first pattern: `/admin/analytics/purchases`, `/admin/analytics/ranking-experiment`, `/admin/analytics/recommendations`, `/admin/analytics/ranking`, and `/admin/analytics/creator-activation` render headers and filter controls first, then stream heavy report bodies separately; ranking filter categories are now loaded through a dedicated cached filter reader and the ranking filter chrome itself sits behind a smaller suspense boundary so the page no longer waits on category-filter data before showing the rest of the route shell
 - marketplace account dropdowns and dashboard avatar menus now proactively prefetch the protected dashboard-lite targets they expose (`/dashboard`, `/dashboard/library`, `/dashboard/purchases`, `/settings`, `/subscription` or the avatar subset) as soon as the user hovers or opens the menu, so clicking `Settings` from an already-open menu no longer relies on a cold route discovery path while the dashboard overlay is already visible
+- dashboard user and creator routes now share a common page-header contract through `src/components/dashboard/DashboardPageHeader.tsx`, so route shells and their loading placeholders keep the same title/description/action rhythm instead of each route hand-rolling its own spacing
+- dashboard user skeletons are now intentionally neutral where user state changes the page shape most sharply: the library results fallback no longer reserves a checkout-recovery banner by default, and the membership route no longer assumes the active-plan hero layout before subscription data resolves
 - Category landing pages intentionally use `newest` for their first-page curated feed
 - protected download redirects now allow the branded bucket host `files.krukraft.com`, matching the repo's current R2/public URL guidance instead of the old `cdn.studyplatform.com` example
 - `src/env.ts` is the central server env validation surface

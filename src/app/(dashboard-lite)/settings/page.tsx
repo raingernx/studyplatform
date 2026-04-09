@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 
 import { getCachedServerSession } from "@/lib/auth";
 import { getServerAuthTokenSnapshot } from "@/lib/auth/token-snapshot";
-import { PageContentNarrow, SectionHeader } from "@/design-system";
+import { PageContentNarrow } from "@/design-system";
 import { SettingsTabs } from "@/components/settings/SettingsTabs";
 import { SettingsTabsSkeleton } from "@/components/skeletons/SettingsPageSkeleton";
 import { getDashboardSettingsPageData } from "@/services/admin";
 import { routes } from "@/lib/routes";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 
 export const metadata = {
   title: "Settings",
@@ -52,7 +53,7 @@ async function SettingsTabsContent() {
 export default function SettingsPage() {
   return (
     <PageContentNarrow data-route-shell-ready="dashboard-settings" className="space-y-8">
-      <SectionHeader
+      <DashboardPageHeader
         title="Settings"
         description="Manage your account preferences and security."
       />

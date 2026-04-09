@@ -3,6 +3,7 @@
 import { Skeleton } from "boneyard-js/react";
 import { PageContentNarrow } from "@/design-system";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
+import { DashboardPageHeaderSkeleton } from "@/components/dashboard/DashboardPageHeader";
 
 const SETTINGS_PAGE_SKELETON_NAME = "settings-page";
 
@@ -24,10 +25,7 @@ function SectionHeadingSkeleton({
 function ManualSettingsPageSkeleton() {
   return (
     <PageContentNarrow className="space-y-8">
-      <div className="space-y-3">
-        <LoadingSkeleton className="h-8 w-32 rounded-md" />
-        <LoadingSkeleton className="h-4 w-72 rounded-md" />
-      </div>
+      <DashboardPageHeaderSkeleton titleWidth="w-32" descriptionWidth="w-72" />
 
       <div className="space-y-0">
         <section className="space-y-5 border-b border-border pb-6">
@@ -253,8 +251,10 @@ function SettingsPagePreview() {
   return (
     <PageContentNarrow className="space-y-8">
       <div className="space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Settings</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
+          Settings
+        </h1>
+        <p className="max-w-2xl text-small leading-6 text-muted-foreground">
           Manage your profile, notifications, and account preferences.
         </p>
       </div>

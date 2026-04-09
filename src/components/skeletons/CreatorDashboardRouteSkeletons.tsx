@@ -3,28 +3,13 @@
 import { Skeleton } from "boneyard-js/react";
 import type { ReactNode } from "react";
 import { LoadingSkeleton } from "@/design-system";
+import { DashboardPageHeaderSkeleton } from "@/components/dashboard/DashboardPageHeader";
 
 const CREATOR_DASHBOARD_OVERVIEW_NAME = "creator-dashboard-overview";
 const CREATOR_DASHBOARD_ANALYTICS_NAME = "creator-dashboard-analytics";
 const CREATOR_DASHBOARD_RESOURCES_NAME = "creator-dashboard-resources";
 const CREATOR_DASHBOARD_SALES_NAME = "creator-dashboard-sales";
 const CREATOR_DASHBOARD_PROFILE_NAME = "creator-dashboard-profile";
-
-function HeaderSkeleton({
-  titleWidth,
-  copyWidth = "max-w-xl",
-}: {
-  titleWidth: string;
-  copyWidth?: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <LoadingSkeleton className="h-3 w-16" />
-      <LoadingSkeleton className={`h-10 rounded-2xl ${titleWidth}`} />
-      <LoadingSkeleton className={`h-4 w-full ${copyWidth}`} />
-    </div>
-  );
-}
 
 function StatCardRow({
   count,
@@ -102,7 +87,11 @@ function TableShell({
 function OverviewPreview() {
   return (
     <div className="space-y-8">
-      <HeaderSkeleton titleWidth="w-64" />
+      <DashboardPageHeaderSkeleton
+        eyebrowWidth="w-16"
+        titleWidth="w-64"
+        descriptionWidth="w-full max-w-xl"
+      />
 
       <StatCardRowCompact count={3} columns="md:grid-cols-3" />
 
@@ -128,7 +117,12 @@ function OverviewPreview() {
 function AnalyticsPreview() {
   return (
     <div className="space-y-8">
-      <HeaderSkeleton titleWidth="w-48" />
+      <DashboardPageHeaderSkeleton
+        eyebrowWidth="w-16"
+        titleWidth="w-48"
+        descriptionWidth="w-full max-w-xl"
+        actionWidth="w-52"
+      />
       <StatCardRow count={4} columns="md:grid-cols-2 xl:grid-cols-4" />
       <TableShell titleWidth="w-40" subtitleWidth="w-64" rows={5} columns="grid-cols-[1.4fr_1fr_1fr_1fr]" />
     </div>
@@ -138,7 +132,12 @@ function AnalyticsPreview() {
 function ResourcesPreview() {
   return (
     <div className="space-y-8">
-      <HeaderSkeleton titleWidth="w-56" copyWidth="max-w-lg" />
+      <DashboardPageHeaderSkeleton
+        eyebrowWidth="w-16"
+        titleWidth="w-56"
+        descriptionWidth="w-full max-w-lg"
+        actionWidth="w-40"
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         {Array.from({ length: 3 }).map((_, index) => (
@@ -169,7 +168,11 @@ function ResourcesPreview() {
 function SalesPreview() {
   return (
     <div className="space-y-8">
-      <HeaderSkeleton titleWidth="w-40" copyWidth="max-w-lg" />
+      <DashboardPageHeaderSkeleton
+        eyebrowWidth="w-16"
+        titleWidth="w-40"
+        descriptionWidth="w-full max-w-lg"
+      />
       <StatCardRow count={4} columns="md:grid-cols-2 xl:grid-cols-4" />
       <TableShell titleWidth="w-28" rows={5} columns="grid-cols-[2fr_1.2fr_1fr_1fr]" />
     </div>
@@ -181,7 +184,11 @@ function ProfilePreview() {
     <div className="space-y-8">
       <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
         <div className="min-w-0 flex-1">
-          <HeaderSkeleton titleWidth="w-52" />
+          <DashboardPageHeaderSkeleton
+            eyebrowWidth="w-16"
+            titleWidth="w-52"
+            descriptionWidth="w-full max-w-xl"
+          />
         </div>
         <div className="space-y-2">
           <LoadingSkeleton className="ml-auto h-4 w-36" />

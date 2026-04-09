@@ -1,5 +1,6 @@
 import { findResourceById } from "@/repositories/resources/resource.repository";
 import {
+  deleteMarketplaceListingTotalRedisKeys,
   deleteMarketplaceNewestListingRedisKeys,
   deleteMarketplaceRecommendedListingRedisKeys,
 } from "@/lib/cache";
@@ -457,6 +458,10 @@ export async function warmTargetedPublicCaches(
 
       if (includeListings) {
         await Promise.all([
+          deleteMarketplaceListingTotalRedisKeys(
+            ["recommended", "newest"],
+            recommendedCategorySlugs,
+          ),
           deleteMarketplaceRecommendedListingRedisKeys(recommendedCategorySlugs),
           deleteMarketplaceNewestListingRedisKeys(recommendedCategorySlugs),
         ]);

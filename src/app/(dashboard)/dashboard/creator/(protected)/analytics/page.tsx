@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { BarChart2, DollarSign, Download, FileText, MessageSquare, ShoppingBag, Star } from "lucide-react";
-import { Badge, Button, Card, CardContent, SectionHeader } from "@/design-system";
+import { Badge, Button, Card, CardContent } from "@/design-system";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { formatDate, formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
@@ -12,6 +12,7 @@ import {
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
 import { CreatorDashboardAnalyticsResultsSkeleton } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
 import { getCreatorProtectedUserContext } from "../creatorProtectedUser";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 
 export const metadata = {
   title: "Creator Analytics",
@@ -62,7 +63,7 @@ export default async function CreatorAnalyticsPage({
 
   return (
     <div data-route-shell-ready="dashboard-creator-analytics" className="space-y-8">
-      <SectionHeader
+      <DashboardPageHeader
         eyebrow="Creator"
         title="Analytics"
         description="Revenue, downloads, and top-performing resources for your creator business."

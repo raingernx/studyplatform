@@ -2,6 +2,7 @@
 
 import { Skeleton } from "boneyard-js/react";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
+import { DashboardPageHeaderSkeleton } from "@/components/dashboard/DashboardPageHeader";
 import {
   CreatorResourceFormLoadingShell,
   CreatorResourceFormLoadingShellPreview,
@@ -11,12 +12,12 @@ const CREATOR_RESOURCE_NEW_ROUTE_NAME = "creator-resource-new-route";
 
 function CreatorResourceNewRouteSkeletonPreview() {
   return (
-    <div className="space-y-6">
-      <div className="border-b border-border pb-5">
-        <LoadingSkeleton className="h-3 w-16" />
-        <LoadingSkeleton className="mt-2 h-10 w-64 rounded-2xl" />
-        <LoadingSkeleton className="mt-2 h-4 w-full max-w-xl" />
-      </div>
+    <div className="space-y-8">
+      <DashboardPageHeaderSkeleton
+        eyebrowWidth="w-16"
+        titleWidth="w-64"
+        descriptionWidth="w-full max-w-xl"
+      />
 
       <div className="flex items-center gap-4">
         {Array.from({ length: 3 }).map((_, index) => (

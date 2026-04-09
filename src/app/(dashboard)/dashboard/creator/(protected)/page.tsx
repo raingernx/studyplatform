@@ -19,7 +19,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  SectionHeader,
 } from "@/design-system";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { CreatorResourceStatusButton } from "@/components/creator/CreatorResourceStatusButton";
@@ -44,6 +43,7 @@ import {
 } from "@/services/creator";
 import { logActivity } from "@/lib/activity";
 import { getCreatorProtectedUserContext } from "./creatorProtectedUser";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 
 export const metadata = {
   title: "Creator Dashboard",
@@ -130,7 +130,7 @@ export default async function CreatorDashboardPage() {
 
     return (
       <div data-route-shell-ready="dashboard-creator-overview" className="space-y-8">
-        <SectionHeader
+        <DashboardPageHeader
           eyebrow="Creator"
           title="Creator Dashboard"
           description="Review the resources you own in the marketplace. This dashboard is read-only and shows only listings attached to your account."
@@ -155,7 +155,7 @@ export default async function CreatorDashboardPage() {
 
   return (
     <div data-route-shell-ready="dashboard-creator-overview" className="space-y-8">
-      <SectionHeader
+      <DashboardPageHeader
         eyebrow="Creator"
         title="Creator Dashboard"
         description="Review the resources you own in the marketplace. This dashboard is read-only and shows only listings attached to your account."

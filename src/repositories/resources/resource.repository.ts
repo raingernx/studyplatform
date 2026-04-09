@@ -2298,6 +2298,134 @@ export async function findActivationRankedResources(
   return { rows, total };
 }
 
+export async function findActivationRankedResourceCards(
+  params: FindActivationRankedResourcesParams,
+): Promise<FindActivationRankedResourcesRow[]> {
+  const { page, pageSize, categoryId, tagSlug, search, isFree, featured } = params;
+  const skip = (page - 1) * pageSize;
+
+  const conditions: Prisma.Sql[] = [];
+
+  if (categoryId) {
+    conditions.push(Prisma.sql`AND r."categoryId" = ${categoryId}`);
+  }
+
+  if (tagSlug) {
+    conditions.push(Prisma.sql`AND EXISTS (
+        SELECT 1 FROM "ResourceTag" rt
+        INNER JOIN "Tag" t ON t."id" = rt."tagId"
+        WHERE rt."resourceId" = r."id"
+          AND t."slug" = ${tagSlug}
+      )`);
+  }
+
+  if (search) {
+    const pattern = `%${search}%`;
+    conditions.push(
+      Prisma.sql`AND (r."title" ILIKE ${pattern} OR r."description" ILIKE ${pattern})`,
+    );
+  }
+
+  if (isFree !== undefined) {
+    conditions.push(Prisma.sql`AND r."isFree" = ${isFree}`);
+  }
+
+  if (featured) {
+    conditions.push(Prisma.sql`AND r."featured" = TRUE`);
+  }
+
+  const extraWhere =
+    conditions.length > 0 ? Prisma.join(conditions, "\n        ") : Prisma.empty;
+
+  return prisma.$queryRaw<FindActivationRankedResourcesRow[]>(Prisma.sql`
+      WITH base_resources AS (
+        SELECT
+          r."id",
+          r."title",
+          r."slug",
+          r."price",
+          r."isFree",
+          r."featured",
+          r."downloadCount",
+          r."createdAt",
+          r."authorId",
+          r."categoryId"
+        FROM "Resource" r
+        WHERE r."status"    = 'PUBLISHED'
+          AND r."deletedAt" IS NULL
+          AND (r."visibility" IS NULL OR r."visibility" = 'PUBLIC')
+          ${extraWhere}
+      ),
+      first_paid_downloads AS (
+        SELECT
+          al."entityId" AS "resourceId",
+          COUNT(*)::int AS "fpd_count",
+          MAX(al."createdAt") AS "last_activation_at"
+        FROM "ActivityLog" al
+        INNER JOIN base_resources br ON br."id" = al."entityId"
+        WHERE al."action" = 'FIRST_PAID_DOWNLOAD'
+          AND al."entity" = 'Resource'
+        GROUP BY al."entityId"
+      ),
+      ranked AS (
+        SELECT
+          br."id",
+          br."title",
+          br."slug",
+          br."price",
+          br."isFree",
+          br."featured",
+          br."downloadCount",
+          br."createdAt",
+          br."authorId",
+          br."categoryId",
+          (
+            LN(COALESCE(rs."purchases", 0) + 1) * 0.6
+            + ((COALESCE(fpd."fpd_count", 0)::float + 3.0) / (COALESCE(rs."purchases", 0)::float + 6.0)) * 0.3
+            + GREATEST(0.05, CASE
+                WHEN fpd."last_activation_at" IS NOT NULL
+                  AND EXTRACT(EPOCH FROM (NOW() - fpd."last_activation_at")) / 86400.0 < 7.0
+                  THEN 1.0
+                WHEN fpd."last_activation_at" IS NOT NULL
+                  THEN 7.0 / (EXTRACT(EPOCH FROM (NOW() - fpd."last_activation_at")) / 86400.0)
+                ELSE 0.05
+              END) * 0.1
+          ) AS "score"
+        FROM base_resources br
+        LEFT JOIN "resource_stats" rs ON rs."resourceId" = br."id"
+        LEFT JOIN first_paid_downloads fpd ON fpd."resourceId" = br."id"
+        ORDER BY "score" DESC NULLS LAST
+        LIMIT  ${pageSize}
+        OFFSET ${skip}
+      )
+      SELECT
+        rnk."id",
+        rnk."title",
+        rnk."slug",
+        rnk."price",
+        rnk."isFree",
+        rnk."featured",
+        rnk."downloadCount",
+        rnk."createdAt",
+        u."name"     AS "authorName",
+        c."id"       AS "categoryId",
+        c."name"     AS "categoryName",
+        c."slug"     AS "categorySlug",
+        p."imageUrl" AS "previewImageUrl"
+      FROM ranked rnk
+      LEFT JOIN "User" u ON u."id" = rnk."authorId"
+      LEFT JOIN "Category" c ON c."id" = rnk."categoryId"
+      LEFT JOIN LATERAL (
+        SELECT "imageUrl"
+        FROM   "ResourcePreview"
+        WHERE  "resourceId" = rnk."id"
+        ORDER BY "order" ASC
+        LIMIT  1
+      ) p ON TRUE
+      ORDER BY rnk."score" DESC NULLS LAST
+    `);
+}
+
 // ── Ranking debug / observability ─────────────────────────────────────────────
 
 /**

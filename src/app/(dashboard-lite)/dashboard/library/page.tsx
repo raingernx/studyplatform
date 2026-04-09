@@ -9,6 +9,7 @@ import { routes } from "@/lib/routes";
 import { getUserLibraryItems } from "@/services/purchases";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
 import { DashboardLibraryResultsSkeleton } from "@/components/skeletons/DashboardUserRouteSkeletons";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import {
   traceServerStep,
   withRequestPerformanceTrace,
@@ -151,18 +152,11 @@ export default async function DashboardLibraryPage({
 
       return (
         <div data-route-shell-ready="dashboard-library">
-          <div className="space-y-5">
-            <section className="space-y-2.5">
-              <div>
-                <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
-                  My Library
-                </h1>
-                <p className="mt-1 text-small leading-6 text-muted-foreground">
-                  Open what you own, pick up where you left off, and find the
-                  right resource quickly.
-                </p>
-              </div>
-            </section>
+          <div className="min-w-0 space-y-8">
+            <DashboardPageHeader
+              title="My Library"
+              description="Open what you own, pick up where you left off, and find the right resource quickly."
+            />
 
             <Suspense fallback={<DashboardLibraryResultsSkeleton />}>
               <LibraryResultsSection

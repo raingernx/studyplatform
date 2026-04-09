@@ -19,6 +19,7 @@ import { getBuildSafePlatformConfig } from "@/services/platform";
 import { EmptyState } from "@/design-system";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
 import { DashboardPurchasesResultsSkeleton } from "@/components/skeletons/DashboardUserRouteSkeletons";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 
 export const metadata = {
   title: "Purchases",
@@ -198,17 +199,11 @@ export default async function PurchasesPage() {
   const purchasesPromise = getDashboardPurchaseHistoryPageData(userId);
 
   return (
-    <div data-route-shell-ready="dashboard-purchases">
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
-            Purchases
-          </h1>
-          <p className="mt-1 text-[14px] text-muted-foreground">
-            Your complete order history on {platform.platformShortName}.
-          </p>
-        </div>
-      </div>
+    <div data-route-shell-ready="dashboard-purchases" className="min-w-0 space-y-8">
+      <DashboardPageHeader
+        title="Purchases"
+        description={`Your complete order history on ${platform.platformShortName}.`}
+      />
 
       <Suspense fallback={<DashboardPurchasesResultsSkeleton />}>
         <PurchasesResultsSection purchasesPromise={purchasesPromise} />

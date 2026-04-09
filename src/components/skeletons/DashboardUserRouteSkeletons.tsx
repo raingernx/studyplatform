@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Skeleton } from "boneyard-js/react";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
+import { DashboardPageHeaderSkeleton } from "@/components/dashboard/DashboardPageHeader";
 
 const DASHBOARD_OVERVIEW_NAME = "dashboard-overview";
 const DASHBOARD_LIBRARY_NAME = "dashboard-library";
@@ -10,21 +11,6 @@ const DASHBOARD_DOWNLOADS_NAME = "dashboard-downloads";
 const DASHBOARD_PURCHASES_NAME = "dashboard-purchases";
 const DASHBOARD_SUBSCRIPTION_NAME = "dashboard-subscription";
 const DASHBOARD_RESOURCES_REDIRECT_NAME = "dashboard-resources-redirect";
-
-function SectionTitle({
-  titleWidth = "w-48",
-  copyWidth = "w-[32rem]",
-}: {
-  titleWidth?: string;
-  copyWidth?: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <LoadingSkeleton className={`h-10 rounded-2xl ${titleWidth}`} />
-      <LoadingSkeleton className={`h-4 ${copyWidth}`} />
-    </div>
-  );
-}
 
 function SmallCardPreview() {
   return (
@@ -242,7 +228,7 @@ function DashboardOverviewPreview() {
   return (
     <div className="space-y-8">
       <section className="space-y-4">
-        <SectionTitle titleWidth="w-64" copyWidth="w-[34rem]" />
+        <DashboardPageHeaderSkeleton titleWidth="w-64" descriptionWidth="w-[34rem]" />
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-stretch">
           <div className="rounded-xl border border-border bg-card px-5 py-4 sm:px-6">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -329,10 +315,10 @@ function DashboardOverviewPreview() {
 
 function DashboardLibraryPreview() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
         <div className="space-y-2.5">
-          <SectionTitle titleWidth="w-44" copyWidth="w-[34rem]" />
+          <DashboardPageHeaderSkeleton titleWidth="w-44" descriptionWidth="w-[34rem]" />
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <LoadingSkeleton className="h-4 w-24" />
             <LoadingSkeleton className="h-4 w-24" />
@@ -360,11 +346,12 @@ function DashboardLibraryPreview() {
 
 function DashboardDownloadsPreview() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <SectionTitle titleWidth="w-56" copyWidth="w-[34rem]" />
-        <LoadingSkeleton className="h-9 w-28 rounded-full" />
-      </div>
+    <div className="space-y-8">
+      <DashboardPageHeaderSkeleton
+        titleWidth="w-56"
+        descriptionWidth="w-[34rem]"
+        actionWidth="w-28"
+      />
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
         <TableHeaderPreview widths={["2fr", "1fr", "140px", "100px", "100px"]} />
         <DownloadsTableRowsPreview />
@@ -375,9 +362,9 @@ function DashboardDownloadsPreview() {
 
 function DashboardPurchasesPreview() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <SectionTitle titleWidth="w-48" copyWidth="w-[28rem]" />
+    <div className="space-y-8">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <DashboardPageHeaderSkeleton titleWidth="w-48" descriptionWidth="w-[28rem]" />
         <div className="space-y-2">
           <LoadingSkeleton className="ml-auto h-3 w-16" />
           <LoadingSkeleton className="ml-auto h-7 w-24" />
@@ -398,7 +385,7 @@ function DashboardPurchasesPreview() {
 function DashboardSubscriptionPreview() {
   return (
     <div className="space-y-8">
-      <SectionTitle titleWidth="w-48" copyWidth="w-[28rem]" />
+      <DashboardPageHeaderSkeleton titleWidth="w-48" descriptionWidth="w-[28rem]" />
       <div className="space-y-5">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
           <LoadingSkeleton className="h-4 w-24" />
@@ -437,7 +424,7 @@ function DashboardSubscriptionPreview() {
 function DashboardResourcesRedirectPreview() {
   return (
     <div className="space-y-6">
-      <SectionTitle titleWidth="w-52" copyWidth="w-[26rem]" />
+      <DashboardPageHeaderSkeleton titleWidth="w-52" descriptionWidth="w-[26rem]" />
       <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
         <LoadingSkeleton className="h-5 w-40" />
         <LoadingSkeleton className="mt-3 h-4 w-[28rem]" />
@@ -480,7 +467,7 @@ export function DashboardLibrarySkeleton() {
 
 export function DashboardLibraryResultsSkeleton() {
   return (
-    <div data-loading-scope="dashboard-library-results" className="space-y-5">
+    <div data-loading-scope="dashboard-library-results" className="space-y-8">
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
         <div className="space-y-2.5">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -496,12 +483,6 @@ export function DashboardLibraryResultsSkeleton() {
           <LoadingSkeleton className="mt-4 h-10 w-36 rounded-xl" />
         </div>
       </section>
-
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
-        <LoadingSkeleton className="h-4 w-32" />
-        <LoadingSkeleton className="mt-2 h-3 w-56" />
-        <LoadingSkeleton className="mt-2 h-9 w-24 rounded-lg" />
-      </div>
 
       <LibraryToolsPreview />
 
@@ -578,20 +559,18 @@ export function DashboardSubscriptionSkeleton() {
 export function DashboardSubscriptionResultsSkeleton() {
   return runtimeSkeleton(
     <div className="space-y-5">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-blue-600 to-blue-500 p-6 text-white shadow-glow-violet">
-        <div className="absolute right-0 top-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-white/5" />
-        <div className="absolute bottom-0 left-0 h-24 w-24 -translate-x-6 translate-y-6 rounded-full bg-white/5" />
-        <div className="relative flex items-start justify-between gap-4">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
+        <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <LoadingSkeleton className="h-4 w-24 rounded-full bg-white/15" />
-            <LoadingSkeleton className="h-8 w-52 rounded-xl bg-white/15" />
-            <LoadingSkeleton className="h-4 w-72 max-w-full rounded-xl bg-white/10" />
+            <LoadingSkeleton className="h-4 w-24 rounded-full" />
+            <LoadingSkeleton className="h-8 w-52 rounded-xl" />
+            <LoadingSkeleton className="h-4 w-72 max-w-full rounded-xl" />
           </div>
-          <LoadingSkeleton className="h-12 w-12 rounded-2xl bg-white/15" />
+          <LoadingSkeleton className="h-12 w-12 rounded-2xl" />
         </div>
-        <div className="relative mt-6 flex items-center justify-between rounded-xl bg-white/10 px-4 py-3">
-          <LoadingSkeleton className="h-3 w-20 rounded-full bg-white/15" />
-          <LoadingSkeleton className="h-4 w-24 rounded-full bg-white/15" />
+        <div className="mt-6 flex items-center justify-between rounded-xl border border-border bg-muted/60 px-4 py-3">
+          <LoadingSkeleton className="h-3 w-20 rounded-full" />
+          <LoadingSkeleton className="h-4 w-24 rounded-full" />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">

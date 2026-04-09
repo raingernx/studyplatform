@@ -7,6 +7,7 @@ import { getCreatorSales } from "@/services/creator";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
 import { CreatorDashboardSalesResultsSkeleton } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
 import { getCreatorProtectedUserContext } from "../creatorProtectedUser";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 
 export const metadata = {
   title: "Creator Sales",
@@ -21,17 +22,11 @@ export default async function CreatorSalesPage() {
 
   return (
     <div data-route-shell-ready="dashboard-creator-sales" className="space-y-8">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-500">
-          Creator
-        </p>
-        <h1 className="mt-2 font-display text-h2 font-semibold tracking-tight text-foreground">
-          Sales
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Recent transactions and the gross revenue your resources have generated.
-        </p>
-      </div>
+      <DashboardPageHeader
+        eyebrow="Creator"
+        title="Sales"
+        description="Recent transactions and the gross revenue your resources have generated."
+      />
 
       <Suspense fallback={<CreatorDashboardSalesResultsSkeleton />}>
         <CreatorSalesResults salesDataPromise={salesDataPromise} />

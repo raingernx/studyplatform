@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import nextDynamic from "next/dynamic";
 import { CreatorResourceFormLoadingShell } from "@/components/creator/CreatorResourceFormLoadingShell";
 import { PageContent } from "@/design-system";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { routes } from "@/lib/routes";
 import {
   getCreatorResourceForEdit,
@@ -47,7 +48,15 @@ export default async function CreatorEditResourcePage({
     : undefined;
 
   return (
-    <PageContent data-route-shell-ready="dashboard-creator-resource-editor">
+    <PageContent
+      data-route-shell-ready="dashboard-creator-resource-editor"
+      className="space-y-8"
+    >
+      <DashboardPageHeader
+        eyebrow="Creator"
+        title="Edit resource"
+        description="Update listing details, files, pricing, and publish status without leaving your workspace."
+      />
       <Suspense fallback={<CreatorResourceFormLoadingShell />}>
         <CreatorEditResourceFormSection
           userId={userId}

@@ -30,6 +30,7 @@ export const CACHE_TTLS = {
   resourceDetail: 3600,
   stats: 300,
   publicPage: 120,
+  listingLanding: 900,
   platform: 300,
 } as const;
 
@@ -78,6 +79,14 @@ export const CACHE_KEYS = {
     pageSize: number,
   ) =>
     `marketplace_search_listing:${encodeURIComponent(query.toLowerCase())}:${category ?? "all"}:${sort}:page${page}:${pageSize}`,
+  marketplaceListingTotal: (
+    sort: string,
+    category: string | null,
+    tag: string | null,
+    price: "free" | "paid" | "any",
+    featured: boolean,
+  ) =>
+    `marketplace_listing_total:${sort}:${category ?? "all"}:${tag ?? "none"}:${price}:${featured ? "1" : "0"}`,
   resourceMetadata: (slug: string) => `resource_metadata:${slug}`,
   resourcePurchaseMeta: (slug: string) => `resource_purchase_meta:${slug}`,
   resourceBodyContent: (slug: string) => `resource_body_content:${slug}`,
@@ -179,6 +188,7 @@ export async function deleteDiscoverRedisKeys(): Promise<void> {
     deleteCachedKey(CACHE_KEYS.discoverFreeResources),
     deleteCachedKey(CACHE_KEYS.discoverCategories),
     deleteCachedKey(CACHE_KEYS.marketplaceCategories),
+    deleteMarketplaceListingTotalRedisKeys(),
     deleteMarketplaceRecommendedListingRedisKeys(),
     deleteMarketplaceNewestListingRedisKeys(),
     deleteCachedKey(`${CACHE_KEYS.trendingResources}:8`),
@@ -188,6 +198,44 @@ export async function deleteDiscoverRedisKeys(): Promise<void> {
     deleteCachedKey(`${CACHE_KEYS.freeResources}:8`),
     deleteCachedKey(CACHE_KEYS.topCreator),
   ]);
+}
+
+export async function deleteMarketplaceListingTotalRedisKeys(
+  sorts: string[] = ["recommended", "newest"],
+  categorySlugs: Array<string | null | undefined> = [],
+): Promise<void> {
+  const uniqueCategorySlugs = Array.from(
+    new Set(
+      categorySlugs
+        .map((categorySlug) => categorySlug?.trim())
+        .filter(
+          (categorySlug): categorySlug is string =>
+            typeof categorySlug === "string" && categorySlug.length > 0,
+        ),
+    ),
+  );
+
+  const keys: string[] = [];
+  const appendKey = (
+    sort: string,
+    category: string | null,
+    tag: string | null,
+    price: "free" | "paid" | "any",
+    featured: boolean,
+  ) => {
+    keys.push(
+      CACHE_KEYS.marketplaceListingTotal(sort, category, tag, price, featured),
+    );
+  };
+
+  for (const sort of sorts) {
+    appendKey(sort, null, null, "any", false);
+    for (const categorySlug of uniqueCategorySlugs) {
+      appendKey(sort, categorySlug, null, "any", false);
+    }
+  }
+
+  await Promise.all(keys.map((key) => deleteCachedKey(key)));
 }
 
 export async function deleteMarketplaceRecommendedListingRedisKeys(

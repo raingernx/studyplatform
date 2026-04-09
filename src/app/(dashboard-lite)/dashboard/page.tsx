@@ -24,6 +24,7 @@ import {
 import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 import { routes } from "@/lib/routes";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 
 export const metadata = {
   title: "Overview",
@@ -223,15 +224,10 @@ export default async function DashboardPage() {
       return (
         <div data-route-shell-ready="dashboard-overview" className="space-y-8">
           <section className="space-y-4">
-            <div className="space-y-1.5">
-              <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
-                Welcome back, {firstName}
-              </h1>
-              <p className="max-w-2xl text-small leading-6 text-muted-foreground">
-                Your dashboard keeps recent activity, saved resources, and the next useful pick in
-                one place.
-              </p>
-            </div>
+            <DashboardPageHeader
+              title={`Welcome back, ${firstName}`}
+              description="Your dashboard keeps recent activity, saved resources, and the next useful pick in one place."
+            />
 
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-stretch">
               <div className="h-full rounded-xl border border-border bg-card px-5 py-4 sm:px-6">
