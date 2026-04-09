@@ -122,6 +122,26 @@ jobs:
           curl -fsS http://127.0.0.1:3000/api/internal/ready >/dev/null
           BASE_URL=http://127.0.0.1:3000 npm run browser:probe:pages
 
+      - name: Run Browser Sentinel Probes
+        run: |
+          pkill -f 'next dev --webpack' || true
+          npm run dev > /tmp/sentinel-browser-probe.log 2>&1 &
+          DEV_PID=$!
+          cleanup() {
+            kill "$DEV_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3000/api/internal/ready >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fsS http://127.0.0.1:3000/api/internal/ready >/dev/null
+          BASE_URL=http://127.0.0.1:3000 npm run browser:probe:sentinel
+
       - name: Upload Playwright Artifacts
         if: always()
         uses: actions/upload-artifact@v6
@@ -132,6 +152,7 @@ jobs:
             test-results/**
             /tmp/dashboard-browser-probe.log
             /tmp/page-browser-probe.log
+            /tmp/sentinel-browser-probe.log
           if-no-files-found: warn
 
   management_probes:

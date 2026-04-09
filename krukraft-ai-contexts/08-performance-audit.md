@@ -181,6 +181,7 @@ Current perf-hardening baseline for the production UX initiative is:
 - creator activation and ranking debug admin reports now use short-lived service-level caching instead of re-running the same read-heavy queries every request
 - platform metrics, purchase analytics, and recommendation report admin reads now use a Redis-backed cross-instance cache layer in addition to `unstable_cache`
 - several admin analytics/creator pages no longer repeat `requireAdminSession()` inside the page because the admin layout already gates that subtree
+- browser/perf verification is now explicitly layered as `core / sentinel / drill-down` instead of assuming one warmed smoke suite can describe every route family: the core post-deploy k6 gate still owns the six public marketplace baselines, a separate report-only sentinel k6 suite now tracks non-default public listing blind spots (`/resources?category=art-creativity`, `/resources?search=worksheet`), and browser smoke now has a matching sentinel Playwright lane for dropdown-origin dashboard navigation, filtered/search listing pages, and admin resource-editor routes
 
 ---
 
@@ -222,6 +223,10 @@ Current perf-hardening baseline for the production UX initiative is:
 - public route resilience audit (2026-04-09)
   - `/resources` listing/search-recovery/discover controls now treat transient Prisma infrastructure failures as fail-soft and surface an in-page unavailable state or omit the deferred section instead of throwing the entire route into `resources/error.tsx`
   - `/resources/[slug]` and `/creators/[slug]` now also degrade more gracefully on transient infrastructure failures: metadata falls back to safe defaults, critical shell reads can render dedicated temporary-unavailable states, and non-critical creator-resource sections can resolve to empty results instead of tearing down the page shell
+- verification coverage policy (2026-04-09)
+  - the core k6 gate remains `/resources`, recommended/newest first-page listings, hot resource detail, hot creator detail, and hot category listing
+  - sentinel coverage is now intentionally broader but lighter-weight: browser smoke owns auth-shell, dropdown, filtered-listing, and editor-route correctness, while post-deploy sentinel perf keeps extra public listing shapes visible without turning every new route into a hard p95 gate on day one
+  - family drill-down should be manual or failure-triggered, not always-on: `listing-drilldown` now exists to cluster the public listing family (`/resources`, recommended/newest, category page, non-default category listing, and search listing) when the core/sentinel layers signal instability
 - management long-tail shell audit (2026-04-09)
   - `/admin/audit` now follows the same shell-first pattern as the other hardened admin routes: filter/header chrome renders first, while the heavy audit table and pagination stream behind an in-page `Suspense` fallback
   - `/dashboard/creator/apply` now renders the creator-program header/benefits shell first and streams the status/form panel separately, which keeps the route from waiting on the slowest rejected-application/form branch before any UI appears

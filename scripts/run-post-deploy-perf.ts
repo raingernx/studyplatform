@@ -8,6 +8,10 @@ const hotSlug =
   process.env.HOT_SLUG?.trim() || "middle-school-science-quiz-assessment-set";
 const hotCreator = process.env.HOT_CREATOR?.trim() || "kru-mint";
 const categorySlug = process.env.CATEGORY?.trim() || "science";
+const sentinelCategorySlug =
+  process.env.SENTINEL_CATEGORY?.trim() || "art-creativity";
+const sentinelQuery =
+  process.env.SENTINEL_QUERY?.trim() || "worksheet";
 const resultsDir = path.resolve(process.env.PERF_RESULTS_DIR?.trim() || "artifacts/k6");
 const summaryPath = path.resolve(
   process.env.PERF_SUMMARY_PATH?.trim() || "artifacts/perf-summary.json",
@@ -21,16 +25,21 @@ if (!baseUrl) {
   process.exit(1);
 }
 
-if (requestedSuite !== "smoke" && requestedSuite !== "full") {
+if (
+  requestedSuite !== "smoke" &&
+  requestedSuite !== "full" &&
+  requestedSuite !== "sentinel" &&
+  requestedSuite !== "listing-drilldown"
+) {
   console.error(
-    `[post-deploy-perf] Unsupported PERF_SUITE "${requestedSuite}". Use "smoke" or "full".`,
+    `[post-deploy-perf] Unsupported PERF_SUITE "${requestedSuite}". Use "smoke", "full", "sentinel", or "listing-drilldown".`,
   );
   process.exit(1);
 }
 
 const selectedSuite: PerfSuite = requestedSuite;
 
-type PerfSuite = "smoke" | "full";
+type PerfSuite = "smoke" | "full" | "sentinel" | "listing-drilldown";
 
 type RouteSpec = {
   name: string;
@@ -137,6 +146,55 @@ const routeSpecsBySuite: Record<PerfSuite, RouteSpec[]> = {
       script: "k6/routes/resource-detail-hot.js",
       thresholdMs: 1800,
       env: { HOT_SLUG: hotSlug },
+    },
+  ],
+  sentinel: [
+    {
+      name: "filtered_category_art_creativity_sentinel",
+      script: "k6/routes/resources-filtered-category-smoke.js",
+      thresholdMs: 1200,
+      env: { CATEGORY: sentinelCategorySlug },
+    },
+    {
+      name: "search_worksheet_sentinel",
+      script: "k6/routes/resources-search-smoke.js",
+      thresholdMs: 1200,
+      env: { QUERY: sentinelQuery },
+    },
+  ],
+  "listing-drilldown": [
+    {
+      name: "resources_home_smoke",
+      script: "k6/routes/resources-home-smoke.js",
+      thresholdMs: 900,
+    },
+    {
+      name: "listing_recommended_smoke",
+      script: "k6/routes/listing-recommended-smoke.js",
+      thresholdMs: 1000,
+    },
+    {
+      name: "listing_newest_smoke",
+      script: "k6/routes/listing-newest-smoke.js",
+      thresholdMs: 900,
+    },
+    {
+      name: "category_listing_smoke",
+      script: "k6/routes/category-listing-smoke.js",
+      thresholdMs: 1000,
+      env: { CATEGORY: categorySlug },
+    },
+    {
+      name: "filtered_category_art_creativity_sentinel",
+      script: "k6/routes/resources-filtered-category-smoke.js",
+      thresholdMs: 1200,
+      env: { CATEGORY: sentinelCategorySlug },
+    },
+    {
+      name: "search_worksheet_sentinel",
+      script: "k6/routes/resources-search-smoke.js",
+      thresholdMs: 1200,
+      env: { QUERY: sentinelQuery },
     },
   ],
 };

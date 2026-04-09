@@ -1,5 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { PrismaClient } from "@prisma/client";
 import { expect } from "@playwright/test";
 import { chromium, webkit, type Browser, type BrowserContext, type Page } from "playwright";
@@ -16,11 +18,16 @@ const OUTPUT_DIR = path.join(process.cwd(), "test-results", "browser-probe");
 const READY_TIMEOUT_MS = 120_000;
 const READY_POLL_INTERVAL_MS = 2_000;
 const CREATOR_EMAIL = "demo.instructor@krukraft.dev";
+const execFileAsync = promisify(execFile);
 
 type ProbeScenarioName =
   | "launch"
   | "resources-to-library"
   | "library-to-resources"
+  | "resources-account-menu-pages"
+  | "dashboard-avatar-menu-pages"
+  | "listing-filter-pages"
+  | "admin-resource-editor-pages"
   | "dashboard-overview-refresh-shell"
   | "dashboard-library-refresh-shell"
   | "dashboard-downloads-refresh-shell"
@@ -79,6 +86,10 @@ const VALID_SCENARIOS: ProbeScenarioName[] = [
   "launch",
   "resources-to-library",
   "library-to-resources",
+  "resources-account-menu-pages",
+  "dashboard-avatar-menu-pages",
+  "listing-filter-pages",
+  "admin-resource-editor-pages",
   "dashboard-overview-refresh-shell",
   "dashboard-library-refresh-shell",
   "dashboard-downloads-refresh-shell",
@@ -124,8 +135,22 @@ async function ensureServerReady() {
 
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(readyUrl, { cache: "no-store" });
+      const response = await fetch(readyUrl, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(5_000),
+      });
       if (response.ok) {
+        return;
+      }
+    } catch {
+      // Fall through to the curl-based probe below.
+    }
+
+    try {
+      const { stdout } = await execFileAsync("curl", ["-fsS", readyUrl], {
+        timeout: 5_000,
+      });
+      if (stdout.includes('"status":"ok"')) {
         return;
       }
     } catch {
@@ -368,6 +393,108 @@ async function openLibraryFromResources(page: Page) {
   await expect(page).toHaveURL(/\/dashboard\/library$/);
 }
 
+async function openPublicAccountMenu(page: Page) {
+  const accountButton = page
+    .locator(
+      'header button[aria-label="เปิดเมนูบัญชี"]:visible, header button[aria-label="Open account menu"]:visible',
+    )
+    .first();
+
+  await expect(accountButton).toBeVisible({ timeout: 15_000 });
+  await accountButton.hover();
+  await accountButton.click();
+  await expect(page.locator('a[href="/settings"]:visible')).toBeVisible({ timeout: 15_000 });
+}
+
+async function navigateViaPublicAccountMenu(
+  page: Page,
+  target: { href: string; heading: RegExp },
+) {
+  await page.goto("/resources", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/resources(?:\?.*)?$/);
+
+  await openPublicAccountMenu(page);
+
+  const link = page.locator(`a[href="${target.href}"]:visible`).first();
+
+  await expect(link).toBeVisible({ timeout: 15_000 });
+
+  await Promise.all([
+    page.waitForURL(new RegExp(`${target.href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\?.*)?$`), {
+      timeout: 20_000,
+      waitUntil: "commit",
+    }),
+    link.click(),
+  ]);
+
+  await expect(page).toHaveURL(new RegExp(`${target.href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\?.*)?$`));
+  await expect(page.getByRole("heading", { name: target.heading }).first()).toBeVisible({
+    timeout: 20_000,
+  });
+}
+
+async function openDashboardAvatarMenu(page: Page) {
+  const avatarButton = page
+    .locator("header button:has(svg.lucide-chevron-down):visible")
+    .first();
+
+  await expect(avatarButton).toBeVisible({ timeout: 15_000 });
+  await avatarButton.hover();
+  await avatarButton.click();
+
+  await expect(page.locator('div.absolute.right-0.top-full a[href="/dashboard/library"]:visible')).toBeVisible({
+    timeout: 15_000,
+  });
+}
+
+async function navigateViaDashboardAvatarMenu(
+  page: Page,
+  target: { href: string; heading: RegExp },
+) {
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/dashboard(?:\?.*)?$/);
+  await expect(page.getByRole("heading", { name: /Welcome back/i }).first()).toBeVisible({
+    timeout: 20_000,
+  });
+
+  await openDashboardAvatarMenu(page);
+
+  const link = page.locator(`div.absolute.right-0.top-full a[href="${target.href}"]:visible`).first();
+  await expect(link).toBeVisible({ timeout: 15_000 });
+
+  await Promise.all([
+    page.waitForURL(new RegExp(`${target.href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\?.*)?$`), {
+      timeout: 20_000,
+      waitUntil: "commit",
+    }),
+    link.click(),
+  ]);
+
+  await expect(page).toHaveURL(new RegExp(`${target.href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\?.*)?$`));
+  await expect(page.getByRole("heading", { name: target.heading }).first()).toBeVisible({
+    timeout: 20_000,
+  });
+}
+
+async function findSeededAdminResourceId() {
+  const prisma = new PrismaClient();
+
+  try {
+    const resource = await prisma.resource.findFirst({
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+
+    if (!resource) {
+      throw new Error("No seeded resource found for admin-resource-editor-pages probe");
+    }
+
+    return resource.id;
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
 async function setUserThemePreference(email: string, theme: "light" | "dark" | "system") {
   const prisma = new PrismaClient();
 
@@ -485,6 +612,152 @@ async function runLibraryToResourcesScenario({ browser }: ProbeContext) {
     const screenshot = await saveFailureScreenshot(page, "library-to-resources");
     throw new Error(
       `library-to-resources probe failed. Screenshot: ${screenshot}. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  } finally {
+    await closeContext(context);
+  }
+}
+
+async function runResourcesAccountMenuPagesScenario({ browser }: ProbeContext) {
+  const context = await createContext(browser);
+  const page = await context.newPage();
+  const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
+  const targets: Array<{ href: string; heading: RegExp }> = [
+    { href: "/dashboard", heading: /Welcome back/i },
+    { href: "/dashboard/purchases", heading: /^Purchases$/i },
+    { href: "/settings", heading: /^Settings$/i },
+  ];
+
+  try {
+    await loginAsCreator(page, "/resources");
+    await expect(page).toHaveURL(/\/resources(?:\?.*)?$/);
+
+    for (const target of targets) {
+      await navigateViaPublicAccountMenu(page, target);
+    }
+
+    expect(pageErrors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  } catch (error) {
+    const screenshot = await saveFailureScreenshot(page, "resources-account-menu-pages");
+    throw new Error(
+      `resources-account-menu-pages probe failed. Screenshot: ${screenshot}. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  } finally {
+    await closeContext(context);
+  }
+}
+
+async function runDashboardAvatarMenuPagesScenario({ browser }: ProbeContext) {
+  const context = await createContext(browser);
+  const page = await context.newPage();
+  const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
+  const targets: Array<{ href: string; heading: RegExp }> = [
+    { href: "/dashboard/library", heading: /^My Library$/i },
+    { href: "/dashboard/purchases", heading: /^Purchases$/i },
+    { href: "/settings", heading: /^Settings$/i },
+  ];
+
+  try {
+    await loginAsCreator(page, "/dashboard");
+    await expect(page).toHaveURL(/\/dashboard(?:\?.*)?$/);
+
+    for (const target of targets) {
+      await navigateViaDashboardAvatarMenu(page, target);
+    }
+
+    expect(pageErrors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  } catch (error) {
+    const screenshot = await saveFailureScreenshot(page, "dashboard-avatar-menu-pages");
+    throw new Error(
+      `dashboard-avatar-menu-pages probe failed. Screenshot: ${screenshot}. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  } finally {
+    await closeContext(context);
+  }
+}
+
+async function runListingFilterPagesScenario({ browser }: ProbeContext) {
+  const context = await createContext(browser);
+  const page = await context.newPage();
+  const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
+  const targets = [
+    "/resources?category=art-creativity",
+    "/resources?category=science",
+    "/resources?search=worksheet",
+  ];
+
+  try {
+    await loginAsCreator(page, "/resources");
+    await expect(page).toHaveURL(/\/resources(?:\?.*)?$/);
+
+    for (const target of targets) {
+      await page.goto(target, { waitUntil: "domcontentloaded" });
+      await expect(page).toHaveURL(
+        new RegExp(`${target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
+      );
+      await expect(page.locator('[data-route-shell-ready="resources-browse"]').first()).toBeVisible({
+        timeout: 20_000,
+      });
+      await expect(
+        page.getByRole("heading", { name: /The resource library could not load\./i }),
+      ).toHaveCount(0);
+      await expect
+        .poll(
+          async () =>
+            page.locator('main a[href^="/resources/"]:visible').count(),
+          { timeout: 20_000 },
+        )
+        .toBeGreaterThan(0);
+    }
+
+    expect(pageErrors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  } catch (error) {
+    const screenshot = await saveFailureScreenshot(page, "listing-filter-pages");
+    throw new Error(
+      `listing-filter-pages probe failed. Screenshot: ${screenshot}. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  } finally {
+    await closeContext(context);
+  }
+}
+
+async function runAdminResourceEditorPagesScenario({ browser }: ProbeContext) {
+  const context = await createContext(browser);
+  const page = await context.newPage();
+  const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
+
+  try {
+    const resourceId = await findSeededAdminResourceId();
+
+    await loginAsAdmin(page, "/admin/resources/new");
+    await expect(page).toHaveURL(/\/admin\/resources\/new$/);
+    await expect(page.getByRole("heading", { name: /^Create Resource$/i }).first()).toBeVisible({
+      timeout: 20_000,
+    });
+
+    await page.goto(`/admin/resources/${resourceId}`, { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(new RegExp(`/admin/resources/${resourceId}(?:\\?.*)?$`));
+    await expect(page.getByRole("heading", { name: /^Edit Resource$/i }).first()).toBeVisible({
+      timeout: 20_000,
+    });
+
+    expect(pageErrors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  } catch (error) {
+    const screenshot = await saveFailureScreenshot(page, "admin-resource-editor-pages");
+    throw new Error(
+      `admin-resource-editor-pages probe failed. Screenshot: ${screenshot}. ${
         error instanceof Error ? error.message : String(error)
       }`,
     );
@@ -1298,6 +1571,10 @@ const scenarioHandlers: Record<ProbeScenarioName, (context: ProbeContext) => Pro
   launch: runLaunchScenario,
   "resources-to-library": runResourcesToLibraryScenario,
   "library-to-resources": runLibraryToResourcesScenario,
+  "resources-account-menu-pages": runResourcesAccountMenuPagesScenario,
+  "dashboard-avatar-menu-pages": runDashboardAvatarMenuPagesScenario,
+  "listing-filter-pages": runListingFilterPagesScenario,
+  "admin-resource-editor-pages": runAdminResourceEditorPagesScenario,
   "dashboard-overview-refresh-shell": runDashboardOverviewRefreshShellScenario,
   "dashboard-library-refresh-shell": runDashboardLibraryRefreshShellScenario,
   "dashboard-downloads-refresh-shell": runDashboardDownloadsRefreshShellScenario,
@@ -1339,7 +1616,9 @@ const scenarioHandlers: Record<ProbeScenarioName, (context: ProbeContext) => Pro
 
 async function main() {
   const scenarios = parseScenarioNames(process.argv.slice(2));
+  console.log(`[browser-probe] Waiting for server readiness at ${BASE_URL}/api/internal/ready ...`);
   await ensureServerReady();
+  console.log("[browser-probe] Server ready. Launching browser ...");
   const probeContext = await launchBrowser();
 
   console.log(
