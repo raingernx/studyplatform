@@ -1,6 +1,7 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
-import { requireSession } from "@/lib/auth/require-session";
+import { getCachedServerSession } from "@/lib/auth";
 import { PageContentNarrow, SectionHeader } from "@/design-system";
 import { SettingsTabs } from "@/components/settings/SettingsTabs";
 import { SettingsTabsSkeleton } from "@/components/skeletons/SettingsPageSkeleton";
@@ -13,8 +14,21 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-async function SettingsTabsContent({ userId }: { userId: string }) {
-  const { user, preferences } = await getDashboardSettingsPageData(userId);
+async function SettingsTabsContent() {
+  const session = await getCachedServerSession();
+
+  if (!session?.user?.id) {
+    redirect(routes.loginWithNext(routes.settings));
+  }
+
+  const { user, preferences } = await getDashboardSettingsPageData({
+    userId: session.user.id,
+    fallbackUser: {
+      name: session.user.name ?? null,
+      email: session.user.email ?? null,
+      image: session.user.image ?? null,
+    },
+  });
 
   return (
     <SettingsTabs
@@ -28,9 +42,7 @@ async function SettingsTabsContent({ userId }: { userId: string }) {
   );
 }
 
-export default async function SettingsPage() {
-  const { userId } = await requireSession(routes.settings);
-
+export default function SettingsPage() {
   return (
     <PageContentNarrow data-route-shell-ready="dashboard-settings" className="space-y-8">
       <SectionHeader
@@ -38,7 +50,7 @@ export default async function SettingsPage() {
         description="Manage your account preferences and security."
       />
       <Suspense fallback={<SettingsTabsSkeleton />}>
-        <SettingsTabsContent userId={userId} />
+        <SettingsTabsContent />
       </Suspense>
     </PageContentNarrow>
   );

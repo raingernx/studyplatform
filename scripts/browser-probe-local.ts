@@ -435,16 +435,18 @@ async function navigateViaPublicAccountMenu(
 
 async function openDashboardAvatarMenu(page: Page) {
   const avatarButton = page
-    .locator("header button:has(svg.lucide-chevron-down):visible")
+    .locator('[data-dashboard-account-trigger="true"]:visible')
     .first();
 
   await expect(avatarButton).toBeVisible({ timeout: 15_000 });
   await avatarButton.hover();
   await avatarButton.click();
 
-  await expect(page.locator('div.absolute.right-0.top-full a[href="/dashboard/library"]:visible')).toBeVisible({
-    timeout: 15_000,
-  });
+  await expect(
+    page.locator(
+      '[data-dashboard-account-menu="true"] [data-dashboard-account-link="/dashboard/library"]:visible',
+    ),
+  ).toBeVisible({ timeout: 15_000 });
 }
 
 async function navigateViaDashboardAvatarMenu(
@@ -459,7 +461,11 @@ async function navigateViaDashboardAvatarMenu(
 
   await openDashboardAvatarMenu(page);
 
-  const link = page.locator(`div.absolute.right-0.top-full a[href="${target.href}"]:visible`).first();
+  const link = page
+    .locator(
+      `[data-dashboard-account-menu="true"] [data-dashboard-account-link="${target.href}"]:visible`,
+    )
+    .first();
   await expect(link).toBeVisible({ timeout: 15_000 });
 
   await Promise.all([

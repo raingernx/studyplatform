@@ -70,6 +70,14 @@ export const CACHE_KEYS = {
     `marketplace_recommended_listing:${categorySlug ?? "all"}:page1:12`,
   marketplaceNewestListing: (categorySlug?: string | null) =>
     `marketplace_newest_listing:${categorySlug ?? "all"}:page1:20`,
+  marketplaceSearchListing: (
+    query: string,
+    category: string | null,
+    sort: string,
+    page: number,
+    pageSize: number,
+  ) =>
+    `marketplace_search_listing:${encodeURIComponent(query.toLowerCase())}:${category ?? "all"}:${sort}:page${page}:${pageSize}`,
   resourceMetadata: (slug: string) => `resource_metadata:${slug}`,
   resourcePurchaseMeta: (slug: string) => `resource_purchase_meta:${slug}`,
   resourceBodyContent: (slug: string) => `resource_body_content:${slug}`,

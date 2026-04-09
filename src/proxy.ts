@@ -76,7 +76,9 @@ export async function proxy(req: NextRequest) {
 
   if (
     pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/admin")
+    pathname.startsWith("/admin") ||
+    pathname === "/settings" ||
+    pathname === "/subscription"
   ) {
     const response = await handleProtectedRoute(req);
     assignRankingVariantIfAbsent(req, response);

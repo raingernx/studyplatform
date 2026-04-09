@@ -689,7 +689,12 @@ async function loadMarketplaceResources(filters: NormalizedMarketplaceFilters) {
 type MarketplaceResourcesResult = Awaited<
   ReturnType<typeof loadMarketplaceResources>
 >;
+const MARKETPLACE_SEARCH_CACHE_MAX_KEYS = 64;
 const _marketplaceResourcesCacheMap = new Map<
+  string,
+  () => Promise<MarketplaceResourcesResult>
+>();
+const _marketplaceSearchResourcesCacheMap = new Map<
   string,
   () => Promise<MarketplaceResourcesResult>
 >();
@@ -701,6 +706,64 @@ const _categoryLandingPageCacheMap = new Map<
   string,
   () => Promise<CategoryLandingPageResult>
 >();
+
+function readBoundedCachedFn<T>(
+  map: Map<string, () => Promise<T>>,
+  key: string,
+) {
+  const cachedFn = map.get(key);
+  if (!cachedFn) {
+    return null;
+  }
+
+  map.delete(key);
+  map.set(key, cachedFn);
+  return cachedFn;
+}
+
+function writeBoundedCachedFn<T>(
+  map: Map<string, () => Promise<T>>,
+  key: string,
+  cachedFn: () => Promise<T>,
+  maxKeys: number,
+) {
+  if (map.has(key)) {
+    map.delete(key);
+  }
+
+  while (map.size >= maxKeys) {
+    const oldestKey = map.keys().next().value;
+    if (!oldestKey) {
+      break;
+    }
+    map.delete(oldestKey);
+  }
+
+  map.set(key, cachedFn);
+}
+
+function getReusableMarketplaceSearchListingCacheKey(
+  filters: NormalizedMarketplaceFilters,
+) {
+  if (
+    filters.search === null ||
+    filters.featured ||
+    filters.price !== null ||
+    filters.tag !== null ||
+    filters.page !== MARKETPLACE_DEFAULT_PAGE ||
+    filters.pageSize !== MARKETPLACE_LISTING_PAGE_SIZE
+  ) {
+    return null;
+  }
+
+  return CACHE_KEYS.marketplaceSearchListing(
+    filters.search,
+    filters.category,
+    filters.sort,
+    filters.page,
+    filters.pageSize,
+  );
+}
 
 export async function getMarketplaceResources(filters: MarketplaceFilters) {
   const normalizedFilters = normalizeMarketplaceFilters(filters);
@@ -718,24 +781,70 @@ export async function getMarketplaceResources(filters: MarketplaceFilters) {
     sort: normalizedFilters.sort,
   });
 
-  // Search queries produce unique, one-off cache keys that are never reused.
-  // Caching them via unstable_cache would grow the in-process cache without
-  // bound. Bypass caching for search — the pg_trgm index makes the DB query
-  // fast enough that caching provides no meaningful benefit here.
   if (normalizedFilters.search !== null) {
-    recordCacheMiss("getMarketplaceResources", {
-      cacheKey,
-      category: normalizedFilters.category ?? "all",
-      page: normalizedFilters.page,
-      sort: normalizedFilters.sort,
-    });
-    logPerformanceEvent("cache_bypass:getMarketplaceResources", {
-      category: normalizedFilters.category ?? "all",
-      page: normalizedFilters.page,
-      pageSize: normalizedFilters.pageSize,
-      sort: normalizedFilters.sort,
-    });
-    return loadMarketplaceResources(normalizedFilters);
+    const reusableSearchCacheKey =
+      getReusableMarketplaceSearchListingCacheKey(normalizedFilters);
+
+    if (!reusableSearchCacheKey) {
+      recordCacheMiss("getMarketplaceResources", {
+        cacheKey,
+        category: normalizedFilters.category ?? "all",
+        page: normalizedFilters.page,
+        sort: normalizedFilters.sort,
+      });
+      logPerformanceEvent("cache_bypass:getMarketplaceResources", {
+        category: normalizedFilters.category ?? "all",
+        page: normalizedFilters.page,
+        pageSize: normalizedFilters.pageSize,
+        sort: normalizedFilters.sort,
+      });
+      return loadMarketplaceResources(normalizedFilters);
+    }
+
+    let cachedFn = readBoundedCachedFn(
+      _marketplaceSearchResourcesCacheMap,
+      reusableSearchCacheKey,
+    );
+
+    if (!cachedFn) {
+      // Search listings are dynamic enough that we avoid a Redis cross-instance
+      // layer here; keep the cache local, bounded, and short-lived so repeated
+      // first-page searches can reuse the same render work without accumulating
+      // unbounded query keys or stale shared search results.
+      cachedFn = unstable_cache(
+        async function _getReusableMarketplaceSearchResourcesByKey() {
+          recordCacheMiss("getMarketplaceResources", {
+            cacheKey,
+            category: normalizedFilters.category ?? "all",
+            page: normalizedFilters.page,
+            sort: normalizedFilters.sort,
+          });
+          logPerformanceEvent("cache_execute:getMarketplaceSearchResources", {
+            category: normalizedFilters.category ?? "all",
+            page: normalizedFilters.page,
+            pageSize: normalizedFilters.pageSize,
+            sort: normalizedFilters.sort,
+          });
+          return runSingleFlight(singleFlightKey, () =>
+            loadMarketplaceResources(normalizedFilters),
+          );
+        },
+        ["marketplace-search-resources", reusableSearchCacheKey],
+        {
+          revalidate: CACHE_TTLS.publicPage,
+          tags: [CACHE_TAGS.discover],
+        },
+      );
+
+      writeBoundedCachedFn(
+        _marketplaceSearchResourcesCacheMap,
+        reusableSearchCacheKey,
+        cachedFn,
+        MARKETPLACE_SEARCH_CACHE_MAX_KEYS,
+      );
+    }
+
+    return cachedFn();
   }
 
   let cachedFn = _marketplaceResourcesCacheMap.get(cacheKey);

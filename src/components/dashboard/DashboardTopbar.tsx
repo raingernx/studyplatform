@@ -209,6 +209,10 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
           <div ref={avatarRef} className="relative">
             <button
               type="button"
+              aria-label="Open dashboard account menu"
+              aria-haspopup="menu"
+              aria-expanded={avatarOpen}
+              data-dashboard-account-trigger="true"
               onClick={() => {
                 if (!avatarOpen) {
                   warmAvatarMenuTargets();
@@ -236,7 +240,10 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
             </button>
 
             {avatarOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+              <div
+                data-dashboard-account-menu="true"
+                className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_rgba(15,23,42,0.08)]"
+              >
                 <div className="border-b border-border px-4 py-3">
                   <p className="text-small font-semibold text-foreground">
                     {user.name ?? "Account"}
@@ -253,6 +260,7 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
                       <Link
                         key={item.href}
                         href={item.href}
+                        data-dashboard-account-link={item.href}
                         onMouseEnter={warmAvatarMenuTargets}
                         onFocus={warmAvatarMenuTargets}
                         onClick={() => {

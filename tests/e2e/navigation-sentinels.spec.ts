@@ -74,7 +74,7 @@ test("dashboard avatar menu reaches library purchases and settings", async ({ pa
   await expect(page.getByRole("heading", { name: /Welcome back/i }).first()).toBeVisible();
 
   const avatarButton = page
-    .locator("header button:has(svg.lucide-chevron-down):visible")
+    .locator('header button[data-dashboard-account-trigger="true"]:visible')
     .first();
 
   await expect(avatarButton).toBeVisible({ timeout: 20_000 });
@@ -93,7 +93,11 @@ test("dashboard avatar menu reaches library purchases and settings", async ({ pa
 
     await avatarButton.click();
 
-    const link = page.locator(`div.absolute.right-0.top-full a[href="${target.href}"]:visible`).first();
+    const link = page
+      .locator(
+        `header [data-dashboard-account-menu="true"] a[data-dashboard-account-link="${target.href}"]:visible`,
+      )
+      .first();
     await expect(link).toBeVisible({ timeout: 20_000 });
 
     await Promise.all([

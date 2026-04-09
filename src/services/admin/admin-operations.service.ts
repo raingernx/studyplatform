@@ -36,7 +36,8 @@ import { findAdminOrders, findAdminResourcePurchaseSummaries, getAdminOrdersToda
 import { getUserPurchaseHistory } from "@/services/purchases";
 import { getUserMembershipOverview } from "@/services/subscriptions/subscription.service";
 import { toSlug } from "@/lib/slug";
-import { getUserPreferences } from "@/lib/preferences";
+import { DEFAULT_USER_PREFERENCES, getUserPreferences } from "@/lib/preferences";
+import { runBestEffortAsync, runWithTimeoutFallback } from "@/lib/async";
 
 type AdminResourceRow = {
   id: string;
@@ -519,10 +520,47 @@ export async function deleteAdminTag(tagId: string) {
   return { tag };
 }
 
-export async function getDashboardSettingsPageData(userId: string) {
+export async function getDashboardSettingsPageData(input: {
+  userId: string;
+  fallbackUser?: {
+    name: string | null;
+    email: string | null;
+    image: string | null;
+  } | null;
+}) {
+  const fallbackUser = input.fallbackUser ?? null;
+
   const [user, preferences] = await Promise.all([
-    findUserSettingsProfile(userId),
-    getUserPreferences(userId),
+    runWithTimeoutFallback(
+      () =>
+        runBestEffortAsync(
+          () => findUserSettingsProfile(input.userId),
+          {
+            fallback: fallbackUser,
+            warningLabel: "[dashboard-settings] using fallback user profile",
+          },
+        ),
+      {
+        timeoutMs: 1200,
+        fallback: fallbackUser,
+        warningLabel: "[dashboard-settings] user profile timed out",
+      },
+    ),
+    runWithTimeoutFallback(
+      () =>
+        runBestEffortAsync(
+          () => getUserPreferences(input.userId),
+          {
+            fallback: DEFAULT_USER_PREFERENCES,
+            warningLabel: "[dashboard-settings] using default preferences",
+          },
+        ),
+      {
+        timeoutMs: 1200,
+        fallback: DEFAULT_USER_PREFERENCES,
+        warningLabel: "[dashboard-settings] preferences timed out",
+      },
+    ),
   ]);
 
   return { user, preferences };

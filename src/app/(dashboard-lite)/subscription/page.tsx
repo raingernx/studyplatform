@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   Sparkles,
   Check,
@@ -10,12 +12,13 @@ import {
   CreditCard,
   Star,
 } from "lucide-react";
-import { requireSession } from "@/lib/auth/require-session";
+import { getCachedServerSession } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { PageContentNarrow } from "@/design-system";
 import { getDashboardSubscriptionPageData } from "@/services/admin";
 import { getBuildSafePlatformConfig } from "@/services/platform";
 import { routes } from "@/lib/routes";
+import { DashboardSubscriptionResultsSkeleton } from "@/components/skeletons/DashboardUserRouteSkeletons";
 
 export const metadata = {
   title: "Membership",
@@ -46,9 +49,13 @@ const PRO_BENEFITS = [
   },
 ];
 
-export default async function SubscriptionPage() {
-  const { userId } = await requireSession(routes.subscription);
+async function SubscriptionContent() {
+  const session = await getCachedServerSession();
+  if (!session?.user?.id) {
+    redirect(routes.loginWithNext(routes.subscription));
+  }
 
+  const userId = session.user.id;
   const platform = getBuildSafePlatformConfig();
   const user = await getDashboardSubscriptionPageData(userId);
 
@@ -57,18 +64,7 @@ export default async function SubscriptionPage() {
   const hasPlan = isActive || isTrialing;
   const resourcesOwned = user?.purchases.length ?? 0;
 
-  return (
-    <PageContentNarrow data-route-shell-ready="dashboard-subscription" className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
-          Membership
-        </h1>
-        <p className="text-[14px] text-muted-foreground">
-          Manage your plan and unlock full access to {platform.platformShortName}.
-        </p>
-      </div>
-
-      {hasPlan ? (
+  return hasPlan ? (
         <div className="space-y-5">
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-blue-600 to-blue-500 p-6 text-white shadow-glow-violet">
             <div className="absolute right-0 top-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-white/5" />
@@ -254,7 +250,26 @@ export default async function SubscriptionPage() {
             </div>
           </div>
         </div>
-      )}
+      );
+}
+
+export default function SubscriptionPage() {
+  const platform = getBuildSafePlatformConfig();
+
+  return (
+    <PageContentNarrow data-route-shell-ready="dashboard-subscription" className="space-y-8">
+      <div className="space-y-2">
+        <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
+          Membership
+        </h1>
+        <p className="text-[14px] text-muted-foreground">
+          Manage your plan and unlock full access to {platform.platformShortName}.
+        </p>
+      </div>
+
+      <Suspense fallback={<DashboardSubscriptionResultsSkeleton />}>
+        <SubscriptionContent />
+      </Suspense>
     </PageContentNarrow>
   );
 }

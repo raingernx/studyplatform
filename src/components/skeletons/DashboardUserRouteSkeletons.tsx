@@ -575,6 +575,35 @@ export function DashboardSubscriptionSkeleton() {
   return runtimeSkeleton(<DashboardSubscriptionPreview />, "dashboard-subscription");
 }
 
+export function DashboardSubscriptionResultsSkeleton() {
+  return runtimeSkeleton(
+    <div className="space-y-5">
+      <div className="relative overflow-hidden rounded-2xl p-6">
+        <LoadingSkeleton className="h-[220px] w-full rounded-2xl" />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <LoadingSkeleton className="h-[142px] rounded-2xl" />
+        <LoadingSkeleton className="h-[142px] rounded-2xl" />
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
+        <LoadingSkeleton className="h-5 w-32" />
+        <div className="mt-4 space-y-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="flex items-start gap-3">
+              <LoadingSkeleton className="h-8 w-8 rounded-xl" />
+              <div className="space-y-1.5">
+                <LoadingSkeleton className="h-4 w-40" />
+                <LoadingSkeleton className="h-3 w-72 max-w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>,
+    "dashboard-subscription-results",
+  );
+}
+
 export function DashboardResourcesRedirectBonesPreview() {
   return previewSkeleton(
     DASHBOARD_RESOURCES_REDIRECT_NAME,
