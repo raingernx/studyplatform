@@ -1,5 +1,8 @@
 import { Suspense } from "react";
-import { isMissingTableError } from "@/lib/prismaErrors";
+import {
+  isMissingTableError,
+  isTransientPrismaInfrastructureError,
+} from "@/lib/prismaErrors";
 import { Container } from "@/design-system";
 import {
   CategoryChips,
@@ -49,9 +52,20 @@ export async function ResourcesCatalogControls() {
       },
     );
   } catch (error) {
-    if (!isMissingTableError(error)) {
+    if (
+      !isMissingTableError(error) &&
+      !isTransientPrismaInfrastructureError(error)
+    ) {
       throw error;
     }
+
+    console.error("[RESOURCES_CATALOG_CATEGORIES_FALLBACK]", {
+      error:
+        error instanceof Error
+          ? { message: error.message, name: error.name }
+          : String(error),
+      fallbackApplied: true,
+    });
   }
 
   const categories = categoriesWithCount.map((category) => ({

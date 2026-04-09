@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Input, Select } from "@/design-system";
@@ -32,35 +33,30 @@ interface AuditTrailItem {
 }
 
 interface AuditTrailClientProps {
-  items: AuditTrailItem[];
   actionOptions: string[];
   adminOptions: { id: string; name: string | null; email: string | null }[];
-  pagination: {
-    page: number;
-    totalPages: number;
-  };
   initialFilters: {
     action: string;
     adminId: string;
     from: string;
     to: string;
   };
+  children?: ReactNode;
 }
 
-export function AuditTrailClient({
-  items,
-  actionOptions,
-  adminOptions,
-  pagination,
-  initialFilters,
-}: AuditTrailClientProps) {
+function useAuditTrailQueryUpdater() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const page = pagination.page;
-  const totalPages = pagination.totalPages;
-
-  function updateQuery(next: Partial<{ page: number; action: string; adminId: string; from: string; to: string }>) {
+  return function updateQuery(
+    next: Partial<{
+      page: number;
+      action: string;
+      adminId: string;
+      from: string;
+      to: string;
+    }>,
+  ) {
     const params = new URLSearchParams(searchParams ?? undefined);
 
     if (next.page !== undefined) {
@@ -77,7 +73,6 @@ export function AuditTrailClient({
       } else {
         params.set("action", next.action);
       }
-      // Reset page when filters change
       params.delete("page");
     }
 
@@ -110,12 +105,16 @@ export function AuditTrailClient({
 
     const qs = params.toString();
     router.push(routes.adminAuditQuery(qs));
-  }
+  };
+}
 
-  function handlePageChange(nextPage: number) {
-    if (nextPage < 1 || nextPage > totalPages) return;
-    updateQuery({ page: nextPage });
-  }
+export function AuditTrailShell({
+  actionOptions,
+  adminOptions,
+  initialFilters,
+  children,
+}: AuditTrailClientProps) {
+  const updateQuery = useAuditTrailQueryUpdater();
 
   return (
     <div className="min-w-0 space-y-8">
@@ -203,68 +202,123 @@ export function AuditTrailClient({
         </div>
       </TableToolbar>
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <DataTable minWidth="min-w-full" className="rounded-none border-0 bg-transparent">
-          <DataTableHeader>
-            <tr>
-              <DataTableHeadCell className="px-2">
-                Admin
-              </DataTableHeadCell>
-              <DataTableHeadCell className="px-3">
-                Action
-              </DataTableHeadCell>
-              <DataTableHeadCell className="px-3">
-                Entity
-              </DataTableHeadCell>
-              <DataTableHeadCell className="px-3">
-                Date
-              </DataTableHeadCell>
-            </tr>
-          </DataTableHeader>
-          <DataTableBody>
-            {items.length === 0 ? (
-              <TableEmptyState
-                message="No audit events found"
-                description="Try widening the date range or clearing the current filters."
-              />
-            ) : (
-              items.map((item) => (
-                <DataTableRow key={item.id}>
-                  <DataTableCell className="px-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {item.admin.name}
-                      </p>
-                      {item.admin.email && (
-                        <p className="truncate text-caption text-muted-foreground">
-                          {item.admin.email}
-                        </p>
-                      )}
-                    </div>
-                  </DataTableCell>
-                  <DataTableCell className="px-3 text-muted-foreground">
-                    {item.action}
-                  </DataTableCell>
-                  <DataTableCell className="px-3 text-muted-foreground">
-                    {item.entityType}
-                    {item.entityId && ` #${item.entityId}`}
-                  </DataTableCell>
-                  <DataTableCell className="px-3 text-muted-foreground">
-                    {formatDate(new Date(item.createdAt))}
-                  </DataTableCell>
-                </DataTableRow>
-              ))
-            )}
-          </DataTableBody>
-        </DataTable>
-        <TablePagination
-          page={page}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          className="px-4 py-2.5"
-        />
-      </div>
+      {children}
     </div>
+  );
+}
+
+export function AuditTrailResults({
+  items,
+  pagination,
+}: {
+  items: AuditTrailItem[];
+  pagination: {
+    page: number;
+    totalPages: number;
+  };
+}) {
+  const updateQuery = useAuditTrailQueryUpdater();
+  const page = pagination.page;
+  const totalPages = pagination.totalPages;
+
+  function handlePageChange(nextPage: number) {
+    if (nextPage < 1 || nextPage > totalPages) return;
+    updateQuery({ page: nextPage });
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <DataTable minWidth="min-w-full" className="rounded-none border-0 bg-transparent">
+        <DataTableHeader>
+          <tr>
+            <DataTableHeadCell className="px-2">
+              Admin
+            </DataTableHeadCell>
+            <DataTableHeadCell className="px-3">
+              Action
+            </DataTableHeadCell>
+            <DataTableHeadCell className="px-3">
+              Entity
+            </DataTableHeadCell>
+            <DataTableHeadCell className="px-3">
+              Date
+            </DataTableHeadCell>
+          </tr>
+        </DataTableHeader>
+        <DataTableBody>
+          {items.length === 0 ? (
+            <TableEmptyState
+              message="No audit events found"
+              description="Try widening the date range or clearing the current filters."
+            />
+          ) : (
+            items.map((item) => (
+              <DataTableRow key={item.id}>
+                <DataTableCell className="px-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {item.admin.name}
+                    </p>
+                    {item.admin.email && (
+                      <p className="truncate text-caption text-muted-foreground">
+                        {item.admin.email}
+                      </p>
+                    )}
+                  </div>
+                </DataTableCell>
+                <DataTableCell className="px-3 text-muted-foreground">
+                  {item.action}
+                </DataTableCell>
+                <DataTableCell className="px-3 text-muted-foreground">
+                  {item.entityType}
+                  {item.entityId && ` #${item.entityId}`}
+                </DataTableCell>
+                <DataTableCell className="px-3 text-muted-foreground">
+                  {formatDate(new Date(item.createdAt))}
+                </DataTableCell>
+              </DataTableRow>
+            ))
+          )}
+        </DataTableBody>
+      </DataTable>
+      <TablePagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+        className="px-4 py-2.5"
+      />
+    </div>
+  );
+}
+
+export function AuditTrailClient({
+  items,
+  actionOptions,
+  adminOptions,
+  pagination,
+  initialFilters,
+}: {
+  items: AuditTrailItem[];
+  actionOptions: string[];
+  adminOptions: { id: string; name: string | null; email: string | null }[];
+  pagination: {
+    page: number;
+    totalPages: number;
+  };
+  initialFilters: {
+    action: string;
+    adminId: string;
+    from: string;
+    to: string;
+  };
+}) {
+  return (
+    <AuditTrailShell
+      actionOptions={actionOptions}
+      adminOptions={adminOptions}
+      initialFilters={initialFilters}
+    >
+      <AuditTrailResults items={items} pagination={pagination} />
+    </AuditTrailShell>
   );
 }

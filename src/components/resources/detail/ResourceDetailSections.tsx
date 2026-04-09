@@ -258,6 +258,7 @@ export async function ResourceDetailRelatedSection({
         fallback: {
           relatedResources: [],
         },
+        timeoutMs: 900,
       },
     );
 

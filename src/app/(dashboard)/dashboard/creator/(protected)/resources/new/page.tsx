@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import nextDynamic from "next/dynamic";
 import { requireSession } from "@/lib/auth/require-session";
@@ -40,8 +41,6 @@ export default async function CreatorNewResourcePage() {
     });
   }
 
-  const { categories } = await getCreatorResourceFormData(userId);
-
   return (
     <div
       data-route-shell-ready="dashboard-creator-resource-editor"
@@ -69,11 +68,12 @@ export default async function CreatorNewResourcePage() {
           isFirstResource ? "grid gap-6 lg:grid-cols-[1fr_280px]" : undefined
         }
       >
-        <CreatorResourceForm
-          mode="create"
-          categories={categories}
-          isFirstResource={isFirstResource}
-        />
+        <Suspense fallback={<CreatorResourceFormLoadingShell />}>
+          <CreatorNewResourceFormSection
+            userId={userId}
+            isFirstResource={isFirstResource}
+          />
+        </Suspense>
 
         {isFirstResource && (
           <aside className="space-y-4">
@@ -82,5 +82,23 @@ export default async function CreatorNewResourcePage() {
         )}
       </div>
     </div>
+  );
+}
+
+async function CreatorNewResourceFormSection({
+  userId,
+  isFirstResource,
+}: {
+  userId: string;
+  isFirstResource: boolean;
+}) {
+  const { categories } = await getCreatorResourceFormData(userId);
+
+  return (
+    <CreatorResourceForm
+      mode="create"
+      categories={categories}
+      isFirstResource={isFirstResource}
+    />
   );
 }

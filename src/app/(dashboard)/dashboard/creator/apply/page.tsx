@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import {
   BarChart2,
@@ -8,13 +9,16 @@ import {
   Upload,
   XCircle,
 } from "lucide-react";
-import { authOptions } from "@/lib/auth";
 import { requireSession } from "@/lib/auth/require-session";
 import { PageContent } from "@/design-system";
 import { routes } from "@/lib/routes";
 import { canAccessCreatorWorkspace, getCreatorAccessState } from "@/services/creator";
 import { CreatorApplicationForm } from "@/components/creator/CreatorApplicationForm";
 import { findCreatorApplicationRecord } from "@/repositories/creators/creator.repository";
+import {
+  CreatorApplyPanelSkeleton,
+  CreatorApplyRejectedFeedbackSkeleton,
+} from "@/components/skeletons/CreatorApplyPageSkeleton";
 
 export const metadata = {
   title: "Become a Creator",
@@ -46,7 +50,11 @@ const BENEFITS = [
 ];
 
 export default async function CreatorApplyPage() {
-  const { userId } = await requireSession(routes.creatorApply);
+  const { userId, session } = await requireSession(routes.creatorApply);
+
+  if (session.user.role === "ADMIN" || session.user.role === "INSTRUCTOR") {
+    redirect(routes.creatorDashboard);
+  }
 
   const access = await getCreatorAccessState(userId);
 
@@ -101,17 +109,57 @@ export default async function CreatorApplyPage() {
         </div>
       </div>
 
-      {/* State-based action panel */}
-      {applicationStatus === "APPROVED" && <ApprovedPanel />}
-      {applicationStatus === "PENDING" && <PendingPanel />}
-      {applicationStatus === "REJECTED" && (
-        <RejectedPanel userId={userId} />
-      )}
-      {applicationStatus === "NOT_APPLIED" && (
-        <ApplyPanel />
-      )}
+      <Suspense
+        fallback={
+          <CreatorApplyPanelSkeleton
+            variant={getCreatorApplySkeletonVariant(applicationStatus)}
+          />
+        }
+      >
+        <CreatorApplyStatePanel
+          applicationStatus={applicationStatus}
+          userId={userId}
+        />
+      </Suspense>
     </PageContent>
   );
+}
+
+async function CreatorApplyStatePanel({
+  applicationStatus,
+  userId,
+}: {
+  applicationStatus: string;
+  userId: string;
+}) {
+  if (applicationStatus === "APPROVED") {
+    return <ApprovedPanel />;
+  }
+
+  if (applicationStatus === "PENDING") {
+    return <PendingPanel />;
+  }
+
+  if (applicationStatus === "REJECTED") {
+    return <RejectedPanel userId={userId} />;
+  }
+
+  return <ApplyPanel />;
+}
+
+function getCreatorApplySkeletonVariant(
+  applicationStatus: string,
+): "approved" | "pending" | "rejected" | "not-applied" {
+  switch (applicationStatus) {
+    case "APPROVED":
+      return "approved";
+    case "PENDING":
+      return "pending";
+    case "REJECTED":
+      return "rejected";
+    default:
+      return "not-applied";
+  }
 }
 
 function PendingPanel() {
@@ -150,9 +198,6 @@ function ApprovedPanel() {
 }
 
 async function RejectedPanel({ userId }: { userId: string }) {
-  const record = await findCreatorApplicationRecord(userId);
-  const reason = record?.rejectionReason;
-
   return (
     <div className="space-y-5 rounded-2xl border border-red-200 bg-card p-6 shadow-card">
       <div className="flex items-start gap-3">
@@ -160,22 +205,36 @@ async function RejectedPanel({ userId }: { userId: string }) {
         <div>
           <h2 className="text-base font-semibold text-foreground">Application not approved</h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Unfortunately your application was not approved at this time.
-            {reason ? " Please see the feedback below." : " You may reapply with updated information."}
+            Unfortunately your application was not approved at this time. You may reapply with
+            updated information.
           </p>
-          {reason && (
-            <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">
-              <span className="font-medium">Feedback: </span>
-              {reason}
-            </div>
-          )}
         </div>
       </div>
+
+      <Suspense fallback={<CreatorApplyRejectedFeedbackSkeleton />}>
+        <RejectedFeedbackSection userId={userId} />
+      </Suspense>
 
       <div>
         <h3 className="mb-4 text-sm font-semibold text-foreground">Submit a new application</h3>
         <CreatorApplicationForm />
       </div>
+    </div>
+  );
+}
+
+async function RejectedFeedbackSection({ userId }: { userId: string }) {
+  const record = await findCreatorApplicationRecord(userId);
+  const reason = record?.rejectionReason;
+
+  if (!reason) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <span className="font-medium">Feedback: </span>
+      {reason}
     </div>
   );
 }

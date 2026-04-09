@@ -232,6 +232,51 @@ export function CreatorDashboardOverviewLoadingShell() {
   return <RuntimeShell preview={<OverviewPreview />} scope="creator-dashboard-overview" />;
 }
 
+export function CreatorDashboardOverviewResultsSkeleton() {
+  return (
+    <div className="space-y-8">
+      <StatCardRowCompact count={3} columns="md:grid-cols-3" />
+
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
+        <LoadingSkeleton className="h-5 w-40" />
+        <div className="mt-6 space-y-4">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="flex items-center gap-4 rounded-xl border border-border/70 px-4 py-4">
+              <LoadingSkeleton className="h-9 w-9 rounded-xl" />
+              <div className="flex-1 space-y-2">
+                <LoadingSkeleton className="h-4 w-40" />
+                <LoadingSkeleton className="h-3 w-28" />
+              </div>
+              <LoadingSkeleton className="h-8 w-20 rounded-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <TableShell
+          titleWidth="w-28"
+          subtitleWidth="w-56"
+          rows={3}
+          columns="grid-cols-[1fr_1fr]"
+        />
+        <TableShell
+          titleWidth="w-24"
+          rows={3}
+          columns="grid-cols-[1fr_1fr]"
+        />
+      </div>
+
+      <TableShell
+        titleWidth="w-40"
+        subtitleWidth="w-64"
+        rows={5}
+        columns="grid-cols-[2fr_1fr_1fr_1fr]"
+      />
+    </div>
+  );
+}
+
 export function CreatorDashboardOverviewBonesPreview() {
   return <BoneyardPreview name={CREATOR_DASHBOARD_OVERVIEW_NAME} preview={<OverviewPreview />} />;
 }
@@ -290,6 +335,35 @@ export function CreatorDashboardAnalyticsBonesPreview() {
 
 export function CreatorDashboardResourcesLoadingShell() {
   return <RuntimeShell preview={<ResourcesPreview />} scope="creator-dashboard-resources" />;
+}
+
+export function CreatorDashboardResourcesResultsSkeleton() {
+  return (
+    <div className="space-y-8">
+      <div className="grid gap-4 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="rounded-2xl border border-border bg-card p-5 shadow-card">
+            <LoadingSkeleton className="h-4 w-20" />
+            <LoadingSkeleton className="mt-3 h-8 w-20" />
+            <LoadingSkeleton className="mt-2 h-4 w-28" />
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-card">
+        <div className="flex flex-wrap gap-3">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="space-y-2">
+              <LoadingSkeleton className="h-3 w-20" />
+              <LoadingSkeleton className="h-10 w-40 rounded-xl" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <TableShell titleWidth="w-32" rows={5} columns="grid-cols-[2fr_1fr_1fr_1fr]" padded="px-4 py-4" />
+    </div>
+  );
 }
 
 export function CreatorDashboardResourcesBonesPreview() {

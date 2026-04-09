@@ -168,9 +168,17 @@ export function AdminAuditLoadingShell() {
     <div className="space-y-8">
       <AdminHeaderSkeleton titleWidth="w-40" descriptionWidth="w-80" />
       <AdminToolbarSkeleton inputs={4} trailingAction={false} />
+      <AdminAuditResultsSkeleton />
+    </div>
+  );
+}
+
+export function AdminAuditResultsSkeleton() {
+  return (
+    <>
       <AdminTableShell columns={4} rows={6} />
       <PaginationSkeleton />
-    </div>
+    </>
   );
 }
 
@@ -206,9 +214,14 @@ export function AdminReviewsLoadingShell() {
   return (
     <div className="space-y-8">
       <AdminHeaderSkeleton titleWidth="w-32" descriptionWidth="w-[34rem]" />
+      <AdminReviewsSummarySkeleton />
       <AdminReviewsResultsSkeleton />
     </div>
   );
+}
+
+export function AdminReviewsSummarySkeleton() {
+  return <AdminStatsSkeleton count={3} />;
 }
 
 export function AdminReviewsResultsSkeleton() {
@@ -219,9 +232,14 @@ export function AdminCreatorsLoadingShell() {
   return (
     <div className="space-y-8">
       <AdminHeaderSkeleton titleWidth="w-64" descriptionWidth="w-[28rem]" />
+      <AdminCreatorsSummarySkeleton />
       <AdminCreatorsResultsSkeleton />
     </div>
   );
+}
+
+export function AdminCreatorsSummarySkeleton() {
+  return <AdminStatsSkeleton count={3} />;
 }
 
 export function AdminCreatorsResultsSkeleton() {

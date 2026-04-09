@@ -306,6 +306,37 @@ export async function getAdminAuditPageData(input: {
   to: string;
   pageSize: number;
 }) {
+  const [filters, results] = await Promise.all([
+    getAdminAuditFilterData(),
+    getAdminAuditResultsData(input),
+  ]);
+
+  return {
+    ...filters,
+    ...results,
+  };
+}
+
+export async function getAdminAuditFilterData() {
+  const [actions, admins] = await Promise.all([
+    findDistinctAdminAuditActions(),
+    findAdminsWithAuditLogs(),
+  ]);
+
+  return {
+    actionOptions: actions.map((row) => row.action),
+    adminOptions: admins,
+  };
+}
+
+export async function getAdminAuditResultsData(input: {
+  page: number;
+  actionFilter: string;
+  adminIdFilter: string;
+  from: string;
+  to: string;
+  pageSize: number;
+}) {
   const where: Prisma.AuditLogWhereInput = {};
   const createdAtFilter: Prisma.DateTimeFilter = {};
 
@@ -333,15 +364,13 @@ export async function getAdminAuditPageData(input: {
 
   const skip = (input.page - 1) * input.pageSize;
 
-  const [logs, total, actions, admins] = await Promise.all([
+  const [logs, total] = await Promise.all([
     findAdminAuditLogs({
       where,
       skip,
       take: input.pageSize,
     }),
     countAdminAuditLogs(where),
-    findDistinctAdminAuditActions(),
-    findAdminsWithAuditLogs(),
   ]);
 
   return {
@@ -357,8 +386,6 @@ export async function getAdminAuditPageData(input: {
       entityId: log.entityId ?? "",
       createdAt: log.createdAt.toISOString(),
     })),
-    actionOptions: actions.map((row) => row.action),
-    adminOptions: admins,
     totalPages: Math.max(1, Math.ceil(total / input.pageSize)),
   };
 }

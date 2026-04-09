@@ -1,12 +1,12 @@
-import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import {
   getAdminResourceEditPageData,
   getAdminResourceEditTitle,
 } from "@/services/admin";
 import { EditResourceForm } from "./EditResourceForm";
 import type { ResourceCardData } from "@/components/resources/ResourceCard";
-import { routes } from "@/lib/routes";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
+import { AdminResourcesEditFormSkeleton } from "@/components/skeletons/AdminResourcesRouteSkeletons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -26,11 +26,30 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function EditResourcePage({ params }: Props) {
   const { id } = await params;
-  const session = await requireAdminSession(routes.adminResource(id));
 
+  return (
+    <div className="w-full space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
+            Edit Resource
+          </h1>
+          <p className="mt-1 text-meta text-muted-foreground">
+            Update details, pricing, and file for this resource.
+          </p>
+        </div>
+      </div>
+
+      <Suspense fallback={<AdminResourcesEditFormSkeleton />}>
+        <EditResourceFormSection id={id} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function EditResourceFormSection({ id }: { id: string }) {
   const { resource, categories, tags } = await getAdminResourceEditPageData(id);
 
-  // ── 3. 404 if resource doesn't exist ──────────────────────────────────────
   if (!resource) {
     notFound();
   }
@@ -81,62 +100,44 @@ export default async function EditResourcePage({ params }: Props) {
   };
 
   return (
-    <div className="w-full space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
-            Edit Resource
-          </h1>
-          <p className="mt-1 text-meta text-muted-foreground">
-            Update details, pricing, and file for this resource.
-          </p>
-        </div>
-      </div>
-
-      <EditResourceForm
-        id="edit-resource-form"
-        currentUser={
-          session.user?.id
-            ? { id: session.user.id, name: session.user.name ?? null }
-            : undefined
-        }
-        resource={{
-          id: resource.id,
-          slug: resource.slug,
-          title: resource.title,
-          description: resource.description,
-          type: resource.type,
-          status: resource.status,
-          isFree: resource.isFree,
-          price: resource.price,
-          fileUrl: resource.fileUrl,
-          categoryId: resource.categoryId,
-          featured: resource.featured,
-          level: resource.level,
-          license: resource.license,
-          visibility: resource.visibility,
-          authorId: resource.authorId,
-          authorName: resource.author?.name ?? null,
-        }}
-        categories={categories}
-        tags={tags}
-        initialTagIds={resource.tags.map((rt) => rt.tagId)}
-        initialPreviewUrls={initialPreviewUrls}
-        initialFileName={resource.fileName}
-        initialFileSize={resource.fileSize}
-        initialPreviewData={previewData}
-        stats={{
-          downloads: resource.downloadCount,
-          purchases: resource._count.purchases,
-          reviews: resource._count.reviews,
-        }}
-        details={{
-          resourceId: resource.id,
-          slug: resource.slug,
-          createdAt: resource.createdAt,
-          updatedAt: resource.updatedAt,
-        }}
-      />
-    </div>
+    <EditResourceForm
+      id="edit-resource-form"
+      resource={{
+        id: resource.id,
+        slug: resource.slug,
+        title: resource.title,
+        description: resource.description,
+        type: resource.type,
+        status: resource.status,
+        isFree: resource.isFree,
+        price: resource.price,
+        fileUrl: resource.fileUrl,
+        categoryId: resource.categoryId,
+        featured: resource.featured,
+        level: resource.level,
+        license: resource.license,
+        visibility: resource.visibility,
+        authorId: resource.authorId,
+        authorName: resource.author?.name ?? null,
+      }}
+      categories={categories}
+      tags={tags}
+      initialTagIds={resource.tags.map((rt) => rt.tagId)}
+      initialPreviewUrls={initialPreviewUrls}
+      initialFileName={resource.fileName}
+      initialFileSize={resource.fileSize}
+      initialPreviewData={previewData}
+      stats={{
+        downloads: resource.downloadCount,
+        purchases: resource._count.purchases,
+        reviews: resource._count.reviews,
+      }}
+      details={{
+        resourceId: resource.id,
+        slug: resource.slug,
+        createdAt: resource.createdAt,
+        updatedAt: resource.updatedAt,
+      }}
+    />
   );
 }

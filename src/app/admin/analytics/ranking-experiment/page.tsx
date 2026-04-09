@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getRankingExperimentReport } from "@/services/analytics";
 import { type RankingVariantRow } from "@/services/analytics";
@@ -5,8 +6,8 @@ import { SlidersHorizontal, Info } from "lucide-react";
 import { Button, Input } from "@/design-system";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { TableToolbar } from "@/components/admin/table";
+import { AdminAnalyticsRankingExperimentResultsSkeleton } from "@/components/skeletons/AdminAnalyticsRouteSkeletons";
 import { routes } from "@/lib/routes";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export const metadata = {
   title: "Ranking Experiment – Admin",
@@ -106,22 +107,14 @@ export default async function RankingExperimentPage({
 }: {
   searchParams?: Promise<Record<string, string | undefined>>;
 }) {
-  await requireAdminSession(routes.adminRankingExperiment);
-
   const params = searchParams ? await searchParams : {};
   const startParam = params.start ?? "";
   const endParam = params.end ?? "";
-
-  const report = await getRankingExperimentReport({
-    start: startParam || null,
-    end: endParam || null,
-  });
-
   const hasFilters = Boolean(startParam || endParam);
-
-  // All variants from the service — already ordered A → B → UNASSIGNED.
-  // No special null branch needed: UNASSIGNED is a regular variant string.
-  const variants = report.variants;
+  const fallbackRangeLabel =
+    !startParam && !endParam
+      ? "Showing last 30 days (default)"
+      : `${startParam || "…"} — ${endParam || "…"}`;
 
   return (
     <div className="space-y-8">
@@ -217,15 +210,38 @@ export default async function RankingExperimentPage({
           </div>
 
           <p className="flex items-center gap-1.5 font-ui text-caption text-muted-foreground lg:ml-auto">
-            {report.isDefaultRange
-              ? "Showing last 30 days (default)"
-              : `${report.filterStart} — ${report.filterEnd}`}
+            {fallbackRangeLabel}
           </p>
           </TableToolbar>
         </form>
       </section>
 
-      {/* ── Comparison table ─────────────────────────────────────────────────── */}
+      <Suspense fallback={<AdminAnalyticsRankingExperimentResultsSkeleton />}>
+        <RankingExperimentResultsSection
+          startParam={startParam}
+          endParam={endParam}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+async function RankingExperimentResultsSection({
+  startParam,
+  endParam,
+}: {
+  startParam: string;
+  endParam: string;
+}) {
+  const report = await getRankingExperimentReport({
+    start: startParam || null,
+    end: endParam || null,
+  });
+
+  const variants = report.variants;
+
+  return (
+    <>
       <section aria-label="Variant comparison">
         <p className="mb-3 font-ui text-caption text-muted-foreground">
           Per-variant metrics
@@ -257,32 +273,24 @@ export default async function RankingExperimentPage({
               </thead>
 
               <tbody className="divide-y divide-border/60">
-
-                {/* Checkout starts */}
                 <MetricRow
                   label="Checkout starts"
                   tooltip="CHECKOUT_STARTED ActivityLog events. Direct attribution — rankingVariant is written into metadata at checkout creation time."
                   variants={variants}
                   renderCell={(r) => fmt(r.checkoutStarts)}
                 />
-
-                {/* Checkout redirects */}
                 <MetricRow
                   label="Checkout redirects"
                   tooltip="CHECKOUT_REDIRECTED events attributed via 30-minute time-window join from CHECKOUT_STARTED (same userId + resourceId). Indirect attribution."
                   variants={variants}
                   renderCell={(r) => fmt(r.checkoutRedirects)}
                 />
-
-                {/* Completed purchases */}
                 <MetricRow
                   label="Completed purchases"
                   tooltip="Purchase rows (status = COMPLETED, paid provider) joined from CHECKOUT_STARTED on userId + resourceId. Indirect attribution — PURCHASE_COMPLETED_WEBHOOK fires server-side with no cookie access."
                   variants={variants}
                   renderCell={(r) => fmt(r.completions)}
                 />
-
-                {/* Redirect → completion rate */}
                 <MetricRow
                   label="Redirect → completion rate"
                   tooltip="Completed purchases / Checkout redirects × 100. Isolates payment provider friction from UI or pricing drop-off. ≥ 80% healthy."
@@ -293,8 +301,6 @@ export default async function RankingExperimentPage({
                     </span>
                   )}
                 />
-
-                {/* Conversion rate */}
                 <MetricRow
                   label="Conversion rate"
                   tooltip="Completed purchases / Checkout starts × 100. Combined signal: includes both redirect drop-off and payment drop-off."
@@ -305,16 +311,12 @@ export default async function RankingExperimentPage({
                     </span>
                   )}
                 />
-
-                {/* FPD count */}
                 <MetricRow
                   label="First paid downloads (FPD)"
                   tooltip="FIRST_PAID_DOWNLOAD ActivityLog events. Direct attribution — fires on the first successful paid download per user per resource."
                   variants={variants}
                   renderCell={(r) => fmt(r.fpdCount)}
                 />
-
-                {/* Paid activation rate */}
                 <MetricRow
                   label="Paid activation rate"
                   tooltip="First paid downloads / Completed purchases × 100. Key health signal: ≥ 85% healthy, 75–85% monitor, < 75% fix activation first."
@@ -325,11 +327,9 @@ export default async function RankingExperimentPage({
                     </span>
                   )}
                 />
-
               </tbody>
             </table>
 
-            {/* ── Attribution footnotes ──────────────────────────────────────── */}
             <div className="border-t border-border bg-muted/80 px-5 py-4">
               <p className="mb-2 font-ui text-caption text-muted-foreground">
                 Attribution notes
@@ -369,7 +369,6 @@ export default async function RankingExperimentPage({
         )}
       </section>
 
-      {/* ── Footer ──────────────────────────────────────────────────────────── */}
       <div className="border-t border-border pt-4 text-caption text-muted-foreground">
         Generated at {report.generatedAt} ·{" "}
         {report.isDefaultRange
@@ -378,6 +377,6 @@ export default async function RankingExperimentPage({
         · <span className="font-medium text-foreground">read-only</span>{" "}
         · no effect on live rankings
       </div>
-    </div>
+    </>
   );
 }

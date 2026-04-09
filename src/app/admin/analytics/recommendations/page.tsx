@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { getRecommendationReport, type VariantMetrics } from "@/services/analytics";
 import {
   Card,
@@ -11,6 +11,7 @@ import {
 } from "@/design-system";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { TableToolbar } from "@/components/admin/table";
+import { AdminAnalyticsRecommendationsResultsSkeleton } from "@/components/skeletons/AdminAnalyticsRouteSkeletons";
 import { routes } from "@/lib/routes";
 import {
   traceServerStep,
@@ -173,7 +174,68 @@ export default async function RecommendationExperimentPage({
   const params = searchParams ? await searchParams : {};
   const start = params.start || null;
   const end = params.end || null;
+  const fallbackRangeLabel =
+    start || end ? `${start || "…"} → ${end || "…"}` : "Last 7 days · default";
 
+  return (
+    <div className="space-y-8">
+      <AdminPageHeader
+        title="Recommendation Experiment"
+        description="Phase 1 vs Phase 2 performance."
+      />
+      <TableToolbar className="items-start justify-between gap-4">
+        <PresetButtons start={start} end={end} />
+        <div className="shrink-0">
+          <form method="get" className="flex flex-wrap items-end gap-2.5">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="start" className="font-ui text-caption text-muted-foreground">
+                From
+              </label>
+              <Input
+                id="start"
+                name="start"
+                type="date"
+                defaultValue={start ?? ""}
+                className="w-full sm:w-36"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="end" className="font-ui text-caption text-muted-foreground">
+                To
+              </label>
+              <Input
+                id="end"
+                name="end"
+                type="date"
+                defaultValue={end ?? ""}
+                className="w-full sm:w-36"
+              />
+            </div>
+            <Button type="submit" size="sm">
+              Apply
+            </Button>
+          </form>
+          <p className="mt-2 flex items-center gap-1.5 font-ui text-caption text-muted-foreground">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-success-400" />
+            {fallbackRangeLabel}
+          </p>
+        </div>
+      </TableToolbar>
+
+      <Suspense fallback={<AdminAnalyticsRecommendationsResultsSkeleton />}>
+        <RecommendationResultsSection start={start} end={end} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function RecommendationResultsSection({
+  start,
+  end,
+}: {
+  start: string | null;
+  end: string | null;
+}) {
   return withRequestPerformanceTrace(
     "route:/admin/analytics/recommendations",
     {
@@ -264,58 +326,7 @@ export default async function RecommendationExperimentPage({
       ];
 
       return (
-        <div className="space-y-8">
-          <AdminPageHeader
-            title="Recommendation Experiment"
-            description={
-              <>
-                Phase 1 vs Phase 2 performance.{" "}
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-caption text-muted-foreground">
-                  {report.experimentId}
-                </code>
-              </>
-            }
-          />
-          <TableToolbar className="items-start justify-between gap-4">
-            <PresetButtons start={start} end={end} />
-            <div className="shrink-0">
-              <form method="get" className="flex flex-wrap items-end gap-2.5">
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="start" className="font-ui text-caption text-muted-foreground">
-                    From
-                  </label>
-                  <Input
-                    id="start"
-                    name="start"
-                    type="date"
-                    defaultValue={start ?? ""}
-                    className="w-full sm:w-36"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="end" className="font-ui text-caption text-muted-foreground">
-                    To
-                  </label>
-                  <Input
-                    id="end"
-                    name="end"
-                    type="date"
-                    defaultValue={end ?? ""}
-                    className="w-full sm:w-36"
-                  />
-                </div>
-                <Button type="submit" size="sm">
-                  Apply
-                </Button>
-              </form>
-              <p className="mt-2 flex items-center gap-1.5 font-ui text-caption text-muted-foreground">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-success-400" />
-                {rangeLabel}
-                {report.isDefaultRange && <span>(default)</span>}
-              </p>
-            </div>
-          </TableToolbar>
-
+        <>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             {[
               { label: "Total impressions", value: fmt(totalImpressions), sub: "Both variants" },
@@ -422,7 +433,7 @@ export default async function RecommendationExperimentPage({
               raw JSON
             </a>
           </div>
-        </div>
+        </>
       );
     },
   );

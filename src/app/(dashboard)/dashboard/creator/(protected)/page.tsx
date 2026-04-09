@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -29,6 +30,7 @@ import { CreatorQuickTipsCard } from "@/components/creator/CreatorQuickTipsCard"
 import { CreatorDraftBanner } from "@/components/creator/CreatorDraftBanner";
 import { CreatorFirstSaleBanner } from "@/components/creator/CreatorFirstSaleBanner";
 import { CreatorRecentSalesCard } from "@/components/creator/CreatorRecentSalesCard";
+import { CreatorDashboardOverviewResultsSkeleton } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
 import { formatDate, formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
@@ -39,8 +41,8 @@ import {
   getCreatorMostRecentDraft,
   getCreatorRecentSalesForDashboard,
   getCreatorResourceStatusSummary,
+  getCreatorSetupState,
 } from "@/services/creator";
-import { getCreatorSetupState } from "@/services/creator";
 import { logActivity } from "@/lib/activity";
 
 export const metadata = {
@@ -144,28 +146,12 @@ export default async function CreatorDashboardPage() {
     );
   }
 
-  const [stats, performance, balance, statusSummary, mostRecentDraft, recentSales] =
-    await Promise.all([
-      getCreatorDashboardStats(userId),
-      getCreatorDashboardPerformance(userId),
-      getCreatorBalance(userId),
-      getCreatorResourceStatusSummary(userId),
-      getCreatorMostRecentDraft(userId),
-      getCreatorRecentSalesForDashboard(userId),
-    ]);
-  const lifecycleMessage =
-    stats.totalResources === 0
-      ? null
-      : statusSummary.published > 0 && stats.totalSales === 0
-          ? {
-              title: "Your resources are live",
-              description:
-                "Published resources are visible in the marketplace. Share or refine your listings to start generating sales.",
-            }
-          : null;
-  const topPerformer = performance[0] ?? null;
-  const momentumMilestones = topPerformer ? buildMomentumMilestones(topPerformer) : [];
-  const qualityFeedback = topPerformer ? buildQualityFeedback(topPerformer) : null;
+  const statsPromise = getCreatorDashboardStats(userId);
+  const performancePromise = getCreatorDashboardPerformance(userId);
+  const balancePromise = getCreatorBalance(userId);
+  const statusSummaryPromise = getCreatorResourceStatusSummary(userId);
+  const mostRecentDraftPromise = getCreatorMostRecentDraft(userId);
+  const recentSalesPromise = getCreatorRecentSalesForDashboard(userId);
 
   return (
     <div data-route-shell-ready="dashboard-creator-overview" className="space-y-8">
@@ -188,6 +174,61 @@ export default async function CreatorDashboardPage() {
         }
       />
 
+      <Suspense fallback={<CreatorDashboardOverviewResultsSkeleton />}>
+        <CreatorDashboardOverviewResultsSection
+          statsPromise={statsPromise}
+          performancePromise={performancePromise}
+          balancePromise={balancePromise}
+          statusSummaryPromise={statusSummaryPromise}
+          mostRecentDraftPromise={mostRecentDraftPromise}
+          recentSalesPromise={recentSalesPromise}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+async function CreatorDashboardOverviewResultsSection({
+  statsPromise,
+  performancePromise,
+  balancePromise,
+  statusSummaryPromise,
+  mostRecentDraftPromise,
+  recentSalesPromise,
+}: {
+  statsPromise: ReturnType<typeof getCreatorDashboardStats>;
+  performancePromise: ReturnType<typeof getCreatorDashboardPerformance>;
+  balancePromise: ReturnType<typeof getCreatorBalance>;
+  statusSummaryPromise: ReturnType<typeof getCreatorResourceStatusSummary>;
+  mostRecentDraftPromise: ReturnType<typeof getCreatorMostRecentDraft>;
+  recentSalesPromise: ReturnType<typeof getCreatorRecentSalesForDashboard>;
+}) {
+  const [stats, performance, balance, statusSummary, mostRecentDraft, recentSales] =
+    await Promise.all([
+      statsPromise,
+      performancePromise,
+      balancePromise,
+      statusSummaryPromise,
+      mostRecentDraftPromise,
+      recentSalesPromise,
+    ]);
+
+  const lifecycleMessage =
+    stats.totalResources === 0
+      ? null
+      : statusSummary.published > 0 && stats.totalSales === 0
+          ? {
+              title: "Your resources are live",
+              description:
+                "Published resources are visible in the marketplace. Share or refine your listings to start generating sales.",
+            }
+          : null;
+  const topPerformer = performance[0] ?? null;
+  const momentumMilestones = topPerformer ? buildMomentumMilestones(topPerformer) : [];
+  const qualityFeedback = topPerformer ? buildQualityFeedback(topPerformer) : null;
+
+  return (
+    <>
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-3">
@@ -549,6 +590,6 @@ export default async function CreatorDashboardPage() {
           </div>
         )}
       </section>
-    </div>
+    </>
   );
 }

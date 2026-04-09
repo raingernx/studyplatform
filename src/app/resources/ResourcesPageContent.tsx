@@ -1,7 +1,11 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowRight } from "lucide-react";
-import { isMissingTableError } from "@/lib/prismaErrors";
+import {
+  isMissingTableError,
+  isTransientPrismaInfrastructureError,
+} from "@/lib/prismaErrors";
 import { LazyResourcesDiscoverPersonalizedSection } from "@/components/resources/LazyResourcesDiscoverPersonalizedSection";
 import { ResourcesViewerStateProvider } from "@/components/resources/ResourcesViewerStateProvider";
 import type { ResourceCardData } from "@/components/resources/ResourceCard";
@@ -80,6 +84,39 @@ const QUICK_BROWSE_TILES = [
 const DISCOVER_LEAD_TIMEOUT_MS = 600;
 const DISCOVER_COLLECTIONS_TIMEOUT_MS = 600;
 
+function summarizeResourcesRouteError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      name: error.name,
+    };
+  }
+
+  return {
+    message: String(error),
+    name: "UnknownError",
+  };
+}
+
+function isResourcesFailSoftError(error: unknown) {
+  return (
+    isMissingTableError(error) ||
+    isTransientPrismaInfrastructureError(error)
+  );
+}
+
+function logResourcesRouteFallback(
+  label: string,
+  error: unknown,
+  context: Record<string, unknown>,
+) {
+  console.error(label, {
+    ...context,
+    error: summarizeResourcesRouteError(error),
+    fallbackApplied: true,
+  });
+}
+
 type ResourcesPageContentProps = {
   isDiscoverMode: boolean;
   search?: string;
@@ -138,6 +175,7 @@ async function ResourcesListingContent({
   currentPage,
 }: Omit<ResourcesPageContentProps, "isDiscoverMode">) {
   const normalizedSearch = search?.trim() ?? "";
+  let listingUnavailable = false;
   let categories: { id: string; name: string; slug: string }[] = [];
   let resources: ResourceCardData[] = [];
   let total = 0;
@@ -170,12 +208,20 @@ async function ResourcesListingContent({
     totalPages = data.totalPages;
     safePage = Math.min(currentPage, data.totalPages);
   } catch (error) {
-    if (!isMissingTableError(error)) {
+    if (!isResourcesFailSoftError(error)) {
       throw error;
     }
+
+    listingUnavailable = true;
+    logResourcesRouteFallback("[RESOURCES_LISTING_FALLBACK]", error, {
+      category: category ?? "all",
+      page: currentPage,
+      sort: effectiveSort,
+    });
   }
 
-  const isEmptySearchResults = normalizedSearch.length > 0 && total === 0;
+  const isEmptySearchResults =
+    !listingUnavailable && normalizedSearch.length > 0 && total === 0;
   const searchRecoveryPromise = isEmptySearchResults
     ? traceServerStep(
         "resources.getSearchRecoveryData",
@@ -329,7 +375,11 @@ async function ResourcesListingContent({
               </p>
             ) : null}
 
-            {isEmptySearchResults ? (
+            {listingUnavailable ? (
+              <ResourcesListingUnavailableState
+                retryHref={resourceGridQueryKey}
+              />
+            ) : isEmptySearchResults ? (
               <Suspense fallback={<SearchRecoveryPanelFallback />}>
                 {searchRecoveryPromise ? (
                   <SearchRecoveryPanelDeferred
@@ -649,7 +699,23 @@ async function SearchRecoveryPanelDeferred({
   query: string;
   recoveryPromise: Promise<Awaited<ReturnType<typeof getSearchRecoveryData>>>;
 }) {
-  const recovery = await recoveryPromise;
+  let recovery: Awaited<ReturnType<typeof getSearchRecoveryData>> | null = null;
+
+  try {
+    recovery = await recoveryPromise;
+  } catch (error) {
+    if (!isResourcesFailSoftError(error)) {
+      throw error;
+    }
+
+    logResourcesRouteFallback("[RESOURCES_SEARCH_RECOVERY_FALLBACK]", error, {
+      query,
+    });
+  }
+
+  if (!recovery) {
+    return null;
+  }
 
   return <SearchRecoveryPanel query={query} recovery={recovery} />;
 }
@@ -668,9 +734,13 @@ async function loadDiscoverLeadDataSafe(): Promise<DiscoverLeadData | null> {
       },
     );
   } catch (error) {
-    if (!isMissingTableError(error)) {
+    if (!isResourcesFailSoftError(error)) {
       throw error;
     }
+
+    logResourcesRouteFallback("[RESOURCES_DISCOVER_LEAD_FALLBACK]", error, {
+      section: "discover-lead",
+    });
 
     return null;
   }
@@ -690,12 +760,54 @@ async function loadDiscoverCollectionsDataSafe(): Promise<DiscoverCollectionsDat
       },
     );
   } catch (error) {
-    if (!isMissingTableError(error)) {
+    if (!isResourcesFailSoftError(error)) {
       throw error;
     }
 
+    logResourcesRouteFallback("[RESOURCES_DISCOVER_COLLECTIONS_FALLBACK]", error, {
+      section: "discover-collections",
+    });
+
     return null;
   }
+}
+
+function ResourcesListingUnavailableState({
+  retryHref,
+}: {
+  retryHref: string;
+}) {
+  return (
+    <div className="rounded-[28px] border border-border bg-card px-6 py-10 text-center shadow-card sm:px-8 sm:py-12">
+      <div className="space-y-3">
+        <p className="text-caption font-semibold uppercase tracking-[0.18em] text-primary-700">
+          Library temporarily unavailable
+        </p>
+        <h2 className="font-display text-3xl font-semibold text-foreground">
+          This library view could not refresh right now.
+        </h2>
+        <p className="mx-auto max-w-2xl text-body leading-7 text-muted-foreground">
+          The marketplace shell is still here, but the listing data hit a temporary service issue.
+          Try this view again or jump back to the main resource index.
+        </p>
+      </div>
+
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <Link
+          href={retryHref}
+          className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-3 text-small font-semibold text-white transition hover:bg-brand-700"
+        >
+          Try again
+        </Link>
+        <Link
+          href={routes.marketplace}
+          className="inline-flex items-center justify-center rounded-xl border border-border px-5 py-3 text-small font-medium text-foreground transition hover:bg-muted"
+        >
+          Open resources
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 function buildResultsContext(

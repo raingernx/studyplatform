@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import {
   BarChart2,
@@ -11,6 +12,7 @@ import { requireSession } from "@/lib/auth/require-session";
 import { Button, Select, RowActionButton, RowActions } from "@/design-system";
 import { CreatorResourceStatusButton } from "@/components/creator/CreatorResourceStatusButton";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { CreatorDashboardResourcesResultsSkeleton } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
 import { formatDate, formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { getCreatorResourceManagementData } from "@/services/creator";
@@ -40,26 +42,14 @@ export default async function CreatorResourcesPage({
   const pricing = firstValue(resolvedSearchParams.pricing);
   const categoryId = firstValue(resolvedSearchParams.categoryId);
   const sort = firstValue(resolvedSearchParams.sort);
-
-  const data = await getCreatorResourceManagementData(userId, {
-    status:
-      status === "DRAFT" || status === "PUBLISHED" || status === "ARCHIVED" || status === "all"
-        ? status
-        : "all",
-    pricing: pricing === "free" || pricing === "paid" || pricing === "all" ? pricing : "all",
-    categoryId: categoryId || undefined,
-    sort: sort === "downloads" || sort === "revenue" || sort === "latest" ? sort : "latest",
-  });
-
-  const publishedCount = data.resources.filter((resource) => resource.status === "PUBLISHED").length;
-  const totalRevenue = data.resources.reduce((sum, resource) => sum + resource.revenue, 0);
-  const totalDownloads = data.resources.reduce((sum, resource) => sum + resource.downloadCount, 0);
-
-  const hasActiveFilters = Boolean(
-    (status && status !== "all") ||
-      (pricing && pricing !== "all") ||
-      (categoryId && categoryId !== ""),
-  );
+  const normalizedStatus =
+    status === "DRAFT" || status === "PUBLISHED" || status === "ARCHIVED" || status === "all"
+      ? status
+      : "all";
+  const normalizedPricing =
+    pricing === "free" || pricing === "paid" || pricing === "all" ? pricing : "all";
+  const normalizedSort =
+    sort === "downloads" || sort === "revenue" || sort === "latest" ? sort : "latest";
 
   return (
     <div data-route-shell-ready="dashboard-creator-resources" className="min-w-0 space-y-8">
@@ -85,7 +75,64 @@ export default async function CreatorResourcesPage({
         </Button>
       </div>
 
-      {/* Stats */}
+      <Suspense fallback={<CreatorDashboardResourcesResultsSkeleton />}>
+        <CreatorResourcesResultsSection
+          userId={userId}
+          status={normalizedStatus}
+          pricing={normalizedPricing}
+          categoryId={categoryId}
+          sort={normalizedSort}
+        />
+      </Suspense>
+
+      <div className="rounded-2xl border border-brand-100 bg-brand-50/60 px-5 py-4 text-sm text-brand-700">
+        <p className="font-semibold">Need deeper performance insights?</p>
+        <p className="mt-1 text-brand-700/80">
+          Your creator analytics page breaks down downloads, revenue, and sales trends over time.
+        </p>
+        <Link
+          href={routes.creatorAnalytics}
+          className="mt-3 inline-flex items-center gap-1 font-medium text-brand-700 hover:text-brand-800"
+        >
+          Open analytics
+          <ExternalLink className="h-4 w-4" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+async function CreatorResourcesResultsSection({
+  userId,
+  status,
+  pricing,
+  categoryId,
+  sort,
+}: {
+  userId: string;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "all";
+  pricing: "free" | "paid" | "all";
+  categoryId: string | undefined;
+  sort: "downloads" | "revenue" | "latest";
+}) {
+  const data = await getCreatorResourceManagementData(userId, {
+    status,
+    pricing,
+    categoryId: categoryId || undefined,
+    sort,
+  });
+
+  const publishedCount = data.resources.filter((resource) => resource.status === "PUBLISHED").length;
+  const totalRevenue = data.resources.reduce((sum, resource) => sum + resource.revenue, 0);
+  const totalDownloads = data.resources.reduce((sum, resource) => sum + resource.downloadCount, 0);
+  const hasActiveFilters = Boolean(
+    (status && status !== "all") ||
+      (pricing && pricing !== "all") ||
+      (categoryId && categoryId !== ""),
+  );
+
+  return (
+    <>
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
           <p className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground">Resources</p>
@@ -108,7 +155,6 @@ export default async function CreatorResourcesPage({
         </div>
       </div>
 
-      {/* Filters */}
       <form className="flex min-w-0 flex-wrap items-end gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-card">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground">
@@ -166,7 +212,6 @@ export default async function CreatorResourcesPage({
         </div>
       </form>
 
-      {/* Table */}
       <div className="min-w-0 w-full overflow-hidden rounded-2xl border border-border bg-card shadow-card">
         <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
           <p className="text-sm font-semibold text-foreground">Your resources</p>
@@ -250,8 +295,8 @@ export default async function CreatorResourcesPage({
                       <StatusBadge status={resource.status} />
                     </td>
                     <td className="px-3 py-3 text-right">
-                        <RowActions>
-                          <RowActionButton asChild>
+                      <RowActions>
+                        <RowActionButton asChild>
                           <ResourceIntentLink href={routes.resource(resource.slug)}>
                             <Eye className="h-3.5 w-3.5" />
                             View
@@ -276,20 +321,6 @@ export default async function CreatorResourcesPage({
           </div>
         )}
       </div>
-
-      <div className="rounded-2xl border border-brand-100 bg-brand-50/60 px-5 py-4 text-sm text-brand-700">
-        <p className="font-semibold">Need deeper performance insights?</p>
-        <p className="mt-1 text-brand-700/80">
-          Your creator analytics page breaks down downloads, revenue, and sales trends over time.
-        </p>
-        <Link
-          href={routes.creatorAnalytics}
-          className="mt-3 inline-flex items-center gap-1 font-medium text-brand-700 hover:text-brand-800"
-        >
-          Open analytics
-          <ExternalLink className="h-4 w-4" />
-        </Link>
-      </div>
-    </div>
+    </>
   );
 }

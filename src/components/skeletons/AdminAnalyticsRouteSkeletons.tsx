@@ -346,12 +346,60 @@ export function AdminAnalyticsRecommendationsSkeleton() {
   );
 }
 
+export function AdminAnalyticsRecommendationsResultsSkeleton() {
+  return (
+    <div className="space-y-8">
+      <StatGridPreview count={3} />
+      <div className="rounded-xl border border-border bg-card px-5 py-4">
+        <LoadingSkeleton className="h-5 w-56" />
+        <LoadingSkeleton className="mt-2 h-4 w-72" />
+      </div>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <AnalyticsCardPreview tall />
+        <AnalyticsCardPreview tall />
+      </div>
+      <TablePreview rows={5} columns={4} />
+      <LoadingSkeleton className="h-3 w-40" />
+    </div>
+  );
+}
+
 export function AdminAnalyticsRankingBonesPreview() {
   return makePreviewSkeleton(ADMIN_ANALYTICS_RANKING_NAME, <RankingPreview />);
 }
 
 export function AdminAnalyticsRankingSkeleton() {
   return makeRuntimeSkeleton(ADMIN_ANALYTICS_RANKING_NAME, <RankingPreview />);
+}
+
+export function AdminAnalyticsRankingResultsSkeleton() {
+  return (
+    <div className="space-y-8">
+      <TablePreview rows={8} columns={7} />
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="border-b border-border bg-muted/80 px-5 py-3">
+          <LoadingSkeleton className="h-3 w-40" />
+        </div>
+        <div className="divide-y divide-border/60">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="grid grid-cols-6 gap-4 px-5 py-4">
+              <LoadingSkeleton className="h-4 w-8" />
+              <LoadingSkeleton className="h-4 w-40" />
+              <LoadingSkeleton className="ml-auto h-4 w-20" />
+              <LoadingSkeleton className="ml-auto h-4 w-20" />
+              <LoadingSkeleton className="ml-auto h-4 w-20" />
+              <LoadingSkeleton className="ml-auto h-4 w-24" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <LoadingSkeleton className="h-3 w-40" />
+    </div>
+  );
+}
+
+export function AdminAnalyticsRankingFiltersSkeleton() {
+  return <ToolbarPreview inputs={3} />;
 }
 
 export function AdminAnalyticsRankingExperimentBonesPreview() {
@@ -368,12 +416,58 @@ export function AdminAnalyticsRankingExperimentSkeleton() {
   );
 }
 
+export function AdminAnalyticsRankingExperimentResultsSkeleton() {
+  return (
+    <div className="space-y-8">
+      <TablePreview rows={8} columns={4} />
+      <div className="space-y-2">
+        <LoadingSkeleton className="h-3 w-32" />
+        <LoadingSkeleton className="h-3 w-full" />
+        <LoadingSkeleton className="h-3 w-full" />
+        <LoadingSkeleton className="h-3 w-5/6" />
+      </div>
+      <LoadingSkeleton className="h-3 w-40" />
+    </div>
+  );
+}
+
 export function AdminAnalyticsPurchasesBonesPreview() {
   return makePreviewSkeleton(ADMIN_ANALYTICS_PURCHASES_NAME, <PurchasesPreview />);
 }
 
 export function AdminAnalyticsPurchasesSkeleton() {
   return makeRuntimeSkeleton(ADMIN_ANALYTICS_PURCHASES_NAME, <PurchasesPreview />);
+}
+
+export function AdminAnalyticsPurchasesResultsSkeleton() {
+  return (
+    <div className="space-y-8">
+      <StatGridPreview count={4} />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <AnalyticsCardPreview />
+        <AnalyticsCardPreview />
+      </div>
+      <div className="rounded-xl border border-border bg-card p-5">
+        <LoadingSkeleton className="h-5 w-36" />
+        <div className="mt-4 space-y-3">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <div className="space-y-2">
+                <LoadingSkeleton className="h-4 w-40" />
+                <LoadingSkeleton className="h-3 w-24" />
+              </div>
+              <div className="space-y-2 text-right">
+                <LoadingSkeleton className="ml-auto h-6 w-20 rounded-full" />
+                <LoadingSkeleton className="ml-auto h-3 w-16" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <TablePreview rows={6} columns={4} />
+      <LoadingSkeleton className="h-3 w-40" />
+    </div>
+  );
 }
 
 export function AdminAnalyticsCreatorActivationBonesPreview() {
@@ -387,5 +481,24 @@ export function AdminAnalyticsCreatorActivationSkeleton() {
   return makeRuntimeSkeleton(
     ADMIN_ANALYTICS_CREATOR_ACTIVATION_NAME,
     <CreatorActivationPreview />,
+  );
+}
+
+export function AdminAnalyticsCreatorActivationResultsSkeleton() {
+  return (
+    <div className="space-y-8">
+      <div className="rounded-2xl border border-border bg-card px-6 py-4">
+        <LoadingSkeleton className="h-6 w-32" />
+        <LoadingSkeleton className="mt-2 h-4 w-80" />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-4">
+        <AnalyticsCardPreview tall />
+        <AnalyticsCardPreview tall />
+        <AnalyticsCardPreview tall />
+        <AnalyticsCardPreview tall />
+      </div>
+      <TablePreview rows={4} columns={4} />
+      <LoadingSkeleton className="h-3 w-32" />
+    </div>
   );
 }

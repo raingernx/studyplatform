@@ -4,7 +4,6 @@ import { BulkUploadClient } from "./BulkUploadClient";
 import Link from "next/link";
 import { Layers } from "lucide-react";
 import { routes } from "@/lib/routes";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export const metadata = {
@@ -13,8 +12,6 @@ export const metadata = {
 };
 
 export default async function BulkUploadPage() {
-  await requireAdminSession(routes.adminBulkUpload);
-
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen flex-col">

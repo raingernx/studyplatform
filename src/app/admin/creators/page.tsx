@@ -1,8 +1,14 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { getAllCreatorApplications } from "@/services/creator";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { CreatorApplicationActions } from "@/components/admin/CreatorApplicationActions";
-import { AdminCreatorsResultsSkeleton } from "@/components/skeletons/AdminCoreRouteSkeletons";
+import {
+  AdminCreatorsResultsSkeleton,
+  AdminCreatorsSummarySkeleton,
+} from "@/components/skeletons/AdminCoreRouteSkeletons";
+import { isTransientPrismaInfrastructureError } from "@/lib/prismaErrors";
+import { routes } from "@/lib/routes";
 
 export const metadata = {
   title: "Creator Applications – Admin",
@@ -18,22 +24,107 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 };
 
 export default async function AdminCreatorsPage() {
+  const applicationsStatePromise = loadCreatorApplicationsState();
+
   return (
     <div className="min-w-0 space-y-8">
       <AdminPageHeader
         title="Creator Applications"
         description="Review and manage creator access applications."
       />
+      <Suspense fallback={<AdminCreatorsSummarySkeleton />}>
+        <AdminCreatorApplicationsSummary
+          applicationsStatePromise={applicationsStatePromise}
+        />
+      </Suspense>
       <Suspense fallback={<AdminCreatorsResultsSkeleton />}>
-        <AdminCreatorApplicationsResults />
+        <AdminCreatorApplicationsResults
+          applicationsStatePromise={applicationsStatePromise}
+        />
       </Suspense>
     </div>
   );
 }
 
-async function AdminCreatorApplicationsResults() {
-  const applications = await getAllCreatorApplications();
+async function loadCreatorApplicationsState() {
+  let applications;
 
+  try {
+    applications = await getAllCreatorApplications();
+  } catch (error) {
+    if (isTransientPrismaInfrastructureError(error)) {
+      console.error("[ADMIN_CREATORS_FALLBACK]", {
+        error:
+          error instanceof Error
+            ? { message: error.message, name: error.name }
+            : String(error),
+        fallbackApplied: true,
+      });
+      return {
+        applications: [],
+        unavailable: true as const,
+      };
+    }
+
+    throw error;
+  }
+
+  return { applications, unavailable: false as const };
+}
+
+async function AdminCreatorApplicationsSummary({
+  applicationsStatePromise,
+}: {
+  applicationsStatePromise: ReturnType<typeof loadCreatorApplicationsState>;
+}) {
+  const state = await applicationsStatePromise;
+
+  if (state.unavailable) {
+    return null;
+  }
+
+  const applications = state.applications;
+  const pending   = applications.filter((a) => a.creatorApplicationStatus === "PENDING");
+  const rest      = applications.filter((a) => a.creatorApplicationStatus !== "PENDING");
+  const approved = applications.filter((a) => a.creatorApplicationStatus === "APPROVED").length;
+  const rejected = applications.filter((a) => a.creatorApplicationStatus === "REJECTED").length;
+
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p className="text-sm text-muted-foreground">Pending</p>
+        <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+          {pending.length}
+        </p>
+      </div>
+      <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p className="text-sm text-muted-foreground">Approved</p>
+        <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+          {approved}
+        </p>
+      </div>
+      <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p className="text-sm text-muted-foreground">Rejected</p>
+        <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+          {rejected}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+async function AdminCreatorApplicationsResults({
+  applicationsStatePromise,
+}: {
+  applicationsStatePromise: ReturnType<typeof loadCreatorApplicationsState>;
+}) {
+  const state = await applicationsStatePromise;
+
+  if (state.unavailable) {
+    return <AdminCreatorsUnavailableState />;
+  }
+
+  const applications = state.applications;
   const pending   = applications.filter((a) => a.creatorApplicationStatus === "PENDING");
   const rest      = applications.filter((a) => a.creatorApplicationStatus !== "PENDING");
   const sorted    = [...pending, ...rest];
@@ -127,6 +218,40 @@ async function AdminCreatorApplicationsResults() {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+function AdminCreatorsUnavailableState() {
+  return (
+    <div className="rounded-2xl border border-border bg-card px-6 py-10 text-center shadow-card">
+      <div className="space-y-3">
+        <p className="font-ui text-caption tracking-[0.12em] text-primary">
+          Creator applications temporarily unavailable
+        </p>
+        <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+          This creator moderation view could not refresh right now.
+        </h2>
+        <p className="mx-auto max-w-2xl text-small leading-6 text-muted-foreground">
+          The admin shell is still available, but the application queue hit a temporary service
+          issue. Try the page again in a moment.
+        </p>
+      </div>
+
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <Link
+          href={routes.adminCreators}
+          className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-3 text-small font-semibold text-white transition hover:bg-brand-700"
+        >
+          Try again
+        </Link>
+        <Link
+          href={routes.admin}
+          className="inline-flex items-center justify-center rounded-xl border border-border px-5 py-3 text-small font-medium text-foreground transition hover:bg-muted"
+        >
+          Back to admin
+        </Link>
+      </div>
     </div>
   );
 }

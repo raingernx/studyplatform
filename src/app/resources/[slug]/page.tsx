@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { isMissingTableError } from "@/lib/prismaErrors";
+import {
+  isMissingTableError,
+  isTransientPrismaInfrastructureError,
+} from "@/lib/prismaErrors";
 import { AlertCircle, BookOpen } from "lucide-react";
 import { ResourceHeader } from "@/components/resources/detail/ResourceHeader";
 import { ResourceGallery } from "@/components/resources/detail/ResourceGallery";
@@ -126,7 +129,18 @@ function buildOutcomeHint(resource: {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const resource = await getResourceDetailPageMetadata(slug);
+  let resource = null;
+
+  try {
+    resource = await getResourceDetailPageMetadata(slug);
+  } catch (error) {
+    if (
+      !isMissingTableError(error) &&
+      !isTransientPrismaInfrastructureError(error)
+    ) {
+      throw error;
+    }
+  }
 
   return {
     title: resource?.title ?? "Resource",
@@ -153,6 +167,55 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
       slug,
     },
     async () => {
+      const bodyContentPromise = runNonCriticalResourceDetailTask(
+        () =>
+          traceServerStep(
+            "resource_detail.getResourceDetailBodyContent",
+            () => getResourceDetailPageBodyContent(slug),
+            { slug },
+          ),
+        {
+          fallback: null,
+          context: {
+            section: "body-content",
+            slug,
+          },
+          timeoutMs: 700,
+        },
+      );
+      const footerContentPromise = runNonCriticalResourceDetailTask(
+        () =>
+          traceServerStep(
+            "resource_detail.getResourceDetailFooterContent",
+            () => getResourceDetailPageFooterContent(slug),
+            { slug },
+          ),
+        {
+          fallback: null,
+          context: {
+            section: "footer-content",
+            slug,
+          },
+          timeoutMs: 700,
+        },
+      );
+      const purchaseMetaPromise = runNonCriticalResourceDetailTask(
+        () =>
+          traceServerStep(
+            "resource_detail.getResourceDetailPurchaseMeta",
+            () => getResourceDetailPagePurchaseMeta(slug),
+            { slug },
+          ),
+        {
+          fallback: null,
+          context: {
+            section: "purchase-meta",
+            slug,
+          },
+          timeoutMs: 800,
+        },
+      );
+
       let resource;
 
       try {
@@ -171,6 +234,9 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
           error,
           0,
         );
+        if (isTransientPrismaInfrastructureError(error)) {
+          return <ResourceDetailUnavailableState slug={slug} />;
+        }
         if (!isMissingTableError(error)) throw error;
         // Resource table missing (local dev schema drift) — render 404.
         notFound();
@@ -206,54 +272,7 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
             section: "trust-summary",
             slug,
           },
-        },
-      );
-      const bodyContentPromise = runNonCriticalResourceDetailTask(
-        () =>
-          traceServerStep(
-            "resource_detail.getResourceDetailBodyContent",
-            () => getResourceDetailPageBodyContent(slug),
-            { slug },
-          ),
-        {
-          fallback: null,
-          context: {
-            resourceId: resource.id,
-            section: "body-content",
-            slug,
-          },
-        },
-      );
-      const footerContentPromise = runNonCriticalResourceDetailTask(
-        () =>
-          traceServerStep(
-            "resource_detail.getResourceDetailFooterContent",
-            () => getResourceDetailPageFooterContent(slug),
-            { slug },
-          ),
-        {
-          fallback: null,
-          context: {
-            resourceId: resource.id,
-            section: "footer-content",
-            slug,
-          },
-        },
-      );
-      const purchaseMetaPromise = runNonCriticalResourceDetailTask(
-        () =>
-          traceServerStep(
-            "resource_detail.getResourceDetailPurchaseMeta",
-            () => getResourceDetailPagePurchaseMeta(slug),
-            { slug },
-          ),
-        {
-          fallback: null,
-          context: {
-            resourceId: resource.id,
-            section: "purchase-meta",
-            slug,
-          },
+          timeoutMs: 700,
         },
       );
       // Fetch public reviews in parallel with ownership — reviews are public
@@ -272,6 +291,7 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
             section: "review-list",
             slug,
           },
+          timeoutMs: 900,
         },
       );
 
@@ -470,5 +490,45 @@ export default async function ResourceDetailPage({ params, searchParams }: Props
         </ResourceDetailShell>
       );
     },
+  );
+}
+
+function ResourceDetailUnavailableState({ slug }: { slug: string }) {
+  return (
+    <ResourceDetailShell>
+      <div className="mx-auto max-w-2xl rounded-[28px] border border-border bg-card px-6 py-10 text-center shadow-sm sm:px-8 sm:py-12">
+        <div className="space-y-3">
+          <p className="text-caption font-semibold uppercase tracking-[0.18em] text-primary-700">
+            Resource temporarily unavailable
+          </p>
+          <h1 className="font-display text-3xl font-semibold text-foreground">
+            This resource is taking longer than expected to load.
+          </h1>
+          <p className="text-body leading-7 text-muted-foreground">
+            The resource page hit a temporary service issue. Try again, or return to the
+            library and reopen it in a moment.
+          </p>
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <a
+            href={`/resources/${slug}`}
+            className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-3 text-small font-semibold text-white transition hover:bg-brand-700"
+          >
+            Try again
+          </a>
+          <IntentPrefetchLink
+            href={routes.marketplace}
+            prefetchMode="intent"
+            prefetchScope="resource-detail-unavailable-back-link"
+            prefetchLimit={1}
+            resourcesNavigationMode="discover"
+            className="inline-flex items-center justify-center rounded-xl border border-border px-5 py-3 text-small font-medium text-foreground transition hover:bg-muted"
+          >
+            Back to resources
+          </IntentPrefetchLink>
+        </div>
+      </div>
+    </ResourceDetailShell>
   );
 }

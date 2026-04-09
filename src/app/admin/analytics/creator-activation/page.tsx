@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { getCreatorActivationFunnel } from "@/services/analytics";
 import { ArrowRight, Users, MousePointerClick, FilePlus, Rocket } from "lucide-react";
+import { AdminAnalyticsCreatorActivationResultsSkeleton } from "@/components/skeletons/AdminAnalyticsRouteSkeletons";
 import { routes } from "@/lib/routes";
 
 export const metadata = {
@@ -134,25 +135,8 @@ export default async function CreatorActivationPage({
   const params = searchParams ? await searchParams : {};
   const start = params.start || null;
   const end = params.end || null;
-
-  const funnel = await getCreatorActivationFunnel({ start, end });
-
-  const rangeLabel = funnel.isDefaultRange
-    ? `Last 30 days  ·  ${funnel.filterStart} → ${funnel.filterEnd}`
-    : start || end
-      ? `${funnel.filterStart} → ${funnel.filterEnd}`
-      : "All time";
-
-  // Overall summary banner tone
-  const overallRate = funnel.overallRate;
-  const summaryTone =
-    overallRate === null
-      ? "bg-muted border-border text-muted-foreground"
-      : overallRate >= 50
-        ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-        : overallRate >= 20
-          ? "bg-amber-50 border-amber-200 text-amber-800"
-          : "bg-red-50 border-red-200 text-red-700";
+  const fallbackRangeLabel =
+    start || end ? `${start || "…"} → ${end || "…"}` : "Last 30 days · default";
 
   return (
     <div className="space-y-8 px-6 py-8">
@@ -212,13 +196,39 @@ export default async function CreatorActivationPage({
           </form>
           <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            {rangeLabel}
-            {funnel.isDefaultRange && <span>(default)</span>}
+            {fallbackRangeLabel}
           </p>
         </div>
       </div>
 
-      {/* ── Overall summary ─────────────────────────────────────────────────── */}
+      <Suspense fallback={<AdminAnalyticsCreatorActivationResultsSkeleton />}>
+        <CreatorActivationResultsSection start={start} end={end} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function CreatorActivationResultsSection({
+  start,
+  end,
+}: {
+  start: string | null;
+  end: string | null;
+}) {
+  const funnel = await getCreatorActivationFunnel({ start, end });
+
+  const overallRate = funnel.overallRate;
+  const summaryTone =
+    overallRate === null
+      ? "bg-muted border-border text-muted-foreground"
+      : overallRate >= 50
+        ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+        : overallRate >= 20
+          ? "bg-amber-50 border-amber-200 text-amber-800"
+          : "bg-red-50 border-red-200 text-red-700";
+
+  return (
+    <>
       <div className={`rounded-2xl border px-6 py-4 ${summaryTone}`}>
         {overallRate === null ? (
           <p className="text-sm font-medium">
@@ -237,7 +247,6 @@ export default async function CreatorActivationPage({
         )}
       </div>
 
-      {/* ── Funnel steps ────────────────────────────────────────────────────── */}
       <div>
         <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           Funnel steps · unique creators
@@ -284,7 +293,6 @@ export default async function CreatorActivationPage({
         </div>
       </div>
 
-      {/* ── Conversion breakdown table ─────────────────────────────────────── */}
       <div>
         <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           Conversion breakdown
@@ -366,10 +374,9 @@ export default async function CreatorActivationPage({
         </p>
       </div>
 
-      {/* ── Footer ─────────────────────────────────────────────────────────── */}
       <div className="border-t border-border pt-4 text-[11px] text-muted-foreground">
         Generated at {funnel.generatedAt}
       </div>
-    </div>
+    </>
   );
 }

@@ -1,9 +1,9 @@
-import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/design-system";
 import { getAdminResourceVersionsPageData } from "@/services/admin";
 import { ResourceVersionsClient } from "./ResourceVersionsClient";
-import { routes } from "@/lib/routes";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
+import { AdminResourcesVersionsResultsSkeleton } from "@/components/skeletons/AdminResourcesRouteSkeletons";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -13,13 +13,6 @@ export const metadata = {
 
 export default async function ResourceVersionsPage({ params }: Props) {
   const { id } = await params;
-  await requireAdminSession(routes.adminResourceVersions(id));
-
-  const { resource, versions } = await getAdminResourceVersionsPageData(id);
-
-  if (!resource) {
-    notFound();
-  }
 
   return (
     <div className="space-y-6">
@@ -32,22 +25,36 @@ export default async function ResourceVersionsPage({ params }: Props) {
         </p>
       </div>
 
-      <Card>
-        <CardHeader className="border-b border-border">
-          <CardTitle>{resource.title}</CardTitle>
-          <CardDescription className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-            <span>Slug: {resource.slug}</span>
-            <span className="text-border">•</span>
-            <span>Status: {resource.status}</span>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-0 pb-0 pt-0">
-          <ResourceVersionsClient
-            resourceId={resource.id}
-            initialVersions={versions}
-          />
-        </CardContent>
-      </Card>
+      <Suspense fallback={<AdminResourcesVersionsResultsSkeleton />}>
+        <ResourceVersionsResults resourceId={id} />
+      </Suspense>
     </div>
+  );
+}
+
+async function ResourceVersionsResults({ resourceId }: { resourceId: string }) {
+  const { resource, versions } = await getAdminResourceVersionsPageData(resourceId);
+
+  if (!resource) {
+    notFound();
+  }
+
+  return (
+    <Card>
+      <CardHeader className="border-b border-border">
+        <CardTitle>{resource.title}</CardTitle>
+        <CardDescription className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+          <span>Slug: {resource.slug}</span>
+          <span className="text-border">•</span>
+          <span>Status: {resource.status}</span>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="px-0 pb-0 pt-0">
+        <ResourceVersionsClient
+          resourceId={resource.id}
+          initialVersions={versions}
+        />
+      </CardContent>
+    </Card>
   );
 }

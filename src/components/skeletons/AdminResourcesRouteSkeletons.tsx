@@ -187,9 +187,13 @@ export function AdminResourcesTrashLoadingShell() {
   return (
     <div className="space-y-6">
       <HeaderBlock titleWidth="w-28" copyWidth="w-[32rem]" actions={1} />
-      <AdminResourcesTableShell columns={4} rows={5} />
+      <AdminResourcesTrashResultsSkeleton />
     </div>
   );
+}
+
+export function AdminResourcesTrashResultsSkeleton() {
+  return <AdminResourcesTableShell columns={4} rows={5} />;
 }
 
 export function AdminResourcesBulkLoadingShell() {
@@ -223,10 +227,7 @@ export function AdminResourcesCreateLoadingShell() {
   return (
     <div className="w-full space-y-6">
       <HeaderBlock titleWidth="w-52" copyWidth="w-[34rem]" actions={0} />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <AdminResourceFormLoadingShell />
-        <AdminResourcesFormSidebarSkeleton />
-      </div>
+      <AdminResourcesCreateFormSkeleton />
     </div>
   );
 }
@@ -235,10 +236,25 @@ export function AdminResourcesEditLoadingShell() {
   return (
     <div className="w-full space-y-6">
       <HeaderBlock titleWidth="w-44" copyWidth="w-[30rem]" actions={0} />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <AdminResourceFormLoadingShell />
-        <AdminResourcesFormSidebarSkeleton includeStats includeDetails />
-      </div>
+      <AdminResourcesEditFormSkeleton />
+    </div>
+  );
+}
+
+export function AdminResourcesCreateFormSkeleton() {
+  return (
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <AdminResourceFormLoadingShell />
+      <AdminResourcesFormSidebarSkeleton />
+    </div>
+  );
+}
+
+export function AdminResourcesEditFormSkeleton() {
+  return (
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <AdminResourceFormLoadingShell />
+      <AdminResourcesFormSidebarSkeleton includeStats includeDetails />
     </div>
   );
 }
@@ -247,22 +263,28 @@ export function AdminResourcesVersionsLoadingShell() {
   return (
     <div className="space-y-6">
       <HeaderBlock titleWidth="w-32" copyWidth="w-[26rem]" actions={0} />
-      <div className="rounded-2xl border border-border bg-card shadow-card">
-        <div className="border-b border-border px-6 py-5">
-          <LoadingSkeleton className="h-6 w-56" />
-          <div className="mt-3 flex flex-wrap gap-2">
-            <LoadingSkeleton className="h-4 w-28" />
-            <LoadingSkeleton className="h-4 w-3" />
-            <LoadingSkeleton className="h-4 w-24" />
-          </div>
+      <AdminResourcesVersionsResultsSkeleton />
+    </div>
+  );
+}
+
+export function AdminResourcesVersionsResultsSkeleton() {
+  return (
+    <div className="rounded-2xl border border-border bg-card shadow-card">
+      <div className="border-b border-border px-6 py-5">
+        <LoadingSkeleton className="h-6 w-56" />
+        <div className="mt-3 flex flex-wrap gap-2">
+          <LoadingSkeleton className="h-4 w-28" />
+          <LoadingSkeleton className="h-4 w-3" />
+          <LoadingSkeleton className="h-4 w-24" />
         </div>
-        <div className="px-5 py-4">
-          <div className="mb-4 flex items-center justify-between">
-            <LoadingSkeleton className="h-8 w-28 rounded-lg" />
-            <LoadingSkeleton className="h-4 w-28" />
-          </div>
-          <AdminResourcesTableShell columns={6} rows={4} />
+      </div>
+      <div className="px-5 py-4">
+        <div className="mb-4 flex items-center justify-between">
+          <LoadingSkeleton className="h-8 w-28 rounded-lg" />
+          <LoadingSkeleton className="h-4 w-28" />
         </div>
+        <AdminResourcesTableShell columns={6} rows={4} />
       </div>
     </div>
   );

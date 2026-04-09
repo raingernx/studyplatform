@@ -35,6 +35,10 @@ export interface RankingDebugCategory {
   slug: string;
 }
 
+export interface RankingDebugFilterData {
+  categories: RankingDebugCategory[];
+}
+
 export interface RankingDebugReport {
   rows: RankingDebugRow[];
   categories: RankingDebugCategory[];
@@ -44,6 +48,36 @@ export interface RankingDebugReport {
   generatedAt: string;
   /** Maximum score in this result set — used for proportional bar widths. */
   maxScore: number;
+}
+
+export async function getRankingDebugFilterData(): Promise<RankingDebugFilterData> {
+  recordCacheCall("getRankingDebugFilterData", {});
+
+  return unstable_cache(
+    async function _getRankingDebugFilterData() {
+      recordCacheMiss("getRankingDebugFilterData", {});
+
+      const cacheKey = "admin-ranking-debug:filters";
+
+      return rememberJson(
+        cacheKey,
+        CACHE_TTLS.publicPage,
+        () =>
+          runSingleFlight(cacheKey, async () => ({
+            categories: await prisma.category.findMany({
+              select: { id: true, name: true, slug: true },
+              orderBy: { name: "asc" },
+            }),
+          })),
+        {
+          metricName: "getRankingDebugFilterData",
+          details: {},
+        },
+      );
+    },
+    ["admin-ranking-debug", "filters"],
+    { revalidate: CACHE_TTLS.publicPage },
+  )();
 }
 
 export async function getRankingDebugReport(
@@ -96,20 +130,14 @@ export async function getRankingDebugReport(
                     })
                     .then((row) => row?.id)
                 : Promise.resolve(undefined);
-            const categoriesPromise = prisma.category.findMany({
-              select: { id: true, name: true, slug: true },
-              orderBy: { name: "asc" },
-            });
             const categoryId = await categoryIdPromise;
-            const [rows, categories] = await Promise.all([
-              findRankingDebugRows({
-                categoryId,
-                search: normalizedSearch || undefined,
-                isFree: isFreeFilter,
-                limit: 50,
-              }),
-              categoriesPromise,
-            ]);
+            const rows = await findRankingDebugRows({
+              categoryId,
+              search: normalizedSearch || undefined,
+              isFree: isFreeFilter,
+              limit: 50,
+            });
+            const { categories } = await getRankingDebugFilterData();
 
             const maxScore = rows.length > 0 ? Math.max(...rows.map((r) => r.score)) : 1;
 

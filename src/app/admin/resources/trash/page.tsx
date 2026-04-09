@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
@@ -5,7 +6,7 @@ import { Button } from "@/design-system";
 import { AdminResourcesTrashTable } from "@/components/admin/resources";
 import { getAdminResourcesTrashPageData } from "@/services/admin";
 import { routes } from "@/lib/routes";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
+import { AdminResourcesTrashResultsSkeleton } from "@/components/skeletons/AdminResourcesRouteSkeletons";
 
 export const metadata = {
   title: "Trash – Admin",
@@ -15,13 +16,8 @@ export const metadata = {
 const PAGE_SIZE = 50;
 
 export default async function AdminResourcesTrashPage() {
-  await requireAdminSession(routes.adminTrash);
-
-  const rows = await getAdminResourcesTrashPageData({ take: PAGE_SIZE });
-
   return (
     <>
-      {/* Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-h2 font-semibold tracking-tight text-foreground">
@@ -45,7 +41,15 @@ export default async function AdminResourcesTrashPage() {
         </Button>
       </div>
 
-      <AdminResourcesTrashTable resources={rows} />
+      <Suspense fallback={<AdminResourcesTrashResultsSkeleton />}>
+        <AdminResourcesTrashResults />
+      </Suspense>
     </>
   );
+}
+
+async function AdminResourcesTrashResults() {
+  const rows = await getAdminResourcesTrashPageData({ take: PAGE_SIZE });
+
+  return <AdminResourcesTrashTable resources={rows} />;
 }

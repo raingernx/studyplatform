@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { isTransientPrismaInfrastructureError } from "@/lib/prismaErrors";
 import { formatDate } from "@/lib/format";
 import { getAdminReviews, ReviewServiceError } from "@/services/reviews";
 import { ReviewVisibilityAction } from "@/components/admin/ReviewVisibilityAction";
@@ -16,7 +17,10 @@ import {
   DataTableRow,
   TableEmptyState,
 } from "@/components/admin/table";
-import { AdminReviewsResultsSkeleton } from "@/components/skeletons/AdminCoreRouteSkeletons";
+import {
+  AdminReviewsResultsSkeleton,
+  AdminReviewsSummarySkeleton,
+} from "@/components/skeletons/AdminCoreRouteSkeletons";
 
 export const metadata = {
   title: "Reviews – Admin",
@@ -24,20 +28,25 @@ export const metadata = {
 };
 
 export default async function AdminReviewsPage() {
+  const reviewsStatePromise = loadAdminReviewsState();
+
   return (
     <div className="min-w-0 space-y-8">
       <AdminPageHeader
         title="Reviews"
         description="Review marketplace feedback and hide public reviews when moderation is needed."
       />
+      <Suspense fallback={<AdminReviewsSummarySkeleton />}>
+        <AdminReviewsSummary reviewsStatePromise={reviewsStatePromise} />
+      </Suspense>
       <Suspense fallback={<AdminReviewsResultsSkeleton />}>
-        <AdminReviewsResults />
+        <AdminReviewsResults reviewsStatePromise={reviewsStatePromise} />
       </Suspense>
     </div>
   );
 }
 
-async function AdminReviewsResults() {
+async function loadAdminReviewsState() {
   let reviews;
 
   try {
@@ -53,8 +62,82 @@ async function AdminReviewsResults() {
       }
     }
 
+    if (isTransientPrismaInfrastructureError(error)) {
+      console.error("[ADMIN_REVIEWS_FALLBACK]", {
+        error:
+          error instanceof Error
+            ? { message: error.message, name: error.name }
+            : String(error),
+        fallbackApplied: true,
+      });
+      return {
+        reviews: [],
+        unavailable: true as const,
+      };
+    }
+
     throw error;
   }
+
+  return { reviews, unavailable: false as const };
+}
+
+async function AdminReviewsSummary({
+  reviewsStatePromise,
+}: {
+  reviewsStatePromise: ReturnType<typeof loadAdminReviewsState>;
+}) {
+  const state = await reviewsStatePromise;
+
+  if (state.unavailable) {
+    return null;
+  }
+
+  const reviews = state.reviews;
+  const visibleCount = reviews.filter((review) => review.isVisible).length;
+  const hiddenCount = reviews.length - visibleCount;
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+      : null;
+
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p className="text-sm text-muted-foreground">Total reviews</p>
+        <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+          {reviews.length}
+        </p>
+      </div>
+      <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p className="text-sm text-muted-foreground">Visible now</p>
+        <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+          {visibleCount}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">{hiddenCount} hidden</p>
+      </div>
+      <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p className="text-sm text-muted-foreground">Average rating</p>
+        <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+          {averageRating ? averageRating.toFixed(1) : "—"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+async function AdminReviewsResults({
+  reviewsStatePromise,
+}: {
+  reviewsStatePromise: ReturnType<typeof loadAdminReviewsState>;
+}) {
+  const state = await reviewsStatePromise;
+
+  if (state.unavailable) {
+    return <AdminReviewsUnavailableState />;
+  }
+
+  const reviews = state.reviews;
 
   return (
     <DataTable minWidth="min-w-[900px]">
@@ -139,5 +222,39 @@ async function AdminReviewsResults() {
         )}
       </DataTableBody>
     </DataTable>
+  );
+}
+
+function AdminReviewsUnavailableState() {
+  return (
+    <div className="rounded-2xl border border-border bg-card px-6 py-10 text-center shadow-card">
+      <div className="space-y-3">
+        <p className="font-ui text-caption tracking-[0.12em] text-primary">
+          Reviews temporarily unavailable
+        </p>
+        <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+          This moderation view could not refresh right now.
+        </h2>
+        <p className="mx-auto max-w-2xl text-small leading-6 text-muted-foreground">
+          The admin shell is still available, but the review list hit a temporary service issue.
+          Try this page again in a moment.
+        </p>
+      </div>
+
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <Link
+          href={routes.adminReviews}
+          className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-3 text-small font-semibold text-white transition hover:bg-brand-700"
+        >
+          Try again
+        </Link>
+        <Link
+          href={routes.admin}
+          className="inline-flex items-center justify-center rounded-xl border border-border px-5 py-3 text-small font-medium text-foreground transition hover:bg-muted"
+        >
+          Back to admin
+        </Link>
+      </div>
+    </div>
   );
 }

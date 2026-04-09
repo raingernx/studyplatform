@@ -1,18 +1,14 @@
+import { Suspense } from "react";
 import { getAdminResourceCreatePageData } from "@/services/admin";
 import { CreateResourceForm } from "./CreateResourceForm";
-import { routes } from "@/lib/routes";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
+import { AdminResourcesCreateFormSkeleton } from "@/components/skeletons/AdminResourcesRouteSkeletons";
 
 export const metadata = {
   title: "Create Resource – Admin",
   description: "Manually create a new marketplace resource.",
 };
 
-export default async function AdminNewResourcePage() {
-  const session = await requireAdminSession(routes.adminNewResource);
-
-  const { categories, tags } = await getAdminResourceCreatePageData();
-
+export default function AdminNewResourcePage() {
   return (
     <div className="w-full space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -26,15 +22,15 @@ export default async function AdminNewResourcePage() {
         </div>
       </div>
 
-      <CreateResourceForm
-        categories={categories}
-        tags={tags}
-        currentUser={
-          session.user?.id
-            ? { id: session.user.id, name: session.user.name ?? null }
-            : undefined
-        }
-      />
+      <Suspense fallback={<AdminResourcesCreateFormSkeleton />}>
+        <AdminNewResourceFormSection />
+      </Suspense>
     </div>
   );
+}
+
+async function AdminNewResourceFormSection() {
+  const { categories, tags } = await getAdminResourceCreatePageData();
+
+  return <CreateResourceForm categories={categories} tags={tags} />;
 }

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
@@ -18,8 +19,8 @@ import {
 import { Button, Input } from "@/design-system";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { TableToolbar } from "@/components/admin/table";
+import { AdminAnalyticsPurchasesResultsSkeleton } from "@/components/skeletons/AdminAnalyticsRouteSkeletons";
 import { routes } from "@/lib/routes";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import {
   traceServerStep,
   withRequestPerformanceTrace,
@@ -256,54 +257,13 @@ export default async function PurchaseAnalyticsPage({
   const params = searchParams ? await searchParams : {};
   const start = params.start || null;
   const end = params.end || null;
+  const fallbackRangeLabel =
+    start || end
+      ? `${start || "…"} → ${end || "…"}`
+      : `Last 30 days · ${daysAgo(30)} → ${today()}`;
 
-  return withRequestPerformanceTrace(
-    "route:/admin/analytics/purchases",
-    {
-      filterMode: start || end ? "explicit" : "default",
-      start: start ?? "",
-      end: end ?? "",
-    },
-    async () => {
-      await traceServerStep(
-        "admin_analytics_purchases.requireAdminSession",
-        () => requireAdminSession(routes.adminPurchasesAnalytics),
-      );
-
-      const report = await traceServerStep(
-        "admin_analytics_purchases.getPurchaseAnalytics",
-        () => getPurchaseAnalytics({ start, end }),
-        {
-          filterMode: start || end ? "explicit" : "default",
-          start: start ?? "",
-          end: end ?? "",
-        },
-      );
-
-      const rangeLabel = report.isDefaultRange
-        ? `Last 30 days · ${report.filterStart} → ${report.filterEnd}`
-        : start || end
-          ? `${report.filterStart} → ${report.filterEnd}`
-          : "All time";
-
-      const totalProviderPurchases = report.providerBreakdown.reduce(
-        (sum, r) => sum + r.purchaseCount,
-        0,
-      );
-
-      const dailyPaidData = report.dailySeries.map((d) => ({
-        date: d.date,
-        value: d.paidCount,
-      }));
-      const dailyFreeData = report.dailySeries.map((d) => ({
-        date: d.date,
-        value: d.freeCount,
-      }));
-
-      const funnelTopCount = report.funnelSteps[0]?.count ?? 0;
-
-      return (
-        <div className="space-y-10">
+  return (
+    <div className="space-y-10">
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <AdminPageHeader
@@ -348,12 +308,62 @@ export default async function PurchaseAnalyticsPage({
           </form>
           <p className="mt-2 flex items-center gap-1.5 font-ui text-caption text-muted-foreground">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-success-400" />
-            {rangeLabel}
-            {report.isDefaultRange && <span>(default)</span>}
+            {fallbackRangeLabel}
+            {!start && !end && <span>(default)</span>}
           </p>
         </div>
       </TableToolbar>
 
+      <Suspense fallback={<AdminAnalyticsPurchasesResultsSkeleton />}>
+        <PurchaseAnalyticsReportSection start={start} end={end} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function PurchaseAnalyticsReportSection({
+  start,
+  end,
+}: {
+  start: string | null;
+  end: string | null;
+}) {
+  return withRequestPerformanceTrace(
+    "route:/admin/analytics/purchases",
+    {
+      filterMode: start || end ? "explicit" : "default",
+      start: start ?? "",
+      end: end ?? "",
+    },
+    async () => {
+      const report = await traceServerStep(
+        "admin_analytics_purchases.getPurchaseAnalytics",
+        () => getPurchaseAnalytics({ start, end }),
+        {
+          filterMode: start || end ? "explicit" : "default",
+          start: start ?? "",
+          end: end ?? "",
+        },
+      );
+
+      const totalProviderPurchases = report.providerBreakdown.reduce(
+        (sum, r) => sum + r.purchaseCount,
+        0,
+      );
+
+      const dailyPaidData = report.dailySeries.map((d) => ({
+        date: d.date,
+        value: d.paidCount,
+      }));
+      const dailyFreeData = report.dailySeries.map((d) => ({
+        date: d.date,
+        value: d.freeCount,
+      }));
+
+      const funnelTopCount = report.funnelSteps[0]?.count ?? 0;
+
+      return (
+        <>
       {/* ── Summary cards ───────────────────────────────────────────────────── */}
       <section aria-label="Summary">
         <p className="mb-3 font-ui text-caption text-muted-foreground">
@@ -685,7 +695,7 @@ export default async function PurchaseAnalyticsPage({
       <div className="border-t border-border pt-4 text-caption text-muted-foreground">
         Generated at {report.generatedAt}
       </div>
-        </div>
+        </>
       );
     },
   );

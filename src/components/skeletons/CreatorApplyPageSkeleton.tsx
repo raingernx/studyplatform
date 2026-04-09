@@ -259,10 +259,63 @@ export function CreatorApplyPageSkeletonBonesPreview() {
   );
 }
 
+export function CreatorApplyRejectedFeedbackSkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-muted/30 px-4 py-4">
+      <div className="space-y-2">
+        <LoadingSkeleton className="h-4 w-28" />
+        <LoadingSkeleton className="h-4 w-full max-w-lg" />
+        <LoadingSkeleton className="h-4 w-5/6 max-w-md" />
+      </div>
+    </div>
+  );
+}
+
 export function CreatorApplyPageSkeleton({
   variant = "status-shell",
 }: {
   variant?: CreatorApplyPageSkeletonVariant;
 }) {
   return <ManualCreatorApplyPageSkeleton variant={variant} />;
+}
+
+export function CreatorApplyPanelSkeleton({
+  variant = "status-shell",
+}: {
+  variant?: CreatorApplyPageSkeletonVariant;
+}) {
+  if (variant === "rejected") {
+    return <CreatorApplyRejectedPanelSkeleton />;
+  }
+
+  if (variant === "not-applied") {
+    return <CreatorApplyFormCardSkeleton />;
+  }
+
+  if (variant === "pending") {
+    return (
+      <CreatorApplyStatusPanelSkeleton
+        titleWidth="w-48"
+        lineWidths={["w-full max-w-2xl", "w-4/5 max-w-xl", "w-3/5 max-w-lg"]}
+        className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-card"
+      />
+    );
+  }
+
+  if (variant === "approved") {
+    return (
+      <CreatorApplyStatusPanelSkeleton
+        titleWidth="w-44"
+        lineWidths={["w-full max-w-2xl", "w-5/6 max-w-xl", "w-2/3 max-w-lg"]}
+        className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-card"
+      />
+    );
+  }
+
+  return (
+    <CreatorApplyStatusPanelSkeleton
+      titleWidth="w-52"
+      lineWidths={["w-full max-w-2xl", "w-4/5 max-w-xl"]}
+    />
+  );
 }

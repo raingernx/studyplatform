@@ -3,11 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, FileText, Globe, Instagram, Layers3, Linkedin, Sparkles, Youtube } from "lucide-react";
+import { isTransientPrismaInfrastructureError } from "@/lib/prismaErrors";
 import { Navbar } from "@/components/layout/Navbar";
 import { MarketplaceNavbarSearch } from "@/components/marketplace/MarketplaceNavbarSearch";
 import { Avatar, PageContainer, PageContentWide } from "@/design-system";
 import { PublicResourceCard } from "@/components/resources/PublicResourceCard";
 import { CreatorPublicResourcesSectionFallback } from "@/components/skeletons/PublicRouteSkeletons";
+import { routes } from "@/lib/routes";
 import {
   getCreatorPublicMetadata,
   getCreatorPublicResources,
@@ -20,7 +22,15 @@ type CreatorProfilePageProps = {
 
 export async function generateMetadata({ params }: CreatorProfilePageProps) {
   const { slug } = await params;
-  const creator = await getCreatorPublicMetadata(slug);
+  let creator = null;
+
+  try {
+    creator = await getCreatorPublicMetadata(slug);
+  } catch (error) {
+    if (!isTransientPrismaInfrastructureError(error)) {
+      throw error;
+    }
+  }
 
   if (!creator) {
     return {
@@ -39,8 +49,33 @@ export default async function CreatorPublicProfilePage({
 }: CreatorProfilePageProps) {
   const { slug } = await params;
   const creatorPromise = getCreatorPublicShell(slug);
-  const creatorResourcesPromise = getCreatorPublicResources(slug);
-  const creator = await creatorPromise;
+  const creatorResourcesPromise = getCreatorPublicResources(slug).catch((error) => {
+    if (!isTransientPrismaInfrastructureError(error)) {
+      throw error;
+    }
+
+    console.error("[CREATOR_PUBLIC_RESOURCES_FALLBACK]", {
+      slug,
+      error:
+        error instanceof Error
+          ? { message: error.message, name: error.name }
+          : String(error),
+      fallbackApplied: true,
+    });
+
+    return [];
+  });
+  let creator = null;
+
+  try {
+    creator = await creatorPromise;
+  } catch (error) {
+    if (!isTransientPrismaInfrastructureError(error)) {
+      throw error;
+    }
+
+    return <CreatorUnavailableState slug={slug} />;
+  }
 
   if (!creator) {
     notFound();
@@ -198,6 +233,50 @@ export default async function CreatorPublicProfilePage({
         <Suspense fallback={<CreatorPublicResourcesSectionFallback />}>
           <CreatorResourcesSection creatorResourcesPromise={creatorResourcesPromise} />
         </Suspense>
+          </PageContentWide>
+        </PageContainer>
+      </main>
+    </div>
+  );
+}
+
+function CreatorUnavailableState({ slug }: { slug: string }) {
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar headerSearch={<MarketplaceNavbarSearch />} />
+
+      <main>
+        <PageContainer className="py-10">
+          <PageContentWide>
+            <div className="mx-auto max-w-2xl rounded-[28px] border border-border bg-card px-6 py-10 text-center shadow-sm sm:px-8 sm:py-12">
+              <div className="space-y-3">
+                <p className="text-caption font-semibold uppercase tracking-[0.18em] text-primary-700">
+                  Creator temporarily unavailable
+                </p>
+                <h1 className="font-display text-3xl font-semibold text-foreground">
+                  This creator page could not load right now.
+                </h1>
+                <p className="text-body leading-7 text-muted-foreground">
+                  The creator shell hit a temporary service issue. Try again, or return to the
+                  marketplace and reopen this profile in a moment.
+                </p>
+              </div>
+
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href={`/creators/${slug}`}
+                  className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-3 text-small font-semibold text-white transition hover:bg-brand-700"
+                >
+                  Try again
+                </Link>
+                <Link
+                  href={routes.marketplace}
+                  className="inline-flex items-center justify-center rounded-xl border border-border px-5 py-3 text-small font-medium text-foreground transition hover:bg-muted"
+                >
+                  Open resources
+                </Link>
+              </div>
+            </div>
           </PageContentWide>
         </PageContainer>
       </main>

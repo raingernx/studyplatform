@@ -5,6 +5,12 @@ type NonCriticalResourceDetailContext = {
   critical?: boolean;
 };
 
+function createTimeoutError(timeoutMs: number) {
+  const error = new Error(`Resource detail task timed out after ${timeoutMs}ms`);
+  error.name = "TimeoutError";
+  return error;
+}
+
 function summarizeResourceDetailError(error: unknown) {
   if (error instanceof Error) {
     return {
@@ -59,12 +65,24 @@ export async function runNonCriticalResourceDetailTask<T>(
   options: {
     fallback: T;
     context: NonCriticalResourceDetailContext;
+    timeoutMs?: number;
   },
 ): Promise<T> {
   const startedAt = Date.now();
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
   try {
-    return await loader();
+    if (!options.timeoutMs) {
+      return await loader();
+    }
+
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      timeoutHandle = setTimeout(() => {
+        reject(createTimeoutError(options.timeoutMs!));
+      }, options.timeoutMs);
+    });
+
+    return await Promise.race([loader(), timeoutPromise]);
   } catch (error) {
     logResourceDetailFailure(
       {
@@ -79,5 +97,9 @@ export async function runNonCriticalResourceDetailTask<T>(
     );
 
     return options.fallback;
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
   }
 }
