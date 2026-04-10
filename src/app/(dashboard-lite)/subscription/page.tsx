@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
@@ -15,12 +14,14 @@ import {
 import { getCachedServerSession } from "@/lib/auth";
 import { getServerAuthTokenSnapshot } from "@/lib/auth/token-snapshot";
 import { formatDate } from "@/lib/format";
-import { PageContentNarrow } from "@/design-system";
 import { getDashboardSubscriptionPageData } from "@/services/admin";
 import { getBuildSafePlatformConfig } from "@/services/platform";
 import { routes } from "@/lib/routes";
-import { DashboardSubscriptionResultsSkeleton } from "@/components/skeletons/DashboardUserRouteSkeletons";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import {
+  DashboardPageShell,
+  DashboardPageStack,
+} from "@/components/dashboard/DashboardPageShell";
 
 export const metadata = {
   title: "Membership",
@@ -73,7 +74,7 @@ async function SubscriptionContent() {
   const resourcesOwned = user?.purchases.length ?? 0;
 
   return hasPlan ? (
-        <div className="space-y-5">
+        <DashboardPageStack className="space-y-5">
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-blue-600 to-blue-500 p-6 text-white shadow-glow-violet">
             <div className="absolute right-0 top-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-white/5" />
             <div className="absolute bottom-0 left-0 h-24 w-24 -translate-x-6 translate-y-6 rounded-full bg-white/5" />
@@ -182,9 +183,9 @@ async function SubscriptionContent() {
               </button>
             </div>
           </div>
-        </div>
+        </DashboardPageStack>
       ) : (
-        <div className="space-y-5">
+        <DashboardPageStack className="space-y-5">
           <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -257,23 +258,23 @@ async function SubscriptionContent() {
               </div>
             </div>
           </div>
-        </div>
+        </DashboardPageStack>
       );
 }
 
-export default function SubscriptionPage() {
+export default async function SubscriptionPage() {
   const platform = getBuildSafePlatformConfig();
+  const subscriptionContent = await SubscriptionContent();
 
   return (
-    <PageContentNarrow data-route-shell-ready="dashboard-subscription" className="space-y-8">
-      <DashboardPageHeader
-        title="Membership"
-        description={`Manage your plan and unlock full access to ${platform.platformShortName}.`}
-      />
-
-      <Suspense fallback={<DashboardSubscriptionResultsSkeleton />}>
-        <SubscriptionContent />
-      </Suspense>
-    </PageContentNarrow>
+    <DashboardPageShell width="narrow">
+      <DashboardPageStack data-route-shell-ready="dashboard-subscription">
+        <DashboardPageHeader
+          title="Membership"
+          description={`Manage your plan and unlock full access to ${platform.platformShortName}.`}
+        />
+        {subscriptionContent}
+      </DashboardPageStack>
+    </DashboardPageShell>
   );
 }

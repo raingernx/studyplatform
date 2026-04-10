@@ -99,8 +99,10 @@ function DashboardSidebarTopSlotSkeleton() {
 
 export function DashboardGroupLoadingShell({
   children,
+  mode = "content",
 }: {
   children?: ReactNode;
+  mode?: "content" | "shell";
 }) {
   return (
     <div data-loading-scope="dashboard-group" className="flex min-h-screen bg-background">
@@ -154,7 +156,12 @@ export function DashboardGroupLoadingShell({
         </header>
 
         <main className="min-w-0 flex-1 overflow-y-auto py-4 sm:py-5 lg:py-6">
-          <Container>{children ?? <DashboardGroupContentSkeleton />}</Container>
+          <Container>
+            {children ??
+              (mode === "shell"
+                ? <div aria-hidden="true" className="min-h-px" />
+                : <DashboardGroupContentSkeleton />)}
+          </Container>
         </main>
       </div>
     </div>

@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Download, FileText, BookOpen } from "lucide-react";
@@ -9,8 +8,11 @@ import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 import { routes } from "@/lib/routes";
 import { getUserDownloadHistory } from "@/services/purchases";
 import { EmptyState } from "@/design-system";
-import { DashboardDownloadsResultsSkeleton } from "@/components/skeletons/DashboardUserRouteSkeletons";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import {
+  DashboardPageShell,
+  DashboardPageStack,
+} from "@/components/dashboard/DashboardPageShell";
 
 export const metadata = {
   title: "Downloads",
@@ -24,12 +26,10 @@ function safeFormatFileSize(bytes: number | null): string {
 }
 
 async function DownloadsResultsSection({
-  downloadsPromise,
+  downloads,
 }: {
-  downloadsPromise: ReturnType<typeof getUserDownloadHistory>;
+  downloads: Awaited<ReturnType<typeof getUserDownloadHistory>>;
 }) {
-  const downloads = await downloadsPromise;
-
   if (downloads.length === 0) {
     return (
       <EmptyState
@@ -55,7 +55,7 @@ async function DownloadsResultsSection({
   }
 
   return (
-    <>
+    <DashboardPageStack>
       <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-sm">
         <Download className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-[12px] font-semibold text-foreground">
@@ -140,24 +140,21 @@ async function DownloadsResultsSection({
           ))}
         </ul>
       </div>
-    </>
+    </DashboardPageStack>
   );
 }
 
 export default async function DownloadsPage() {
   const { userId } = await requireSession(routes.downloads);
-  const downloadsPromise = getUserDownloadHistory(userId);
+  const downloads = await getUserDownloadHistory(userId);
 
   return (
-    <div data-route-shell-ready="dashboard-downloads" className="min-w-0 space-y-8">
+    <DashboardPageShell routeReady="dashboard-downloads">
       <DashboardPageHeader
         title="Download history"
         description="Files you've actually downloaded. Re-download any owned resource from your library any time."
       />
-
-      <Suspense fallback={<DashboardDownloadsResultsSkeleton />}>
-        <DownloadsResultsSection downloadsPromise={downloadsPromise} />
-      </Suspense>
-    </div>
+      <DownloadsResultsSection downloads={downloads} />
+    </DashboardPageShell>
   );
 }

@@ -23,7 +23,9 @@ export function DashboardSidebarItem({
     <Link
       href={item.href}
       onClick={() => {
-        beginDashboardNavigation(item.href);
+        if (!active) {
+          beginDashboardNavigation(item.href);
+        }
         onNavigate?.();
       }}
       className={cn(

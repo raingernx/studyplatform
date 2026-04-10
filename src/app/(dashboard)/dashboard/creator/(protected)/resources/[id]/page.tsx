@@ -1,25 +1,13 @@
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import nextDynamic from "next/dynamic";
-import { CreatorResourceFormLoadingShell } from "@/components/creator/CreatorResourceFormLoadingShell";
-import { PageContent } from "@/design-system";
+import { CreatorResourceForm } from "@/components/creator/CreatorResourceForm";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import { DashboardPageShell } from "@/components/dashboard/DashboardPageShell";
 import { routes } from "@/lib/routes";
 import {
-  getCreatorResourceForEdit,
-  getCreatorResourceFormData,
+  getCreatorResourceForEditForWorkspace,
+  getCreatorResourceFormDataForWorkspace,
 } from "@/services/creator";
 import { getCreatorProtectedUserContext } from "../../creatorProtectedUser";
-
-const CreatorResourceForm = nextDynamic(
-  () =>
-    import("@/components/creator/CreatorResourceForm").then(
-      (mod) => mod.CreatorResourceForm,
-    ),
-  {
-    loading: () => <CreatorResourceFormLoadingShell />,
-  },
-);
 
 export const metadata = {
   title: "Edit Resource",
@@ -46,40 +34,9 @@ export default async function CreatorEditResourcePage({
   )
     ? (focus as ValidFocusField)
     : undefined;
-
-  return (
-    <PageContent
-      data-route-shell-ready="dashboard-creator-resource-editor"
-      className="space-y-8"
-    >
-      <DashboardPageHeader
-        eyebrow="Creator"
-        title="Edit resource"
-        description="Update listing details, files, pricing, and publish status without leaving your workspace."
-      />
-      <Suspense fallback={<CreatorResourceFormLoadingShell />}>
-        <CreatorEditResourceFormSection
-          userId={userId}
-          id={id}
-          focusField={focusField}
-        />
-      </Suspense>
-    </PageContent>
-  );
-}
-
-async function CreatorEditResourceFormSection({
-  userId,
-  id,
-  focusField,
-}: {
-  userId: string;
-  id: string;
-  focusField: "title" | "description" | "price" | "file" | undefined;
-}) {
   const [resource, formData] = await Promise.all([
-    getCreatorResourceForEdit(userId, id),
-    getCreatorResourceFormData(userId),
+    getCreatorResourceForEditForWorkspace(userId, id),
+    getCreatorResourceFormDataForWorkspace(userId),
   ]);
 
   if (!resource) {
@@ -87,10 +44,35 @@ async function CreatorEditResourceFormSection({
   }
 
   return (
+    <DashboardPageShell routeReady="dashboard-creator-resource-editor">
+      <DashboardPageHeader
+        eyebrow="Creator"
+        title="Edit resource"
+        description="Update listing details, files, pricing, and publish status without leaving your workspace."
+      />
+      <CreatorEditResourceFormSection
+        resource={resource}
+        categories={formData.categories}
+        focusField={focusField}
+      />
+    </DashboardPageShell>
+  );
+}
+
+function CreatorEditResourceFormSection({
+  resource,
+  categories,
+  focusField,
+}: {
+  resource: NonNullable<Awaited<ReturnType<typeof getCreatorResourceForEditForWorkspace>>>;
+  categories: Awaited<ReturnType<typeof getCreatorResourceFormDataForWorkspace>>["categories"];
+  focusField: "title" | "description" | "price" | "file" | undefined;
+}) {
+  return (
     <CreatorResourceForm
       mode="edit"
       focusField={focusField}
-      categories={formData.categories}
+      categories={categories}
       initialAIDraft={
         resource.aiDraft
           ? {

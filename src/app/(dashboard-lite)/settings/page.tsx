@@ -1,14 +1,15 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { getCachedServerSession } from "@/lib/auth";
 import { getServerAuthTokenSnapshot } from "@/lib/auth/token-snapshot";
-import { PageContentNarrow } from "@/design-system";
 import { SettingsTabs } from "@/components/settings/SettingsTabs";
-import { SettingsTabsSkeleton } from "@/components/skeletons/SettingsPageSkeleton";
 import { getDashboardSettingsPageData } from "@/services/admin";
 import { routes } from "@/lib/routes";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import {
+  DashboardPageShell,
+  DashboardPageStack,
+} from "@/components/dashboard/DashboardPageShell";
 
 export const metadata = {
   title: "Settings",
@@ -39,27 +40,29 @@ async function SettingsTabsContent() {
   });
 
   return (
-    <SettingsTabs
-      user={{
-        name: user?.name ?? null,
-        email: user?.email ?? null,
-        image: user?.image ?? null,
-      }}
-      preferences={preferences}
-    />
+    <DashboardPageStack>
+      <SettingsTabs
+        user={{
+          name: user?.name ?? null,
+          email: user?.email ?? null,
+          image: user?.image ?? null,
+        }}
+        preferences={preferences}
+      />
+    </DashboardPageStack>
   );
 }
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const settingsTabs = await SettingsTabsContent();
+
   return (
-    <PageContentNarrow data-route-shell-ready="dashboard-settings" className="space-y-8">
+    <DashboardPageShell routeReady="dashboard-settings" width="narrow">
       <DashboardPageHeader
         title="Settings"
         description="Manage your account preferences and security."
       />
-      <Suspense fallback={<SettingsTabsSkeleton />}>
-        <SettingsTabsContent />
-      </Suspense>
-    </PageContentNarrow>
+      {settingsTabs}
+    </DashboardPageShell>
   );
 }

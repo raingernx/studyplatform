@@ -8,6 +8,8 @@ export interface CreatorResourceFilters {
   categoryId?: string;
 }
 
+type CreatorManagementSort = "latest" | "downloads" | "revenue";
+
 export interface CreatorSeriesRow {
   date: Date;
   count: number;
@@ -576,6 +578,67 @@ export async function findCreatorResourcesByUserId(
         },
       },
     },
+  });
+}
+
+function buildCreatorManagementOrderBy(sort: CreatorManagementSort = "latest") {
+  if (sort === "downloads") {
+    return [
+      { resourceStat: { downloads: "desc" as const } },
+      { downloadCount: "desc" as const },
+      { updatedAt: "desc" as const },
+    ];
+  }
+
+  if (sort === "revenue") {
+    return [
+      { resourceStat: { revenue: "desc" as const } },
+      { updatedAt: "desc" as const },
+    ];
+  }
+
+  return [{ createdAt: "desc" as const }];
+}
+
+export async function findCreatorManagementTableRowsByUserId(
+  userId: string,
+  filters?: CreatorResourceFilters,
+  sort: CreatorManagementSort = "latest",
+) {
+  return prisma.resource.findMany({
+    where: buildCreatorResourceWhere(userId, filters),
+    orderBy: buildCreatorManagementOrderBy(sort),
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      status: true,
+      isFree: true,
+      price: true,
+      updatedAt: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+      resourceStat: {
+        select: {
+          downloads: true,
+          revenue: true,
+        },
+      },
+    },
+  });
+}
+
+export async function countCreatorResourcesByUserId(
+  userId: string,
+  filters?: CreatorResourceFilters,
+) {
+  return prisma.resource.count({
+    where: buildCreatorResourceWhere(userId, filters),
   });
 }
 
@@ -1274,6 +1337,12 @@ export async function findCreatorSales(userId: string) {
         },
       },
     },
+  });
+}
+
+export async function countCreatorSales(userId: string) {
+  return prisma.creatorRevenue.count({
+    where: { creatorId: userId },
   });
 }
 

@@ -1,7 +1,6 @@
-import { Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { DashboardGroupNavigationOverlay } from "@/components/providers/DashboardGroupNavigationOverlay";
-import { DashboardGroupLoadingShell } from "@/components/skeletons/DashboardGroupLoadingShell";
 
 import DashboardSessionLayoutContent from "./DashboardSessionLayoutContent";
 
@@ -17,9 +16,7 @@ export default function DashboardLiteLayout({
   return (
     <>
       <DashboardGroupNavigationOverlay />
-      <Suspense fallback={<DashboardGroupLoadingShell />}>
-        <DashboardSessionLayoutContent>{children}</DashboardSessionLayoutContent>
-      </Suspense>
+      <DashboardSessionLayoutContent>{children}</DashboardSessionLayoutContent>
     </>
   );
 }

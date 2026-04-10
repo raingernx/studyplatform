@@ -7,7 +7,7 @@ import { expect } from "@playwright/test";
 import { chromium, webkit, type Browser, type BrowserContext, type Page } from "playwright";
 
 import { collectRuntimeErrors } from "../tests/e2e/helpers/browser";
-import { loginAsAdmin, loginAsCreator } from "../tests/e2e/helpers/auth";
+import { loginAsAdmin, loginAsCreator, loginAsUser } from "../tests/e2e/helpers/auth";
 
 const BASE_URL = process.env.BASE_URL ?? "http://127.0.0.1:3000";
 const HEADLESS = process.env.HEADLESS !== "0";
@@ -46,7 +46,11 @@ type ProbeScenarioName =
   | "creator-editor-refresh-shell"
   | "dashboard-to-downloads"
   | "dashboard-to-purchases"
-  | "dashboard-to-settings";
+  | "dashboard-to-settings"
+  | "dashboard-settings-cold-entry"
+  | "dashboard-subscription-cold-entry"
+  | "creator-overview-cold-entry"
+  | "creator-apply-cold-entry";
 
 type ProbeContext = {
   browserName: "chromium" | "webkit";
@@ -80,7 +84,26 @@ type RefreshSample = {
   rootLoadingVisible: boolean;
   dashboardShellVisible: boolean;
   routeReady: string[];
+  loadingScopes: string[];
 };
+
+const DASHBOARD_FULL_SHELL_SCOPES = new Set([
+  "dashboard-group",
+  "dashboard-overview",
+  "dashboard-library",
+  "dashboard-downloads",
+  "dashboard-purchases",
+  "dashboard-settings",
+  "dashboard-subscription",
+  "dashboard-creator-layout",
+  "dashboard-creator-overview",
+  "dashboard-creator-analytics",
+  "dashboard-creator-resources",
+  "dashboard-creator-sales",
+  "dashboard-creator-profile",
+  "dashboard-creator-resource-editor",
+  "dashboard-creator-apply",
+]);
 
 const VALID_SCENARIOS: ProbeScenarioName[] = [
   "launch",
@@ -109,6 +132,10 @@ const VALID_SCENARIOS: ProbeScenarioName[] = [
   "dashboard-to-downloads",
   "dashboard-to-purchases",
   "dashboard-to-settings",
+  "dashboard-settings-cold-entry",
+  "dashboard-subscription-cold-entry",
+  "creator-overview-cold-entry",
+  "creator-apply-cold-entry",
 ];
 
 function parseScenarioNames(argv: string[]) {
@@ -434,6 +461,7 @@ async function navigateViaPublicAccountMenu(
   await expect(page.locator('[data-loading-scope="dashboard-group"]:visible')).toHaveCount(0, {
     timeout: 20_000,
   });
+  await expectNoVisibleDashboardShellStack(page, "resources-account-menu-pages");
 }
 
 async function openDashboardAvatarMenu(page: Page) {
@@ -505,6 +533,7 @@ async function navigateViaDashboardAvatarMenu(
   await expect(page.locator('[data-loading-scope="dashboard-group"]:visible')).toHaveCount(0, {
     timeout: 20_000,
   });
+  await expectNoVisibleDashboardShellStack(page, "dashboard-avatar-menu-pages");
 }
 
 async function findSeededAdminResourceId() {
@@ -1000,6 +1029,7 @@ async function runCreatorManagementPagesScenario({ browser }: ProbeContext) {
         new RegExp(`${target.path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
       );
       await target.assert(page);
+      await expectNoVisibleDashboardShellStack(page, "creator-management-pages");
     }
 
     expect(pageErrors).toEqual([]);
@@ -1037,6 +1067,38 @@ async function startRefreshProbe(page: Page) {
       let stopped = false;
       let rafId = 0;
 
+      const getVisibleLoadingScopes = () => {
+        const isVisible = (node) => {
+          if (!(node instanceof HTMLElement)) {
+            return false;
+          }
+
+          const style = window.getComputedStyle(node);
+          if (
+            style.display === "none" ||
+            style.visibility === "hidden" ||
+            Number(style.opacity) === 0
+          ) {
+            return false;
+          }
+
+          const rect = node.getBoundingClientRect();
+          return (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            rect.bottom > 0 &&
+            rect.right > 0 &&
+            rect.top < window.innerHeight &&
+            rect.left < window.innerWidth
+          );
+        };
+
+        return Array.from(document.querySelectorAll("[data-loading-scope]"))
+          .filter(isVisible)
+          .map((node) => node.getAttribute("data-loading-scope"))
+          .filter(Boolean);
+      };
+
       const sample = () => {
         const samples = readSamples();
         samples.push({
@@ -1047,6 +1109,7 @@ async function startRefreshProbe(page: Page) {
           routeReady: Array.from(document.querySelectorAll("[data-route-shell-ready]"))
             .map((node) => node.getAttribute("data-route-shell-ready"))
             .filter(Boolean),
+          loadingScopes: getVisibleLoadingScopes(),
         });
         writeSamples(samples);
 
@@ -1103,6 +1166,104 @@ async function stopRefreshProbe(page: Page) {
   return [];
 }
 
+function getVisibleDashboardFullShellScopes(sample: RefreshSample) {
+  return Array.from(
+    new Set(
+      sample.loadingScopes.filter((scope) => DASHBOARD_FULL_SHELL_SCOPES.has(scope)),
+    ),
+  );
+}
+
+function expectNoFullShellOnFullShell(
+  samples: RefreshSample[],
+  scenario: ProbeScenarioName,
+) {
+  const offendingSample = samples.find((sample) => {
+    const visibleScopes = getVisibleDashboardFullShellScopes(sample);
+    return visibleScopes.length > 1;
+  });
+
+  expect(
+    offendingSample,
+    offendingSample
+      ? `${scenario} captured overlapping dashboard full shells: ${getVisibleDashboardFullShellScopes(offendingSample).join(", ")} at ${offendingSample.href}`
+      : "",
+  ).toBeUndefined();
+}
+
+function expectNoDisallowedScopesAfterRouteReady(
+  samples: RefreshSample[],
+  readyMarker: string,
+  disallowedScopes: readonly string[],
+  scenario: ProbeScenarioName,
+) {
+  const firstReadyIndex = samples.findIndex((sample) =>
+    sample.routeReady.includes(readyMarker),
+  );
+
+  expect(
+    firstReadyIndex,
+    `${scenario} probe did not observe route-ready marker ${readyMarker}`,
+  ).toBeGreaterThanOrEqual(0);
+
+  const offendingSample = samples
+    .slice(firstReadyIndex)
+    .find((sample) =>
+      sample.loadingScopes.some((scope) => disallowedScopes.includes(scope)),
+    );
+
+  expect(
+    offendingSample,
+    offendingSample
+      ? `${scenario} kept route-shell scopes visible after ${readyMarker} was ready: ${offendingSample.loadingScopes.join(", ")} at ${offendingSample.href}`
+      : "",
+  ).toBeUndefined();
+}
+
+async function expectNoVisibleDashboardShellStack(
+  page: Page,
+  scenario: ProbeScenarioName,
+) {
+  const visibleScopes = (await page.evaluate(`
+    (() => {
+      const knownScopes = ${JSON.stringify(Array.from(DASHBOARD_FULL_SHELL_SCOPES))};
+      return Array.from(document.querySelectorAll("[data-loading-scope]"))
+        .filter((node) => {
+          if (!(node instanceof HTMLElement)) {
+            return false;
+          }
+
+          const style = window.getComputedStyle(node);
+          if (
+            style.display === "none" ||
+            style.visibility === "hidden" ||
+            Number(style.opacity) === 0
+          ) {
+            return false;
+          }
+
+          const rect = node.getBoundingClientRect();
+          return (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            rect.bottom > 0 &&
+            rect.right > 0 &&
+            rect.top < window.innerHeight &&
+            rect.left < window.innerWidth
+          );
+        })
+        .map((node) => node.getAttribute("data-loading-scope"))
+        .filter((value) => typeof value === "string" && value.length > 0)
+        .filter((scope) => knownScopes.includes(scope));
+    })()
+  `)) as string[];
+
+  expect(
+    Array.from(new Set(visibleScopes)).length,
+    `${scenario} ended with overlapping dashboard full shells: ${Array.from(new Set(visibleScopes)).join(", ")}`,
+  ).toBeLessThanOrEqual(1);
+}
+
 async function runCreatorRefreshShellScenario({ browser }: ProbeContext) {
   const context = await createContext(browser);
   const page = await context.newPage();
@@ -1153,6 +1314,7 @@ async function runCreatorRefreshShellScenario({ browser }: ProbeContext) {
     ).toBeDefined();
 
     expect(creatorSamples.at(-1)?.rootLoadingVisible).not.toBe(true);
+    expectNoFullShellOnFullShell(creatorSamples, "creator-refresh-shell");
 
     expect(pageErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);
@@ -1180,6 +1342,20 @@ type DashboardRefreshShellOptions = {
   urlPattern: RegExp;
   headingName: RegExp;
   expectedRouteReady: string;
+};
+
+type ColdEntryHandoffOptions = {
+  scenario:
+    | "dashboard-settings-cold-entry"
+    | "dashboard-subscription-cold-entry"
+    | "creator-overview-cold-entry"
+    | "creator-apply-cold-entry";
+  loginAs: "creator" | "user";
+  targetPath: string;
+  urlPattern: RegExp;
+  headingName: RegExp;
+  readyMarker: string;
+  disallowedScopesAfterReady: readonly string[];
 };
 
 type AdminRefreshShellOptions = {
@@ -1237,6 +1413,61 @@ async function runDashboardRefreshShellScenario(
     ).toBeDefined();
 
     expect(routeSamples.at(-1)?.rootLoadingVisible).not.toBe(true);
+    expectNoFullShellOnFullShell(routeSamples, options.scenario);
+
+    expect(pageErrors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  } catch (error) {
+    const screenshot = await saveFailureScreenshot(page, options.scenario);
+    throw new Error(
+      `${options.scenario} probe failed. Screenshot: ${screenshot}. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  } finally {
+    await closeContext(context);
+  }
+}
+
+async function runColdEntryHandoffScenario(
+  probeContext: ProbeContext,
+  options: ColdEntryHandoffOptions,
+) {
+  const context = await createContext(probeContext.browser);
+  const page = await context.newPage();
+  const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
+
+  try {
+    if (options.loginAs === "creator") {
+      await loginAsCreator(page, "/resources");
+    } else {
+      await loginAsUser(page, "/resources");
+    }
+    await expect(page).toHaveURL(/\/resources(?:\?.*)?$/);
+
+    await startRefreshProbe(page);
+    await page.goto(options.targetPath, { waitUntil: "domcontentloaded" });
+
+    await expect(page).toHaveURL(options.urlPattern);
+    await expect(page.getByRole("heading", { name: options.headingName }).first()).toBeVisible({
+      timeout: 20_000,
+    });
+    await page.waitForTimeout(500);
+
+    const samples = await stopRefreshProbe(page);
+    const routeSamples = samples.filter((sample) => options.urlPattern.test(sample.href));
+
+    expect(
+      routeSamples.length,
+      `${options.scenario} probe did not capture route samples during cold entry`,
+    ).toBeGreaterThan(0);
+
+    expectNoDisallowedScopesAfterRouteReady(
+      routeSamples,
+      options.readyMarker,
+      options.disallowedScopesAfterReady,
+      options.scenario,
+    );
 
     expect(pageErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);
@@ -1465,6 +1696,7 @@ async function runCreatorEditorRefreshShellScenario({ browser }: ProbeContext) {
     ).toBeDefined();
 
     expect(editorSamples.at(-1)?.rootLoadingVisible).not.toBe(true);
+    expectNoFullShellOnFullShell(editorSamples, "creator-editor-refresh-shell");
 
     expect(pageErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);
@@ -1634,6 +1866,46 @@ const scenarioHandlers: Record<ProbeScenarioName, (context: ProbeContext) => Pro
       linkName: /^Settings$/,
       headingName: /^Settings$/,
       urlPattern: /\/settings$/,
+    }),
+  "dashboard-settings-cold-entry": (context) =>
+    runColdEntryHandoffScenario(context, {
+      scenario: "dashboard-settings-cold-entry",
+      loginAs: "creator",
+      targetPath: "/settings",
+      urlPattern: /\/settings(?:\?.*)?$/,
+      headingName: /^Settings$/i,
+      readyMarker: "dashboard-settings",
+      disallowedScopesAfterReady: ["dashboard-group", "dashboard-settings"],
+    }),
+  "dashboard-subscription-cold-entry": (context) =>
+    runColdEntryHandoffScenario(context, {
+      scenario: "dashboard-subscription-cold-entry",
+      loginAs: "creator",
+      targetPath: "/subscription",
+      urlPattern: /\/subscription(?:\?.*)?$/,
+      headingName: /^Membership$/i,
+      readyMarker: "dashboard-subscription",
+      disallowedScopesAfterReady: ["dashboard-group", "dashboard-subscription"],
+    }),
+  "creator-overview-cold-entry": (context) =>
+    runColdEntryHandoffScenario(context, {
+      scenario: "creator-overview-cold-entry",
+      loginAs: "creator",
+      targetPath: "/dashboard/creator",
+      urlPattern: /\/dashboard\/creator(?:\?.*)?$/,
+      headingName: /^Creator Dashboard$/i,
+      readyMarker: "dashboard-creator-overview",
+      disallowedScopesAfterReady: ["dashboard-group", "dashboard-creator-layout"],
+    }),
+  "creator-apply-cold-entry": (context) =>
+    runColdEntryHandoffScenario(context, {
+      scenario: "creator-apply-cold-entry",
+      loginAs: "user",
+      targetPath: "/dashboard/creator/apply",
+      urlPattern: /\/dashboard\/creator\/apply(?:\?.*)?$/,
+      headingName: /^Become a Creator$/i,
+      readyMarker: "dashboard-creator-apply",
+      disallowedScopesAfterReady: ["dashboard-group", "dashboard-creator-apply"],
     }),
   "public-product-pages": runPublicProductPagesScenario,
   "admin-core-pages": runAdminCorePagesScenario,

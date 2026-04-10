@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -18,8 +17,11 @@ import { getDashboardPurchaseHistoryPageData } from "@/services/admin";
 import { getBuildSafePlatformConfig } from "@/services/platform";
 import { EmptyState } from "@/design-system";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
-import { DashboardPurchasesResultsSkeleton } from "@/components/skeletons/DashboardUserRouteSkeletons";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import {
+  DashboardPageShell,
+  DashboardPageStack,
+} from "@/components/dashboard/DashboardPageShell";
 
 export const metadata = {
   title: "Purchases",
@@ -51,11 +53,10 @@ const STATUS_CONFIG = {
 };
 
 async function PurchasesResultsSection({
-  purchasesPromise,
+  purchases,
 }: {
-  purchasesPromise: ReturnType<typeof getDashboardPurchaseHistoryPageData>;
+  purchases: Awaited<ReturnType<typeof getDashboardPurchaseHistoryPageData>>;
 }) {
-  const purchases = await purchasesPromise;
   const totalSpent = purchases
     .filter((p) => p.status === "COMPLETED")
     .reduce((sum, p) => sum + p.amount, 0);
@@ -85,7 +86,7 @@ async function PurchasesResultsSection({
   }
 
   return (
-    <>
+    <DashboardPageStack>
       <div className="hidden flex-col items-end gap-0.5 sm:flex">
         <p className="text-[12px] text-muted-foreground">Total spent</p>
         <p className="text-[18px] font-bold tracking-tight text-foreground">
@@ -188,7 +189,7 @@ async function PurchasesResultsSection({
           </span>
         </div>
       </div>
-    </>
+    </DashboardPageStack>
   );
 }
 
@@ -196,18 +197,15 @@ export default async function PurchasesPage() {
   const { userId } = await requireSession(routes.purchases);
 
   const platform = getBuildSafePlatformConfig();
-  const purchasesPromise = getDashboardPurchaseHistoryPageData(userId);
+  const purchases = await getDashboardPurchaseHistoryPageData(userId);
 
   return (
-    <div data-route-shell-ready="dashboard-purchases" className="min-w-0 space-y-8">
+    <DashboardPageShell routeReady="dashboard-purchases">
       <DashboardPageHeader
         title="Purchases"
         description={`Your complete order history on ${platform.platformShortName}.`}
       />
-
-      <Suspense fallback={<DashboardPurchasesResultsSkeleton />}>
-        <PurchasesResultsSection purchasesPromise={purchasesPromise} />
-      </Suspense>
-    </div>
+      <PurchasesResultsSection purchases={purchases} />
+    </DashboardPageShell>
   );
 }

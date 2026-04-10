@@ -15,10 +15,7 @@ import { routes } from "@/lib/routes";
 import { canAccessCreatorWorkspace, getCreatorAccessState } from "@/services/creator";
 import { CreatorApplicationForm } from "@/components/creator/CreatorApplicationForm";
 import { findCreatorApplicationRecord } from "@/repositories/creators/creator.repository";
-import {
-  CreatorApplyPanelSkeleton,
-  CreatorApplyRejectedFeedbackSkeleton,
-} from "@/components/skeletons/CreatorApplyPageSkeleton";
+import { CreatorApplyRejectedFeedbackSkeleton } from "@/components/skeletons/CreatorApplyPageSkeleton";
 
 export const metadata = {
   title: "Become a Creator",
@@ -66,6 +63,10 @@ export default async function CreatorApplyPage() {
   }
 
   const applicationStatus = access.applicationStatus;
+  const statePanel = await CreatorApplyStatePanel({
+    applicationStatus,
+    userId,
+  });
 
   return (
     <PageContent data-route-shell-ready="dashboard-creator-apply" className="space-y-8">
@@ -108,19 +109,7 @@ export default async function CreatorApplyPage() {
           })}
         </div>
       </div>
-
-      <Suspense
-        fallback={
-          <CreatorApplyPanelSkeleton
-            variant={getCreatorApplySkeletonVariant(applicationStatus)}
-          />
-        }
-      >
-        <CreatorApplyStatePanel
-          applicationStatus={applicationStatus}
-          userId={userId}
-        />
-      </Suspense>
+      {statePanel}
     </PageContent>
   );
 }
@@ -145,21 +134,6 @@ async function CreatorApplyStatePanel({
   }
 
   return <ApplyPanel />;
-}
-
-function getCreatorApplySkeletonVariant(
-  applicationStatus: string,
-): "approved" | "pending" | "rejected" | "not-applied" {
-  switch (applicationStatus) {
-    case "APPROVED":
-      return "approved";
-    case "PENDING":
-      return "pending";
-    case "REJECTED":
-      return "rejected";
-    default:
-      return "not-applied";
-  }
 }
 
 function PendingPanel() {

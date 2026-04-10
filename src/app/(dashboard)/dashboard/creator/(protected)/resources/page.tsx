@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import {
   BarChart2,
@@ -11,13 +10,18 @@ import {
 import { Button, Select, RowActionButton, RowActions } from "@/design-system";
 import { CreatorResourceStatusButton } from "@/components/creator/CreatorResourceStatusButton";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { CreatorDashboardResourcesResultsSkeleton } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
 import { formatDate, formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
-import { getCreatorResourceManagementData } from "@/services/creator";
+import {
+  getCreatorResourceManagementDataForWorkspace,
+} from "@/services/creator";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
 import { getCreatorProtectedUserContext } from "../creatorProtectedUser";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import {
+  DashboardPageShell,
+  DashboardPageStack,
+} from "@/components/dashboard/DashboardPageShell";
 
 export const metadata = {
   title: "Creator Resources",
@@ -51,9 +55,19 @@ export default async function CreatorResourcesPage({
     pricing === "free" || pricing === "paid" || pricing === "all" ? pricing : "all";
   const normalizedSort =
     sort === "downloads" || sort === "revenue" || sort === "latest" ? sort : "latest";
+  const resourceFilters = {
+    status: normalizedStatus,
+    pricing: normalizedPricing,
+    categoryId: categoryId || undefined,
+    sort: normalizedSort,
+  } as const;
+  const resourcesData = await getCreatorResourceManagementDataForWorkspace(
+    userId,
+    resourceFilters,
+  );
 
   return (
-    <div data-route-shell-ready="dashboard-creator-resources" className="min-w-0 space-y-8">
+    <DashboardPageShell routeReady="dashboard-creator-resources">
       <DashboardPageHeader
         eyebrow="Creator"
         title="Resource management"
@@ -68,53 +82,30 @@ export default async function CreatorResourcesPage({
         }
       />
 
-      <Suspense fallback={<CreatorDashboardResourcesResultsSkeleton />}>
-        <CreatorResourcesResultsSection
-          userId={userId}
-          status={normalizedStatus}
-          pricing={normalizedPricing}
-          categoryId={categoryId}
-          sort={normalizedSort}
-        />
-      </Suspense>
-
-      <div className="rounded-2xl border border-brand-100 bg-brand-50/60 px-5 py-4 text-sm text-brand-700">
-        <p className="font-semibold">Need deeper performance insights?</p>
-        <p className="mt-1 text-brand-700/80">
-          Your creator analytics page breaks down downloads, revenue, and sales trends over time.
-        </p>
-        <Link
-          href={routes.creatorAnalytics}
-          className="mt-3 inline-flex items-center gap-1 font-medium text-brand-700 hover:text-brand-800"
-        >
-          Open analytics
-          <ExternalLink className="h-4 w-4" />
-        </Link>
-      </div>
-    </div>
+      <CreatorResourcesResultsSection
+        data={resourcesData}
+        status={normalizedStatus}
+        pricing={normalizedPricing}
+        categoryId={categoryId}
+        sort={normalizedSort}
+      />
+    </DashboardPageShell>
   );
 }
 
-async function CreatorResourcesResultsSection({
-  userId,
+function CreatorResourcesResultsSection({
+  data,
   status,
   pricing,
   categoryId,
   sort,
 }: {
-  userId: string;
+  data: Awaited<ReturnType<typeof getCreatorResourceManagementDataForWorkspace>>;
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "all";
   pricing: "free" | "paid" | "all";
   categoryId: string | undefined;
   sort: "downloads" | "revenue" | "latest";
 }) {
-  const data = await getCreatorResourceManagementData(userId, {
-    status,
-    pricing,
-    categoryId: categoryId || undefined,
-    sort,
-  });
-
   const publishedCount = data.resources.filter((resource) => resource.status === "PUBLISHED").length;
   const totalRevenue = data.resources.reduce((sum, resource) => sum + resource.revenue, 0);
   const totalDownloads = data.resources.reduce((sum, resource) => sum + resource.downloadCount, 0);
@@ -125,7 +116,7 @@ async function CreatorResourcesResultsSection({
   );
 
   return (
-    <>
+    <DashboardPageStack>
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
           <p className="text-xs font-semibold uppercase tracking-tightest text-muted-foreground">Resources</p>
@@ -314,6 +305,19 @@ async function CreatorResourcesResultsSection({
           </div>
         )}
       </div>
-    </>
+      <div className="rounded-2xl border border-brand-100 bg-brand-50/60 px-5 py-4 text-sm text-brand-700">
+        <p className="font-semibold">Need deeper performance insights?</p>
+        <p className="mt-1 text-brand-700/80">
+          Your creator analytics page breaks down downloads, revenue, and sales trends over time.
+        </p>
+        <Link
+          href={routes.creatorAnalytics}
+          className="mt-3 inline-flex items-center gap-1 font-medium text-brand-700 hover:text-brand-800"
+        >
+          Open analytics
+          <ExternalLink className="h-4 w-4" />
+        </Link>
+      </div>
+    </DashboardPageStack>
   );
 }

@@ -1,8 +1,10 @@
 import { unstable_cache } from "next/cache";
 import {
   countDownloadEventsByUser,
+  countPurchaseHistoryByUser,
   findCompletedPurchaseByUserAndResource,
   findCompletedLibraryItemsByUser,
+  findLibrarySurfaceSummaryByUser,
   findCompletedPurchasesByUser,
   findRecentPurchasePreferenceSignalsByUser,
   findCompletedResourceIdsByUser,
@@ -209,6 +211,29 @@ export async function getUserLibraryItems(userId: string) {
     }));
 }
 
+export async function getUserLibrarySurfaceSummary(userId: string) {
+  const summary = await findLibrarySurfaceSummaryByUser(userId);
+
+  return {
+    total: summary.total,
+    latest:
+      summary.latest && summary.latest.resource
+        ? {
+            purchaseId: summary.latest.id,
+            purchasedAt: summary.latest.createdAt,
+            id: summary.latest.resource.id,
+            slug: summary.latest.resource.slug,
+            title: summary.latest.resource.title,
+            authorName: summary.latest.resource.author?.name ?? null,
+            previewUrl: summary.latest.resource.previewUrl ?? null,
+            mimeType: summary.latest.resource.mimeType ?? null,
+            type: summary.latest.resource.type,
+            categorySlug: summary.latest.resource.category?.slug ?? null,
+          }
+        : null,
+  };
+}
+
 export async function getUserDownloadCount(userId: string) {
   return countDownloadEventsByUser(userId);
 }
@@ -217,12 +242,31 @@ export async function getUserDownloadHistory(userId: string) {
   return findDownloadHistoryByUser(userId);
 }
 
+export async function getUserDownloadHistorySurfaceSummary(userId: string) {
+  const downloads = await findDownloadHistoryByUser(userId);
+  const count = downloads.length;
+
+  return {
+    count,
+    rowCount: Math.min(Math.max(count, 1), 10),
+  };
+}
+
 /**
  * Returns all purchases (any status) for a user, ordered newest first.
  * Used by the purchases history page which shows PENDING / FAILED records too.
  */
 export async function getUserPurchaseHistory(userId: string) {
   return findPurchaseHistoryByUser(userId);
+}
+
+export async function getUserPurchaseHistorySurfaceSummary(userId: string) {
+  const count = await countPurchaseHistoryByUser(userId);
+
+  return {
+    count,
+    rowCount: Math.min(Math.max(count, 1), 10),
+  };
 }
 
 export interface UserLearningProfile {

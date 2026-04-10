@@ -1,24 +1,15 @@
-import { Suspense } from "react";
-import nextDynamic from "next/dynamic";
 import { CreatorResourceProgress } from "@/components/creator/CreatorResourceProgress";
 import { CreatorResourceHelperCard } from "@/components/creator/CreatorResourceHelperCard";
-import { CreatorResourceFormLoadingShell } from "@/components/creator/CreatorResourceFormLoadingShell";
+import { CreatorResourceForm } from "@/components/creator/CreatorResourceForm";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import { DashboardPageShell } from "@/components/dashboard/DashboardPageShell";
 import { routes } from "@/lib/routes";
-import { getCreatorResourceFormData } from "@/services/creator";
-import { getCreatorSetupState } from "@/services/creator";
+import {
+  getCreatorResourceFormDataForWorkspace,
+  getCreatorResourceOnboardingSurfaceSummaryForWorkspace,
+} from "@/services/creator";
 import { logActivity } from "@/lib/activity";
 import { getCreatorProtectedUserContext } from "../../creatorProtectedUser";
-
-const CreatorResourceForm = nextDynamic(
-  () =>
-    import("@/components/creator/CreatorResourceForm").then(
-      (mod) => mod.CreatorResourceForm,
-    ),
-  {
-    loading: () => <CreatorResourceFormLoadingShell />,
-  },
-);
 
 export const metadata = {
   title: "Create Resource",
@@ -28,9 +19,10 @@ export const dynamic = "force-dynamic";
 
 export default async function CreatorNewResourcePage() {
   const { userId } = await getCreatorProtectedUserContext(routes.creatorNewResource);
-  const setupState = await getCreatorSetupState(userId);
-
-  const isFirstResource = setupState.totalResources === 0;
+  const formData = await getCreatorResourceFormDataForWorkspace(userId);
+  const onboardingSurface =
+    await getCreatorResourceOnboardingSurfaceSummaryForWorkspace(userId);
+  const isFirstResource = onboardingSurface.isFirstResource;
 
   if (isFirstResource) {
     void logActivity({
@@ -42,10 +34,7 @@ export default async function CreatorNewResourcePage() {
   }
 
   return (
-    <div
-      data-route-shell-ready="dashboard-creator-resource-editor"
-      className="space-y-8"
-    >
+    <DashboardPageShell routeReady="dashboard-creator-resource-editor">
       <DashboardPageHeader
         eyebrow="Creator"
         title={isFirstResource ? "Create your first resource" : "New resource"}
@@ -65,12 +54,10 @@ export default async function CreatorNewResourcePage() {
           isFirstResource ? "grid gap-6 lg:grid-cols-[1fr_280px]" : undefined
         }
       >
-        <Suspense fallback={<CreatorResourceFormLoadingShell />}>
-          <CreatorNewResourceFormSection
-            userId={userId}
-            isFirstResource={isFirstResource}
-          />
-        </Suspense>
+        <CreatorNewResourceFormSection
+          categories={formData.categories}
+          isFirstResource={isFirstResource}
+        />
 
         {isFirstResource && (
           <aside className="space-y-4">
@@ -78,19 +65,17 @@ export default async function CreatorNewResourcePage() {
           </aside>
         )}
       </div>
-    </div>
+    </DashboardPageShell>
   );
 }
 
-async function CreatorNewResourceFormSection({
-  userId,
+function CreatorNewResourceFormSection({
+  categories,
   isFirstResource,
 }: {
-  userId: string;
+  categories: Awaited<ReturnType<typeof getCreatorResourceFormDataForWorkspace>>["categories"];
   isFirstResource: boolean;
 }) {
-  const { categories } = await getCreatorResourceFormData(userId);
-
   return (
     <CreatorResourceForm
       mode="create"

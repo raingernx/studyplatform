@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
-import { requireSession } from "@/lib/auth/require-session";
 import { routes } from "@/lib/routes";
 import {
   canAccessCreatorWorkspace,
   getCreatorAccessState,
 } from "@/services/creator";
+import { getCreatorProtectedUserContext } from "./creatorProtectedUser";
 
 interface CreatorProtectedLayoutContentProps {
   children: ReactNode;
@@ -20,7 +20,7 @@ interface CreatorProtectedLayoutContentProps {
 export default async function CreatorProtectedLayoutContent({
   children,
 }: CreatorProtectedLayoutContentProps) {
-  const { userId } = await requireSession(routes.creatorDashboard);
+  const { userId } = await getCreatorProtectedUserContext(routes.creatorDashboard);
   const access = await getCreatorAccessState(userId);
 
   if (!canAccessCreatorWorkspace(access)) {

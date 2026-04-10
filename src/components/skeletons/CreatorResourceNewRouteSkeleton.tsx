@@ -3,6 +3,7 @@
 import { Skeleton } from "boneyard-js/react";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { DashboardPageHeaderSkeleton } from "@/components/dashboard/DashboardPageHeader";
+import { DashboardPageStack } from "@/components/dashboard/DashboardPageShell";
 import {
   CreatorResourceFormLoadingShell,
   CreatorResourceFormLoadingShellPreview,
@@ -12,7 +13,7 @@ const CREATOR_RESOURCE_NEW_ROUTE_NAME = "creator-resource-new-route";
 
 function CreatorResourceNewRouteSkeletonPreview() {
   return (
-    <div className="space-y-8">
+    <DashboardPageStack>
       <DashboardPageHeaderSkeleton
         eyebrowWidth="w-16"
         titleWidth="w-64"
@@ -43,7 +44,7 @@ function CreatorResourceNewRouteSkeletonPreview() {
           </div>
         </div>
       </div>
-    </div>
+    </DashboardPageStack>
   );
 }
 

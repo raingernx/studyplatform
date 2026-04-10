@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { BarChart2, DollarSign, Download, FileText, MessageSquare, ShoppingBag, Star } from "lucide-react";
 import { Badge, Button, Card, CardContent } from "@/design-system";
@@ -10,9 +9,12 @@ import {
   getCreatorReviewAnalytics,
 } from "@/services/creator";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
-import { CreatorDashboardAnalyticsResultsSkeleton } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
 import { getCreatorProtectedUserContext } from "../creatorProtectedUser";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import {
+  DashboardPageShell,
+  DashboardPageStack,
+} from "@/components/dashboard/DashboardPageShell";
 
 export const metadata = {
   title: "Creator Analytics",
@@ -58,11 +60,13 @@ export default async function CreatorAnalyticsPage({
       ? rangeParam
       : "30d";
 
-  const analyticsPromise = getCreatorAnalytics(userId, range);
-  const reviewAnalyticsPromise = getCreatorReviewAnalytics(userId);
+  const [analytics, reviewAnalytics] = await Promise.all([
+    getCreatorAnalytics(userId, range),
+    getCreatorReviewAnalytics(userId),
+  ]);
 
   return (
-    <div data-route-shell-ready="dashboard-creator-analytics" className="space-y-8">
+    <DashboardPageShell routeReady="dashboard-creator-analytics">
       <DashboardPageHeader
         eyebrow="Creator"
         title="Analytics"
@@ -82,28 +86,21 @@ export default async function CreatorAnalyticsPage({
         }
       />
 
-      <Suspense fallback={<CreatorDashboardAnalyticsResultsSkeleton />}>
-        <CreatorAnalyticsResults
-          analyticsPromise={analyticsPromise}
-          reviewAnalyticsPromise={reviewAnalyticsPromise}
-        />
-      </Suspense>
-    </div>
+      <CreatorAnalyticsResults
+        analytics={analytics}
+        reviewAnalytics={reviewAnalytics}
+      />
+    </DashboardPageShell>
   );
 }
 
-async function CreatorAnalyticsResults({
-  analyticsPromise,
-  reviewAnalyticsPromise,
+function CreatorAnalyticsResults({
+  analytics,
+  reviewAnalytics,
 }: {
-  analyticsPromise: ReturnType<typeof getCreatorAnalytics>;
-  reviewAnalyticsPromise: ReturnType<typeof getCreatorReviewAnalytics>;
+  analytics: Awaited<ReturnType<typeof getCreatorAnalytics>>;
+  reviewAnalytics: Awaited<ReturnType<typeof getCreatorReviewAnalytics>>;
 }) {
-  const [analytics, reviewAnalytics] = await Promise.all([
-    analyticsPromise,
-    reviewAnalyticsPromise,
-  ]);
-
   const seriesRows = Array.from(
     new Set([
       ...analytics.revenueSeries.map((row) => row.date),
@@ -170,7 +167,7 @@ async function CreatorAnalyticsResults({
   ];
 
   return (
-    <div className="space-y-8">
+    <DashboardPageStack>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) => {
           const Icon = card.icon;
@@ -553,6 +550,6 @@ async function CreatorAnalyticsResults({
           </Button>
         </div>
       </section>
-    </div>
+    </DashboardPageStack>
   );
 }

@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -28,7 +27,6 @@ import { CreatorQuickTipsCard } from "@/components/creator/CreatorQuickTipsCard"
 import { CreatorDraftBanner } from "@/components/creator/CreatorDraftBanner";
 import { CreatorFirstSaleBanner } from "@/components/creator/CreatorFirstSaleBanner";
 import { CreatorRecentSalesCard } from "@/components/creator/CreatorRecentSalesCard";
-import { CreatorDashboardOverviewResultsSkeleton } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
 import { formatDate, formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
@@ -44,6 +42,10 @@ import {
 import { logActivity } from "@/lib/activity";
 import { getCreatorProtectedUserContext } from "./creatorProtectedUser";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import {
+  DashboardPageShell,
+  DashboardPageStack,
+} from "@/components/dashboard/DashboardPageShell";
 
 export const metadata = {
   title: "Creator Dashboard",
@@ -129,7 +131,7 @@ export default async function CreatorDashboardPage() {
     });
 
     return (
-      <div data-route-shell-ready="dashboard-creator-overview" className="space-y-8">
+      <DashboardPageShell routeReady="dashboard-creator-overview">
         <DashboardPageHeader
           eyebrow="Creator"
           title="Creator Dashboard"
@@ -142,7 +144,7 @@ export default async function CreatorDashboardPage() {
           <CreatorSetupChecklist steps={setupState.steps} canCreate />
           <CreatorQuickTipsCard />
         </div>
-      </div>
+      </DashboardPageShell>
     );
   }
 
@@ -152,9 +154,17 @@ export default async function CreatorDashboardPage() {
   const statusSummaryPromise = getCreatorResourceStatusSummary(userId);
   const mostRecentDraftPromise = getCreatorMostRecentDraft(userId);
   const recentSalesPromise = getCreatorRecentSalesForDashboard(userId);
+  const overviewResults = await CreatorDashboardOverviewResultsSection({
+    statsPromise,
+    performancePromise,
+    balancePromise,
+    statusSummaryPromise,
+    mostRecentDraftPromise,
+    recentSalesPromise,
+  });
 
   return (
-    <div data-route-shell-ready="dashboard-creator-overview" className="space-y-8">
+    <DashboardPageShell routeReady="dashboard-creator-overview">
       <DashboardPageHeader
         eyebrow="Creator"
         title="Creator Dashboard"
@@ -173,18 +183,8 @@ export default async function CreatorDashboardPage() {
           </div>
         }
       />
-
-      <Suspense fallback={<CreatorDashboardOverviewResultsSkeleton />}>
-        <CreatorDashboardOverviewResultsSection
-          statsPromise={statsPromise}
-          performancePromise={performancePromise}
-          balancePromise={balancePromise}
-          statusSummaryPromise={statusSummaryPromise}
-          mostRecentDraftPromise={mostRecentDraftPromise}
-          recentSalesPromise={recentSalesPromise}
-        />
-      </Suspense>
-    </div>
+      {overviewResults}
+    </DashboardPageShell>
   );
 }
 
@@ -228,7 +228,7 @@ async function CreatorDashboardOverviewResultsSection({
   const qualityFeedback = topPerformer ? buildQualityFeedback(topPerformer) : null;
 
   return (
-    <>
+    <DashboardPageStack>
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-3">
@@ -590,6 +590,6 @@ async function CreatorDashboardOverviewResultsSection({
           </div>
         )}
       </section>
-    </>
+    </DashboardPageStack>
   );
 }

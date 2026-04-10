@@ -287,6 +287,24 @@ export async function findCompletedLibraryItemsByUser(userId: string) {
   });
 }
 
+export async function findLibrarySurfaceSummaryByUser(userId: string) {
+  const [total, latest] = await prisma.$transaction([
+    prisma.purchase.count({
+      where: { userId, status: "COMPLETED" },
+    }),
+    prisma.purchase.findFirst({
+      where: { userId, status: "COMPLETED" },
+      select: LIBRARY_LIST_ITEM_SELECT,
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  return {
+    total,
+    latest,
+  };
+}
+
 export async function findRecentPurchasePreferenceSignalsByUser(
   userId: string,
   take: number,
@@ -304,6 +322,12 @@ export async function findPurchaseHistoryByUser(userId: string) {
     where: { userId },
     select: PURCHASE_LIST_ITEM_SELECT,
     orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function countPurchaseHistoryByUser(userId: string) {
+  return prisma.purchase.count({
+    where: { userId },
   });
 }
 

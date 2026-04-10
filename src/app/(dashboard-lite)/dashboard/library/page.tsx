@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { requireSession } from "@/lib/auth/require-session";
 import { LibraryGridClient } from "@/components/library/LibraryGridClient";
@@ -8,8 +7,8 @@ import { formatDate } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { getUserLibraryItems } from "@/services/purchases";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
-import { DashboardLibraryResultsSkeleton } from "@/components/skeletons/DashboardUserRouteSkeletons";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import { DashboardPageShell, DashboardPageStack } from "@/components/dashboard/DashboardPageShell";
 import {
   traceServerStep,
   withRequestPerformanceTrace,
@@ -25,12 +24,11 @@ const RECENT_PURCHASE_WINDOW_MS = 15 * 60 * 1000;
 
 async function LibraryResultsSection({
   isReturningFromCheckout,
-  resourcesPromise,
+  resources,
 }: {
   isReturningFromCheckout: boolean;
-  resourcesPromise: ReturnType<typeof getUserLibraryItems>;
+  resources: Awaited<ReturnType<typeof getUserLibraryItems>>;
 }) {
-  const resources = await resourcesPromise;
   const mostRecent = resources[0] ?? null;
   const isRecentlyCompleted =
     mostRecent !== null &&
@@ -42,6 +40,30 @@ async function LibraryResultsSection({
   const lastOpened = resources[0] ?? null;
   const lastDownload =
     resources.length > 0 ? formatDate(resources[0].purchasedAt) : null;
+
+  if (resources.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
+          <BookOpen className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <h2 className="mt-4 text-base font-semibold text-foreground">
+          Your library is empty
+        </h2>
+        <p className="mt-1.5 max-w-sm text-small leading-6 text-muted-foreground">
+          Everything you get or purchase lands here. Find your first
+          resource and start building your collection.
+        </p>
+        <Link
+          href={routes.marketplace}
+          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-small font-semibold text-background transition hover:opacity-90"
+        >
+          <BookOpen className="h-4 w-4" />
+          Find your first resource
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -87,41 +109,19 @@ async function LibraryResultsSection({
         />
       )}
 
-      {resources.length > 0 ? (
-        <LibraryGridClient
-          items={resources.map((item) => ({
-            id: item.id,
-            slug: item.slug,
-            title: item.title,
-            authorName: item.authorName,
-            previewUrl: item.previewUrl,
-            mimeType: item.mimeType,
-            downloadedAt: item.purchasedAt,
-            type: item.type,
-            categorySlug: item.categorySlug,
-          }))}
-        />
-      ) : (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card py-16 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
-            <BookOpen className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <h2 className="mt-4 text-base font-semibold text-foreground">
-            Your library is empty
-          </h2>
-          <p className="mt-1.5 max-w-sm text-small leading-6 text-muted-foreground">
-            Everything you get or purchase lands here. Find your first
-            resource and start building your collection.
-          </p>
-          <Link
-            href={routes.marketplace}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-small font-semibold text-background transition hover:opacity-90"
-          >
-            <BookOpen className="h-4 w-4" />
-            Find your first resource
-          </Link>
-        </div>
-      )}
+      <LibraryGridClient
+        items={resources.map((item) => ({
+          id: item.id,
+          slug: item.slug,
+          title: item.title,
+          authorName: item.authorName,
+          previewUrl: item.previewUrl,
+          mimeType: item.mimeType,
+          downloadedAt: item.purchasedAt,
+          type: item.type,
+          categorySlug: item.categorySlug,
+        }))}
+      />
     </div>
   );
 }
@@ -149,23 +149,21 @@ export default async function DashboardLibraryPage({
         "dashboard_library.getUserLibraryItems",
         () => getUserLibraryItems(userId),
       );
+      const resources = await resourcesPromise;
 
       return (
-        <div data-route-shell-ready="dashboard-library">
-          <div className="min-w-0 space-y-8">
-            <DashboardPageHeader
-              title="My Library"
-              description="Open what you own, pick up where you left off, and find the right resource quickly."
+        <DashboardPageShell routeReady="dashboard-library">
+          <DashboardPageHeader
+            title="My Library"
+            description="Open what you own, pick up where you left off, and find the right resource quickly."
+          />
+          <DashboardPageStack>
+            <LibraryResultsSection
+              isReturningFromCheckout={isReturningFromCheckout}
+              resources={resources}
             />
-
-            <Suspense fallback={<DashboardLibraryResultsSkeleton />}>
-              <LibraryResultsSection
-                isReturningFromCheckout={isReturningFromCheckout}
-                resourcesPromise={resourcesPromise}
-              />
-            </Suspense>
-          </div>
-        </div>
+          </DashboardPageStack>
+        </DashboardPageShell>
       );
     },
   );

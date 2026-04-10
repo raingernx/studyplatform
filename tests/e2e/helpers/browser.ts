@@ -14,7 +14,8 @@ export function collectRuntimeErrors(page: Page) {
   const consoleErrors: string[] = [];
 
   page.on("pageerror", (error) => {
-    pageErrors.push(String(error));
+    const stack = typeof error.stack === "string" ? error.stack.trim() : "";
+    pageErrors.push(stack.length > 0 ? stack : String(error));
   });
 
   page.on("console", (message) => {

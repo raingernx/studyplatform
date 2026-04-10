@@ -1,6 +1,4 @@
-import { Suspense, type ReactNode } from "react";
-
-import { CreatorDashboardOverviewLoadingShell } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
+import type { ReactNode } from "react";
 
 import CreatorProtectedLayoutContent from "./CreatorProtectedLayoutContent";
 
@@ -9,9 +7,5 @@ export default function CreatorProtectedLayout({
 }: {
   children: ReactNode;
 }) {
-  return (
-    <Suspense fallback={<CreatorDashboardOverviewLoadingShell />}>
-      <CreatorProtectedLayoutContent>{children}</CreatorProtectedLayoutContent>
-    </Suspense>
-  );
+  return <CreatorProtectedLayoutContent>{children}</CreatorProtectedLayoutContent>;
 }

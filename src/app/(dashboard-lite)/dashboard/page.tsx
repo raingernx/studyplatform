@@ -25,6 +25,10 @@ import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 import { routes } from "@/lib/routes";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import {
+  DashboardPageShell,
+  DashboardPageStack,
+} from "@/components/dashboard/DashboardPageShell";
 
 export const metadata = {
   title: "Overview",
@@ -145,24 +149,25 @@ export default async function DashboardPage() {
       ]);
       const ownedResourceIds = purchases.map((purchase) => purchase.resource.id);
       const topCategoryIds = learningProfile.topCategories.map((category) => category.id);
-      const primaryLevel = learningProfile.preferredLevels[0];
+      const preferredLevels = learningProfile.preferredLevels;
+      const primaryLevel = preferredLevels[0];
       const { recommended, newInCategories, levelRecommendations } = await traceServerStep(
         "dashboard.getDashboardOverviewRecommendations",
         () =>
           getDashboardOverviewRecommendations({
             ownedResourceIds,
             topCategoryIds,
-            preferredLevels: learningProfile.preferredLevels,
+            preferredLevels,
           }),
         {
           ownedCount: ownedResourceIds.length,
           topCategoryCount: topCategoryIds.length,
-          preferredLevelCount: learningProfile.preferredLevels.length,
+          preferredLevelCount: preferredLevels.length,
         },
       );
 
       const isSubscribed = session.user.subscriptionStatus === "ACTIVE";
-      const totalSpent = purchases.reduce((sum, p) => sum + p.amount, 0);
+      const totalSpent = purchases.reduce((sum, purchase) => sum + purchase.amount, 0);
       const lastOpened = purchases[0] ?? null;
       const recentPurchases = purchases.slice(0, 4);
       const nextBestAction = recommended[0] ?? null;
@@ -170,10 +175,9 @@ export default async function DashboardPage() {
       const becauseYouPickedUp = lastOpened?.resource.title ?? null;
       const multiCategoryLabel = learningProfile.topCategories.map((category) => category.name);
       const levelLabel = formatLevelLabel(primaryLevel);
-
       const firstName = session.user.name?.split(" ")[0] ?? "there";
 
-      const STATS = [
+      const stats = [
         {
           label: "Resources owned",
           value: purchases.length,
@@ -222,17 +226,16 @@ export default async function DashboardPage() {
       ];
 
       return (
-        <div data-route-shell-ready="dashboard-overview" className="space-y-8">
-          <section className="space-y-4">
-            <DashboardPageHeader
-              title={`Welcome back, ${firstName}`}
-              description="Your dashboard keeps recent activity, saved resources, and the next useful pick in one place."
-            />
-
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-stretch">
+        <DashboardPageShell routeReady="dashboard-overview">
+          <DashboardPageHeader
+            title={`Welcome back, ${firstName}`}
+            description="Your dashboard keeps recent activity, saved resources, and the next useful pick in one place."
+          />
+          <DashboardPageStack>
+            <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-stretch">
               <div className="h-full rounded-xl border border-border bg-card px-5 py-4 sm:px-6">
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  {STATS.map((stat) => (
+                  {stats.map((stat) => (
                     <WorkspaceStat
                       key={stat.label}
                       label={stat.label}
@@ -282,199 +285,201 @@ export default async function DashboardPage() {
                   })}
                 </div>
               </aside>
-            </div>
-          </section>
+            </section>
 
-          <section className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.9fr)]">
-            <div className="space-y-4 rounded-xl border border-border bg-card px-5 py-4 sm:px-6">
+            <section className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.9fr)]">
+              <div className="space-y-4 rounded-xl border border-border bg-card px-5 py-4 sm:px-6">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-caption font-semibold text-muted-foreground">Continue</p>
+                    <h2 className="text-lg font-semibold text-foreground">Pick up where you left off</h2>
+                  </div>
+                  <Link
+                    href={routes.library}
+                    className="text-caption font-medium text-primary-700 transition hover:text-primary-800"
+                  >
+                    Open library
+                  </Link>
+                </div>
+
+                {recentPurchases.length > 0 ? (
+                  <div className="divide-y divide-border">
+                    {recentPurchases.map((purchase) => (
+                      <ResourceIntentLink
+                        key={purchase.id}
+                        href={routes.resource(purchase.resource.slug)}
+                        className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
+                      >
+                        <div className="relative h-14 w-14 overflow-hidden rounded-xl border border-border bg-muted">
+                          {purchase.resource.previewUrl ? (
+                            <Image
+                              src={purchase.resource.previewUrl}
+                              alt={purchase.resource.title}
+                              fill
+                              sizes="56px"
+                              unoptimized={shouldBypassImageOptimizer(purchase.resource.previewUrl)}
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center">
+                              <FileText className="h-5 w-5 text-muted-foreground/50" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1 space-y-0.5">
+                          <p className="truncate text-small font-semibold text-foreground">
+                            {purchase.resource.title}
+                          </p>
+                          <p className="truncate text-caption text-muted-foreground">
+                            {purchase.resource.author?.name ?? "Unknown"}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-caption font-medium text-foreground">
+                            {formatDate(purchase.createdAt)}
+                          </p>
+                          <p className="text-caption text-muted-foreground">
+                            {purchase.resource.category?.name ?? "Resource"}
+                          </p>
+                        </div>
+                      </ResourceIntentLink>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-border bg-muted/40 px-5 py-8 text-center">
+                    <p className="text-small font-semibold text-foreground">No recent resources yet</p>
+                    <p className="mt-1 text-small leading-6 text-muted-foreground">
+                      Your newest purchases will show up here once you start building your library.
+                    </p>
+                    <Link
+                      href={routes.marketplace}
+                      className="mt-4 inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-small font-semibold text-background transition hover:opacity-90"
+                    >
+                      Browse resources
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              <aside className="space-y-4 rounded-xl border border-border bg-card px-5 py-4 sm:px-6">
+                <div className="space-y-1">
+                  <p className="text-caption font-semibold text-muted-foreground">Personalized</p>
+                  <h2 className="text-lg font-semibold text-foreground">Next best action</h2>
+                </div>
+
+                {nextBestAction ? (
+                  <DashboardShelfCard
+                    resource={nextBestAction}
+                    meta={continueLearningCategory ? `Because of ${continueLearningCategory}` : null}
+                    widthClassName="w-full"
+                  />
+                ) : (
+                  <div className="rounded-xl border border-dashed border-border bg-muted/40 px-5 py-8 text-center">
+                    <p className="text-small font-semibold text-foreground">
+                      Recommendations unlock after your first purchase
+                    </p>
+                    <p className="mt-1 text-small leading-6 text-muted-foreground">
+                      Explore the marketplace and we will highlight the most useful follow-up picks here.
+                    </p>
+                  </div>
+                )}
+
+                <div className="rounded-xl border border-border bg-muted/50 px-4 py-3.5">
+                  <p className="text-caption font-semibold text-muted-foreground">Why these picks</p>
+                  <div className="mt-2 space-y-1.5 text-small text-muted-foreground">
+                    {becauseYouPickedUp ? (
+                      <p>
+                        Based on <span className="font-medium text-foreground">{becauseYouPickedUp}</span>
+                      </p>
+                    ) : null}
+                    {multiCategoryLabel.length > 0 ? (
+                      <p>
+                        Top categories:{" "}
+                        <span className="font-medium text-foreground">
+                          {multiCategoryLabel.slice(0, 3).join(", ")}
+                        </span>
+                      </p>
+                    ) : null}
+                    {levelLabel ? (
+                      <p>
+                        Preferred level: <span className="font-medium text-foreground">{levelLabel}</span>
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </aside>
+            </section>
+
+            <section className="space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-caption font-semibold text-muted-foreground">Continue</p>
-                  <h2 className="text-lg font-semibold text-foreground">Pick up where you left off</h2>
+                  <p className="text-caption font-semibold text-muted-foreground">Recommended</p>
+                  <h2 className="text-lg font-semibold text-foreground">More to explore</h2>
                 </div>
                 <Link
-                  href={routes.library}
+                  href={routes.marketplace}
                   className="text-caption font-medium text-primary-700 transition hover:text-primary-800"
                 >
-                  Open library
+                  View marketplace
                 </Link>
               </div>
 
-              {recentPurchases.length > 0 ? (
-                <div className="divide-y divide-border">
-                  {recentPurchases.map((purchase) => (
-                    <ResourceIntentLink
-                      key={purchase.id}
-                      href={routes.resource(purchase.resource.slug)}
-                      className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
-                    >
-                      <div className="relative h-14 w-14 overflow-hidden rounded-xl border border-border bg-muted">
-                        {purchase.resource.previewUrl ? (
-                          <Image
-                            src={purchase.resource.previewUrl}
-                            alt={purchase.resource.title}
-                            fill
-                            sizes="56px"
-                            unoptimized={shouldBypassImageOptimizer(purchase.resource.previewUrl)}
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center">
-                            <FileText className="h-5 w-5 text-muted-foreground/50" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1 space-y-0.5">
-                        <p className="truncate text-small font-semibold text-foreground">
-                          {purchase.resource.title}
-                        </p>
-                        <p className="truncate text-caption text-muted-foreground">
-                          {purchase.resource.author?.name ?? "Unknown"}
+              <div className="space-y-6">
+                {recommended.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-base font-semibold text-foreground">Recommended for you</h3>
+                        <p className="text-small text-muted-foreground">
+                          Picks based on what you already own and study most often.
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-caption font-medium text-foreground">
-                          {formatDate(purchase.createdAt)}
-                        </p>
-                        <p className="text-caption text-muted-foreground">
-                          {purchase.resource.category?.name ?? "Resource"}
-                        </p>
-                      </div>
-                    </ResourceIntentLink>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed border-border bg-muted/40 px-5 py-8 text-center">
-                  <p className="text-small font-semibold text-foreground">No recent resources yet</p>
-                  <p className="mt-1 text-small leading-6 text-muted-foreground">
-                    Your newest purchases will show up here once you start building your library.
-                  </p>
-                  <Link
-                    href={routes.marketplace}
-                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-small font-semibold text-background transition hover:opacity-90"
-                  >
-                    Browse resources
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            <aside className="space-y-4 rounded-xl border border-border bg-card px-5 py-4 sm:px-6">
-              <div className="space-y-1">
-                <p className="text-caption font-semibold text-muted-foreground">Personalized</p>
-                <h2 className="text-lg font-semibold text-foreground">Next best action</h2>
-              </div>
-
-              {nextBestAction ? (
-                <DashboardShelfCard
-                  resource={nextBestAction}
-                  meta={continueLearningCategory ? `Because of ${continueLearningCategory}` : null}
-                  widthClassName="w-full"
-                />
-              ) : (
-                <div className="rounded-xl border border-dashed border-border bg-muted/40 px-5 py-8 text-center">
-                  <p className="text-small font-semibold text-foreground">Recommendations unlock after your first purchase</p>
-                  <p className="mt-1 text-small leading-6 text-muted-foreground">
-                    Explore the marketplace and we will highlight the most useful follow-up picks here.
-                  </p>
-                </div>
-              )}
-
-              <div className="rounded-xl border border-border bg-muted/50 px-4 py-3.5">
-                <p className="text-caption font-semibold text-muted-foreground">Why these picks</p>
-                <div className="mt-2 space-y-1.5 text-small text-muted-foreground">
-                  {becauseYouPickedUp ? (
-                    <p>
-                      Based on <span className="font-medium text-foreground">{becauseYouPickedUp}</span>
-                    </p>
-                  ) : null}
-                  {multiCategoryLabel.length > 0 ? (
-                    <p>
-                      Top categories:{" "}
-                      <span className="font-medium text-foreground">
-                        {multiCategoryLabel.slice(0, 3).join(", ")}
-                      </span>
-                    </p>
-                  ) : null}
-                  {levelLabel ? (
-                    <p>
-                      Preferred level: <span className="font-medium text-foreground">{levelLabel}</span>
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-            </aside>
-          </section>
-
-          <section className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-caption font-semibold text-muted-foreground">Recommended</p>
-                <h2 className="text-lg font-semibold text-foreground">More to explore</h2>
-              </div>
-              <Link
-                href={routes.marketplace}
-                className="text-caption font-medium text-primary-700 transition hover:text-primary-800"
-              >
-                View marketplace
-              </Link>
-            </div>
-
-            <div className="space-y-6">
-              {recommended.length > 0 ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h3 className="text-base font-semibold text-foreground">Recommended for you</h3>
-                      <p className="text-small text-muted-foreground">
-                        Picks based on what you already own and study most often.
-                      </p>
+                    </div>
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                      {recommended.map((resource) => (
+                        <DashboardShelfCard key={resource.id} resource={resource} />
+                      ))}
                     </div>
                   </div>
-                  <div className="flex gap-4 overflow-x-auto pb-2">
-                    {recommended.map((resource) => (
-                      <DashboardShelfCard key={resource.id} resource={resource} />
-                    ))}
-                  </div>
-                </div>
-              ) : null}
+                ) : null}
 
-              {newInCategories.length > 0 ? (
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="text-base font-semibold text-foreground">New in your top categories</h3>
-                    <p className="text-small text-muted-foreground">
-                      Fresh additions for the subjects you come back to most.
-                    </p>
+                {newInCategories.length > 0 ? (
+                  <div className="space-y-3">
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground">New in your top categories</h3>
+                      <p className="text-small text-muted-foreground">
+                        Fresh additions for the subjects you come back to most.
+                      </p>
+                    </div>
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                      {newInCategories.map((resource) => (
+                        <DashboardShelfCard key={resource.id} resource={resource} />
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex gap-4 overflow-x-auto pb-2">
-                    {newInCategories.map((resource) => (
-                      <DashboardShelfCard key={resource.id} resource={resource} />
-                    ))}
-                  </div>
-                </div>
-              ) : null}
+                ) : null}
 
-              {levelRecommendations.length > 0 ? (
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="text-base font-semibold text-foreground">
-                      {levelLabel ? `${levelLabel} picks` : "Level-based picks"}
-                    </h3>
-                    <p className="text-small text-muted-foreground">
-                      Resources aligned with the difficulty you open most often.
-                    </p>
+                {levelRecommendations.length > 0 ? (
+                  <div className="space-y-3">
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground">
+                        {levelLabel ? `${levelLabel} picks` : "Level-based picks"}
+                      </h3>
+                      <p className="text-small text-muted-foreground">
+                        Resources aligned with the difficulty you open most often.
+                      </p>
+                    </div>
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                      {levelRecommendations.map((resource) => (
+                        <DashboardShelfCard key={resource.id} resource={resource} />
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex gap-4 overflow-x-auto pb-2">
-                    {levelRecommendations.map((resource) => (
-                      <DashboardShelfCard key={resource.id} resource={resource} />
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </section>
-        </div>
+                ) : null}
+              </div>
+            </section>
+          </DashboardPageStack>
+        </DashboardPageShell>
       );
     },
   );

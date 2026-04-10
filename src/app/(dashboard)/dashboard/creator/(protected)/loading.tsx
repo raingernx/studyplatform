@@ -1,5 +1,5 @@
-import { CreatorDashboardOverviewLoadingShell } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
+import { CreatorDashboardProtectedLayoutShell } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
 
 export default function Loading() {
-  return <CreatorDashboardOverviewLoadingShell />;
+  return <CreatorDashboardProtectedLayoutShell />;
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { memo, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { FileText } from "lucide-react";
@@ -14,6 +13,7 @@ import { formatPrice } from "@/lib/format";
 import { shouldBypassImageOptimizer } from "@/lib/imageDelivery";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import { ResourceCardLibraryFooter } from "./ResourceCardLibraryFooter";
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 
@@ -97,10 +97,6 @@ interface ResourceCardProps {
   badge?: ReactNode;
   imageLoading?: "lazy" | "eager";
 }
-
-const ResourceCardLibraryFooter = dynamic(() =>
-  import("./ResourceCardLibraryFooter").then((mod) => mod.ResourceCardLibraryFooter),
-);
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 

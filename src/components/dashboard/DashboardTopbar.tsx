@@ -8,7 +8,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   Search,
@@ -25,7 +25,10 @@ import { AccountTrigger } from "@/components/layout/account/AccountTrigger";
 import type { DashboardUser } from "./DashboardLayout";
 import { DashboardTopbar as SharedDashboardTopbar } from "@/components/layout/dashboard/DashboardTopbar";
 import { beginResourcesNavigation } from "@/components/marketplace/resourcesNavigationState";
-import { beginDashboardNavigation } from "@/components/layout/dashboard/dashboardNavigationState";
+import {
+  beginDashboardNavigation,
+  canonicalizeDashboardHref,
+} from "@/components/layout/dashboard/dashboardNavigationState";
 
 interface DashboardTopbarProps {
   user: DashboardUser;
@@ -45,6 +48,8 @@ const AVATAR_MENU_PREFETCH_TARGETS = [
 
 export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -75,6 +80,11 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
     avatarMenuPrefetchedRef.current = false;
   }, [user.email]);
 
+  const currentSearch = searchParams.toString();
+  const currentDashboardHref = canonicalizeDashboardHref(
+    currentSearch ? `${pathname}?${currentSearch}` : pathname,
+  );
+
   function warmAvatarMenuTargets() {
     if (avatarMenuPrefetchedRef.current) {
       return;
@@ -90,6 +100,10 @@ export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {
   }
 
   function handleDashboardNavigation(href: string) {
+    if (canonicalizeDashboardHref(href) === currentDashboardHref) {
+      return;
+    }
+
     beginDashboardNavigation(href);
   }
 

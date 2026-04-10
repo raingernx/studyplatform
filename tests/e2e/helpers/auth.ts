@@ -28,12 +28,18 @@ const CREATOR_CREDENTIALS: LoginCredentials = {
   password: "Krukraft2024!",
 };
 
+const USER_CREDENTIALS: LoginCredentials = {
+  email: "demo.user@krukraft.dev",
+  password: "Krukraft2024!",
+};
+
 let ensureAuthFixturesPromise: Promise<void> | null = null;
 
 async function ensureAuthFixtures() {
   const prisma = new PrismaClient();
   const hashedAdminPassword = await bcrypt.hash(ADMIN_CREDENTIALS.password, 12);
   const hashedCreatorPassword = await bcrypt.hash(CREATOR_CREDENTIALS.password, 12);
+  const hashedUserPassword = await bcrypt.hash(USER_CREDENTIALS.password, 12);
   const generatedCreatorSlug = `demo-instructor-smoke-${Date.now().toString(36)}`;
 
   try {
@@ -75,6 +81,28 @@ async function ensureAuthFixtures() {
         creatorEnabled: true,
         creatorStatus: CreatorStatus.ACTIVE,
         creatorApplicationStatus: CreatorApplicationStatus.APPROVED,
+      },
+    });
+
+    await prisma.user.upsert({
+      where: { email: USER_CREDENTIALS.email },
+      update: {
+        hashedPassword: hashedUserPassword,
+        role: UserRole.STUDENT,
+        emailVerified: new Date(),
+        creatorEnabled: false,
+        creatorStatus: CreatorStatus.INACTIVE,
+        creatorApplicationStatus: CreatorApplicationStatus.NOT_APPLIED,
+      },
+      create: {
+        name: "Demo Learner",
+        email: USER_CREDENTIALS.email,
+        hashedPassword: hashedUserPassword,
+        role: UserRole.STUDENT,
+        emailVerified: new Date(),
+        creatorEnabled: false,
+        creatorStatus: CreatorStatus.INACTIVE,
+        creatorApplicationStatus: CreatorApplicationStatus.NOT_APPLIED,
       },
     });
   } finally {
@@ -160,4 +188,8 @@ export async function loginAsAdmin(page: Page, nextPath: string) {
 
 export async function loginAsCreator(page: Page, nextPath: string) {
   await loginWithCredentials(page, CREATOR_CREDENTIALS, nextPath);
+}
+
+export async function loginAsUser(page: Page, nextPath: string) {
+  await loginWithCredentials(page, USER_CREDENTIALS, nextPath);
 }

@@ -1,17 +1,15 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { CreatorProfileForm } from "@/components/creator/CreatorProfileForm";
-import { PageContent } from "@/design-system";
 import { routes } from "@/lib/routes";
 import { getCreatorProfile } from "@/services/creator";
-import {
-  CreatorDashboardProfileFormSkeleton,
-  CreatorDashboardProfileLinkFallback,
-} from "@/components/skeletons/CreatorDashboardRouteSkeletons";
 import { getCreatorProtectedUserContext } from "../creatorProtectedUser";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import {
+  DashboardPageShell,
+  DashboardPageStack,
+} from "@/components/dashboard/DashboardPageShell";
 
 export const metadata = {
   title: "Creator Profile",
@@ -21,38 +19,30 @@ export const dynamic = "force-dynamic";
 
 export default async function CreatorProfilePage() {
   const { userId } = await getCreatorProtectedUserContext(routes.creatorProfile);
-  const profilePromise = getCreatorProfile(userId);
+  const profile = await getCreatorProfile(userId);
 
-  return (
-    <PageContent data-route-shell-ready="dashboard-creator-profile" className="space-y-8">
-      <DashboardPageHeader
-        eyebrow="Creator"
-        title="Creator Profile"
-        description="Build the public identity learners see across your creator page and resource listings."
-        actions={
-          <Suspense fallback={<CreatorDashboardProfileLinkFallback />}>
-            <CreatorProfileLink profilePromise={profilePromise} />
-          </Suspense>
-        }
-      />
-
-      <Suspense fallback={<CreatorDashboardProfileFormSkeleton />}>
-        <CreatorProfileContent profilePromise={profilePromise} />
-      </Suspense>
-    </PageContent>
-  );
-}
-
-async function CreatorProfileLink({
-  profilePromise,
-}: {
-  profilePromise: ReturnType<typeof getCreatorProfile>;
-}) {
-  const profile = await profilePromise;
   if (!profile) {
     redirect(routes.dashboard);
   }
 
+  return (
+    <DashboardPageShell routeReady="dashboard-creator-profile">
+      <DashboardPageHeader
+        eyebrow="Creator"
+        title="Creator Profile"
+        description="Build the public identity learners see across your creator page and resource listings."
+        actions={<CreatorProfileLink profile={profile} />}
+      />
+      <CreatorProfileContent profile={profile} />
+    </DashboardPageShell>
+  );
+}
+
+function CreatorProfileLink({
+  profile,
+}: {
+  profile: NonNullable<Awaited<ReturnType<typeof getCreatorProfile>>>;
+}) {
   if (profile.creatorSlug) {
     return (
       <div className="ml-auto flex shrink-0 flex-col items-end justify-end gap-2 self-end text-right">
@@ -80,15 +70,14 @@ async function CreatorProfileLink({
   );
 }
 
-async function CreatorProfileContent({
-  profilePromise,
+function CreatorProfileContent({
+  profile,
 }: {
-  profilePromise: ReturnType<typeof getCreatorProfile>;
+  profile: NonNullable<Awaited<ReturnType<typeof getCreatorProfile>>>;
 }) {
-  const profile = await profilePromise;
-  if (!profile) {
-    redirect(routes.dashboard);
-  }
-
-  return <CreatorProfileForm profile={profile} />;
+  return (
+    <DashboardPageStack>
+      <CreatorProfileForm profile={profile} />
+    </DashboardPageStack>
+  );
 }

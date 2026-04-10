@@ -1,13 +1,17 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { DollarSign, Receipt, ShoppingBag, Wallet } from "lucide-react";
 import { formatDate, formatPrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
-import { getCreatorSales } from "@/services/creator";
+import {
+  getCreatorSales,
+} from "@/services/creator";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
-import { CreatorDashboardSalesResultsSkeleton } from "@/components/skeletons/CreatorDashboardRouteSkeletons";
 import { getCreatorProtectedUserContext } from "../creatorProtectedUser";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import {
+  DashboardPageShell,
+  DashboardPageStack,
+} from "@/components/dashboard/DashboardPageShell";
 
 export const metadata = {
   title: "Creator Sales",
@@ -18,29 +22,26 @@ export const dynamic = "force-dynamic";
 export default async function CreatorSalesPage() {
   const { userId } = await getCreatorProtectedUserContext(routes.creatorSales);
 
-  const salesDataPromise = getCreatorSales(userId);
+  const salesData = await getCreatorSales(userId);
 
   return (
-    <div data-route-shell-ready="dashboard-creator-sales" className="space-y-8">
+    <DashboardPageShell routeReady="dashboard-creator-sales">
       <DashboardPageHeader
         eyebrow="Creator"
         title="Sales"
         description="Recent transactions and the gross revenue your resources have generated."
       />
 
-      <Suspense fallback={<CreatorDashboardSalesResultsSkeleton />}>
-        <CreatorSalesResults salesDataPromise={salesDataPromise} />
-      </Suspense>
-    </div>
+      <CreatorSalesResults salesData={salesData} />
+    </DashboardPageShell>
   );
 }
 
-async function CreatorSalesResults({
-  salesDataPromise,
+function CreatorSalesResults({
+  salesData,
 }: {
-  salesDataPromise: ReturnType<typeof getCreatorSales>;
+  salesData: Awaited<ReturnType<typeof getCreatorSales>>;
 }) {
-  const salesData = await salesDataPromise;
   const stats = [
     {
       label: "Gross revenue",
@@ -69,7 +70,7 @@ async function CreatorSalesResults({
   ];
 
   return (
-    <div className="space-y-8">
+    <DashboardPageStack>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -153,6 +154,6 @@ async function CreatorSalesResults({
           </div>
         )}
       </section>
-    </div>
+    </DashboardPageStack>
   );
 }

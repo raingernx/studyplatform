@@ -21,6 +21,7 @@ import {
   findCreatorAccessContext,
   findMostRecentCreatorDraft,
   findCreatorCategories,
+  countCreatorResourcesByUserId,
   findCreatorDownloadSeries,
   findCreatorEarningsTotals,
   findCreatorProfileBySlug,
@@ -39,6 +40,8 @@ import {
   findCreatorResourceStatusSummary,
   findCreatorOverviewResourceCounts,
   findCreatorResourcesByUserId,
+  findCreatorManagementTableRowsByUserId,
+  countCreatorSales,
   findCreatorTopResources,
   getCreatorResourcePerformance,
   getCreatorStats,
@@ -884,21 +887,89 @@ export async function getCreatorResourceManagementData(
   userId: string,
   input: CreatorResourceFilters & { sort?: CreatorResourceSort } = {},
 ) {
-  const access = await requireCreatorAccess(userId);
-  const [categories, resourcesRaw] = await Promise.all([
+  await requireCreatorAccess(userId);
+  return getCreatorResourceManagementDataForWorkspace(userId, input);
+}
+
+export async function getCreatorResourceManagementSurfaceSummary(
+  userId: string,
+  input: CreatorResourceFilters & { sort?: CreatorResourceSort } = {},
+) {
+  await requireCreatorAccess(userId);
+  return getCreatorResourceManagementSurfaceSummaryForWorkspace(userId, input);
+}
+
+export async function getCreatorResourceManagementDataForWorkspace(
+  userId: string,
+  input: CreatorResourceFilters & { sort?: CreatorResourceSort } = {},
+) {
+  const [categories, resources] = await Promise.all([
     findCreatorCategories(),
-    findCreatorResourcesByUserId(userId, input),
+    findCreatorManagementTableRowsByUserId(userId, input, input.sort ?? "latest"),
   ]);
 
-  const resources = sortCreatorResources(
-    resourcesRaw.map(mapManagementResource),
-    input.sort ?? "latest",
+  return {
+    categories,
+    resources: resources.map((resource) => ({
+      id: resource.id,
+      title: resource.title,
+      slug: resource.slug,
+      status: resource.status,
+      isFree: resource.isFree || resource.price === 0,
+      price: resource.price,
+      updatedAt: resource.updatedAt,
+      downloadCount: resource.resourceStat?.downloads ?? 0,
+      revenue: resource.resourceStat?.revenue ?? 0,
+      category: resource.category,
+    })),
+  };
+}
+
+export async function getCreatorResourceManagementSurfaceSummaryForWorkspace(
+  userId: string,
+  input: CreatorResourceFilters & { sort?: CreatorResourceSort } = {},
+) {
+  const count = await countCreatorResourcesByUserId(userId, input);
+
+  return {
+    count,
+    rowCount: Math.max(count, 1),
+  };
+}
+
+export async function getCreatorSalesSurfaceSummaryForWorkspace(userId: string) {
+  const count = await countCreatorSales(userId);
+
+  return {
+    count,
+    rowCount: Math.min(Math.max(count, 1), 12),
+  };
+}
+
+export async function getCreatorAnalyticsSurfaceSummaryForWorkspace(
+  userId: string,
+  range: CreatorAnalyticsRange = "30d",
+) {
+  const since = startOfRange(range);
+  const [resourceCount, revenueRows, downloadRows] = await Promise.all([
+    countCreatorResourcesByUserId(userId),
+    findCreatorRevenueSeries(userId, since),
+    findCreatorDownloadSeries(userId, since),
+  ]);
+
+  const seriesRowCount = Math.max(
+    new Set([
+      ...revenueRows.map((row) => toPointDate(row.date)),
+      ...downloadRows.map((row) => toPointDate(row.date)),
+    ]).size,
+    1,
   );
 
   return {
-    access,
-    categories,
-    resources,
+    seriesRowCount,
+    resourceReviewRowCount: Math.max(resourceCount, 1),
+    recentReviewsRowCount: 4,
+    recentActivityRowCount: 6,
   };
 }
 
@@ -909,6 +980,23 @@ export async function getCreatorResourceFormData(userId: string) {
   return {
     access,
     categories,
+  };
+}
+
+export async function getCreatorResourceFormDataForWorkspace(userId: string) {
+  return {
+    userId,
+    categories: await findCreatorCategories(),
+  };
+}
+
+export async function getCreatorResourceOnboardingSurfaceSummaryForWorkspace(userId: string) {
+  const summary = await findCreatorResourceStatusSummary(userId);
+  const totalResources = summary.draft + summary.published + summary.archived;
+
+  return {
+    totalResources,
+    isFirstResource: totalResources === 0,
   };
 }
 
@@ -1482,7 +1570,10 @@ export async function getCreatorPublicResources(slug: string) {
 
 export async function getCreatorResourceForEdit(userId: string, resourceId: string) {
   await requireCreatorAccess(userId);
+  return getCreatorResourceForEditForWorkspace(userId, resourceId);
+}
 
+export async function getCreatorResourceForEditForWorkspace(userId: string, resourceId: string) {
   const resource = await findCreatorResourceById(userId, resourceId);
   if (!resource) {
     return null;

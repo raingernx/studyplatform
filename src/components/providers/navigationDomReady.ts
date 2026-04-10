@@ -2,12 +2,12 @@
 
 function hasStableMainSurface() {
   const main = document.querySelector("main");
-  const loadingScopes = document.querySelectorAll("[data-loading-scope]").length > 0;
 
   if (!main) {
-    return loadingScopes;
+    return false;
   }
 
+  const loadingScopes = main.querySelectorAll("[data-loading-scope]").length > 0;
   const mainTextLength = main.textContent?.trim().length ?? 0;
   return loadingScopes || main.children.length > 0 || mainTextLength > 0;
 }
