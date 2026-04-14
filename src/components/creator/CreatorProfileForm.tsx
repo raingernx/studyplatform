@@ -26,6 +26,7 @@ interface CreatorProfileFormProps {
     };
     image: string | null;
   };
+  accountSettingsHref?: string;
 }
 
 const PANEL_CLASS = "rounded-2xl border border-border bg-card shadow-card";
@@ -37,7 +38,10 @@ const LABEL_CLASS = "text-sm font-medium text-foreground";
 const FEEDBACK_ERROR_CLASS =
   "rounded-xl border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700";
 
-export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
+export function CreatorProfileForm({
+  profile,
+  accountSettingsHref = routes.dashboardV2Settings,
+}: CreatorProfileFormProps) {
   const router = useRouter();
   const [form, setForm] = useState({
     creatorDisplayName: profile.creatorDisplayName ?? "",
@@ -396,7 +400,7 @@ export function CreatorProfileForm({ profile }: CreatorProfileFormProps) {
 
                   <div className="flex flex-wrap items-center gap-3 pt-1">
                     <Button asChild type="button" variant="outline" size="sm">
-                      <Link href={routes.settings}>Open account settings</Link>
+                      <Link href={accountSettingsHref}>Open account settings</Link>
                     </Button>
                     {hasSavedPublicProfile && profile.creatorSlug ? (
                       <Link

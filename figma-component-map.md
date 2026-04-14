@@ -83,6 +83,7 @@ Validation:
 | --- | --- | --- | --- | --- | --- | --- |
 | `Composed` | `33:33` | `FormSection` | `src/design-system/components/FormSection.tsx` | DS composed | `mapped-manual` | Flat and card variants. |
 | `Composed` | `33:49` | `SectionHeader` | `src/design-system/components/SectionHeader.tsx` | DS composed | `mapped-manual` | Left and center align variants. |
+| `Composed` | `not-built` | `DataPanelTable` | `src/design-system/components/DataPanelTable.tsx` | DS composed | `pending-figma` | Dashboard/admin table shell with title, actions, optional toolbar, and table body slot. |
 | `Composed` | `33:76` | `Pagination` | `src/design-system/components/Pagination.tsx` | DS composed | `mapped-manual` | Default and compact pagination. |
 | `Composed` | `33:84` | `EmptyState` | `src/design-system/components/EmptyState.tsx` | DS composed | `mapped-manual` | Dashed-shell empty state exemplar. |
 | `Composed` | `34:16` | `RowActions` | `src/design-system/components/RowActions.tsx` | DS composed | `mapped-manual` | Default and review action clusters. |

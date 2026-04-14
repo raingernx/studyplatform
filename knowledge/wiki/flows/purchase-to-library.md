@@ -2,7 +2,7 @@
 
 ## Summary
 
-The core paid-content flow is: discover resource, complete checkout, record purchase, then unlock dashboard/library access.
+The core paid-content flow is: discover resource, complete checkout, record purchase, then unlock dashboard-v2 library access.
 
 ## Current Truth
 
@@ -18,7 +18,7 @@ This is the main value path of the product and ties together marketplace, paymen
 
 - `src/app/resources/[slug]/page.tsx`
 - `src/app/checkout/success/page.tsx`
-- `src/app/(dashboard)/dashboard/library/page.tsx`
+- `src/app/(dashboard-v2)/dashboard-v2/library/page.tsx`
 - payment and download services under `src/services/*`
 
 ## Flows
@@ -34,7 +34,7 @@ This is the main value path of the product and ties together marketplace, paymen
 
 - Ownership unlock must be provider-backed and durable.
 - Library access and download access must agree.
-- Dashboard/library remains the truthful post-purchase surface.
+- Dashboard-v2 library remains the truthful post-purchase surface.
 
 ## Known Risks
 
@@ -55,4 +55,4 @@ This is the main value path of the product and ties together marketplace, paymen
 
 ## Last Reviewed
 
-- 2026-04-06
+- 2026-04-13

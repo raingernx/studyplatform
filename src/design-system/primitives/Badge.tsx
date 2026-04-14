@@ -4,15 +4,17 @@ import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center justify-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-colors [&>svg]:size-3 [&>svg]:shrink-0",
+  "inline-flex items-center justify-center gap-1 rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-colors [&>svg]:size-3 [&>svg]:shrink-0",
   {
     variants: {
       variant: {
-        success: "bg-success-50 text-success-700",
-        warning: "bg-warning-50 text-warning-600",
+        success:
+          "border-success-500/25 bg-accent text-success-600",
+        warning:
+          "border-warning-500/25 bg-accent text-warning-600",
         neutral: "bg-muted text-muted-foreground",
-        info: "bg-brand-50 text-brand-700",
-        featured: "bg-accent-yellow-soft text-foreground",
+        info: "border-primary/25 bg-accent text-primary",
+        featured: "border-highlight-500/25 bg-accent text-highlight-600",
         owned: "bg-violet-50 text-violet-600",
         new: "bg-accent-blue-soft text-accent-blue",
         free: "bg-green-50 text-green-600",

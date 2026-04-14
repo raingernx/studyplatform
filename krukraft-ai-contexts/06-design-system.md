@@ -55,6 +55,7 @@
 
 - `EmptyState`
 - `ConfirmDialog`
+- `DataPanelTable`
 - `FileUploadWidget`
 - `FormSection`
 - `NotificationButton`
@@ -81,6 +82,10 @@
   - bypass happens only for non-optimizable cases surfaced through `shouldBypassImageOptimizer`
 - `FormSection` is the canonical DS helper for settings and configuration sections. Its default `flat` variant is intentionally divider-based rather than card-based so form-heavy pages do not drift into box-in-box layouts. Use `variant="card"` only when a section genuinely needs its own elevated surface.
 - Dashboard settings and admin settings now both treat `FormSection` as the canonical section contract, with shared route-level skeletons mirroring the same flat geometry from `src/components/skeletons/SettingsPageSkeleton.tsx` and `src/components/skeletons/AdminSettingsPageSkeleton.tsx`.
+- `DataPanelTable` is the canonical DS shell for dashboard/admin data panels that
+  need title + description + top actions + optional toolbar above table or
+  empty-state content. Keep filters, column definitions, row rendering, and
+  business actions route-owned.
 - `SearchInput` is the canonical DS search primitive with:
   - `default` and `hero` variants
   - clear and loading affordances
@@ -99,6 +104,17 @@
   recovery, success, or marketing treatments. Default loading shells should
   not inherit checkout-success banners, personalized emphasis rails, or
   selected-state tints unless the route state guarantees that exact condition.
+- Dark-shell selected rows and feedback chips should prefer theme-aware
+  emphasis surfaces such as `bg-accent + border-primary/20-30 + text-primary`
+  or `bg-accent + border-success-500/25 + text-success-600` instead of fixed
+  light-only `*-50` backgrounds with `*-700` text. Shared DS `Sidebar` active
+  rows and `Badge` status/info variants now follow that rule so feature shells
+  like Dashboard V2 can reuse them without introducing light-theme artifacts
+  in future dark mode.
+- `Badge.featured` follows the same constraint when used as a route label or
+  creator callout chip: keep the surface on `bg-accent` and express emphasis
+  through highlight-colored text/border instead of pale yellow fill on dark
+  shells.
 - `boneyard-js` is available as an optional DOM-capture skeleton workflow, but it complements the DS loading system rather than replacing route-level loading/error/empty-state design. Generated bones are expected under `src/bones`.
 - Generated bones are now bootstrapped by the client-only
   `src/components/providers/BonesRegistryBootstrap.tsx`, which calls the safe
@@ -184,40 +200,24 @@
   `src/app/(dashboard)/dashboard/creator/(protected)/resources/new/loading.tsx`
   now reuses the shared `CreatorResourceNewRouteSkeleton` hybrid shell, and it
   now captures into `src/bones/creator-resource-new-route.bones.json`.
-  `src/app/(dashboard)/dashboard/loading.tsx`,
-  `src/app/(dashboard)/dashboard/library/loading.tsx`,
-  `src/app/(dashboard)/dashboard/downloads/loading.tsx`,
-  `src/app/(dashboard)/dashboard/purchases/loading.tsx`,
-  `src/app/(dashboard)/dashboard/resources/loading.tsx`, and
-  `src/app/(dashboard)/subscription/loading.tsx` now reuse the shared
+  the canonical dashboard-v2 learner route loading surfaces now reuse the shared
   `DashboardUserRouteSkeletons.tsx` boneyard layer for overview, library,
-  downloads, purchases, subscription, and resources-redirect states, and
+  downloads, purchases, and subscription states, and
   those now capture into `src/bones/dashboard-overview.bones.json`,
   `src/bones/dashboard-library.bones.json`,
   `src/bones/dashboard-downloads.bones.json`,
   `src/bones/dashboard-purchases.bones.json`,
-  `src/bones/dashboard-subscription.bones.json`, and
-  `src/bones/dashboard-resources-redirect.bones.json`.
+  and `src/bones/dashboard-subscription.bones.json`.
   Their runtime loading path now prefers the manual preview geometry directly,
   with `data-loading-scope` markers per route state, because the generated
   dashboard bones were allowing blank content panes during live transitions.
   The boneyard sets are still retained for capture/regeneration work.
-  `src/components/skeletons/DashboardGroupLoadingShell.tsx` now owns the
-  non-boneyard shell-level loading state for `src/app/(dashboard)/loading.tsx`
-  so first entry from public routes into the dashboard group shows sidebar,
-  topbar, and content scaffolding even before the async group layout resolves.
-  `src/components/providers/DashboardGroupNavigationOverlay.tsx` now reuses
-  that same shell from `src/app/(dashboard)/layout.tsx` during
-  public-to-dashboard client navigations so protected-shell entry does not
-  flash blank while the target group is still resolving. The overlay now stays
-  mounted until the dashboard shell clears the pending navigation state through
-  `src/components/layout/dashboard/DashboardOverlayReady.tsx`, while
-  `DashboardNavigationReady` remains responsible only for non-overlay
-  in-dashboard transitions. `src/app/(dashboard)/dashboard/template.tsx` no
-  longer mounts a second `DashboardNavigationReady`, and
-  `DashboardNavigationFeedback` is now suppressed during overlay-driven
-  transitions so cross-group navigations do not clear or redraw twice. That
-  split avoids the earlier flash-then-blank gap during first entry from public
+  The old `DashboardGroupLoadingShell` and dashboard group navigation overlay
+  pattern was retired during the dashboard-v2 hard cut. First entry into the
+  active dashboard now goes through canonical `/dashboard-v2/*` routes, whose
+  real `DashboardV2Shell` owns chrome and whose route `loading.tsx` files own
+  content-only skeletons. That replacement avoids the earlier flash-then-blank
+  and dashboard-inside-dashboard failure class during first entry from public
   routes.
   Additional non-boneyard public/admin route shells now live in
   `src/components/skeletons/PublicRouteSkeletons.tsx` for
@@ -264,26 +264,28 @@
   changes so runtime shell coverage still appears for browser history
   navigations and other transitions that did not go through the explicit
   click-intent helpers.
-  Overlay rendering is now target-aware as well: the dashboard group overlay
-  maps `/dashboard`, `/dashboard/library`, `/dashboard/downloads`,
-  `/dashboard/purchases`, `/subscription`, `/settings`, creator dashboard
-  routes, and creator resource create/edit paths to their corresponding
-  route-specific runtime skeletons instead of always falling back to one
-  generic dashboard shell.
+  Historical note: before the Phase 5 hard cut, the old dashboard group
+  overlay mapped learner/account/creator dashboard aliases such as
+  `/dashboard`, `/dashboard/library`, `/dashboard/downloads`,
+  `/dashboard/purchases`, `/subscription`, and `/settings` to route-specific
+  runtime skeletons instead of one generic dashboard shell. The active runtime
+  contract is now the canonical dashboard-v2 shell plus route-owned loading
+  content on `/dashboard-v2/*`.
   `src/components/settings/PreferenceSettings.tsx` also no longer reapplies
   `initialPreferences.theme` to the global theme on mount when local storage
   is empty. The settings form still reflects the persisted preference, but
-  simply opening `/settings` should not flip the live theme for accounts whose
-  stored DB preference differs from the already-mounted client theme.
+  simply opening `/dashboard-v2/settings` should not flip the live theme for
+  accounts whose stored DB preference differs from the already-mounted client
+  theme.
   Public-navbar dashboard links now start that target-aware dashboard
-  navigation state on click as well, so `/resources -> /dashboard/library`
+  navigation state on click as well, so `/resources -> /dashboard-v2/library`
   does not have to wait for pathname-based fallback before showing the library
   shell.
-  The dashboard overlay now wraps those route-specific runtime skeletons
-  inside `DashboardGroupLoadingShell` chrome instead of painting content-only
-  previews directly against the root background. That keeps sidebar/topbar
-  geometry aligned with the eventual dashboard destination during
-  cross-group transitions.
+  Historical note: the older dashboard overlay used
+  `DashboardGroupLoadingShell` chrome to keep sidebar/topbar geometry aligned
+  during cross-group transitions. After the hard cut, canonical
+  `/dashboard-v2/*` entries rely on `DashboardV2Shell` and route-owned
+  loading geometry instead of the retired full-shell dashboard overlay.
   The resources overlay now resolves browse vs detail shells from the target
   resources href/mode first, and only falls back to current pathname when
   replaying browser history transitions, so `/dashboard -> /resources` no

@@ -10,7 +10,7 @@ import {
 import { locales } from "@/i18n/config";
 
 const LOGIN_PATH = "/auth/login";
-const DASHBOARD_PATH = "/dashboard";
+const DASHBOARD_V2_PATH = "/dashboard-v2";
 
 function assignRankingVariantIfAbsent(
   req: NextRequest,
@@ -48,7 +48,7 @@ async function handleProtectedRoute(req: NextRequest): Promise<NextResponse> {
 
   if (pathname.startsWith("/admin") && token.role !== "ADMIN") {
     const url = req.nextUrl.clone();
-    url.pathname = DASHBOARD_PATH;
+    url.pathname = DASHBOARD_V2_PATH;
     url.search = "";
     return NextResponse.redirect(url);
   }
@@ -75,10 +75,8 @@ export async function proxy(req: NextRequest) {
   }
 
   if (
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/admin") ||
-    pathname === "/settings" ||
-    pathname === "/subscription"
+    pathname.startsWith(DASHBOARD_V2_PATH) ||
+    pathname.startsWith("/admin")
   ) {
     const response = await handleProtectedRoute(req);
     assignRankingVariantIfAbsent(req, response);

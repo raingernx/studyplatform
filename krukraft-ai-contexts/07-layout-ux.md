@@ -146,52 +146,38 @@
   `"resource-detail"`) plus a non-empty `main`/loading surface before they
   clear pending navigation state, which prevents the previous flash-then-blank
   gap on slower route-group transitions.
-- `DashboardGroupNavigationOverlay` and `ResourcesNavigationOverlay` now also
+- `ResourcesNavigationOverlay` now also
   derive a fallback overlay directly from `usePathname()` transitions, not only
   from click-started navigation state. That keeps shell coverage active for
   browser back/forward and any route change where the intent state was not
-  started in time, even though each overlay now mounts inside its own
-  route-group layout and the root only carries the lightweight
-  `DashboardEntryNavigationOverlay` for public-to-dashboard jumps.
-- The root overlays are now target-aware instead of generic:
-  `DashboardGroupNavigationOverlay` maps the destination href to route-specific
-  dashboard, library, downloads, purchases, subscription, settings, creator,
-  and creator-resource shells, while `ResourcesNavigationOverlay` resolves
-  browse/listing vs detail from the destination resources href before it
-  renders. This prevents the earlier sequence where users briefly saw a
-  resource-detail shell while navigating to discover, or a generic dashboard
-  shell before the library/purchases-specific shell appeared.
-- The dashboard overlay now wraps those route-specific loading blocks in the
-  shared dashboard shell chrome instead of painting content-only previews over
-  the root app background. Cross-group jumps into dashboard pages should
-  therefore keep the dashboard sidebar/topbar visible from the first loading
-  frame, rather than showing library/downloads content under public chrome.
+  started in time, while dashboard-v2 now relies on its real shell and
+  route-owned loading surfaces instead of a root dashboard overlay.
+- The remaining root overlay is target-aware for resources only:
+  `ResourcesNavigationOverlay` resolves browse/listing vs detail from the
+  destination resources href before it renders. Dashboard destinations should
+  use canonical `/dashboard-v2/*` links and the `DashboardV2Shell` loading
+  contract directly.
 - If users report "dashboard on dashboard" during entry transitions, treat it
-  as a double-overlay handoff bug first. The usual cause is both the root
-  dashboard entry overlay and the in-dashboard overlay trying to own the same
-  transition window, not a real duplicate route render.
-- Dashboard overlay cleanup is now single-owner as well: the dashboard route
-  subtree no longer mounts a second `DashboardNavigationReady` under
-  `src/app/(dashboard)/dashboard/template.tsx`, and the thin
-  `DashboardNavigationFeedback` strip no longer renders during root-overlay
-  transitions. Cross-group jumps should therefore show one dashboard shell,
-  not a stacked overlay plus an immediate secondary dashboard progress layer.
-- Public-navbar protected links such as `คลังของฉัน` now also start the
-  dashboard navigation intent immediately, not only after pathname fallback
-  detects that the app has already crossed into the dashboard subtree. This
-  keeps first-entry transitions from `/resources` into `/dashboard/library`
-  aligned with the target library shell from the initial frame.
+  as a wrong-level fallback or stale compatibility-route bug first. The old
+  root dashboard entry overlay and legacy dashboard group shells have been
+  removed, so new reports should be investigated in dashboard-v2 route loading
+  or shell readiness rather than legacy overlay ownership.
+- Public-navbar protected links such as `คลังของฉัน` now point directly to
+  canonical `/dashboard-v2/*` destinations. First-entry transitions from
+  `/resources` into `/dashboard-v2/library` should use the dashboard-v2 shell
+  and route-owned library loading state, not a legacy `/dashboard/library`
+  compatibility overlay.
 - The same handoff model now extends further into the creator workspace: the
   creator overview, analytics, resources, sales, profile, and apply routes
   now expose route-ready markers so dashboard entry/in-group overlays do not
   clear purely from generic dashboard-shell readiness when the target route is
   still mounting.
 - Creator resource create/edit routes now use their own route-ready marker as
-  well, so handoffs into `/dashboard/creator/resources/new` and
-  `/dashboard/creator/resources/[id]` stay on the editor skeleton instead of
+  well, so handoffs into `/dashboard-v2/creator/resources/new` and
+  `/dashboard-v2/creator/resources/[id]` stay on the editor skeleton instead of
   clearing early on generic creator/dashboard shell readiness.
 - `tests/e2e/navigation-shells.spec.ts` now samples the DOM every animation
-  frame during public/dashboard/resources transitions and is part of
+  frame during public-to-dashboard-v2 route transitions and is part of
   `npm run smoke:local:browser`, so shell-coverage regressions can be caught in
   browser automation instead of relying on manual visual checks alone.
 - Dashboard route-level loading inside the mounted shell now favors the manual
@@ -216,6 +202,35 @@
   to condition-specific resolved UI, not the baseline loading shell. This is
   especially important on dashboard library, resources listing, and other
   cross-group transitions where a tinted block can read as the wrong page.
+- Dashboard V2 is in staged promotion rather than pure prototype status. The
+  `/dashboard-v2`, `/dashboard-v2/library`, `/dashboard-v2/downloads`,
+  `/dashboard-v2/purchases`, `/dashboard-v2/membership`, and
+  `/dashboard-v2/settings` learner routes plus the `/dashboard-v2/creator`
+  overview route plus `/dashboard-v2/creator/analytics`,
+  `/dashboard-v2/creator/sales`, `/dashboard-v2/creator/payouts`,
+  `/dashboard-v2/creator/profile`, and `/dashboard-v2/creator/settings` now
+  behave like private dashboard routes with real data, while
+  `/dashboard-v2/creator/resources/new` and
+  `/dashboard-v2/creator/resources/[id]` now stay inside the real Dashboard V2
+  shell with route-owned editor states. The edit route renders the same
+  `CreatorResourceForm` used by the protected creator dashboard, while locked,
+  not-found, and forbidden cases resolve as in-shell empty states instead of
+  leaking a standalone editor scaffold. The remaining Dashboard V2 creator
+  child routes are still being integrated route-by-route.
+  Child routes should use the real Dashboard V2 shell plus
+  content-only route loading states; they should not render the full prototype
+  shell inside child route loading files.
+- Dashboard V2 navigation active state is pathname-aware and owned by a small
+  client navigation component inside the otherwise server-led shell. Desktop
+  nav and the mobile drawer should expose exactly one active item with
+  `aria-current="page"`, including nested creator resource create/edit routes
+  mapping back to the creator Resources item.
+- Dashboard V2 topbar account controls now follow the same split: the shell
+  stays server-led, but a small client dropdown owns the premium account-menu
+  interaction. The trigger should render real viewer data when a session is
+  present, fall back to an honest guest preview message when it is not, keep
+  all links/actions real (dashboard home, membership, settings, creator links,
+  sign-out or auth entry points), and avoid generic admin-chip styling.
 - Route-level and Suspense-critical shells now apply that manual-runtime rule
   more broadly as well: the resource-detail purchase rail, auth login shell,
   admin settings shell, admin analytics route shells, and admin/creator
@@ -233,11 +248,11 @@
   `activeCount` or `showDiscoverMeta`. Discover vs listing differences are now
   derived from the route mode and surrounding layout itself, while the shared
   controls shell stays structurally identical across both modes.
-- Theme behavior on `/settings` is intentionally less aggressive now: opening
-  the settings page no longer reapplies the persisted DB theme to the whole
-  app just because `localStorage.user_theme` is empty. The live theme should
-  remain whatever the mounted client is already using until the user changes
-  or saves a new preference explicitly.
+- Theme behavior on `/dashboard-v2/settings` is intentionally less aggressive
+  now: opening the settings page no longer reapplies the persisted DB theme to
+  the whole app just because `localStorage.user_theme` is empty. The live
+  theme should remain whatever the mounted client is already using until the
+  user changes or saves a new preference explicitly.
 - `/categories/[slug]`, `/creators/[slug]`, `/admin/creators`, the
   compatibility redirect route `/resources/id/[id]`, and the legacy
   dashboard alias `/purchases` now all have explicit route-level loading
@@ -317,8 +332,7 @@
   `DashboardLibrarySkeleton`,
   `DashboardDownloadsSkeleton`,
   `DashboardPurchasesSkeleton`,
-  `DashboardSubscriptionSkeleton`,
-  `DashboardResourcesRedirectSkeleton`, and
+  `DashboardSubscriptionSkeleton`, and
   `ResourceDetailLoadingShell` keep manual fallbacks
   if bones are missing or the registry has not loaded yet.
   The current generated registry now includes 39 captured sets, covering
@@ -331,7 +345,7 @@
   the creator resource form shell, creator dashboard overview/analytics/
   resources/sales/profile shells, the creator new-resource route shell,
   the auth login shell, and the user dashboard overview/library/downloads/
-  purchases/subscription/resources-redirect route shells.
+  purchases/subscription route shells.
 - forward navigation from a scrolled `/resources` view into `/resources/[slug]` now scrolls the viewport to the top before the detail loading shell renders, while browser back-navigation should still restore the previous discover scroll position
 - `ResourceDetailLoadingShell` currently prefers its manual runtime shell over
   the generated `resource-detail-shell` bones set because the generated version
@@ -367,39 +381,36 @@ max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8
 
 ### /dashboard
 
-- Per-user dynamic rendering
-- Purchases and learning profile surfaces
-- Download history and creator-access state
-- Route-level loading for `/dashboard`, `/dashboard/library`,
-  `/dashboard/downloads`, `/dashboard/purchases`,
-  `/dashboard/resources`, and `/subscription` now reuses the shared
-  `DashboardUserRouteSkeletons.tsx` hybrid boneyard layer instead of
-  returning `null`
-- The parent `(dashboard)` route group now also declares
-  `src/app/(dashboard)/loading.tsx`, which renders a shell-level dashboard
-  skeleton before the async dashboard layout resolves session and creator
-  access. First navigation from public routes into dashboard surfaces should
-  now show sidebar/topbar/content scaffolding instead of a blank gap while the
-  group layout is still loading.
-- Hard refreshes that appear to "jump to another page" before dashboard
-  content resolves should be treated as fallback-hierarchy bugs first. The
-  usual failure class is a wrong-level app/root fallback appearing before the
-  dashboard-family shell, not the router actually leaving `/dashboard/*`.
-- Public `Navbar` links that enter protected dashboard surfaces now also
-  trigger a global dashboard entry overlay from the root layout via
-  `DashboardEntryNavigationOverlay`, so first entry from public routes does not
-  depend solely on segment loading timing to reveal dashboard shell chrome.
-  The heavier route-aware `DashboardGroupNavigationOverlay` remains scoped to
-  the dashboard layout for in-dashboard transitions, and pending state still
-  clears from the mounted client dashboard shell via `DashboardOverlayReady`.
-- Template-based dashboard readiness now only clears in-dashboard transition
-  progress (`overlay: false`). First entry from public routes into the
-  protected dashboard subtree should clear from the actual `DashboardShell`
-  mount path instead of from a route-group template, which avoids the
-  flash-then-blank gap where the URL changed before the dashboard shell was
-  visibly ready.
-- `/settings` now favors flat, divider-based account sections instead of stacking card-inside-card form panels; section hierarchy should come from headers, spacing, and row separation first
-- `/settings` route-level loading now mirrors that same flat section rhythm instead of returning a null loading state
+- Retired legacy dashboard URL family after Phase 5 hard cut.
+- `/dashboard`, `/dashboard/library`, `/dashboard/downloads`,
+  `/dashboard/purchases`, `/settings`, `/subscription`, and old creator
+  dashboard URLs are no longer supported compatibility redirects.
+- Current learner, account, and creator dashboard UI lives under
+  `/dashboard-v2/*` and should be verified there.
+- If an old `/dashboard*` URL renders a dashboard shell, treat that as a
+  compatibility regression. The expected runtime behavior is app-level
+  not-found or a deliberately explicit canonical redirect added in a future
+  cutover policy, not a half-old/half-new shell.
+
+### /dashboard-v2
+
+- `/dashboard-v2`, `/dashboard-v2/library`, `/dashboard-v2/downloads`,
+  `/dashboard-v2/purchases`, `/dashboard-v2/membership`, and
+  `/dashboard-v2/settings` are now integrated Dashboard V2 product routes, and
+  `/dashboard-v2/creator`, `/dashboard-v2/creator/profile`,
+  `/dashboard-v2/creator/settings`, `/dashboard-v2/creator/analytics`,
+  `/dashboard-v2/creator/sales`, and `/dashboard-v2/creator/payouts` are now
+  integrated creator routes: they redirect anonymous users to login, render
+  data-backed surfaces after auth, and use the shared `DashboardV2Shell`
+  chrome.
+- Other Dashboard V2 creator child routes are still in staged rebuild status
+  until their remaining Phase 4 route-by-route data/auth integration lands.
+- The route family uses `DashboardV2Shell` as the only visible chrome owner.
+  Segment `loading.tsx` files render content-only skeletons inside that shell;
+  the full dashboard-v2 shell skeleton is reserved for route-family/full-surface
+  scaffold entry only, not child-route loading.
+- Keep Dashboard V2 off the production public footer/navbar until the handoff
+  plan explicitly promotes it out of prototype status.
 
 ### /admin
 

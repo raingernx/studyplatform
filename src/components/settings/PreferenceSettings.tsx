@@ -98,7 +98,7 @@ export function PreferenceSettings({
     if (readStoredTheme() !== null) return;
 
     // Lock the currently rendered theme as the local source of truth before the
-    // user explicitly saves a different preference. This prevents `/settings`
+    // user explicitly saves a different preference. This prevents the settings route
     // from feeling like it "auto-switched" just because the DB preference
     // differs from the runtime bootstrap baseline.
     persistTheme(runtimeTheme);

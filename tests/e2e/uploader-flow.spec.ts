@@ -123,7 +123,7 @@ test("creator preview uploader activates lazily and uploads an image after login
   await loginAsCreator(page, "/resources");
 
   await verifyUploaderFlow(page, {
-    targetPath: "/dashboard/creator/resources/new",
+    targetPath: "/dashboard-v2/creator/resources/new",
     headingName: /Create your first resource|New resource/i,
     uploaderLabel: "รูปภาพพรีวิว",
     uploadRouteFragment: "/api/creator/upload/image",

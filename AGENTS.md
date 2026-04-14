@@ -529,6 +529,18 @@ For public or high-traffic routes:
 - after performance-sensitive route changes, verify that public routes did not accidentally regain `cookies()`, `headers()`, or server-session reads at the page level
 - after performance-sensitive changes that reach deployable state, prefer reviewing signals in this order: warmed post-deploy perf summary, Speed Insights, then runtime logs
 
+## Browser Verification Tool Policy
+
+When choosing browser verification tooling, treat `Playwright` and
+`chrome-devtools-mcp` as complementary tools with different responsibilities.
+
+- use `Playwright` for canonical regression coverage, assertions, CI / GitHub Actions workflows, retries, artifacts, and cross-browser validation
+- use `chrome-devtools-mcp` for local browser-level probes against a real authenticated Chrome session when the goal is rapid runtime inspection, DOM/console/network debugging, overlay/layout verification, or click-through validation
+- if local `playwright test` browser launch is unstable, fall back to `chrome-devtools-mcp` plus request-level smoke checks instead of blocking all runtime verification
+- do not treat `chrome-devtools-mcp` as a replacement for the repo's Playwright test suite; it is a local debug/verification companion, not the canonical CI surface
+- do not claim CI-grade or regression-grade confidence from a DevTools-only pass; if the change needs durable automated coverage, add or update Playwright coverage once the flow is stable
+- when using `chrome-devtools-mcp`, verify the real route in browser, then still prefer request-smoke or Playwright evidence for auth/ownership/redirect assertions that should remain machine-checkable
+
 ---
 
 # Performance Guidelines

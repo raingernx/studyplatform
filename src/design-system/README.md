@@ -52,6 +52,7 @@ surfaces.
 ### Composed Components
 
 - `ConfirmDialog`
+- `DataPanelTable`
 - `EmptyState`
 - `FileUploadWidget`
 - `FormSection`
@@ -91,6 +92,10 @@ surfaces.
 - `FileUploadWidget`, `NotificationButton`, `PriceBadge`, `PriceLabel`, and
   `PickerControls` are DS-exposed composed components, but they remain more
   workflow-bound than true primitives.
+- `DataPanelTable` is the reusable dashboard/admin shell for
+  title/description/actions + optional toolbar + table/empty-state content.
+  Keep data fetching, column schema, row rendering, and business actions
+  route-owned.
 - `FormSection` is the canonical settings/admin form layout helper. Prefer its
   default `flat` variant before introducing nested cards.
 - `LoadingSkeleton` is the canonical skeleton primitive. Placeholders should
@@ -166,10 +171,18 @@ surfaces.
   - `border-border-subtle` for passive card shells, dashed placeholders, and soft dividers
   - `border-border` for structural chrome like navbar/sidebar/purchase rails
   - `border-border-strong` and `border-input` for interactive controls
-- Dark-shell marketplace listing active states should use primary tint overlays
-  (`bg-primary/12`, `border-primary/20-30`, `text-primary`) rather than
-  reintroducing light-only `primary-50` or white shells for selected filter
-  rows, selected pills, sort/price selects, or spotlight chips/panels.
+- Dark-shell marketplace listing active states should use theme-aware emphasis
+  surfaces such as `bg-accent` plus `border-primary/20-30` and `text-primary`,
+  rather than reintroducing light-only `primary-50` or white shells for
+  selected filter rows, selected pills, sort/price selects, or spotlight
+  chips/panels.
+- Status chips and feedback badges that need to survive light and dark shells
+  should prefer theme-aware surfaces such as `bg-accent` plus semantic border
+  and text color, instead of fixed `*-50` backgrounds with `*-700` text that
+  only read correctly on light surfaces.
+- The same rule applies to `featured` badges used as route labels or callout
+  chips: keep the shell surface theme-aware (`bg-accent`) and carry the
+  emphasis through semantic border/text color rather than pale yellow panels.
 - Hero surfaces are not treated as generic `card` surfaces. Use the shared
   semantic color layer for hero-specific outer background/panel/chip roles
   (`heroBackground`, `heroBackgroundSubtle`, `heroPanel`,

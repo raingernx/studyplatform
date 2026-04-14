@@ -1,35 +1,30 @@
-import { DashboardGroupLoadingShell } from "@/components/skeletons/DashboardGroupLoadingShell";
-import {
-  DashboardDownloadsSkeleton,
-  DashboardLibrarySkeleton,
-  DashboardOverviewSkeleton,
-  DashboardPurchasesSkeleton,
-  DashboardResourcesRedirectSkeleton,
-  DashboardSubscriptionSkeleton,
-} from "@/components/skeletons/DashboardUserRouteSkeletons";
-import {
-  CreatorDashboardAnalyticsLoadingShell,
-  CreatorDashboardOverviewLoadingShell,
-  CreatorDashboardProfileLoadingShell,
-  CreatorDashboardResourcesLoadingShell,
-  CreatorDashboardSalesLoadingShell,
-} from "@/components/skeletons/CreatorDashboardRouteSkeletons";
-import { CreatorApplyPageSkeleton } from "@/components/skeletons/CreatorApplyPageSkeleton";
-import { CreatorResourceNewRouteSkeleton } from "@/components/skeletons/CreatorResourceNewRouteSkeleton";
-import { SettingsPageSkeleton } from "@/components/skeletons/SettingsPageSkeleton";
 import { routes } from "@/lib/routes";
 
 const DASHBOARD_ROUTE_SHELL_SELECTOR = '[data-route-shell-ready="dashboard"]';
 const DASHBOARD_CREATOR_ROUTE_SHELL_SELECTOR =
   '[data-route-shell-ready^="dashboard-creator"]';
 
+function getDashboardTargetPathname(pathname: string | null, href: string | null) {
+  const target = href ?? pathname ?? "";
+
+  if (!target) {
+    return "";
+  }
+
+  return new URL(target, "http://dashboard.local").pathname;
+}
+
 export function isDashboardGroupHref(href: string) {
+  const pathname = new URL(href, "http://dashboard.local").pathname;
+
   return (
-    href === "/dashboard" ||
-    href === "/settings" ||
-    href === "/subscription" ||
-    href === "/purchases" ||
-    href.startsWith("/dashboard/")
+    pathname === routes.dashboardV2 ||
+    pathname === routes.dashboardV2Library ||
+    pathname === routes.dashboardV2Downloads ||
+    pathname === routes.dashboardV2Purchases ||
+    pathname === routes.dashboardV2Settings ||
+    pathname === routes.dashboardV2Membership ||
+    pathname.startsWith("/dashboard-v2/")
   );
 }
 
@@ -41,171 +36,73 @@ export function isDashboardGroupPath(pathname: string | null) {
   return isDashboardGroupHref(pathname);
 }
 
-export function renderDashboardOverlayContent(
-  pathname: string | null,
-  href: string | null,
-) {
-  const target = href ?? pathname ?? "";
-  const targetPathname = target
-    ? new URL(target, "http://dashboard.local").pathname
-    : "";
-
-  if (targetPathname === routes.library) {
-    return <DashboardLibrarySkeleton />;
-  }
-
-  if (targetPathname === routes.downloads) {
-    return <DashboardDownloadsSkeleton />;
-  }
-
-  if (targetPathname === routes.purchases) {
-    return <DashboardPurchasesSkeleton />;
-  }
-
-  if (targetPathname === routes.subscription) {
-    return <DashboardSubscriptionSkeleton />;
-  }
-
-  if (targetPathname === routes.settings) {
-    return <SettingsPageSkeleton />;
-  }
-
-  if (targetPathname === routes.dashboardResources) {
-    return <DashboardResourcesRedirectSkeleton />;
-  }
-
-  if (targetPathname === routes.creatorApply) {
-    return <CreatorApplyPageSkeleton />;
-  }
-
-  if (targetPathname === routes.creatorDashboard) {
-    return <CreatorDashboardOverviewLoadingShell />;
-  }
-
-  if (targetPathname === routes.creatorAnalytics) {
-    return <CreatorDashboardAnalyticsLoadingShell />;
-  }
-
-  if (targetPathname === routes.creatorResources) {
-    return <CreatorDashboardResourcesLoadingShell />;
-  }
-
-  if (
-    targetPathname === routes.creatorNewResource ||
-    targetPathname.startsWith(`${routes.creatorResources}/`)
-  ) {
-    return <CreatorResourceNewRouteSkeleton />;
-  }
-
-  if (targetPathname === routes.creatorSales) {
-    return <CreatorDashboardSalesLoadingShell />;
-  }
-
-  if (
-    targetPathname === routes.creatorProfile ||
-    targetPathname === "/dashboard/creator/settings"
-  ) {
-    return <CreatorDashboardProfileLoadingShell />;
-  }
-
-  if (targetPathname === routes.dashboard || targetPathname.startsWith("/dashboard/")) {
-    return <DashboardOverviewSkeleton />;
-  }
-
-  return <DashboardGroupLoadingShell />;
-}
-
-export function shouldWrapDashboardOverlayInShell(
-  pathname: string | null,
-  href: string | null,
-) {
-  const target = href ?? pathname ?? "";
-  const targetPathname = target
-    ? new URL(target, "http://dashboard.local").pathname
-    : "";
-
-  if (
-    targetPathname === routes.creatorApply ||
-    targetPathname === routes.creatorDashboard ||
-    targetPathname === routes.creatorAnalytics ||
-    targetPathname === routes.creatorResources ||
-    targetPathname === routes.creatorSales ||
-    targetPathname === routes.creatorProfile ||
-    targetPathname === "/dashboard/creator/settings" ||
-    targetPathname === routes.creatorNewResource ||
-    targetPathname.startsWith(`${routes.creatorResources}/`)
-  ) {
-    return false;
-  }
-
-  return true;
-}
-
 export function getDashboardReadySelector(pathname: string | null, href: string | null) {
-  const target = href ?? pathname ?? "";
-  const targetPathname = target
-    ? new URL(target, "http://dashboard.local").pathname
-    : "";
+  const targetPathname = getDashboardTargetPathname(pathname, href);
 
-  if (targetPathname === routes.dashboard) {
+  if (targetPathname === routes.dashboardV2) {
     return '[data-route-shell-ready="dashboard-overview"]';
   }
 
-  if (targetPathname === routes.library) {
+  if (targetPathname === routes.dashboardV2Library) {
     return '[data-route-shell-ready="dashboard-library"]';
   }
 
-  if (targetPathname === routes.downloads) {
+  if (targetPathname === routes.dashboardV2Downloads) {
     return '[data-route-shell-ready="dashboard-downloads"]';
   }
 
-  if (targetPathname === routes.purchases) {
+  if (targetPathname === routes.dashboardV2Purchases) {
     return '[data-route-shell-ready="dashboard-purchases"]';
   }
 
-  if (targetPathname === routes.settings) {
+  if (targetPathname === routes.dashboardV2Settings) {
     return '[data-route-shell-ready="dashboard-settings"]';
   }
 
-  if (targetPathname === routes.subscription) {
+  if (targetPathname === routes.dashboardV2Membership) {
     return '[data-route-shell-ready="dashboard-subscription"]';
   }
 
-  if (targetPathname === routes.creatorApply) {
+  if (targetPathname === routes.dashboardV2CreatorApply) {
     return '[data-route-shell-ready="dashboard-creator-apply"]';
   }
 
-  if (targetPathname === routes.creatorDashboard) {
+  if (targetPathname === routes.dashboardV2Creator) {
     return '[data-route-shell-ready="dashboard-creator-overview"]';
   }
 
-  if (targetPathname === routes.creatorAnalytics) {
+  if (targetPathname === routes.dashboardV2CreatorAnalytics) {
     return '[data-route-shell-ready="dashboard-creator-analytics"]';
   }
 
-  if (targetPathname === routes.creatorResources) {
+  if (targetPathname === routes.dashboardV2CreatorResources) {
     return '[data-route-shell-ready="dashboard-creator-resources"]';
   }
 
   if (
-    targetPathname === routes.creatorNewResource ||
-    targetPathname.startsWith(`${routes.creatorResources}/`)
+    targetPathname === routes.dashboardV2CreatorNewResource ||
+    targetPathname.startsWith(`${routes.dashboardV2CreatorResources}/`)
   ) {
     return '[data-route-shell-ready="dashboard-creator-resource-editor"]';
   }
 
-  if (targetPathname === routes.creatorSales) {
+  if (targetPathname === routes.dashboardV2CreatorSales) {
     return '[data-route-shell-ready="dashboard-creator-sales"]';
   }
 
-  if (
-    targetPathname === routes.creatorProfile ||
-    targetPathname === "/dashboard/creator/settings"
-  ) {
+  if (targetPathname === routes.dashboardV2CreatorPayouts) {
+    return '[data-route-shell-ready="dashboard-creator-payouts"]';
+  }
+
+  if (targetPathname === routes.dashboardV2CreatorProfile) {
     return '[data-route-shell-ready="dashboard-creator-profile"]';
   }
 
-  if (targetPathname.startsWith("/dashboard/creator")) {
+  if (targetPathname === routes.dashboardV2CreatorSettings) {
+    return '[data-route-shell-ready="dashboard-creator-settings"]';
+  }
+
+  if (targetPathname.startsWith("/dashboard-v2/creator")) {
     return DASHBOARD_CREATOR_ROUTE_SHELL_SELECTOR;
   }
 

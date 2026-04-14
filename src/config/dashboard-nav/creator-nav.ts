@@ -15,33 +15,33 @@ export const CREATOR_DASHBOARD_NAV_SECTION: DashboardNavSection = {
   label: "Creator",
   items: [
     {
-      href: routes.creatorProfile,
+      href: routes.dashboardV2CreatorProfile,
       label: "Profile",
       icon: CircleUser,
     },
     {
-      href: routes.creatorDashboard,
+      href: routes.dashboardV2Creator,
       label: "Dashboard",
       icon: LayoutDashboard,
       exact: true,
     },
     {
-      href: routes.creatorResources,
+      href: routes.dashboardV2CreatorResources,
       label: "Resources",
       icon: FileText,
     },
     {
-      href: routes.creatorNewResource,
+      href: routes.dashboardV2CreatorNewResource,
       label: "New Resource",
       icon: Plus,
     },
     {
-      href: routes.creatorSales,
+      href: routes.dashboardV2CreatorSales,
       label: "Sales",
       icon: ShoppingBag,
     },
     {
-      href: routes.creatorAnalytics,
+      href: routes.dashboardV2CreatorAnalytics,
       label: "Analytics",
       icon: BarChart2,
     },
@@ -53,7 +53,7 @@ export const CREATOR_APPLY_NAV_SECTION: DashboardNavSection = {
   label: "Creator",
   items: [
     {
-      href: routes.creatorApply,
+      href: routes.dashboardV2CreatorApply,
       label: "Become a Creator",
       icon: Sparkles,
     },
@@ -65,7 +65,7 @@ export const ADMIN_CREATOR_ENTRYPOINT_SECTION: DashboardNavSection = {
   label: "Creator",
   items: [
     {
-      href: routes.creatorDashboard,
+      href: routes.dashboardV2Creator,
       label: "Creator Workspace",
       icon: Sparkles,
     },

@@ -11,7 +11,6 @@ import {
   DashboardLibraryBonesPreview,
   DashboardOverviewBonesPreview,
   DashboardPurchasesBonesPreview,
-  DashboardResourcesRedirectBonesPreview,
   DashboardSubscriptionBonesPreview,
 } from "@/components/skeletons/DashboardUserRouteSkeletons";
 import { AdminResourceFormLoadingShellBonesPreview } from "@/components/admin/resources/AdminResourceFormLoadingShell";
@@ -163,7 +162,6 @@ export default function BonesCapturePage() {
             <DashboardDownloadsBonesPreview />
             <DashboardPurchasesBonesPreview />
             <DashboardSubscriptionBonesPreview />
-            <DashboardResourcesRedirectBonesPreview />
           </div>
         </section>
       </div>

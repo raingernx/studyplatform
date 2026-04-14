@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ExternalLink, ImagePlus, Link2, Plus, Trash2 } from "lucide-react";
 import { Button, FileUploadWidget, Input, Select, Textarea } from "@/design-system";
 import {
   CreatorAIDraftGenerator,
   type CreatorAIDraftResourceSeed,
   type CreatorAIDraftValues,
 } from "@/components/creator/CreatorAIDraftGenerator";
-import { CreatorStickyActionBar } from "@/components/creator/CreatorStickyActionBar";
+import { CreatorPublishActions } from "@/components/creator/CreatorPublishActions";
 import {
   CreatorPublishReadiness,
   type FieldName,
@@ -47,6 +48,8 @@ export interface CreatorResourceFormValues {
   thumbnailUrl?: string;
 }
 
+type DeliverySource = "upload" | "external";
+
 interface CreatorResourceFormProps {
   mode: "create" | "edit";
   categories: CreatorResourceFormCategory[];
@@ -72,15 +75,70 @@ const DEFAULT_VALUES: CreatorResourceFormValues = {
   thumbnailUrl: "",
 };
 
-function toPreviewTextarea(urls: string[]) {
-  return urls.join("\n");
+function dedupeImageUrls(urls: string[]) {
+  return Array.from(new Set(urls.map((url) => url.trim()).filter(Boolean)));
+}
+
+function mergeImageUrls(previewUrls: string[], thumbnailUrl?: string | null) {
+  return dedupeImageUrls([thumbnailUrl ?? "", ...previewUrls]);
+}
+
+function summarizeExternalUrl(value: string) {
+  try {
+    const target = new URL(value);
+    return {
+      host: target.host,
+      path: `${target.pathname}${target.search}` || "/",
+    };
+  } catch {
+    return {
+      host: "External link",
+      path: value,
+    };
+  }
+}
+
+function getExternalFileUrlIssue(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    const target = new URL(trimmed);
+    if (target.protocol !== "http:" && target.protocol !== "https:") {
+      return "This URL can't be used yet. Use a full http:// or https:// link.";
+    }
+    return null;
+  } catch {
+    return "This URL can't be used yet. Use a full http:// or https:// link.";
+  }
+}
+
+function getPreviewImageUrlIssue(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith("/")) {
+    return null;
+  }
+
+  try {
+    const target = new URL(trimmed);
+    if (target.protocol !== "http:" && target.protocol !== "https:") {
+      return "Use a full http:// or https:// image URL, or a local /path image reference.";
+    }
+    return null;
+  } catch {
+    return "Use a full http:// or https:// image URL, or a local /path image reference.";
+  }
 }
 
 function fromPreviewTextarea(value: string) {
-  return value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+  return dedupeImageUrls(
+    value
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean),
+  );
 }
 
 export function CreatorResourceForm({
@@ -92,13 +150,40 @@ export function CreatorResourceForm({
   focusField,
 }: CreatorResourceFormProps) {
   const router = useRouter();
+  const fieldIdPrefix = useId();
+  const titleInputId = `${fieldIdPrefix}-title`;
+  const slugInputId = `${fieldIdPrefix}-slug`;
+  const descriptionInputId = `${fieldIdPrefix}-description`;
+  const statusSelectId = `${fieldIdPrefix}-status`;
+  const typeSelectId = `${fieldIdPrefix}-type`;
+  const categorySelectId = `${fieldIdPrefix}-category`;
+  const priceInputId = `${fieldIdPrefix}-price`;
+  const isFreeInputId = `${fieldIdPrefix}-is-free`;
+  const previewUrlDraftPrefix = `${fieldIdPrefix}-preview-url`;
+  const bulkPreviewTextareaId = `${fieldIdPrefix}-preview-url-bulk`;
+  const externalFileUrlInputId = `${fieldIdPrefix}-external-file-url`;
+  const initialImageUrls = mergeImageUrls(initialValues.previewUrls, initialValues.thumbnailUrl);
   // Spread DEFAULT_VALUES first so any field not in initialValues (e.g. thumbnailUrl
   // on existing resources) always has a safe default rather than undefined.
   const [form, setForm] = useState<CreatorResourceFormValues>({
     ...DEFAULT_VALUES,
     ...initialValues,
   });
-  const [previewInput, setPreviewInput] = useState(toPreviewTextarea(initialValues.previewUrls));
+  const [previewUrlsState, setPreviewUrlsState] = useState<string[]>(initialImageUrls);
+  const [previewUrlDrafts, setPreviewUrlDrafts] = useState<string[]>(initialImageUrls);
+  const [bulkPreviewInput, setBulkPreviewInput] = useState("");
+  const [bulkPreviewOpen, setBulkPreviewOpen] = useState(false);
+  const [previewUrlError, setPreviewUrlError] = useState<string | null>(null);
+  const [deliverySource, setDeliverySource] = useState<DeliverySource>(
+    initialValues.fileUrl && !initialValues.fileKey ? "external" : "upload",
+  );
+  const [externalFileUrlDraft, setExternalFileUrlDraft] = useState(initialValues.fileUrl ?? "");
+  const [externalFileUrlIssue, setExternalFileUrlIssue] = useState<string | null>(
+    getExternalFileUrlIssue(initialValues.fileUrl ?? ""),
+  );
+  const [isEditingExternalFileUrl, setIsEditingExternalFileUrl] = useState(
+    !initialValues.fileUrl || Boolean(getExternalFileUrlIssue(initialValues.fileUrl ?? "")),
+  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -126,6 +211,14 @@ export function CreatorResourceForm({
 
   const completion = 4 - missingFields.length;
   const canPublish = missingFields.length === 0;
+  // The draft PATCH endpoint still uses the full creator resource schema.
+  // Skip opportunistic autosave calls until the form satisfies those minimums.
+  const canPersistDraftSnapshot = useMemo(() => {
+    if (!form.title || form.title.trim().length < 3) return false;
+    if (!form.description || form.description.trim().length < 10) return false;
+    if (!form.isFree && (!form.price || Number(form.price) <= 0)) return false;
+    return true;
+  }, [form.title, form.description, form.isFree, form.price]);
 
   // ── Scroll + highlight helper (shared by auto-focus and chip clicks) ─────
   const refMap: Record<FieldName, React.RefObject<HTMLDivElement | null>> = {
@@ -157,10 +250,114 @@ export function CreatorResourceForm({
     // scrollToField uses only stable refs and state setters — safe with empty deps
   }, [focusField]);
 
-  const previewUrls = useMemo(() => fromPreviewTextarea(previewInput), [previewInput]);
+  const previewUrls = useMemo(() => dedupeImageUrls(previewUrlsState), [previewUrlsState]);
+  const hasUploadedFile = Boolean(form.fileKey);
+  const externalFileSummary = form.fileUrl ? summarizeExternalUrl(form.fileUrl) : null;
+
+  useEffect(() => {
+    if (form.fileKey) {
+      setDeliverySource("upload");
+      return;
+    }
+    if (form.fileUrl) {
+      setDeliverySource("external");
+    }
+  }, [form.fileKey, form.fileUrl]);
+
+  useEffect(() => {
+    if (!form.fileUrl) return;
+    const issue = getExternalFileUrlIssue(form.fileUrl);
+    setExternalFileUrlDraft(form.fileUrl);
+    setExternalFileUrlIssue(issue);
+    setIsEditingExternalFileUrl(Boolean(issue));
+  }, [form.fileUrl]);
+
+  useEffect(() => {
+    const coverUrl = previewUrls[0] || "";
+    setForm((prev) => (prev.thumbnailUrl === coverUrl ? prev : { ...prev, thumbnailUrl: coverUrl }));
+  }, [previewUrls]);
 
   function setPreviewUrls(next: string[]) {
-    setPreviewInput(toPreviewTextarea(next));
+    const merged = dedupeImageUrls(next);
+    setPreviewUrlsState(merged);
+    setPreviewUrlDrafts(merged);
+  }
+
+  function persistPreviewUrlsDraft(nextPreviewUrls: string[]) {
+    if (!form.id || !canPersistDraftSnapshot) return;
+    void persistCurrentFormToResource(form.id, {
+      previewUrls: nextPreviewUrls,
+    }).catch((persistError) => {
+      setError(
+        persistError instanceof Error
+          ? persistError.message
+          : "ยังไม่สามารถบันทึกรายการรูปภาพได้",
+      );
+    });
+  }
+
+  function updatePreviewUrlDraft(index: number, value: string) {
+    setPreviewUrlError(null);
+    setPreviewUrlDrafts((prev) => prev.map((current, currentIndex) => (currentIndex === index ? value : current)));
+  }
+
+  function commitPreviewUrlDraft(index: number) {
+    const nextDrafts = [...previewUrlDrafts];
+    const trimmed = nextDrafts[index]?.trim() ?? "";
+
+    if (!trimmed) {
+      nextDrafts.splice(index, 1);
+      const committed = dedupeImageUrls(nextDrafts);
+      setPreviewUrlDrafts(committed);
+      setPreviewUrlsState(committed);
+      persistPreviewUrlsDraft(committed);
+      return;
+    }
+
+    const issue = getPreviewImageUrlIssue(trimmed);
+    if (issue) {
+      setPreviewUrlDrafts(nextDrafts);
+      return;
+    }
+
+    nextDrafts[index] = trimmed;
+    const committed = dedupeImageUrls(nextDrafts);
+    setPreviewUrlDrafts(committed);
+    setPreviewUrlsState(committed);
+    persistPreviewUrlsDraft(committed);
+  }
+
+  function addPreviewUrlDraftRow() {
+    setPreviewUrlError(null);
+    setPreviewUrlDrafts((prev) => [...prev, ""]);
+  }
+
+  function removePreviewUrlDraft(index: number) {
+    setPreviewUrlError(null);
+    const nextDrafts = previewUrlDrafts.filter((_, currentIndex) => currentIndex !== index);
+    const committed = dedupeImageUrls(nextDrafts);
+    setPreviewUrlDrafts(committed);
+    setPreviewUrlsState(committed);
+    persistPreviewUrlsDraft(committed);
+  }
+
+  function applyBulkPreviewUrls() {
+    const incomingUrls = fromPreviewTextarea(bulkPreviewInput);
+    const invalidUrls = incomingUrls.filter((url) => getPreviewImageUrlIssue(url));
+
+    if (invalidUrls.length > 0) {
+      setPreviewUrlError(
+        "One or more image URLs can't be used yet. Use full http:// or https:// links, or a local /path image reference.",
+      );
+      return;
+    }
+
+    setPreviewUrlError(null);
+    const nextUrls = dedupeImageUrls([...previewUrls, ...incomingUrls]);
+    setPreviewUrls(nextUrls);
+    persistPreviewUrlsDraft(nextUrls);
+    setBulkPreviewInput("");
+    setBulkPreviewOpen(false);
   }
 
   async function persistCurrentFormToResource(
@@ -212,6 +409,57 @@ export function CreatorResourceForm({
     });
   }
 
+  async function persistExternalFileUrl(nextFileUrl: string) {
+    setForm((prev) => ({ ...prev, fileUrl: nextFileUrl }));
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next.fileUrl;
+      return next;
+    });
+
+    if (!form.id || !canPersistDraftSnapshot) return;
+
+    try {
+      await persistCurrentFormToResource(form.id, {
+        fileUrl: nextFileUrl || null,
+      });
+    } catch (persistError) {
+      setError(
+        persistError instanceof Error
+          ? persistError.message
+          : "ยังไม่สามารถบันทึกลิงก์ไฟล์ภายนอกได้",
+      );
+    }
+  }
+
+  async function saveExternalFileUrl() {
+    const trimmed = externalFileUrlDraft.trim();
+    const issue = getExternalFileUrlIssue(trimmed);
+    setExternalFileUrlIssue(issue);
+
+    if (!trimmed) {
+      await persistExternalFileUrl("");
+      setIsEditingExternalFileUrl(true);
+      return;
+    }
+
+    if (issue) {
+      setIsEditingExternalFileUrl(true);
+      return;
+    }
+
+    await persistExternalFileUrl(trimmed);
+    setExternalFileUrlDraft(trimmed);
+    setIsEditingExternalFileUrl(false);
+  }
+
+  async function clearExternalFileUrl() {
+    setExternalFileUrlDraft("");
+    setExternalFileUrlIssue(null);
+    setIsEditingExternalFileUrl(true);
+    await persistExternalFileUrl("");
+  }
+
   async function ensureDraftResourceId() {
     if (form.id) {
       return form.id;
@@ -228,7 +476,9 @@ export function CreatorResourceForm({
 
     const resourceId = json.id as string;
     setForm((prev) => ({ ...prev, id: resourceId }));
-    await persistCurrentFormToResource(resourceId);
+    if (canPersistDraftSnapshot) {
+      await persistCurrentFormToResource(resourceId);
+    }
     return resourceId;
   }
 
@@ -254,35 +504,12 @@ export function CreatorResourceForm({
       : null;
   }
 
-  async function handleCoverUpload(file: File) {
-    setImageUploading(true);
-    setImageUploadError(null);
-
-    try {
-      const url = await uploadImageFile(file);
-      if (!url) return;
-
-      const nextPreviewUrls = [url, ...previewUrls.filter((item) => item !== url)];
-      setForm((prev) => ({ ...prev, thumbnailUrl: url }));
-      setPreviewUrls(nextPreviewUrls);
-      setFieldErrors((prev) => {
-        const next = { ...prev };
-        delete next.previewUrls;
-        return next;
-      });
-
-      const resourceId = form.id ?? (mode === "create" ? await ensureDraftResourceId() : undefined);
-      if (resourceId) {
-        await persistCurrentFormToResource(resourceId, {
-          previewUrls: nextPreviewUrls,
-        });
-      }
-    } finally {
-      setImageUploading(false);
-    }
-  }
-
-  async function handlePreviewImagesUpload(files: File[]) {
+  async function handlePreviewImagesUpload(
+    files: File[],
+    options?: {
+      insertAtStart?: boolean;
+    },
+  ) {
     setImageUploading(true);
     setImageUploadError(null);
 
@@ -297,12 +524,10 @@ export function CreatorResourceForm({
       }
 
       if (uploaded.length > 0) {
-        const nextPreviewUrls = [...previewUrls.filter(Boolean), ...uploaded];
+        const nextPreviewUrls = options?.insertAtStart
+          ? dedupeImageUrls([...uploaded, ...previewUrls.filter(Boolean)])
+          : dedupeImageUrls([...previewUrls.filter(Boolean), ...uploaded]);
         setPreviewUrls(nextPreviewUrls);
-        setForm((prev) => ({
-          ...prev,
-          thumbnailUrl: prev.thumbnailUrl || previewUrls[0] || uploaded[0] || "",
-        }));
         setFieldErrors((prev) => {
           const next = { ...prev };
           delete next.previewUrls;
@@ -310,7 +535,7 @@ export function CreatorResourceForm({
         });
 
         const resourceId = form.id ?? (mode === "create" ? await ensureDraftResourceId() : undefined);
-        if (resourceId) {
+        if (resourceId && canPersistDraftSnapshot) {
           await persistCurrentFormToResource(resourceId, {
             previewUrls: nextPreviewUrls,
           });
@@ -346,20 +571,11 @@ export function CreatorResourceForm({
 
   async function handleRemovePreviewAtIndex(index: number) {
     const nextPreviewUrls = previewUrls.filter((_, currentIndex) => currentIndex !== index);
-    const removedUrl = previewUrls[index];
 
     setPreviewUrls(nextPreviewUrls);
-    setForm((prev) => ({
-      ...prev,
-      thumbnailUrl:
-        nextPreviewUrls.length === 0
-          ? ""
-          : prev.thumbnailUrl === removedUrl
-            ? nextPreviewUrls[0]
-            : prev.thumbnailUrl,
-    }));
 
     if (form.id) {
+      if (!canPersistDraftSnapshot) return;
       await persistCurrentFormToResource(form.id, {
         previewUrls: nextPreviewUrls,
       });
@@ -372,9 +588,9 @@ export function CreatorResourceForm({
     nextPreviewUrls.unshift(selected);
 
     setPreviewUrls(nextPreviewUrls);
-    setForm((prev) => ({ ...prev, thumbnailUrl: selected }));
 
     if (form.id) {
+      if (!canPersistDraftSnapshot) return;
       await persistCurrentFormToResource(form.id, {
         previewUrls: nextPreviewUrls,
       });
@@ -385,6 +601,7 @@ export function CreatorResourceForm({
     setPreviewUrls(nextPreviewUrls);
 
     if (form.id) {
+      if (!canPersistDraftSnapshot) return;
       await persistCurrentFormToResource(form.id, {
         previewUrls: nextPreviewUrls,
       });
@@ -435,7 +652,7 @@ export function CreatorResourceForm({
         setPublishedSlug((json.data?.slug as string) ?? null);
         setPublishSuccess(true);
       } else {
-        router.push(routes.creatorResources);
+        router.push(routes.dashboardV2CreatorResources);
         router.refresh();
       }
     } catch (submitError) {
@@ -456,9 +673,9 @@ export function CreatorResourceForm({
   const isCreateMode = mode === "create";
 
   // The live preview thumbnail uses the dedicated thumbnailUrl input first,
-  // then falls back to previewUrls[0] — the same image the backend saves to
-  // resource.previewUrl and displays in the marketplace.
-  const previewThumbnail = form.thumbnailUrl || previewUrls[0] || null;
+  // now driven by the merged image set. thumbnailUrl stays synced for
+  // compatibility with downstream preview consumers that still read it.
+  const previewThumbnail = previewUrls[0] || form.thumbnailUrl || null;
   const aiDraftResourceSeed = useMemo<CreatorAIDraftResourceSeed>(
     () => ({
       title: form.title,
@@ -517,7 +734,7 @@ export function CreatorResourceForm({
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
 
       {/* ── Left column: all form sections ───────────────────────────────── */}
-      <div className={isCreateMode ? "space-y-6 pb-24" : "space-y-8"}>
+      <div className={isCreateMode ? "space-y-6" : "space-y-8"}>
 
       <CreatorAIDraftGenerator
         mode={mode}
@@ -552,10 +769,11 @@ export function CreatorResourceForm({
             ref={titleRef}
             className={`space-y-1.5 rounded-xl p-1 -m-1 transition-all duration-300${highlightedField === "title" ? " ring-2 ring-inset ring-indigo-400/60 bg-indigo-50/60" : ""}`}
           >
-            <label className="text-sm font-medium text-foreground">
+            <label htmlFor={titleInputId} className="text-sm font-medium text-foreground">
               Title <span className="text-red-500">*</span>
             </label>
             <Input
+              id={titleInputId}
               name="title"
               value={form.title}
               onChange={handleChange}
@@ -574,11 +792,12 @@ export function CreatorResourceForm({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">
+            <label htmlFor={slugInputId} className="text-sm font-medium text-foreground">
               Slug{" "}
               <span className="ml-1 text-xs font-normal text-muted-foreground">(auto-generated if left blank)</span>
             </label>
             <Input
+              id={slugInputId}
               name="slug"
               value={form.slug}
               onChange={handleChange}
@@ -591,10 +810,11 @@ export function CreatorResourceForm({
             ref={descriptionRef}
             className={`space-y-1.5 rounded-xl p-1 -m-1 transition-all duration-300${highlightedField === "description" ? " ring-2 ring-inset ring-indigo-400/60 bg-indigo-50/60" : ""}`}
           >
-            <label className="text-sm font-medium text-foreground">
+            <label htmlFor={descriptionInputId} className="text-sm font-medium text-foreground">
               Description <span className="text-red-500">*</span>
             </label>
             <Textarea
+              id={descriptionInputId}
               name="description"
               value={form.description}
               onChange={handleChange}
@@ -630,8 +850,9 @@ export function CreatorResourceForm({
           {/* Hide status select in create mode — sticky bar handles intent */}
           {!isCreateMode && (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Status</label>
+              <label htmlFor={statusSelectId} className="text-sm font-medium text-foreground">Status</label>
               <Select
+                id={statusSelectId}
                 name="status"
                 value={form.status}
                 onChange={handleChange}
@@ -645,8 +866,9 @@ export function CreatorResourceForm({
           )}
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Type</label>
+            <label htmlFor={typeSelectId} className="text-sm font-medium text-foreground">Type</label>
             <Select
+              id={typeSelectId}
               name="type"
               value={form.type}
               onChange={handleChange}
@@ -658,8 +880,9 @@ export function CreatorResourceForm({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Category</label>
+            <label htmlFor={categorySelectId} className="text-sm font-medium text-foreground">Category</label>
             <Select
+              id={categorySelectId}
               name="categoryId"
               value={form.categoryId}
               onChange={handleChange}
@@ -678,8 +901,9 @@ export function CreatorResourceForm({
             ref={priceRef}
             className={`space-y-1.5 rounded-xl p-1 -m-1 transition-all duration-300${highlightedField === "price" ? " ring-2 ring-inset ring-indigo-400/60 bg-indigo-50/60" : ""}`}
           >
-            <label className="text-sm font-medium text-foreground">Price (THB)</label>
+            <label htmlFor={priceInputId} className="text-sm font-medium text-foreground">Price (THB)</label>
             <Input
+              id={priceInputId}
               name="price"
               type="number"
               min="0"
@@ -696,8 +920,9 @@ export function CreatorResourceForm({
           </div>
         </div>
 
-        <label className="mt-4 flex items-center gap-2 text-sm text-foreground">
+        <label htmlFor={isFreeInputId} className="mt-4 flex items-center gap-2 text-sm text-foreground">
           <input
+            id={isFreeInputId}
             name="isFree"
             type="checkbox"
             checked={form.isFree}
@@ -710,119 +935,42 @@ export function CreatorResourceForm({
 
       {/* ── Section 3: Delivery and previews ─────────────────────────────── */}
       <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <div className="mb-5 flex items-center gap-2">
-          {isCreateMode && (
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-600">
-              3
-            </span>
-          )}
-          <h2 className="text-lg font-semibold text-foreground">Delivery and previews</h2>
+        <div className="mb-5 space-y-2">
+          <div className="flex items-center gap-2">
+            {isCreateMode && (
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-600">
+                3
+              </span>
+            )}
+            <h2 className="text-lg font-semibold text-foreground">Delivery and previews</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Set the buyer file, cover image, and preview gallery in one section.
+          </p>
         </div>
 
-        <div className="grid gap-5">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">
-              รูปปก (Cover){" "}
-              <span className="ml-1 text-xs font-normal text-muted-foreground">(แนะนำ)</span>
-            </label>
-            <div className="space-y-3 rounded-xl border border-border bg-muted p-4">
-              <p className="text-xs text-muted-foreground">
-                รูปแรกจะถูกใช้เป็นภาพหน้าปกของ resource ใน marketplace
-              </p>
-              <input
-                id="creator-cover-upload"
-                type="file"
-                accept="image/*"
-                className="block w-full rounded-xl border border-dashed border-blue-300 bg-background px-3 py-2.5 text-sm text-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700"
-                disabled={imageUploading}
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) {
-                    void handleCoverUpload(file);
-                  }
-                  event.target.value = "";
-                }}
-              />
-              <Input
-                name="thumbnailUrl"
-                value={form.thumbnailUrl ?? ""}
-                onChange={handleChange}
-                placeholder="หรือวาง URL ของรูปปก"
-                hint="แนะนำขนาด 1280×720 หรืออัตราส่วน 16:9"
-              />
+        <div className="space-y-5">
+          <div className="rounded-xl border border-border bg-muted p-4 sm:p-5">
+            <div className="mb-4 flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background/80 text-brand-600">
+                <ImagePlus className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">Images</p>
+                <p className="text-sm text-muted-foreground">
+                  Upload the cover first, then add extra previews or external image links.
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div
-            ref={fileRef}
-            className={`space-y-1.5 rounded-xl p-1 -m-1 transition-all duration-300${highlightedField === "file" ? " ring-2 ring-inset ring-indigo-400/60 bg-indigo-50/60" : ""}`}
-          >
-            <label className="text-sm font-medium text-foreground">ไฟล์สำหรับผู้ซื้อดาวน์โหลด</label>
-            <div className="space-y-4 rounded-xl border border-border bg-muted p-4">
-              <FileUploadWidget
-                resourceId={form.id}
-                initialFileName={form.fileName ?? null}
-                initialFileSize={form.fileSize ?? null}
-                uploadEndpoint="/api/creator/resources/upload"
-                onEnsureResourceId={ensureDraftResourceId}
-                onUploadComplete={(payload) => {
-                  setForm((prev) => ({
-                    ...prev,
-                    id: prev.id,
-                    fileUrl: "",
-                    fileKey: payload.fileKey ?? "",
-                    fileName: payload.fileName ?? "",
-                    fileSize: payload.fileSize ?? null,
-                  }));
-                  setFieldErrors((prev) => {
-                    const next = { ...prev };
-                    delete next.fileUrl;
-                    return next;
-                  });
-                }}
-                onRemoveCurrentFile={async () => {
-                  try {
-                    await handleRemoveUploadedFile();
-                  } catch (removeError) {
-                    setError(
-                      removeError instanceof Error ? removeError.message : "ลบไฟล์ไม่สำเร็จ",
-                    );
-                  }
-                }}
-                copy={{
-                  saveFirstError: "ยังไม่สามารถสร้างฉบับร่างเพื่ออัปโหลดไฟล์ได้",
-                  dragAndDrop: "ลากไฟล์มาวาง หรือคลิกเพื่อเลือกไฟล์",
-                  formats: "PDF, DOCX, XLSX, ZIP หรือรูปภาพ สูงสุด 50 MB",
-                  maxSize: "ขนาดไฟล์สูงสุด 50 MB",
-                  replaceFile: "เปลี่ยนไฟล์",
-                  uploading: "กำลังอัปโหลด…",
-                  uploadFile: "อัปโหลดไฟล์",
-                  uploadSuccess: "อัปโหลดไฟล์เรียบร้อยแล้ว",
-                  removeFileAriaLabel: "ลบไฟล์",
-                  removeSelectedFileAriaLabel: "ลบไฟล์ที่เลือก",
-                }}
-              />
-
-              <Input
-                name="fileUrl"
-                value={form.fileUrl}
-                onChange={handleChange}
-                placeholder="หรือวาง URL ไฟล์ภายนอก เช่น https://example.com/worksheet.pdf"
-                hint="ถ้าไฟล์ถูกโฮสต์ไว้ภายนอกอยู่แล้ว สามารถวางลิงก์ตรงได้"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">รูปภาพพรีวิว</label>
-            <div className="space-y-4 rounded-xl border border-border bg-muted p-4">
+            <div className="space-y-3">
               <LazyImageDropzone
                 rootTestId="preview-image-uploader"
                 disabled={imageUploading}
                 onFilesAccepted={(files) => {
                   void handlePreviewImagesUpload(files);
                 }}
-                helpText="ลากรูปภาพมาวาง หรือคลิกเพื่อเพิ่มรูปพรีวิว"
+                helpText="ลากรูปภาพมาวาง หรือคลิกเพื่อเพิ่ม cover และ preview"
               />
               <PreviewImageSortableList
                 images={previewUrls}
@@ -836,13 +984,144 @@ export function CreatorResourceForm({
                   void handleSetPreviewAsCover(index);
                 }}
               />
-              <Textarea
-                value={previewInput}
-                onChange={(event) => setPreviewInput(event.target.value)}
-                rows={isFirstResource ? 4 : 5}
-                placeholder={"/uploads/preview-cover.webp\nhttps://example.com/preview-2.webp"}
-                hint="หรือวาง URL รูปภาพทีละบรรทัด รูปแรกจะถูกใช้เป็นหน้าปก"
-              />
+              <div className="rounded-xl border border-border bg-background/70 p-3">
+                <div className="flex flex-col gap-3 border-b border-border pb-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Image links</p>
+                    <p className="text-xs text-muted-foreground">
+                      Use links when some images are hosted outside Krukraft.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setBulkPreviewOpen((prev) => !prev)}
+                    >
+                      {bulkPreviewOpen ? "Hide list" : "Paste list"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      leftIcon={<Plus className="h-4 w-4" />}
+                      onClick={addPreviewUrlDraftRow}
+                    >
+                      Add one
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-3">
+                  {previewUrlDrafts.length > 0 ? (
+                    previewUrlDrafts.map((url, index) => (
+                      <div
+                        key={`preview-url-${index}`}
+                        className="rounded-xl border border-border bg-background px-4 py-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1.5">
+                            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
+                              <span className="inline-flex h-7 items-center rounded-full border border-border bg-muted px-2.5 text-[11px] text-foreground">
+                                {index === 0 ? "Cover" : `Preview ${index + 1}`}
+                              </span>
+                              <span>
+                                {index === 0 ? "Shown in marketplace cards" : "Shown in preview gallery"}
+                              </span>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 shrink-0 self-start"
+                            onClick={() => removePreviewUrlDraft(index)}
+                            aria-label={`Remove image URL ${index + 1}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="mt-3">
+                          <Input
+                            id={`${previewUrlDraftPrefix}-${index}`}
+                            value={url}
+                            onChange={(event) => updatePreviewUrlDraft(index, event.target.value)}
+                            onBlur={() => commitPreviewUrlDraft(index)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                                commitPreviewUrlDraft(index);
+                              }
+                            }}
+                            leftAdornment={<Link2 className="h-4 w-4" />}
+                            placeholder={
+                              index === 0
+                                ? "Paste the cover image URL"
+                                : "Paste an additional preview image URL"
+                            }
+                            error={getPreviewImageUrlIssue(url) ?? undefined}
+                            hint={
+                              getPreviewImageUrlIssue(url)
+                                ? undefined
+                                : index === 0
+                                  ? "The first image is used as the cover."
+                                  : "Additional images appear in the preview gallery."
+                            }
+                          />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-border bg-background px-4 py-5">
+                      <div className="flex items-start gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-card text-brand-600">
+                          <ImagePlus className="h-5 w-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-foreground">No linked images yet</p>
+                          <p className="text-xs text-muted-foreground">
+                            Add a cover link or preview link only if the image is hosted elsewhere.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {bulkPreviewOpen ? (
+                    <div className="rounded-xl border border-border bg-background px-3 py-3">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">Paste image links</p>
+                          <p className="text-xs text-muted-foreground">
+                            Add one link per line. The first valid link becomes the cover.
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={applyBulkPreviewUrls}
+                          disabled={!bulkPreviewInput.trim()}
+                        >
+                          Apply URLs
+                        </Button>
+                      </div>
+                      <Textarea
+                        id={bulkPreviewTextareaId}
+                        value={bulkPreviewInput}
+                        onChange={(event) => {
+                          setBulkPreviewInput(event.target.value);
+                          setPreviewUrlError(null);
+                        }}
+                        rows={isFirstResource ? 4 : 5}
+                        placeholder={"/uploads/cover.webp\nhttps://example.com/preview-2.webp"}
+                        error={previewUrlError ?? undefined}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
               {imageUploadError && (
                 <p className="text-xs text-red-600">{imageUploadError}</p>
               )}
@@ -850,6 +1129,271 @@ export function CreatorResourceForm({
             {fieldErrors.previewUrls && (
               <p className="text-xs text-red-600">{fieldErrors.previewUrls}</p>
             )}
+          </div>
+
+          <div
+            ref={fileRef}
+            className={`space-y-1.5 rounded-xl p-1 -m-1 transition-all duration-300${highlightedField === "file" ? " ring-2 ring-inset ring-indigo-400/60 bg-indigo-50/60" : ""}`}
+          >
+            <div className="rounded-xl border border-border bg-muted p-4 sm:p-5">
+              <div className="mb-4 flex items-start gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background/80 text-brand-600">
+                  <Link2 className="h-5 w-5" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground">Buyer file</p>
+                  <p className="text-sm text-muted-foreground">
+                    Choose how buyers receive the final file after checkout.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-xl border border-border bg-background/70 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Delivery method</p>
+                      <p className="text-xs text-muted-foreground">
+                        Pick one source and keep it active.
+                      </p>
+                    </div>
+                    <div className="inline-flex rounded-xl border border-border bg-background p-1">
+                      <button
+                        type="button"
+                        onClick={() => setDeliverySource("upload")}
+                        className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                          deliverySource === "upload"
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Upload file
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeliverySource("external")}
+                        className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                          deliverySource === "external"
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Use link
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {deliverySource === "upload" ? (
+                  <div className="space-y-3">
+                    <FileUploadWidget
+                      resourceId={form.id}
+                    initialFileName={form.fileName ?? null}
+                    initialFileSize={form.fileSize ?? null}
+                    uploadEndpoint="/api/creator/resources/upload"
+                    onEnsureResourceId={ensureDraftResourceId}
+                    onUploadComplete={(payload) => {
+                      setDeliverySource("upload");
+                      setExternalFileUrlDraft("");
+                      setExternalFileUrlIssue(null);
+                      setIsEditingExternalFileUrl(true);
+                      setForm((prev) => ({
+                        ...prev,
+                        id: prev.id || payload.resourceId,
+                        fileUrl: "",
+                        fileKey: payload.fileKey ?? "",
+                        fileName: payload.fileName ?? "",
+                        fileSize: payload.fileSize ?? null,
+                      }));
+                      setFieldErrors((prev) => {
+                        const next = { ...prev };
+                        delete next.fileUrl;
+                        return next;
+                      });
+                    }}
+                    onRemoveCurrentFile={async () => {
+                      try {
+                        await handleRemoveUploadedFile();
+                      } catch (removeError) {
+                        setError(
+                          removeError instanceof Error ? removeError.message : "ลบไฟล์ไม่สำเร็จ",
+                        );
+                      }
+                    }}
+                    copy={{
+                      saveFirstError: "ยังไม่สามารถสร้างฉบับร่างเพื่ออัปโหลดไฟล์ได้",
+                      dragAndDrop: "ลากไฟล์มาวาง หรือคลิกเพื่อเลือกไฟล์",
+                      formats: "PDF, DOCX, XLSX, ZIP หรือรูปภาพ สูงสุด 50 MB",
+                      maxSize: "ขนาดไฟล์สูงสุด 50 MB",
+                      replaceFile: "เปลี่ยนไฟล์",
+                      uploading: "กำลังอัปโหลด…",
+                      uploadFile: "อัปโหลดไฟล์",
+                      uploadSuccess: "อัปโหลดไฟล์เรียบร้อยแล้ว",
+                      removeFileAriaLabel: "ลบไฟล์",
+                      removeSelectedFileAriaLabel: "ลบไฟล์ที่เลือก",
+                    }}
+                  />
+                  {form.fileUrl && !hasUploadedFile ? (
+                    <div className="rounded-xl border border-dashed border-border bg-background/50 px-4 py-3.5">
+                      <p className="text-sm font-medium text-foreground">An external link is saved</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Uploading a file here will replace the current external URL as the active delivery source.
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+                ) : (
+                  <div className="space-y-4 border-t border-border/80 pt-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">External file link</p>
+                        <p className="text-xs text-muted-foreground">
+                          Use this only when the buyer file is hosted outside Krukraft.
+                        </p>
+                      </div>
+                      {form.fileUrl && !isEditingExternalFileUrl ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={<Trash2 className="h-4 w-4" />}
+                          onClick={() => {
+                            void clearExternalFileUrl();
+                          }}
+                        >
+                          Clear link
+                        </Button>
+                      ) : null}
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {hasUploadedFile ? (
+                        <div className="rounded-xl border border-dashed border-border bg-background/50 px-4 py-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="space-y-1">
+                              <p className="text-sm font-medium text-foreground">Uploaded file is still active</p>
+                              <p className="text-xs text-muted-foreground">
+                                Remove the uploaded file first if you want buyers to use an external URL instead.
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await handleRemoveUploadedFile();
+                                } catch (removeError) {
+                                  setError(
+                                    removeError instanceof Error
+                                      ? removeError.message
+                                      : "ลบไฟล์ไม่สำเร็จ",
+                                  );
+                                }
+                              }}
+                            >
+                              Remove uploaded file
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {isEditingExternalFileUrl || !form.fileUrl ? (
+                            <div className="rounded-xl border border-border bg-background px-4 py-4">
+                              <div className="space-y-1.5">
+                                <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
+                                  <span className="inline-flex h-7 items-center rounded-full border border-border bg-muted px-2.5 text-[11px] text-foreground">
+                                    External
+                                  </span>
+                                  <span>Direct download link for the buyer file</span>
+                                </div>
+                                <Input
+                                  id={externalFileUrlInputId}
+                                  name="externalFileUrl"
+                                  value={externalFileUrlDraft}
+                                  onChange={(event) => {
+                                    const nextValue = event.target.value;
+                                    setExternalFileUrlDraft(nextValue);
+                                    setExternalFileUrlIssue(getExternalFileUrlIssue(nextValue));
+                                  }}
+                                  onBlur={() => {
+                                    void saveExternalFileUrl();
+                                  }}
+                                  onKeyDown={(event) => {
+                                    if (event.key === "Enter") {
+                                      event.preventDefault();
+                                      void saveExternalFileUrl();
+                                    }
+                                  }}
+                                  className="mt-3"
+                                  leftAdornment={<Link2 className="h-4 w-4" />}
+                                  placeholder="Paste an external file URL, e.g. https://example.com/worksheet.pdf"
+                                  error={externalFileUrlIssue ?? fieldErrors.fileUrl}
+                                />
+                                {!externalFileUrlIssue && !fieldErrors.fileUrl ? (
+                                  <p className="text-xs text-muted-foreground">
+                                    Use one direct download link. Press Enter or click away to save.
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
+                          ) : externalFileSummary ? (
+                            <div className="rounded-xl border border-border bg-background px-4 py-4">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0 flex items-start gap-3">
+                                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground">
+                                    <Link2 className="h-4 w-4" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="inline-flex h-7 items-center rounded-full border border-border bg-muted px-2.5 text-[11px] font-medium text-foreground">
+                                        External
+                                      </span>
+                                      <p className="truncate text-sm font-medium text-foreground">
+                                        {externalFileSummary.host}
+                                      </p>
+                                    </div>
+                                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                                      {externalFileSummary.path}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setExternalFileUrlDraft(form.fileUrl);
+                                      setExternalFileUrlIssue(null);
+                                      setIsEditingExternalFileUrl(true);
+                                    }}
+                                  >
+                                    Edit
+                                  </Button>
+                                  <Button type="button" variant="secondary" size="sm" asChild>
+                                    <a href={form.fileUrl} target="_blank" rel="noreferrer">
+                                      Open link
+                                      <ExternalLink className="h-4 w-4" />
+                                    </a>
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="rounded-xl border border-dashed border-border bg-background/40 px-4 py-4">
+                              <p className="text-sm text-muted-foreground">
+                                Add one direct download URL for the buyer file.
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+              )}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -862,35 +1406,48 @@ export function CreatorResourceForm({
         subtle={!isCreateMode}
       />
 
-      {/* ── Edit mode: traditional bottom buttons ────────────────────────── */}
+      {/* ── Edit mode: save actions ──────────────────────────────────────── */}
       {!isCreateMode && (
-        <div className="flex items-center justify-between gap-4">
-          <div>{error && <p className="text-sm text-red-600">{error}</p>}</div>
-          <div className="flex items-center gap-3">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => router.push(routes.creatorResources)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" size="sm" loading={saving}>
-              Save changes
-            </Button>
+        <section
+          aria-label="Resource editing actions"
+          className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm"
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 flex-1">
+              {error ? (
+                <p className="text-sm text-danger-700">{error}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Save changes to update this listing.
+                </p>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push(routes.dashboardV2CreatorResources)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" size="sm" loading={saving}>
+                Save changes
+              </Button>
+            </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* ── Create mode: sticky action bar ───────────────────────────────── */}
+      {/* ── Create mode: publish actions ─────────────────────────────────── */}
       {isCreateMode && (
-        <CreatorStickyActionBar
+        <CreatorPublishActions
           canPublish={canPublish}
           saving={saving}
           error={error}
           onSaveDraft={() => submitWithStatus("DRAFT")}
           onPublish={() => submitWithStatus("PUBLISHED")}
-          onCancel={() => router.push(routes.creatorResources)}
+          onCancel={() => router.push(routes.dashboardV2CreatorResources)}
           onPreview={() => setPreviewOpen(true)}
         />
       )}
@@ -899,7 +1456,7 @@ export function CreatorResourceForm({
 
       {/* ── Right column: sticky preview (desktop only) ───────────────────── */}
       <aside className="hidden lg:block">
-        <div className="sticky top-6">
+        <div className="sticky top-24">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Marketplace preview
           </p>

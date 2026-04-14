@@ -80,7 +80,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
                       Go back &amp; download
                     </Link>
                     <Link
-                      href={routes.library}
+                      href={routes.dashboardV2Library}
                       className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
                     >
                       <Library className="h-4 w-4" />
@@ -93,7 +93,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
                         ?payment=success activates the recovery block on the
                         library page so the buyer can find their purchase. */}
                     <Link
-                      href={routes.libraryPaymentSuccess()}
+                      href={routes.dashboardV2LibraryPaymentSuccess()}
                       className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                     >
                       <Library className="h-4 w-4" />

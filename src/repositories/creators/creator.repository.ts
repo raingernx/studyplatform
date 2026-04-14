@@ -604,10 +604,16 @@ export async function findCreatorManagementTableRowsByUserId(
   userId: string,
   filters?: CreatorResourceFilters,
   sort: CreatorManagementSort = "latest",
+  pagination?: {
+    skip?: number;
+    take?: number;
+  },
 ) {
   return prisma.resource.findMany({
     where: buildCreatorResourceWhere(userId, filters),
     orderBy: buildCreatorManagementOrderBy(sort),
+    skip: pagination?.skip,
+    take: pagination?.take,
     select: {
       id: true,
       title: true,

@@ -252,11 +252,15 @@ export async function findAdminResourcePurchaseSummaries(resourceIds: string[]) 
   });
 }
 
-export async function findCompletedPurchasesByUser(userId: string) {
+export async function findCompletedPurchasesByUser(
+  userId: string,
+  take?: number,
+) {
   return prisma.purchase.findMany({
     where: { userId, status: "COMPLETED" },
     select: PURCHASE_LIST_ITEM_SELECT,
     orderBy: { createdAt: "desc" },
+    ...(take ? { take } : {}),
   });
 }
 
@@ -378,12 +382,33 @@ export async function countDownloadEventsByUserAndResource(
   });
 }
 
-export async function findDownloadHistoryByUser(userId: string) {
+export async function findDownloadHistoryByUser(userId: string, take?: number) {
   return prisma.downloadEvent.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
     select: DOWNLOAD_EVENT_WITH_RESOURCE_SELECT,
+    ...(take ? { take } : {}),
   });
+}
+
+export async function findDownloadHistorySurfaceSummaryByUser(userId: string) {
+  const [total, latest] = await Promise.all([
+    prisma.downloadEvent.count({
+      where: { userId },
+    }),
+    prisma.downloadEvent.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        createdAt: true,
+      },
+    }),
+  ]);
+
+  return {
+    total,
+    latestDownloadedAt: latest?.createdAt ?? null,
+  };
 }
 
 export async function findPurchaseAnalyticsContextByUserAndResource(

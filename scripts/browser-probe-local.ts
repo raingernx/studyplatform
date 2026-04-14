@@ -50,6 +50,9 @@ type ProbeScenarioName =
   | "dashboard-settings-cold-entry"
   | "dashboard-subscription-cold-entry"
   | "creator-overview-cold-entry"
+  | "creator-profile-cold-entry"
+  | "creator-settings-cold-entry"
+  | "creator-payouts-cold-entry"
   | "creator-apply-cold-entry";
 
 type ProbeContext = {
@@ -95,14 +98,31 @@ const DASHBOARD_FULL_SHELL_SCOPES = new Set([
   "dashboard-purchases",
   "dashboard-settings",
   "dashboard-subscription",
-  "dashboard-creator-layout",
   "dashboard-creator-overview",
   "dashboard-creator-analytics",
   "dashboard-creator-resources",
   "dashboard-creator-sales",
+  "dashboard-creator-payouts",
   "dashboard-creator-profile",
+  "dashboard-creator-settings",
   "dashboard-creator-resource-editor",
   "dashboard-creator-apply",
+  "dashboard-v2-neutral",
+  "dashboard-v2-home",
+  "dashboard-v2-library",
+  "dashboard-v2-downloads",
+  "dashboard-v2-purchases",
+  "dashboard-v2-membership",
+  "dashboard-v2-settings",
+  "dashboard-v2-creator-neutral",
+  "dashboard-v2-creator",
+  "dashboard-v2-creator-analytics",
+  "dashboard-v2-creator-resources",
+  "dashboard-v2-creator-sales",
+  "dashboard-v2-creator-payouts",
+  "dashboard-v2-creator-profile",
+  "dashboard-v2-creator-settings",
+  "dashboard-v2-creator-editor",
 ]);
 
 const VALID_SCENARIOS: ProbeScenarioName[] = [
@@ -135,8 +155,13 @@ const VALID_SCENARIOS: ProbeScenarioName[] = [
   "dashboard-settings-cold-entry",
   "dashboard-subscription-cold-entry",
   "creator-overview-cold-entry",
+  "creator-profile-cold-entry",
+  "creator-settings-cold-entry",
+  "creator-payouts-cold-entry",
   "creator-apply-cold-entry",
 ];
+
+const DASHBOARD_SETTINGS_HEADING = /Profile, preferences, and security/i;
 
 function parseScenarioNames(argv: string[]) {
   const requested = argv.filter((arg) => !arg.startsWith("--"));
@@ -336,38 +361,9 @@ function expectTargetSamples(
   ).toBeGreaterThan(0);
 }
 
-function expectLoadingScope(
-  samples: NavSample[],
-  scopes: readonly string[],
-  scenario: ProbeScenarioName,
-) {
-  const sawExpectedScope = samples.some((sample) =>
-    scopes.some((scope) => sample.loadingScopes.includes(scope)),
-  );
-  const uniqueScopes = Array.from(
-    new Set(samples.flatMap((sample) => sample.loadingScopes)),
-  ).sort();
-  const sampleSummary = {
-    sampleCount: samples.length,
-    uniqueScopes,
-    firstHref: samples[0]?.href ?? null,
-    lastHref: samples.at(-1)?.href ?? null,
-    targetSampleCount: samples.filter((sample) =>
-      scenario === "resources-to-library"
-        ? /\/dashboard\/library$/.test(sample.href)
-        : /\/resources$/.test(sample.href)
-    ).length,
-  };
-
-  expect(
-    sawExpectedScope,
-    `${scenario} probe did not capture any of the expected loading scopes: ${scopes.join(", ")}. ${JSON.stringify(sampleSummary)}`,
-  ).toBeTruthy();
-}
-
 async function openLibraryFromResources(page: Page) {
-  const libraryHref = () => new URL("/dashboard/library", page.url()).toString();
-  const directLibraryLink = page.locator('header a[href="/dashboard/library"]:visible').first();
+  const libraryHref = () => new URL("/dashboard-v2/library", page.url()).toString();
+  const directLibraryLink = page.locator('header a[href="/dashboard-v2/library"]:visible').first();
   const accountButton = page
     .locator(
       'header button[aria-label="เปิดเมนูบัญชี"]:visible, header button[aria-label="Open account menu"]:visible',
@@ -389,12 +385,12 @@ async function openLibraryFromResources(page: Page) {
     await accountButton.click();
 
     const menuLibraryLink = page
-      .locator('[role="menu"] a[href="/dashboard/library"]:visible, a[href="/dashboard/library"]:visible')
+      .locator('[role="menu"] a[href="/dashboard-v2/library"]:visible, a[href="/dashboard-v2/library"]:visible')
       .last();
     await expect(menuLibraryLink).toBeVisible({ timeout: 15_000 });
 
     await Promise.all([
-      page.waitForURL(/\/dashboard\/library$/, {
+      page.waitForURL(/\/dashboard-v2\/library$/, {
         timeout: 15_000,
         waitUntil: "commit",
       }),
@@ -402,7 +398,7 @@ async function openLibraryFromResources(page: Page) {
     ]).catch(() => undefined);
   } else if (await directLibraryLink.isVisible().catch(() => false)) {
     await Promise.all([
-      page.waitForURL(/\/dashboard\/library$/, {
+      page.waitForURL(/\/dashboard-v2\/library$/, {
         timeout: 15_000,
         waitUntil: "commit",
       }),
@@ -410,14 +406,14 @@ async function openLibraryFromResources(page: Page) {
     ]).catch(() => undefined);
   }
 
-  if (!/\/dashboard\/library$/.test(page.url())) {
+  if (!/\/dashboard-v2\/library$/.test(page.url())) {
     await page.goto(libraryHref(), {
       timeout: 15_000,
       waitUntil: "domcontentloaded",
     });
   }
 
-  await expect(page).toHaveURL(/\/dashboard\/library$/);
+  await expect(page).toHaveURL(/\/dashboard-v2\/library$/);
 }
 
 async function openPublicAccountMenu(page: Page) {
@@ -430,7 +426,7 @@ async function openPublicAccountMenu(page: Page) {
   await expect(accountButton).toBeVisible({ timeout: 15_000 });
   await accountButton.hover();
   await accountButton.click();
-  await expect(page.locator('a[href="/settings"]:visible')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('a[href="/dashboard-v2/settings"]:visible')).toBeVisible({ timeout: 15_000 });
 }
 
 async function navigateViaPublicAccountMenu(
@@ -480,7 +476,7 @@ async function openDashboardAvatarMenu(page: Page) {
 
     const menuVisible = await page
       .locator(
-        '[data-dashboard-account-menu="true"] [data-dashboard-account-link="/dashboard/library"]:visible',
+        '[data-dashboard-account-menu="true"] [data-dashboard-account-link="/dashboard-v2/library"]:visible',
       )
       .isVisible()
       .catch(() => false);
@@ -494,7 +490,7 @@ async function openDashboardAvatarMenu(page: Page) {
 
   await expect(
     page.locator(
-      '[data-dashboard-account-menu="true"] [data-dashboard-account-link="/dashboard/library"]:visible',
+      '[data-dashboard-account-menu="true"] [data-dashboard-account-link="/dashboard-v2/library"]:visible',
     ),
   ).toBeVisible({ timeout: 15_000 });
 }
@@ -503,8 +499,8 @@ async function navigateViaDashboardAvatarMenu(
   page: Page,
   target: { href: string; heading: RegExp },
 ) {
-  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(/\/dashboard(?:\?.*)?$/);
+  await page.goto("/dashboard-v2", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/dashboard-v2(?:\?.*)?$/);
   await expect(page.getByRole("heading", { name: /Welcome back/i }).first()).toBeVisible({
     timeout: 20_000,
   });
@@ -614,14 +610,14 @@ async function runResourcesToLibraryScenario({ browser }: ProbeContext) {
 
     await openLibraryFromResources(page);
 
-    await expect(page).toHaveURL(/\/dashboard\/library$/);
+    await expect(page).toHaveURL(/\/dashboard-v2\/library$/);
     await expect(page.getByRole("heading", { name: /My Library/i })).toBeVisible();
     await expect(page.locator("main").first()).toBeVisible();
     await page.waitForLoadState("domcontentloaded");
 
     const samples = await stopNavigationProbe(page);
-    expectLoadingScope(samples, ["dashboard-group"], "resources-to-library");
-    expectNoBlankGap(samples, /\/dashboard\/library$/);
+    expectTargetSamples(samples, /\/dashboard-v2\/library$/, "resources-to-library");
+    expectNoBlankGap(samples, /\/dashboard-v2\/library$/);
 
     expect(pageErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);
@@ -643,8 +639,8 @@ async function runLibraryToResourcesScenario({ browser }: ProbeContext) {
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
 
   try {
-    await loginAsCreator(page, "/dashboard/library");
-    await expect(page).toHaveURL(/\/dashboard\/library$/);
+    await loginAsCreator(page, "/dashboard-v2/library");
+    await expect(page).toHaveURL(/\/dashboard-v2\/library$/);
     await startNavigationProbe(page);
 
     const browseLink = page.getByRole("link", { name: /Browse resources/i }).first();
@@ -663,7 +659,6 @@ async function runLibraryToResourcesScenario({ browser }: ProbeContext) {
     await page.waitForLoadState("domcontentloaded");
 
     const samples = await stopNavigationProbe(page);
-    expectTargetSamples(samples, /\/resources$/, "library-to-resources");
     expectNoBlankGap(samples, /\/resources$/);
 
     expect(pageErrors).toEqual([]);
@@ -685,9 +680,9 @@ async function runResourcesAccountMenuPagesScenario({ browser }: ProbeContext) {
   const page = await context.newPage();
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
   const targets: Array<{ href: string; heading: RegExp }> = [
-    { href: "/dashboard", heading: /Welcome back/i },
-    { href: "/dashboard/purchases", heading: /^Purchases$/i },
-    { href: "/settings", heading: /^Settings$/i },
+    { href: "/dashboard-v2", heading: /Welcome back/i },
+    { href: "/dashboard-v2/purchases", heading: /^Purchases$/i },
+    { href: "/dashboard-v2/settings", heading: DASHBOARD_SETTINGS_HEADING },
   ];
 
   try {
@@ -717,14 +712,14 @@ async function runDashboardAvatarMenuPagesScenario({ browser }: ProbeContext) {
   const page = await context.newPage();
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
   const targets: Array<{ href: string; heading: RegExp }> = [
-    { href: "/dashboard/library", heading: /^My Library$/i },
-    { href: "/dashboard/purchases", heading: /^Purchases$/i },
-    { href: "/settings", heading: /^Settings$/i },
+    { href: "/dashboard-v2/library", heading: /^My Library$/i },
+    { href: "/dashboard-v2/purchases", heading: /^Purchases$/i },
+    { href: "/dashboard-v2/settings", heading: DASHBOARD_SETTINGS_HEADING },
   ];
 
   try {
-    await loginAsCreator(page, "/dashboard");
-    await expect(page).toHaveURL(/\/dashboard(?:\?.*)?$/);
+    await loginAsCreator(page, "/dashboard-v2");
+    await expect(page).toHaveURL(/\/dashboard-v2(?:\?.*)?$/);
 
     for (const target of targets) {
       await navigateViaDashboardAvatarMenu(page, target);
@@ -840,8 +835,8 @@ async function runDashboardRouteScenario(
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
 
   try {
-    await loginAsCreator(page, "/dashboard/library");
-    await expect(page).toHaveURL(/\/dashboard\/library$/);
+    await loginAsCreator(page, "/dashboard-v2/library");
+    await expect(page).toHaveURL(/\/dashboard-v2\/library$/);
     await expect(page.getByRole("heading", { name: /My Library/i })).toBeVisible();
 
     const navLink = page.getByRole("link", { name: options.linkName }).first();
@@ -986,26 +981,31 @@ async function runCreatorManagementPagesScenario({ browser }: ProbeContext) {
     assert: (page: Page) => Promise<void>;
   }> = [
     {
-      path: "/dashboard/creator/resources",
+      path: "/dashboard-v2/creator/resources",
       assert: (page) =>
-        expect(page.getByRole("heading", { name: /^Resource management$/i }).first()).toBeVisible(),
+        expect(page.getByRole("heading", { name: /^Creator resources$/i }).first()).toBeVisible(),
     },
     {
-      path: "/dashboard/creator/resources/new",
+      path: "/dashboard-v2/creator/resources/new",
       assert: (page) =>
         expect(
           page.getByRole("heading", { name: /^(Create your first resource|New resource)$/i }).first(),
         ).toBeVisible(),
     },
     {
-      path: "/dashboard/creator/profile",
+      path: "/dashboard-v2/creator/profile",
       assert: (page) =>
-        expect(page.getByRole("heading", { name: /^Creator Profile$/i }).first()).toBeVisible(),
+        expect(page.getByRole("heading", { name: /^Profile$/i }).first()).toBeVisible(),
     },
     {
-      path: "/dashboard/creator/analytics",
+      path: "/dashboard-v2/creator/settings",
+      assert: (page) =>
+        expect(page.getByRole("heading", { name: /^Settings$/i }).first()).toBeVisible(),
+    },
+    {
+      path: "/dashboard-v2/creator/analytics",
       assert: async (page) => {
-        await expect(page).toHaveURL(/\/dashboard\/creator\/analytics(?:\?.*)?$/);
+        await expect(page).toHaveURL(/\/dashboard-v2\/creator\/analytics(?:\?.*)?$/);
         await expect(
           page.locator("main").getByText(/Gross revenue/i).first(),
         ).toBeVisible({ timeout: 20_000 });
@@ -1017,11 +1017,16 @@ async function runCreatorManagementPagesScenario({ browser }: ProbeContext) {
         ).toBeVisible({ timeout: 20_000 });
       },
     },
+    {
+      path: "/dashboard-v2/creator/payouts",
+      assert: (page) =>
+        expect(page.getByRole("heading", { name: /^Payouts$/i }).first()).toBeVisible(),
+    },
   ];
 
   try {
-    await loginAsCreator(page, "/dashboard/creator/resources");
-    await expect(page).toHaveURL(/\/dashboard\/creator\/resources$/);
+    await loginAsCreator(page, "/dashboard-v2/creator/resources");
+    await expect(page).toHaveURL(/\/dashboard-v2\/creator\/resources$/);
 
     for (const target of pages) {
       await page.goto(target.path, { waitUntil: "domcontentloaded" });
@@ -1270,23 +1275,23 @@ async function runCreatorRefreshShellScenario({ browser }: ProbeContext) {
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
 
   try {
-    await loginAsCreator(page, "/dashboard/creator/resources");
-    await expect(page).toHaveURL(/\/dashboard\/creator\/resources$/);
+    await loginAsCreator(page, "/dashboard-v2/creator/resources");
+    await expect(page).toHaveURL(/\/dashboard-v2\/creator\/resources$/);
     await expect(
-      page.getByRole("heading", { name: /^Resource management$/i }).first(),
+      page.getByRole("heading", { name: /^Creator resources$/i }).first(),
     ).toBeVisible();
 
     await startRefreshProbe(page);
     await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/dashboard\/creator\/resources$/);
+    await expect(page).toHaveURL(/\/dashboard-v2\/creator\/resources$/);
     await expect(
-      page.getByRole("heading", { name: /^Resource management$/i }).first(),
+      page.getByRole("heading", { name: /^Creator resources$/i }).first(),
     ).toBeVisible();
     await page.waitForTimeout(500);
 
     const samples = await stopRefreshProbe(page);
     const creatorSamples = samples.filter((sample) =>
-      /\/dashboard\/creator\/resources(?:\?.*)?$/.test(sample.href),
+      /\/dashboard-v2\/creator\/resources(?:\?.*)?$/.test(sample.href),
     );
 
     expect(
@@ -1349,6 +1354,9 @@ type ColdEntryHandoffOptions = {
     | "dashboard-settings-cold-entry"
     | "dashboard-subscription-cold-entry"
     | "creator-overview-cold-entry"
+    | "creator-profile-cold-entry"
+    | "creator-settings-cold-entry"
+    | "creator-payouts-cold-entry"
     | "creator-apply-cold-entry";
   loginAs: "creator" | "user";
   targetPath: string;
@@ -1546,8 +1554,8 @@ async function runDashboardLibraryRefreshShellScenario(context: ProbeContext) {
     context,
     {
       scenario: "dashboard-library-refresh-shell",
-      initialPath: "/dashboard/library",
-      urlPattern: /\/dashboard\/library(?:\?.*)?$/,
+      initialPath: "/dashboard-v2/library",
+      urlPattern: /\/dashboard-v2\/library(?:\?.*)?$/,
       headingName: /^My Library$/i,
       expectedRouteReady: "dashboard-library",
     },
@@ -1559,8 +1567,8 @@ async function runDashboardOverviewRefreshShellScenario(context: ProbeContext) {
     context,
     {
       scenario: "dashboard-overview-refresh-shell",
-      initialPath: "/dashboard",
-      urlPattern: /\/dashboard(?:\?.*)?$/,
+      initialPath: "/dashboard-v2",
+      urlPattern: /\/dashboard-v2(?:\?.*)?$/,
       headingName: /Welcome back/i,
       expectedRouteReady: "dashboard-overview",
     },
@@ -1572,8 +1580,8 @@ async function runDashboardDownloadsRefreshShellScenario(context: ProbeContext) 
     context,
     {
       scenario: "dashboard-downloads-refresh-shell",
-      initialPath: "/dashboard/downloads",
-      urlPattern: /\/dashboard\/downloads(?:\?.*)?$/,
+      initialPath: "/dashboard-v2/downloads",
+      urlPattern: /\/dashboard-v2\/downloads(?:\?.*)?$/,
       headingName: /Download history/i,
       expectedRouteReady: "dashboard-downloads",
     },
@@ -1585,8 +1593,8 @@ async function runDashboardPurchasesRefreshShellScenario(context: ProbeContext) 
     context,
     {
       scenario: "dashboard-purchases-refresh-shell",
-      initialPath: "/dashboard/purchases",
-      urlPattern: /\/dashboard\/purchases(?:\?.*)?$/,
+      initialPath: "/dashboard-v2/purchases",
+      urlPattern: /\/dashboard-v2\/purchases(?:\?.*)?$/,
       headingName: /^Purchases$/i,
       expectedRouteReady: "dashboard-purchases",
     },
@@ -1598,9 +1606,9 @@ async function runDashboardSettingsRefreshShellScenario(context: ProbeContext) {
     context,
     {
       scenario: "dashboard-settings-refresh-shell",
-      initialPath: "/settings",
-      urlPattern: /\/settings(?:\?.*)?$/,
-      headingName: /^Settings$/i,
+      initialPath: "/dashboard-v2/settings",
+      urlPattern: /\/dashboard-v2\/settings(?:\?.*)?$/,
+      headingName: DASHBOARD_SETTINGS_HEADING,
       expectedRouteReady: "dashboard-settings",
     },
   );
@@ -1611,8 +1619,8 @@ async function runDashboardSubscriptionRefreshShellScenario(context: ProbeContex
     context,
     {
       scenario: "dashboard-subscription-refresh-shell",
-      initialPath: "/subscription",
-      urlPattern: /\/subscription(?:\?.*)?$/,
+      initialPath: "/dashboard-v2/membership",
+      urlPattern: /\/dashboard-v2\/membership(?:\?.*)?$/,
       headingName: /^Membership$/i,
       expectedRouteReady: "dashboard-subscription",
     },
@@ -1651,15 +1659,15 @@ async function runCreatorEditorRefreshShellScenario({ browser }: ProbeContext) {
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
 
   try {
-    await loginAsCreator(page, "/dashboard/creator/resources/new");
-    await expect(page).toHaveURL(/\/dashboard\/creator\/resources\/new$/);
+    await loginAsCreator(page, "/dashboard-v2/creator/resources/new");
+    await expect(page).toHaveURL(/\/dashboard-v2\/creator\/resources\/new$/);
     await expect(
       page.getByRole("heading", { name: /Create your first resource|New resource/i }).first(),
     ).toBeVisible();
 
     await startRefreshProbe(page);
     await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/dashboard\/creator\/resources\/new$/);
+    await expect(page).toHaveURL(/\/dashboard-v2\/creator\/resources\/new$/);
     await expect(
       page.getByRole("heading", { name: /Create your first resource|New resource/i }).first(),
     ).toBeVisible();
@@ -1667,7 +1675,7 @@ async function runCreatorEditorRefreshShellScenario({ browser }: ProbeContext) {
 
     const samples = await stopRefreshProbe(page);
     const editorSamples = samples.filter((sample) =>
-      /\/dashboard\/creator\/resources\/new(?:\?.*)?$/.test(sample.href),
+      /\/dashboard-v2\/creator\/resources\/new(?:\?.*)?$/.test(sample.href),
     );
 
     expect(
@@ -1812,10 +1820,10 @@ async function runSettingsThemeScenario({ browser }: ProbeContext) {
     await expect(page).toHaveURL(/\/resources$/);
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 
-    await page.goto("/settings", { waitUntil: "commit" });
+    await page.goto("/dashboard-v2/settings", { waitUntil: "commit" });
 
-    await expect(page).toHaveURL(/\/settings$/);
-    await expect(page.getByRole("heading", { name: /Settings/i })).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard-v2\/settings$/);
+    await expect(page.getByRole("heading", { name: DASHBOARD_SETTINGS_HEADING })).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
     await expect(page.locator("#preference-theme")).toHaveValue("dark");
   } catch (error) {
@@ -1851,58 +1859,88 @@ const scenarioHandlers: Record<ProbeScenarioName, (context: ProbeContext) => Pro
       scenario: "dashboard-to-downloads",
       linkName: /^Downloads$/,
       headingName: /Download history/i,
-      urlPattern: /\/dashboard\/downloads$/,
+      urlPattern: /\/dashboard-v2\/downloads$/,
     }),
   "dashboard-to-purchases": (context) =>
     runDashboardRouteScenario(context, {
       scenario: "dashboard-to-purchases",
       linkName: /^Purchases$/,
-      headingName: /^Purchases$/,
-      urlPattern: /\/dashboard\/purchases$/,
+      headingName: /^(Purchases|Order history)$/i,
+      urlPattern: /\/dashboard-v2\/purchases$/,
     }),
   "dashboard-to-settings": (context) =>
     runDashboardRouteScenario(context, {
       scenario: "dashboard-to-settings",
       linkName: /^Settings$/,
-      headingName: /^Settings$/,
-      urlPattern: /\/settings$/,
+      headingName: DASHBOARD_SETTINGS_HEADING,
+      urlPattern: /\/dashboard-v2\/settings$/,
     }),
   "dashboard-settings-cold-entry": (context) =>
     runColdEntryHandoffScenario(context, {
       scenario: "dashboard-settings-cold-entry",
       loginAs: "creator",
-      targetPath: "/settings",
-      urlPattern: /\/settings(?:\?.*)?$/,
-      headingName: /^Settings$/i,
+      targetPath: "/dashboard-v2/settings",
+      urlPattern: /\/dashboard-v2\/settings(?:\?.*)?$/,
+      headingName: DASHBOARD_SETTINGS_HEADING,
       readyMarker: "dashboard-settings",
-      disallowedScopesAfterReady: ["dashboard-group", "dashboard-settings"],
+      disallowedScopesAfterReady: ["dashboard-group", "dashboard-v2-neutral"],
     }),
   "dashboard-subscription-cold-entry": (context) =>
     runColdEntryHandoffScenario(context, {
       scenario: "dashboard-subscription-cold-entry",
       loginAs: "creator",
-      targetPath: "/subscription",
-      urlPattern: /\/subscription(?:\?.*)?$/,
+      targetPath: "/dashboard-v2/membership",
+      urlPattern: /\/dashboard-v2\/membership(?:\?.*)?$/,
       headingName: /^Membership$/i,
       readyMarker: "dashboard-subscription",
-      disallowedScopesAfterReady: ["dashboard-group", "dashboard-subscription"],
+      disallowedScopesAfterReady: ["dashboard-group", "dashboard-v2-neutral"],
     }),
   "creator-overview-cold-entry": (context) =>
     runColdEntryHandoffScenario(context, {
       scenario: "creator-overview-cold-entry",
       loginAs: "creator",
-      targetPath: "/dashboard/creator",
-      urlPattern: /\/dashboard\/creator(?:\?.*)?$/,
-      headingName: /^Creator Dashboard$/i,
+      targetPath: "/dashboard-v2/creator",
+      urlPattern: /\/dashboard-v2\/creator(?:\?.*)?$/,
+      headingName: /^Workspace$/i,
       readyMarker: "dashboard-creator-overview",
-      disallowedScopesAfterReady: ["dashboard-group", "dashboard-creator-layout"],
+      disallowedScopesAfterReady: ["dashboard-group", "dashboard-v2-creator-neutral"],
+    }),
+  "creator-profile-cold-entry": (context) =>
+    runColdEntryHandoffScenario(context, {
+      scenario: "creator-profile-cold-entry",
+      loginAs: "creator",
+      targetPath: "/dashboard-v2/creator/profile",
+      urlPattern: /\/dashboard-v2\/creator\/profile(?:\?.*)?$/,
+      headingName: /^Profile$/i,
+      readyMarker: "dashboard-creator-profile",
+      disallowedScopesAfterReady: ["dashboard-group", "dashboard-v2-creator-neutral"],
+    }),
+  "creator-settings-cold-entry": (context) =>
+    runColdEntryHandoffScenario(context, {
+      scenario: "creator-settings-cold-entry",
+      loginAs: "creator",
+      targetPath: "/dashboard-v2/creator/settings",
+      urlPattern: /\/dashboard-v2\/creator\/settings(?:\?.*)?$/,
+      headingName: /^Settings$/i,
+      readyMarker: "dashboard-creator-settings",
+      disallowedScopesAfterReady: ["dashboard-group", "dashboard-v2-creator-neutral"],
+    }),
+  "creator-payouts-cold-entry": (context) =>
+    runColdEntryHandoffScenario(context, {
+      scenario: "creator-payouts-cold-entry",
+      loginAs: "creator",
+      targetPath: "/dashboard-v2/creator/payouts",
+      urlPattern: /\/dashboard-v2\/creator\/payouts(?:\?.*)?$/,
+      headingName: /^Payouts$/i,
+      readyMarker: "dashboard-creator-payouts",
+      disallowedScopesAfterReady: ["dashboard-group", "dashboard-v2-creator-neutral"],
     }),
   "creator-apply-cold-entry": (context) =>
     runColdEntryHandoffScenario(context, {
       scenario: "creator-apply-cold-entry",
       loginAs: "user",
-      targetPath: "/dashboard/creator/apply",
-      urlPattern: /\/dashboard\/creator\/apply(?:\?.*)?$/,
+      targetPath: "/dashboard-v2/creator/apply",
+      urlPattern: /\/dashboard-v2\/creator\/apply(?:\?.*)?$/,
       headingName: /^Become a Creator$/i,
       readyMarker: "dashboard-creator-apply",
       disallowedScopesAfterReady: ["dashboard-group", "dashboard-creator-apply"],

@@ -56,8 +56,8 @@ export type PickerIconTone = "default" | "danger" | "info";
 
 const pickerIconToneClasses: Record<PickerIconTone, string> = {
   default: "text-muted-foreground hover:bg-muted hover:text-foreground",
-  danger: "text-muted-foreground hover:bg-red-50 hover:text-red-500",
-  info: "text-blue-400 hover:bg-blue-100 hover:text-blue-600",
+  danger: "text-muted-foreground hover:bg-accent hover:text-danger-600",
+  info: "text-brand-600 hover:bg-accent hover:text-brand-700",
 };
 
 export interface PickerIconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -87,7 +87,7 @@ export type PreviewCardTone = "neutral" | "info";
 
 const previewCardToneClasses: Record<PreviewCardTone, string> = {
   neutral: "border-border-subtle bg-muted",
-  info: "border-blue-100 bg-blue-50",
+  info: "border-primary/20 bg-accent",
 };
 
 export interface PreviewCardProps extends React.HTMLAttributes<HTMLDivElement> {

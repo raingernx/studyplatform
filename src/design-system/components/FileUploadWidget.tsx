@@ -27,6 +27,7 @@ export interface FileUploadWidgetProps {
   onEnsureResourceId?: () => Promise<string | undefined>;
   uploadEndpoint?: string;
   onUploadComplete?: (payload: {
+    resourceId: string;
     fileKey?: string | null;
     fileName?: string | null;
     fileSize?: number | null;
@@ -169,6 +170,7 @@ export function FileUploadWidget({
         size: (json.fileSize as number | undefined) ?? selectedFile.size,
       });
       onUploadComplete?.({
+        resourceId: targetResourceId,
         fileKey: (json.fileKey as string | undefined) ?? null,
         fileName: (json.fileName as string | undefined) ?? selectedFile.name,
         fileSize: (json.fileSize as number | undefined) ?? selectedFile.size,
@@ -209,8 +211,8 @@ export function FileUploadWidget({
       {uploadedFile ? (
         <>
           <PreviewCard className="flex items-center gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50">
-              <FileText className="h-4 w-4 text-blue-500" />
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card">
+              <FileText className="h-4 w-4 text-brand-600" />
             </span>
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-2 truncate text-[13px] font-medium text-foreground">
@@ -247,17 +249,20 @@ export function FileUploadWidget({
             </PickerActionButton>
             <input
               ref={inputRef}
+              name="resourceFile"
               type="file"
               accept={ACCEPTED_TYPES}
               onChange={handleFileChange}
               disabled={!resourceId}
               className="sr-only"
+              aria-hidden="true"
+              tabIndex={-1}
             />
           </div>
         </>
       ) : (
         <>
-          <label
+          <div
             onDragOver={(e) => {
               e.preventDefault();
             }}
@@ -270,7 +275,26 @@ export function FileUploadWidget({
             }}
             className="block"
           >
-            <PickerDropzoneShell disabled={!resourceId && !onEnsureResourceId}>
+            <PickerDropzoneShell
+              disabled={!resourceId && !onEnsureResourceId}
+              role="button"
+              tabIndex={!resourceId && !onEnsureResourceId ? -1 : 0}
+              aria-label={labels.uploadFile}
+              aria-disabled={!resourceId && !onEnsureResourceId ? "true" : undefined}
+              onClick={() => {
+                if (resourceId || onEnsureResourceId) {
+                  inputRef.current?.click();
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  if (resourceId || onEnsureResourceId) {
+                    inputRef.current?.click();
+                  }
+                }
+              }}
+            >
               <Upload className="mb-2 h-5 w-5 text-muted-foreground" />
               <p className="font-medium text-foreground">
                 {labels.dragAndDrop}
@@ -284,20 +308,23 @@ export function FileUploadWidget({
             </PickerDropzoneShell>
             <input
               ref={inputRef}
+              name="resourceFile"
               type="file"
               accept={ACCEPTED_TYPES}
               onChange={handleFileChange}
               disabled={!resourceId && !onEnsureResourceId}
               className="sr-only"
+              aria-hidden="true"
+              tabIndex={-1}
             />
-          </label>
+          </div>
 
           {selectedFile ? (
             <PreviewCard tone="info" className="flex items-center gap-2">
-              <FileText className="h-4 w-4 shrink-0 text-blue-400" />
-              <p className="min-w-0 flex-1 truncate text-[13px] text-blue-700">
+              <FileText className="h-4 w-4 shrink-0 text-brand-600" />
+              <p className="min-w-0 flex-1 truncate text-[13px] text-foreground">
                 {selectedFile.name}{" "}
-                <span className="text-blue-400">
+                <span className="text-muted-foreground">
                   ({formatFileSize(selectedFile.size)})
                 </span>
               </p>
@@ -339,18 +366,18 @@ export function FileUploadWidget({
       )}
 
       {status === "success" ? (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-          <CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" />
-          <p className="text-[13px] font-medium text-emerald-700">
+        <div className="flex items-center gap-2 rounded-xl border border-success-500/25 bg-accent px-4 py-3">
+          <CheckCircle className="h-4 w-4 shrink-0 text-success-600" />
+          <p className="text-[13px] font-medium text-success-700">
             {labels.uploadSuccess}
           </p>
         </div>
       ) : null}
 
       {status === "error" && errorMsg ? (
-        <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3">
-          <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-          <p className="text-[13px] text-red-700">{errorMsg}</p>
+        <div className="flex items-start gap-2 rounded-xl border border-danger-500/25 bg-accent px-4 py-3">
+          <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger-600" />
+          <p className="text-[13px] text-danger-700">{errorMsg}</p>
         </div>
       ) : null}
     </div>

@@ -68,6 +68,7 @@ layer itself is being maintained.
 ### Composed Components
 
 - `ConfirmDialog`
+- `DataPanelTable`
 - `EmptyState`
 - `FileUploadWidget`
 - `FormSection`
@@ -116,6 +117,7 @@ layer itself is being maintained.
 - `Avatar`
 - `Modal`
 - `EmptyState`
+- `DataPanelTable`
 - `FormSection`
 - `Pagination`
 - `SectionHeader`
@@ -493,6 +495,14 @@ The live product pages now contain exemplar layout compositions for:
 - Do not add accent or promotional colors to loading placeholders.
 
 ### Composed Components
+
+#### DataPanelTable
+
+- Source: `src/design-system/components/DataPanelTable.tsx`
+- Reusable dashboard/admin shell for title, description, top actions, optional
+  toolbar, and table or empty-state content.
+- Keep filter logic, column schema, row rendering, and business actions in the
+  owning route/component.
 
 #### FormSection
 

@@ -24,7 +24,6 @@ import {
 const DASHBOARD_DOWNLOADS_NAME = "dashboard-downloads";
 const DASHBOARD_PURCHASES_NAME = "dashboard-purchases";
 const DASHBOARD_SUBSCRIPTION_NAME = "dashboard-subscription";
-const DASHBOARD_RESOURCES_REDIRECT_NAME = "dashboard-resources-redirect";
 
 function DashboardDownloadsPreview({
   variant = "populated",
@@ -328,25 +327,6 @@ function DashboardSubscriptionRouteShellPreview() {
   );
 }
 
-function DashboardResourcesRedirectPreview() {
-  return (
-    <DashboardPageStack className="space-y-6">
-      <DashboardPageHeaderSkeleton
-        titleWidth="w-52"
-        descriptionWidth="w-[26rem]"
-      />
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
-        <LoadingSkeleton className="h-5 w-40" />
-        <LoadingSkeleton className="mt-3 h-4 w-[28rem]" />
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <LoadingSkeleton className="h-28 rounded-2xl" />
-          <LoadingSkeleton className="h-28 rounded-2xl" />
-        </div>
-      </div>
-    </DashboardPageStack>
-  );
-}
-
 export function DashboardDownloadsBonesPreview({
   variant = "populated",
   rowCount = 8,
@@ -556,26 +536,5 @@ export function DashboardSubscriptionResultsSkeleton({
         </>
       )}
     </DashboardPageStack>
-  );
-}
-
-export function DashboardResourcesRedirectBonesPreview() {
-  return dashboardBonesPreview(
-    DASHBOARD_RESOURCES_REDIRECT_NAME,
-    <DashboardResourcesRedirectPreview />,
-  );
-}
-
-export function DashboardResourcesRedirectSkeleton() {
-  return dashboardRuntimeShell(
-    <DashboardResourcesRedirectPreview />,
-    "dashboard-resources-redirect",
-  );
-}
-
-export function DashboardRouteRedirectSkeleton() {
-  return dashboardRuntimeShell(
-    <DashboardResourcesRedirectPreview />,
-    "dashboard-route-redirect",
   );
 }

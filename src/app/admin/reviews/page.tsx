@@ -58,7 +58,7 @@ async function loadAdminReviewsState() {
       }
 
       if (error.status === 403) {
-        redirect(routes.dashboard);
+        redirect(routes.dashboardV2);
       }
     }
 

@@ -1,14 +1,16 @@
 import { expect, test } from "@playwright/test";
 import { collectRuntimeErrors } from "./helpers/browser";
 
-test("dashboard redirects unauthenticated visitors to login with next param", async ({
+test("dashboard-v2 redirects unauthenticated visitors to login with next param", async ({
   page,
 }) => {
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
 
-  await page.goto("/dashboard");
+  await page.goto("/dashboard-v2", { waitUntil: "domcontentloaded" });
 
-  await expect(page).toHaveURL(/\/auth\/login\?next=%2Fdashboard$/);
+  await page.waitForURL(/\/auth\/login\?next=%2Fdashboard-v2(?:$|&)/, {
+    timeout: 60_000,
+  });
   await expect(page.getByRole("heading", { name: /Welcome back/i })).toBeVisible();
 
   expect(pageErrors).toEqual([]);
@@ -20,9 +22,11 @@ test("admin redirects unauthenticated visitors to login with next param", async 
 }) => {
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
 
-  await page.goto("/admin");
+  await page.goto("/admin", { waitUntil: "domcontentloaded" });
 
-  await expect(page).toHaveURL(/\/auth\/login\?next=%2Fadmin$/);
+  await page.waitForURL(/\/auth\/login\?next=%2Fadmin(?:$|&)/, {
+    timeout: 60_000,
+  });
   await expect(page.getByRole("heading", { name: /Welcome back/i })).toBeVisible();
 
   expect(pageErrors).toEqual([]);

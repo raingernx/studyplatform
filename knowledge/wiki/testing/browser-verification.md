@@ -11,7 +11,7 @@ Krukraft uses a split browser-verification model: local repo-owned probes for de
 - GitHub Actions browser smoke is intentionally Chromium-only now; WebKit remains a local fallback path for macOS/browser-launch instability, not a browser that cloud CI should install on every run.
 - Browser verification was recently hardened around auth login, route transitions, admin pages, and resource detail shell readiness.
 - The split model is now also captured as a raw evidence note so the wiki can cite a maintained snapshot instead of only canonical repo docs.
-- Recent Browser Smoke flakes clustered around three patterns: pre-hydration dashboard/public links that were visible before they were safe to click, shell-coverage assertions that needed one retry-safe navigation helper, and `/settings` theme verification waiting too deep into route load (`domcontentloaded`) instead of proving the contract after navigation commit.
+- Recent Browser Smoke flakes clustered around three patterns: pre-hydration dashboard/public links that were visible before they were safe to click, shell-coverage assertions that needed one retry-safe navigation helper, and `/dashboard-v2/settings` theme verification waiting too deep into route load (`domcontentloaded`) instead of proving the contract after navigation commit.
 
 ## Why It Matters
 
@@ -30,8 +30,8 @@ This split model keeps local debugging practical while giving the repo a stable 
 - local browser probe against a dev server
 - CI browser smoke against cloud Linux runner
 - repo-owned page, dashboard, and management probe passes after Playwright smoke
-- creator workspace refresh verification now also has a repo-owned probe path, so wrong-level app-root fallback on `/dashboard/creator/*` can be caught without depending only on manual repeated refresh checks
-- creator resource editor refresh now has its own repo-owned probe path as well, so `/dashboard/creator/resources/new` can verify the dedicated editor route-ready marker instead of inheriting only the generic creator-shell checks
+- creator workspace refresh verification now also has a repo-owned probe path, so wrong-level app-root fallback on `/dashboard-v2/creator/*` can be caught without depending only on manual repeated refresh checks
+- creator resource editor refresh now has its own repo-owned probe path as well, so `/dashboard-v2/creator/resources/new` can verify the dedicated editor route-ready marker instead of inheriting only the generic creator-shell checks
 - dashboard overview, library, downloads, purchases, settings, and membership hard refreshes now have their own repo-owned probe paths too, so the main authenticated dashboard surfaces can assert family-specific readiness directly and catch wrong-level app-root fallback without relying on manual repeated refresh testing
 - admin overview and admin analytics now also have explicit hard-refresh probes, so the main admin family entry surfaces can prove admin-scoped readiness instead of relying only on direct-load smoke coverage
 - admin refresh probes should tolerate the shared `dashboard` shell-ready marker when admin routes are rendered inside the shared dashboard chrome, as long as the admin-specific route-ready marker is also present and the route does not finish on the app-root fallback
@@ -93,4 +93,4 @@ This split model keeps local debugging practical while giving the repo a stable 
 
 ## Last Reviewed
 
-- 2026-04-07
+- 2026-04-13

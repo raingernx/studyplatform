@@ -1,4 +1,5 @@
 import type { ComponentProps, ComponentType, ReactNode } from "react";
+import { Slot, Slottable } from "@radix-ui/react-slot";
 
 import { cn } from "@/lib/utils";
 
@@ -75,7 +76,7 @@ export function SidebarSectionLabel({
   return (
     <p
       className={cn(
-        "mb-2 mt-6 px-2 font-ui text-caption tracking-[0.08em] text-muted-foreground",
+        "mb-2 mt-6 px-2 font-ui text-xs font-semibold uppercase text-muted-foreground",
         className,
       )}
       {...props}
@@ -122,6 +123,7 @@ export interface SidebarItemProps extends ComponentProps<"button"> {
   active?: boolean;
   badgeCount?: number;
   children: ReactNode;
+  asChild?: boolean;
 }
 
 export function SidebarItem({
@@ -129,31 +131,48 @@ export function SidebarItem({
   active,
   badgeCount,
   children,
+  asChild = false,
   className,
   ...props
 }: SidebarItemProps) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
-        active
-          ? "bg-accent font-semibold text-foreground hover:bg-accent hover:text-foreground"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground",
-        className,
-      )}
-      {...props}
-    >
-      <span className="flex w-full items-center gap-2">
-        <span className="flex items-center gap-3">
-          {icon ? <IconWrapper icon={icon} /> : null}
-          <span>{children}</span>
-        </span>
+  const Comp = asChild ? Slot : "button";
+  const itemClassName = cn(
+    "flex w-full items-center gap-3 rounded-xl border border-transparent px-4 py-2.5 text-sm font-medium transition-colors",
+    active
+      ? "border-primary/25 bg-accent font-semibold text-foreground hover:bg-accent hover:text-foreground"
+      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+    className,
+  );
+
+  if (asChild) {
+    return (
+      <Comp
+        className={itemClassName}
+        {...props}
+      >
+        {icon ? <IconWrapper icon={icon} /> : null}
+        <Slottable>{children}</Slottable>
         {typeof badgeCount === "number" && badgeCount > 0 ? (
           <SidebarBadge>{badgeCount}</SidebarBadge>
         ) : null}
+      </Comp>
+    );
+  }
+
+  return (
+    <Comp
+      type="button"
+      className={itemClassName}
+      {...props}
+    >
+      {icon ? <IconWrapper icon={icon} /> : null}
+      <span className="min-w-0 flex-1">
+        {children}
       </span>
-    </button>
+      {typeof badgeCount === "number" && badgeCount > 0 ? (
+        <SidebarBadge>{badgeCount}</SidebarBadge>
+      ) : null}
+    </Comp>
   );
 }
 

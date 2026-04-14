@@ -35,7 +35,7 @@ export function CreatorResourcePreview({
       {/* ── Card preview ───────────────────────────────────────────────────── */}
       <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         {/* Thumbnail */}
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-muted via-background to-muted">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
           {showImage ? (
             <Image
               src={thumbnailUrl!}
@@ -86,8 +86,8 @@ export function CreatorResourcePreview({
       {/* ── Quality hints ──────────────────────────────────────────────────── */}
       <div className="space-y-1.5">
         {!thumbnailUrl && (
-          <p className="flex items-center gap-1.5 text-[11px] text-amber-600">
-            <span className="inline-block h-1 w-1 shrink-0 rounded-full bg-amber-400" aria-hidden />
+          <p className="flex items-center gap-1.5 text-[11px] text-warning-600">
+            <span className="inline-block h-1 w-1 shrink-0 rounded-full bg-warning-500" aria-hidden />
             A thumbnail helps your resource stand out
           </p>
         )}

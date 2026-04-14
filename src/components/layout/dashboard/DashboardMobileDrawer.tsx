@@ -18,7 +18,7 @@ export function DashboardMobileDrawer({
     <>
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm transition-opacity duration-200 lg:hidden",
+          "fixed inset-0 z-40 bg-[hsl(var(--card)/0.78)] backdrop-blur-[2px] transition-opacity duration-200 lg:hidden",
           isOpen
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0",

@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { z } from "zod";
 import { env } from "@/env";
 import { logActivity } from "@/lib/activity";
+import { routes } from "@/lib/routes";
 import { stripe, SUBSCRIPTION_PLANS, type SubscriptionPlan } from "@/lib/stripe";
 import {
   findPurchaseByUserAndResource,
@@ -285,7 +286,7 @@ export async function createStripeCheckout(body: unknown, userId: string) {
       customer: customerId,
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${baseUrl}/dashboard?subscription=success`,
+      success_url: `${baseUrl}${routes.dashboardV2Membership}?subscription=success`,
       cancel_url: `${baseUrl}/pricing?subscription=cancelled`,
       subscription_data: { metadata: { userId: user.id, plan } },
     },

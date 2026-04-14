@@ -6,6 +6,8 @@ import { collectRuntimeErrors } from "./helpers/browser";
 
 test.describe.configure({ timeout: 90_000 });
 
+const DASHBOARD_SETTINGS_HEADING = /Profile, preferences, and security/i;
+
 async function findSeededResourceId() {
   const prisma = new PrismaClient();
 
@@ -39,10 +41,18 @@ test("public account dropdown reaches dashboard routes without shell hangs", asy
 
   await expect(accountButton).toBeVisible({ timeout: 20_000 });
 
-  const targets: Array<{ href: string; heading: RegExp }> = [
-    { href: "/dashboard", heading: /Welcome back/i },
-    { href: "/dashboard/purchases", heading: /^Purchases$/i },
-    { href: "/settings", heading: /^Settings$/i },
+  const targets: Array<{ href: string; heading: RegExp; routeReady: string }> = [
+    { href: "/dashboard-v2", heading: /Welcome back/i, routeReady: "dashboard-overview" },
+    {
+      href: "/dashboard-v2/purchases",
+      heading: /^Order history$/i,
+      routeReady: "dashboard-purchases",
+    },
+    {
+      href: "/dashboard-v2/settings",
+      heading: DASHBOARD_SETTINGS_HEADING,
+      routeReady: "dashboard-settings",
+    },
   ];
 
   for (const target of targets) {
@@ -57,6 +67,9 @@ test("public account dropdown reaches dashboard routes without shell hangs", asy
       link.click(),
     ]);
 
+    await expect(page.locator(`[data-route-shell-ready="${target.routeReady}"]`).first()).toBeVisible({
+      timeout: 20_000,
+    });
     await expect(page.getByRole("heading", { name: target.heading }).first()).toBeVisible({
       timeout: 20_000,
     });
@@ -69,11 +82,11 @@ test("public account dropdown reaches dashboard routes without shell hangs", asy
   expect(consoleErrors).toEqual([]);
 });
 
-test("dashboard avatar menu reaches library purchases and settings", async ({ page }) => {
+test("dashboard avatar menu reaches home membership and settings", async ({ page }) => {
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
 
-  await loginAsCreator(page, "/dashboard");
-  await expect(page).toHaveURL(/\/dashboard(?:\?.*)?$/);
+  await loginAsCreator(page, "/dashboard-v2");
+  await expect(page).toHaveURL(/\/dashboard-v2(?:\?.*)?$/);
   await expect(page.getByRole("heading", { name: /Welcome back/i }).first()).toBeVisible();
 
   const avatarButton = page
@@ -84,14 +97,22 @@ test("dashboard avatar menu reaches library purchases and settings", async ({ pa
 
   await expect(avatarButton).toBeVisible({ timeout: 20_000 });
 
-  const targets: Array<{ href: string; heading: RegExp }> = [
-    { href: "/dashboard/library", heading: /^My Library$/i },
-    { href: "/dashboard/purchases", heading: /^Purchases$/i },
-    { href: "/settings", heading: /^Settings$/i },
+  const targets: Array<{ href: string; heading: RegExp; routeReady: string }> = [
+    { href: "/dashboard-v2", heading: /Welcome back/i, routeReady: "dashboard-overview" },
+    {
+      href: "/dashboard-v2/membership",
+      heading: /^Membership$/i,
+      routeReady: "dashboard-subscription",
+    },
+    {
+      href: "/dashboard-v2/settings",
+      heading: DASHBOARD_SETTINGS_HEADING,
+      routeReady: "dashboard-settings",
+    },
   ];
 
   for (const target of targets) {
-    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await page.goto("/dashboard-v2", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: /Welcome back/i }).first()).toBeVisible({
       timeout: 20_000,
     });
@@ -101,7 +122,7 @@ test("dashboard avatar menu reaches library purchases and settings", async ({ pa
 
     const link = page
       .locator(
-        `header [data-dashboard-account-menu="true"] a[data-dashboard-account-link="${target.href}"]:visible`,
+        `[data-dashboard-account-menu="true"] [data-dashboard-account-link="${target.href}"]:visible`,
       )
       .first();
     await expect(link).toBeVisible({ timeout: 20_000 });
@@ -111,6 +132,9 @@ test("dashboard avatar menu reaches library purchases and settings", async ({ pa
       link.click(),
     ]);
 
+    await expect(page.locator(`[data-route-shell-ready="${target.routeReady}"]`).first()).toBeVisible({
+      timeout: 20_000,
+    });
     await expect(page.getByRole("heading", { name: target.heading }).first()).toBeVisible({
       timeout: 20_000,
     });

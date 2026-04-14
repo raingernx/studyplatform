@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ImagePlus, UploadCloud } from "lucide-react";
 import { PickerDropzoneShell } from "@/design-system";
 
@@ -20,7 +20,6 @@ export function ImageDropzone({
   maxSizeBytes = DEFAULT_MAX_SIZE_BYTES,
   helpText = "Drag & drop images here, or click to browse",
 }: ImageDropzoneProps) {
-  const inputId = useId();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
   const [error, setError] = useState<string | null>(null);
@@ -146,6 +145,7 @@ export function ImageDropzone({
         className={[borderColor, bgColor].join(" ")}
         role="button"
         tabIndex={disabled ? -1 : 0}
+        aria-label="Select preview images to upload"
         aria-disabled={disabled ? "true" : undefined}
         onClick={handleOpenFilePicker}
         onKeyDown={(event) => {
@@ -161,12 +161,13 @@ export function ImageDropzone({
       >
         <input
           ref={inputRef}
-          id={inputId}
           type="file"
           accept="image/*"
           multiple
           className="sr-only"
           disabled={disabled}
+          aria-hidden="true"
+          tabIndex={-1}
           onChange={(event) => {
             handleFilesSelected(event.target.files);
             event.target.value = "";
@@ -186,9 +187,6 @@ export function ImageDropzone({
           JPEG, PNG, WebP, or GIF — up to{" "}
           {Math.round(maxSizeBytes / (1024 * 1024))} MB each.
         </p>
-        <label htmlFor={inputId} className="sr-only">
-          Select preview images to upload
-        </label>
       </PickerDropzoneShell>
       {error && <p className="text-[12px] text-red-600">{error}</p>}
     </div>

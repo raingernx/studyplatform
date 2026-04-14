@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ListChecks } from "lucide-react";
 
 export type FieldName = "title" | "description" | "price" | "file";
 
@@ -35,18 +35,24 @@ export function CreatorPublishReadiness({
       <div
         className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${
           subtle
-            ? "border border-emerald-100 bg-emerald-50/50"
-            : "border border-emerald-100 bg-emerald-50"
+            ? "border border-border bg-muted"
+            : "border border-success-500/25 bg-accent"
         }`}
       >
-        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
+            subtle ? "bg-background text-success-600" : "bg-card text-success-600"
+          }`}
+        >
+          <CheckCircle2 className="h-4 w-4" aria-hidden />
+        </span>
         <div>
           <p
-            className={`font-semibold text-emerald-800 ${subtle ? "text-xs" : "text-sm"}`}
+            className={`font-semibold ${subtle ? "text-xs text-muted-foreground" : "text-sm text-foreground"}`}
           >
             Ready to publish
           </p>
-          <p className="text-xs text-emerald-600">
+          <p className="text-xs text-muted-foreground">
             Your resource is complete and can be published
           </p>
         </div>
@@ -56,20 +62,28 @@ export function CreatorPublishReadiness({
 
   return (
     <div
-      className={`rounded-2xl px-4 py-3 ${
-        subtle
-          ? "border border-border bg-muted"
-          : "border border-amber-100 bg-amber-50"
+      className={`rounded-2xl border px-4 py-3 ${
+        subtle ? "border-border bg-muted" : "border-warning-500/25 bg-accent"
       }`}
     >
-      <p
-        className={`text-sm font-semibold ${
-          subtle ? "text-muted-foreground" : "text-amber-800"
-        }`}
-      >
-        Finish your resource ({completion}/4 complete)
-      </p>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="flex items-start gap-3">
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
+            subtle ? "bg-background text-muted-foreground" : "bg-card text-warning-600"
+          }`}
+        >
+          <ListChecks className="h-4 w-4" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-foreground">
+            Finish your resource ({completion}/4 complete)
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Complete the missing steps before publishing.
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 pl-11">
         {missingFields.map((field) => (
           <button
             key={field}
@@ -78,7 +92,7 @@ export function CreatorPublishReadiness({
             className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
               subtle
                 ? "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
-                : "border-amber-200 bg-background text-amber-800 hover:border-amber-300 hover:bg-amber-100"
+                : "border-border bg-background text-muted-foreground hover:border-warning-500/40 hover:bg-muted hover:text-foreground"
             }`}
           >
             {FIELD_LABELS[field]}

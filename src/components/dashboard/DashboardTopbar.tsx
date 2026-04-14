@@ -36,14 +36,14 @@ interface DashboardTopbarProps {
 }
 
 const AVATAR_MENU = [
-  { href: routes.library,   label: "My Library", icon: BookOpen },
-  { href: routes.purchases, label: "Purchases",  icon: ShoppingBag },
-  { href: routes.settings,  label: "Settings",   icon: Settings },
+  { href: routes.dashboardV2Library, label: "My Library", icon: BookOpen },
+  { href: routes.dashboardV2Purchases, label: "Purchases", icon: ShoppingBag },
+  { href: routes.dashboardV2Settings, label: "Settings", icon: Settings },
 ];
 const AVATAR_MENU_PREFETCH_TARGETS = [
-  routes.library,
-  routes.purchases,
-  routes.settings,
+  routes.dashboardV2Library,
+  routes.dashboardV2Purchases,
+  routes.dashboardV2Settings,
 ] as const;
 
 export function DashboardTopbar({ user, onMenuToggle }: DashboardTopbarProps) {

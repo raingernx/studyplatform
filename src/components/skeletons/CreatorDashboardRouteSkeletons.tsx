@@ -460,18 +460,6 @@ function OverviewPreview() {
   );
 }
 
-function CreatorProtectedLayoutShellPreview() {
-  return (
-    <DashboardPageStack>
-      <DashboardPageHeaderSkeleton
-        eyebrowWidth="w-16"
-        titleWidth="w-52"
-        descriptionWidth="w-full max-w-lg"
-      />
-    </DashboardPageStack>
-  );
-}
-
 function OverviewResultsPreviewContent() {
   return (
     <>
@@ -650,7 +638,7 @@ function ResourcesPreview({
     <DashboardPageStack>
       <DashboardPageHeader
         eyebrow="Creator"
-        title="Resource management"
+        title="Creator resources"
         description="Filter, publish, and monitor the listings you own in the marketplace."
         actions={<LoadingSkeleton className="h-9 w-40 rounded-xl" />}
       />
@@ -956,13 +944,6 @@ export function CreatorDashboardOverviewLoadingShell() {
   return dashboardRuntimeShell(
     <OverviewPreview />,
     "creator-dashboard-overview",
-  );
-}
-
-export function CreatorDashboardProtectedLayoutShell() {
-  return dashboardRuntimeShell(
-    <CreatorProtectedLayoutShellPreview />,
-    "dashboard-creator-layout",
   );
 }
 

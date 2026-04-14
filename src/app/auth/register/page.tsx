@@ -16,7 +16,7 @@ const PERKS = [
   "Cancel subscription any time",
 ];
 
-const GOOGLE_SIGN_IN_CALLBACK_URL = routes.library;
+const GOOGLE_SIGN_IN_CALLBACK_URL = routes.dashboardV2Library;
 
 function GoogleIcon() {
   return (

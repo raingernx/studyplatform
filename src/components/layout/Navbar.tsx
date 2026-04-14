@@ -42,7 +42,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_LINKS: { href: string; label: string }[] = [
   { href: routes.marketplace, label: "มาร์เก็ตเพลส" },
-  { href: routes.library, label: "คลังของฉัน" },
+  { href: routes.dashboardV2Library, label: "คลังของฉัน" },
 ];
 
 const MARKETPLACE_CATEGORY_ITEMS = [
@@ -103,11 +103,11 @@ const MARKETPLACE_PRIMARY_ACTION_CLASS_NAME =
 const MARKETPLACE_CATEGORY_ITEM_CLASS_NAME =
   "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 text-[14px] leading-[22px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2";
 const PROTECTED_AREA_PREFETCH_TARGETS = [
-  routes.dashboard,
-  routes.library,
-  routes.purchases,
-  routes.settings,
-  routes.subscription,
+  routes.dashboardV2,
+  routes.dashboardV2Library,
+  routes.dashboardV2Purchases,
+  routes.dashboardV2Settings,
+  routes.dashboardV2Membership,
 ] as const;
 
 function isMarketplaceCategoryActive(currentCategory: string | null, itemCategory: string | null) {
@@ -120,12 +120,13 @@ function isMarketplaceCategoryActive(currentCategory: string | null, itemCategor
 
 function handleProtectedAreaNavigation(href: string) {
   if (
-    href === routes.dashboard ||
-    href === routes.library ||
-    href === routes.purchases ||
-    href === routes.settings ||
-    href === routes.subscription ||
-    href.startsWith("/dashboard/")
+    href === routes.dashboardV2 ||
+    href === routes.dashboardV2Library ||
+    href === routes.dashboardV2Downloads ||
+    href === routes.dashboardV2Purchases ||
+    href === routes.dashboardV2Settings ||
+    href === routes.dashboardV2Membership ||
+    href.startsWith("/dashboard-v2/")
   ) {
     beginDashboardNavigation(href, { overlay: true });
   }
@@ -316,16 +317,17 @@ function NavbarInner({
     afterNavigation?.();
     const useDashboardEntryOverlay =
       !isDashboardGroupPath(pathname) &&
-      href !== routes.settings &&
-      href !== routes.subscription;
+      href !== routes.dashboardV2Settings &&
+      href !== routes.dashboardV2Membership;
 
     if (
-      href === routes.dashboard ||
-      href === routes.library ||
-      href === routes.purchases ||
-      href === routes.settings ||
-      href === routes.subscription ||
-      href.startsWith("/dashboard/")
+      href === routes.dashboardV2 ||
+      href === routes.dashboardV2Library ||
+      href === routes.dashboardV2Downloads ||
+      href === routes.dashboardV2Purchases ||
+      href === routes.dashboardV2Settings ||
+      href === routes.dashboardV2Membership ||
+      href.startsWith("/dashboard-v2/")
     ) {
       beginDashboardNavigation(href, { overlay: useDashboardEntryOverlay });
     }
@@ -394,7 +396,7 @@ function NavbarInner({
 
           <div className="p-1.5">
             <Link
-              href={routes.membership}
+              href={routes.dashboardV2Membership}
               onClick={() => setUserMenuOpen(false)}
               className="flex items-center rounded-lg px-3 py-2 text-[13px] font-medium text-amber-700 transition-colors hover:bg-amber-50"
             >
@@ -402,11 +404,11 @@ function NavbarInner({
             </Link>
             <div className="my-1 border-t border-border-subtle" />
             <Link
-              href={routes.dashboard}
+              href={routes.dashboardV2}
               onMouseEnter={warmProtectedAreaTargets}
               onFocus={warmProtectedAreaTargets}
               onClick={(event) => {
-                handleProtectedAreaLinkClick(event, routes.dashboard, () => {
+                handleProtectedAreaLinkClick(event, routes.dashboardV2, () => {
                   setUserMenuOpen(false);
                 });
               }}
@@ -418,11 +420,11 @@ function NavbarInner({
               </span>
             </Link>
             <Link
-              href={routes.library}
+              href={routes.dashboardV2Library}
               onMouseEnter={warmProtectedAreaTargets}
               onFocus={warmProtectedAreaTargets}
               onClick={(event) => {
-                handleProtectedAreaLinkClick(event, routes.library, () => {
+                handleProtectedAreaLinkClick(event, routes.dashboardV2Library, () => {
                   setUserMenuOpen(false);
                 });
               }}
@@ -434,11 +436,11 @@ function NavbarInner({
               </span>
             </Link>
             <Link
-              href={routes.purchases}
+              href={routes.dashboardV2Purchases}
               onMouseEnter={warmProtectedAreaTargets}
               onFocus={warmProtectedAreaTargets}
               onClick={(event) => {
-                handleProtectedAreaLinkClick(event, routes.purchases, () => {
+                handleProtectedAreaLinkClick(event, routes.dashboardV2Purchases, () => {
                   setUserMenuOpen(false);
                 });
               }}
@@ -453,11 +455,11 @@ function NavbarInner({
             <div className="my-1.5 border-t border-border-subtle" />
 
             <Link
-              href={routes.settings}
+              href={routes.dashboardV2Settings}
               onMouseEnter={warmProtectedAreaTargets}
               onFocus={warmProtectedAreaTargets}
               onClick={(event) => {
-                handleProtectedAreaLinkClick(event, routes.settings, () => {
+                handleProtectedAreaLinkClick(event, routes.dashboardV2Settings, () => {
                   setUserMenuOpen(false);
                 });
               }}
@@ -505,10 +507,10 @@ function NavbarInner({
                 {authUser ? (
                   <>
                     <Link
-                      href={routes.library}
+                      href={routes.dashboardV2Library}
                       onMouseEnter={warmProtectedAreaTargets}
                       onFocus={warmProtectedAreaTargets}
-                      onClick={(event) => handleProtectedAreaLinkClick(event, routes.library)}
+                      onClick={(event) => handleProtectedAreaLinkClick(event, routes.dashboardV2Library)}
                       className={MARKETPLACE_ACTION_LINK_CLASS_NAME}
                     >
                       คลังของฉัน
@@ -563,10 +565,10 @@ function NavbarInner({
               >
                 {authUser ? (
                   <Link
-                    href={routes.library}
+                    href={routes.dashboardV2Library}
                     onMouseEnter={warmProtectedAreaTargets}
                     onFocus={warmProtectedAreaTargets}
-                    onClick={(event) => handleProtectedAreaLinkClick(event, routes.library)}
+                    onClick={(event) => handleProtectedAreaLinkClick(event, routes.dashboardV2Library)}
                     className="inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] leading-[22px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2"
                   >
                     คลังของฉัน
@@ -727,7 +729,7 @@ function NavbarInner({
             onFocusCapture={warmProtectedAreaTargets}
           >
             <nav className="hidden items-center gap-2 lg:flex" aria-label="เมนูหลัก">
-              {NAV_LINKS.filter(({ href }) => href !== routes.library || Boolean(authUser)).map(({ href, label }) => (
+              {NAV_LINKS.filter(({ href }) => href !== routes.dashboardV2Library || Boolean(authUser)).map(({ href, label }) => (
                 <NavbarItem
                   key={href}
                   href={href}
@@ -798,7 +800,7 @@ function NavbarInner({
       {mobileOpen ? (
         <div className="border-b border-border bg-background px-4 pb-5 pt-3 lg:hidden">
           <nav className="flex flex-col gap-0.5" aria-label="Mobile navigation">
-            {NAV_LINKS.filter(({ href }) => href !== routes.library || Boolean(authUser)).map(({ href, label }) => (
+            {NAV_LINKS.filter(({ href }) => href !== routes.dashboardV2Library || Boolean(authUser)).map(({ href, label }) => (
               <NavbarItem
                 key={href}
                 href={href}
@@ -832,7 +834,7 @@ function NavbarInner({
                 </div>
 
                 <Link
-                  href={routes.membership}
+                  href={routes.dashboardV2Membership}
                   onClick={closeAll}
                   className="flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-sm font-medium text-amber-700 hover:bg-amber-50"
                 >
@@ -840,9 +842,9 @@ function NavbarInner({
                 </Link>
 
                 <Link
-                  href={routes.dashboard}
+                  href={routes.dashboardV2}
                   onClick={(event) => {
-                    handleProtectedAreaLinkClick(event, routes.dashboard, closeAll);
+                    handleProtectedAreaLinkClick(event, routes.dashboardV2, closeAll);
                   }}
                   className="flex items-center gap-2.5 rounded-lg border border-border-strong px-4 py-2.5 text-sm font-medium text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
                 >

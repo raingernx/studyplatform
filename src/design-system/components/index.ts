@@ -11,6 +11,12 @@ export type {
   EmptyStateProps,
 } from "./EmptyState";
 export {
+  DataPanelTable,
+} from "./DataPanelTable";
+export type {
+  DataPanelTableProps,
+} from "./DataPanelTable";
+export {
   ConfirmDialog,
 } from "./ConfirmDialog";
 export type {

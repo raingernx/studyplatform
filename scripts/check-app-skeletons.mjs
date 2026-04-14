@@ -4,10 +4,20 @@ import path from "node:path";
 const APP_ROOT = path.join(process.cwd(), "src", "app");
 const FILE_EXTENSIONS = new Set([".ts", ".tsx"]);
 const DASHBOARD_LOADING_OWNERSHIP_ROOTS = [
+  path.join("src", "app", "(dashboard)"),
   path.join("src", "app", "(dashboard-lite)"),
+  path.join("src", "app", "(dashboard-v2)", "dashboard-v2"),
   path.join("src", "app", "(dashboard)", "dashboard", "creator", "(protected)"),
   path.join("src", "app", "(dashboard)", "dashboard", "creator", "apply"),
 ];
+const DASHBOARD_GROUP_LOADING_FILES = new Set([
+  path.join("src", "app", "(dashboard)", "loading.tsx"),
+  path.join("src", "app", "(dashboard-lite)", "loading.tsx"),
+]);
+const DASHBOARD_V2_FULL_SHELL_LOADING_FILES = new Set([
+  path.join("src", "app", "(dashboard-v2)", "dashboard-v2", "loading.tsx"),
+  path.join("src", "app", "dev", "dashboard-v2", "loading.tsx"),
+]);
 const DISALLOWED_DASHBOARD_FALLBACKS = new Set([
   "DashboardLibraryResultsSuspenseFallback",
   "DashboardDownloadsResultsSkeleton",
@@ -20,6 +30,7 @@ const DISALLOWED_DASHBOARD_FALLBACKS = new Set([
   "CreatorDashboardProfileFormSkeleton",
   "CreatorResourceFormLoadingShell",
   "CreatorApplyPanelSkeleton",
+  "DashboardV2PrototypeSkeleton",
 ]);
 const PATTERNS = [
   {
@@ -87,6 +98,41 @@ for (const filePath of walk(APP_ROOT)) {
 
   if (!isDashboardOwnershipFile) {
     continue;
+  }
+
+  if (
+    DASHBOARD_GROUP_LOADING_FILES.has(relativePath) &&
+    (
+      /import\s*\{[^}]*\bDashboardGroupLoadingShell\b/.test(source) ||
+      /<DashboardGroupLoadingShell\b/.test(source)
+    )
+  ) {
+    const matchIndex = source.search(
+      /import\s*\{[^}]*\bDashboardGroupLoadingShell\b|<DashboardGroupLoadingShell\b/,
+    );
+    violations.push({
+      file: relativePath,
+      line: getLineNumber(source, matchIndex),
+      name: "DashboardGroupLoadingShell",
+      type: "dashboard-full-shell-in-loading-slot",
+    });
+  }
+
+  if (
+    /import\s*\{[^}]*\bDashboardV2PrototypeSkeleton\b/.test(source) ||
+    /<DashboardV2PrototypeSkeleton\b/.test(source)
+  ) {
+    if (!DASHBOARD_V2_FULL_SHELL_LOADING_FILES.has(relativePath)) {
+      const matchIndex = source.search(
+        /import\s*\{[^}]*\bDashboardV2PrototypeSkeleton\b|<DashboardV2PrototypeSkeleton\b/,
+      );
+      violations.push({
+        file: relativePath,
+        line: getLineNumber(source, matchIndex),
+        name: "DashboardV2PrototypeSkeleton",
+        type: "dashboard-v2-full-shell-outside-family-loading",
+      });
+    }
   }
 
   for (const match of source.matchAll(SUSPENSE_FALLBACK_REGEX)) {

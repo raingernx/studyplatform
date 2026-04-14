@@ -14,7 +14,11 @@ import { logPerformanceEvent } from "@/lib/performance/observability";
 import { logActivity } from "@/lib/activity";
 import { slugify } from "@/lib/utils";
 import { findCreatorStatByCreatorId } from "@/repositories/analytics/analytics.repository";
-import { getCreatorPayouts, sumCreatorPayouts } from "@/repositories/payouts/payout.repository";
+import {
+  getCreatorPayouts,
+  getCreatorPayoutSummary,
+  sumCreatorPayouts,
+} from "@/repositories/payouts/payout.repository";
 import {
   createCreatorResourceRecord,
   enableCreatorAccessRecord,
@@ -71,6 +75,11 @@ import {
 
 // Request-level memoization: deduplicates getCreatorStats calls within one render pass.
 const getCachedCreatorStats = cache(getCreatorStats);
+const getCachedCreatorCategories = cache(async () =>
+  unstable_cache(() => findCreatorCategories(), ["creator-categories"], {
+    revalidate: CACHE_TTLS.publicPage,
+  })(),
+);
 
 const previewUrlSchema = z.string().refine(
   (value) =>
@@ -326,6 +335,17 @@ export interface CreatorBalance {
     status: string;
     createdAt: Date;
   }[];
+}
+
+export interface CreatorEarningsCardSummary {
+  totalSales: number;
+  grossRevenue: number;
+  creatorShare: number;
+  platformFees: number;
+  totalPayouts: number;
+  payoutCount: number;
+  latestPayoutAt: Date | null;
+  availableBalance: number;
 }
 
 export interface CreatorResourceStatusSummary {
@@ -677,8 +697,10 @@ export const getCreatorAccessState = cache(async function getCreatorAccessState(
   const creatorStatus = context.creatorStatus;
   const applicationStatus = context.creatorApplicationStatus;
   const explicitEligible = creatorEnabled && creatorStatus === "ACTIVE";
+  // Legacy access fallback should only preserve known creator-capable accounts.
+  // A plain learner account with authored test data must not bypass creator apply.
   const legacyEligible =
-    context.role === "INSTRUCTOR" || resourceCount > 0;
+    context.role === "INSTRUCTOR" || applicationStatus === "APPROVED";
   const eligible = explicitEligible || legacyEligible;
 
   return {
@@ -696,8 +718,15 @@ export async function isCreatorEligible(userId: string) {
   return (await getCreatorAccessState(userId)).eligible;
 }
 
-export async function getCreatorOverview(userId: string): Promise<CreatorOverview> {
-  await requireCreatorAccess(userId);
+export async function getCreatorOverview(
+  userId: string,
+  options: {
+    skipAccessCheck?: boolean;
+  } = {},
+): Promise<CreatorOverview> {
+  if (!options.skipAccessCheck) {
+    await requireCreatorAccess(userId);
+  }
 
   const [creatorStat, earnings, resourceCounts, topResources, recentSalesRaw, recentDownloadsRaw] =
     await Promise.all([
@@ -847,6 +876,34 @@ export async function getCreatorBalance(userId: string): Promise<CreatorBalance>
   };
 }
 
+export async function getCreatorEarningsCardSummary(
+  userId: string,
+  options: { skipAccessCheck?: boolean } = {},
+): Promise<CreatorEarningsCardSummary> {
+  if (!options.skipAccessCheck) {
+    await requireCreatorAccess(userId);
+  }
+
+  const [stats, earnings, payoutSummary] = await Promise.all([
+    getCachedCreatorStats(userId),
+    findCreatorEarningsTotals(userId),
+    getCreatorPayoutSummary(userId),
+  ]);
+
+  const grossRevenue = stats.totalRevenue ?? earnings.grossRevenue;
+
+  return {
+    totalSales: stats.totalSales ?? 0,
+    grossRevenue,
+    creatorShare: earnings.creatorShare,
+    platformFees: earnings.platformFees,
+    totalPayouts: payoutSummary.totalPayouts,
+    payoutCount: payoutSummary.count,
+    latestPayoutAt: payoutSummary.latestCreatedAt,
+    availableBalance: grossRevenue - payoutSummary.totalPayouts,
+  };
+}
+
 export async function getCreatorResourceStatusSummary(
   userId: string,
 ): Promise<CreatorResourceStatusSummary> {
@@ -904,12 +961,88 @@ export async function getCreatorResourceManagementDataForWorkspace(
   input: CreatorResourceFilters & { sort?: CreatorResourceSort } = {},
 ) {
   const [categories, resources] = await Promise.all([
-    findCreatorCategories(),
+    getCachedCreatorCategories(),
     findCreatorManagementTableRowsByUserId(userId, input, input.sort ?? "latest"),
   ]);
 
   return {
     categories,
+    resources: resources.map((resource) => ({
+      id: resource.id,
+      title: resource.title,
+      slug: resource.slug,
+      status: resource.status,
+      isFree: resource.isFree || resource.price === 0,
+      price: resource.price,
+      updatedAt: resource.updatedAt,
+      downloadCount: resource.resourceStat?.downloads ?? 0,
+      revenue: resource.resourceStat?.revenue ?? 0,
+      category: resource.category,
+    })),
+  };
+}
+
+function normalizePositiveInteger(value: number | undefined, fallback: number) {
+  if (!Number.isFinite(value) || !value || value < 1) {
+    return fallback;
+  }
+
+  return Math.floor(value);
+}
+
+export async function getCreatorResourceManagementPageForWorkspace(
+  userId: string,
+  input: CreatorResourceFilters & {
+    sort?: CreatorResourceSort;
+    page?: number;
+    pageSize?: number;
+  } = {},
+) {
+  const requestedPage = normalizePositiveInteger(input.page, 1);
+  const pageSize = normalizePositiveInteger(input.pageSize, 10);
+  const categoriesPromise = getCachedCreatorCategories();
+  const statusSummaryPromise = findCreatorResourceStatusSummary(userId);
+  const categories = await categoriesPromise;
+  const categoryId = categories.some((category) => category.id === input.categoryId)
+    ? input.categoryId
+    : undefined;
+
+  const filters: CreatorResourceFilters = {
+    status: input.status,
+    pricing: input.pricing,
+    categoryId,
+  };
+
+  const [statusSummary, filteredCount] = await Promise.all([
+    statusSummaryPromise,
+    countCreatorResourcesByUserId(userId, filters),
+  ]);
+
+  const totalCount =
+    statusSummary.draft + statusSummary.published + statusSummary.archived;
+  const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
+  const page = Math.min(requestedPage, totalPages);
+  const skip = (page - 1) * pageSize;
+
+  const resources = await findCreatorManagementTableRowsByUserId(
+    userId,
+    filters,
+    input.sort ?? "latest",
+    {
+      skip,
+      take: pageSize,
+    },
+  );
+
+  return {
+    categories,
+    categoryId: categoryId ?? null,
+    totalCount,
+    filteredCount,
+    page,
+    totalPages,
+    pageSize,
+    statusSummary,
     resources: resources.map((resource) => ({
       id: resource.id,
       title: resource.title,
@@ -975,7 +1108,7 @@ export async function getCreatorAnalyticsSurfaceSummaryForWorkspace(
 
 export async function getCreatorResourceFormData(userId: string) {
   const access = await requireCreatorAccess(userId);
-  const categories = await findCreatorCategories();
+  const categories = await getCachedCreatorCategories();
 
   return {
     access,
@@ -986,7 +1119,7 @@ export async function getCreatorResourceFormData(userId: string) {
 export async function getCreatorResourceFormDataForWorkspace(userId: string) {
   return {
     userId,
-    categories: await findCreatorCategories(),
+    categories: await getCachedCreatorCategories(),
   };
 }
 
@@ -1158,6 +1291,49 @@ export async function getCreatorSales(userId: string) {
       createdAt: sale.createdAt,
     })),
   };
+}
+
+export async function getCreatorSalesLedger(
+  userId: string,
+  options: { skipAccessCheck?: boolean } = {},
+) {
+  if (!options.skipAccessCheck) {
+    await requireCreatorAccess(userId);
+  }
+
+  const sales = await findCreatorSales(userId);
+
+  return sales.map((sale) => ({
+    id: sale.id,
+    resourceId: sale.resource.id,
+    resourceTitle: sale.resource.title,
+    resourceSlug: sale.resource.slug,
+    buyerName: sale.purchase.user.name ?? sale.purchase.user.email ?? "Anonymous buyer",
+    buyerEmail: sale.purchase.user.email ?? null,
+    amount: sale.amount,
+    creatorShare: sale.creatorShare,
+    platformFee: sale.platformFee,
+    status: sale.purchase.status,
+    createdAt: sale.createdAt,
+  }));
+}
+
+export async function getCreatorPayoutLedger(
+  userId: string,
+  options: { skipAccessCheck?: boolean } = {},
+) {
+  if (!options.skipAccessCheck) {
+    await requireCreatorAccess(userId);
+  }
+
+  const payouts = await getCreatorPayouts(userId);
+
+  return payouts.map((payout) => ({
+    id: payout.id,
+    amount: payout.amount,
+    status: payout.status,
+    createdAt: payout.createdAt,
+  }));
 }
 
 export async function getCreatorProfile(userId: string): Promise<CreatorProfile | null> {

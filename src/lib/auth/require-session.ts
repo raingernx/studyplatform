@@ -14,10 +14,10 @@ import { routes } from "@/lib/routes";
  *
  * @example
  * // Only userId needed:
- * const { userId } = await requireSession("/dashboard/library");
+ * const { userId } = await requireSession(routes.dashboardV2Library);
  *
  * // Both userId and other session fields needed:
- * const { userId, session } = await requireSession("/dashboard");
+ * const { userId, session } = await requireSession(routes.dashboardV2);
  * const firstName = session.user.name?.split(" ")[0];
  */
 export async function requireSession(nextPath: string) {

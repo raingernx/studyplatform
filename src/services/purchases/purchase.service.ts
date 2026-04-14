@@ -4,6 +4,7 @@ import {
   countPurchaseHistoryByUser,
   findCompletedPurchaseByUserAndResource,
   findCompletedLibraryItemsByUser,
+  findDownloadHistorySurfaceSummaryByUser,
   findLibrarySurfaceSummaryByUser,
   findCompletedPurchasesByUser,
   findRecentPurchasePreferenceSignalsByUser,
@@ -188,8 +189,8 @@ export async function getExistingPurchase(userId: string, resourceId: string) {
  * Returns all COMPLETED purchases for a user, ordered newest first.
  * Covers dashboard, library, and downloads pages.
  */
-export async function getUserPurchases(userId: string) {
-  return findCompletedPurchasesByUser(userId);
+export async function getUserPurchases(userId: string, take?: number) {
+  return findCompletedPurchasesByUser(userId, take);
 }
 
 export async function getUserLibraryItems(userId: string) {
@@ -238,17 +239,18 @@ export async function getUserDownloadCount(userId: string) {
   return countDownloadEventsByUser(userId);
 }
 
-export async function getUserDownloadHistory(userId: string) {
-  return findDownloadHistoryByUser(userId);
+export async function getUserDownloadHistory(userId: string, take?: number) {
+  return findDownloadHistoryByUser(userId, take);
 }
 
 export async function getUserDownloadHistorySurfaceSummary(userId: string) {
-  const downloads = await findDownloadHistoryByUser(userId);
-  const count = downloads.length;
+  const summary = await findDownloadHistorySurfaceSummaryByUser(userId);
+  const count = summary.total;
 
   return {
     count,
     rowCount: Math.min(Math.max(count, 1), 10),
+    latestDownloadedAt: summary.latestDownloadedAt,
   };
 }
 

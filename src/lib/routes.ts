@@ -7,18 +7,36 @@
  *
  * Usage:
  *   import { routes } from "@/lib/routes";
- *   <Link href={routes.dashboard}>Dashboard</Link>
- *   router.push(routes.library);
+ *   <Link href={routes.dashboardV2}>Dashboard</Link>
+ *   router.push(routes.dashboardV2Library);
  *
  * Notes:
- *   - 
-
-
  *   - API routes are intentionally excluded — they are always non-localized
  *     and should remain hardcoded close to their consumers.
  */
 
 // ── User dashboard ────────────────────────────────────────────────────────────
+
+const canonicalDashboardRoutes = {
+  dashboardV2: "/dashboard-v2",
+  dashboardV2Library: "/dashboard-v2/library",
+  dashboardV2Downloads: "/dashboard-v2/downloads",
+  dashboardV2Purchases: "/dashboard-v2/purchases",
+  dashboardV2Membership: "/dashboard-v2/membership",
+  dashboardV2Settings: "/dashboard-v2/settings",
+  dashboardV2Creator: "/dashboard-v2/creator",
+  dashboardV2CreatorApply: "/dashboard-v2/creator/apply",
+  dashboardV2CreatorResources: "/dashboard-v2/creator/resources",
+  dashboardV2CreatorNewResource: "/dashboard-v2/creator/resources/new",
+  dashboardV2CreatorResource: (id: string) =>
+    `/dashboard-v2/creator/resources/${id}`,
+  dashboardV2CreatorAnalytics: "/dashboard-v2/creator/analytics",
+  dashboardV2CreatorSales: "/dashboard-v2/creator/sales",
+  dashboardV2CreatorPayouts: "/dashboard-v2/creator/payouts",
+  dashboardV2CreatorProfile: "/dashboard-v2/creator/profile",
+  dashboardV2CreatorSettings: "/dashboard-v2/creator/settings",
+  dashboardV2LibraryPaymentSuccess: () => "/dashboard-v2/library?payment=success",
+} as const;
 
 export const routes = {
   // ── Public / marketing ─────────────────────────────────────────────────────
@@ -67,21 +85,7 @@ export const routes = {
     `/auth/login?next=${encodeURIComponent(next)}`,
 
   // ── User dashboard ────────────────────────────────────────────────────────
-  dashboard: "/dashboard",
-  creatorDashboard: "/dashboard/creator",
-  creatorApply: "/dashboard/creator/apply",
-  creatorResources: "/dashboard/creator/resources",
-  creatorNewResource: "/dashboard/creator/resources/new",
-  creatorAnalytics: "/dashboard/creator/analytics",
-  creatorSales: "/dashboard/creator/sales",
-  creatorProfile: "/dashboard/creator/profile",
-  library: "/dashboard/library",
-  downloads: "/dashboard/downloads",
-  purchases: "/dashboard/purchases",
-  dashboardResources: "/dashboard/resources",
-  settings: "/settings",
-  subscription: "/subscription",
-  libraryPaymentSuccess: () => "/dashboard/library?payment=success",
+  ...canonicalDashboardRoutes,
 
   // ── Admin panel ───────────────────────────────────────────────────────────
   admin: "/admin",
@@ -142,7 +146,6 @@ export const routes = {
     const query = typeof params === "string" ? params : params.toString();
     return query ? `/admin/audit?${query}` : "/admin/audit";
   },
-  creatorResource: (id: string) => `/dashboard/creator/resources/${id}`,
   creatorPublicProfile: (slug: string) => `/creators/${slug}`,
   resourcePaymentSuccess: (slug: string) =>
     `/resources/${slug}?payment=success`,

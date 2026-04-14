@@ -87,7 +87,7 @@ test("dashboard routes keep stable result geometry after shell handoff", async (
 }) => {
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
 
-  await loginAsCreator(page, "/subscription");
+  await loginAsCreator(page, "/dashboard-v2/membership");
   await normalizeVisualNoise(page);
 
   await expect(
@@ -101,7 +101,7 @@ test("dashboard routes keep stable result geometry after shell handoff", async (
     "dashboard-subscription-final.png",
   );
 
-  await page.goto("/dashboard/library", { waitUntil: "domcontentloaded" });
+  await page.goto("/dashboard-v2/library", { waitUntil: "domcontentloaded" });
   await expect(
     page.locator('[data-route-shell-ready="dashboard-library"]').first(),
   ).toBeVisible({
@@ -113,7 +113,7 @@ test("dashboard routes keep stable result geometry after shell handoff", async (
     "dashboard-library-final.png",
   );
 
-  await page.goto("/dashboard/creator", { waitUntil: "domcontentloaded" });
+  await page.goto("/dashboard-v2/creator", { waitUntil: "domcontentloaded" });
   await expect(
     page.locator('[data-route-shell-ready="dashboard-creator-overview"]').first(),
   ).toBeVisible({

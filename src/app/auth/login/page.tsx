@@ -23,16 +23,16 @@ function GoogleIcon() {
 }
 
 function sanitizeNext(next: string | null): string {
-  if (!next) return routes.dashboard;
-  if (!next.startsWith("/")) return routes.dashboard;
-  if (next.startsWith("//")) return routes.dashboard;
+  if (!next) return routes.dashboardV2;
+  if (!next.startsWith("/")) return routes.dashboardV2;
+  if (next.startsWith("//")) return routes.dashboardV2;
   return next;
 }
 
 function getGoogleCallbackUrl(next: string) {
   // Keep explicit protected-route redirects intact, but avoid sending the
   // default OAuth completion path through the heavier dashboard overview.
-  return next === routes.dashboard ? routes.library : next;
+  return next === routes.dashboardV2 ? routes.dashboardV2Library : next;
 }
 
 function LoginForm() {

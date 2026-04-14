@@ -16,7 +16,12 @@ const DynamicImageDropzone = dynamic(
   () => import("./ImageDropzone").then((mod) => mod.ImageDropzone),
   {
     ssr: false,
-    loading: () => <ImageDropzoneLoadingShell helpText="Preparing image upload…" />,
+    loading: () => (
+      <ImageDropzoneLoadingShell
+        helpText="ลากรูปภาพมาวาง หรือคลิกเพื่อเพิ่ม cover และ preview"
+        supportingText="JPEG, PNG, WebP, or GIF — up to 5 MB each."
+      />
+    ),
   },
 );
 
@@ -40,9 +45,11 @@ function ImageDropzoneShellContent({
 
 function ImageDropzoneLoadingShell({
   helpText,
+  supportingText,
   disabled = false,
 }: {
   helpText: string;
+  supportingText: string;
   disabled?: boolean;
 }) {
   return (
@@ -54,7 +61,7 @@ function ImageDropzoneLoadingShell({
       >
         <ImageDropzoneShellContent
           helpText={helpText}
-          supportingText="The uploader loads separately to keep this form lighter on first render."
+          supportingText={supportingText}
         />
       </PickerDropzoneShell>
     </div>
@@ -137,7 +144,7 @@ export function LazyImageDropzone({
       >
         <ImageDropzoneShellContent
           helpText={props.helpText ?? "Drag & drop images here, or click to browse"}
-          supportingText="The uploader will load when this section is in view or when you interact with it."
+          supportingText="JPEG, PNG, WebP, or GIF — up to 5 MB each."
         />
       </PickerDropzoneShell>
     </div>

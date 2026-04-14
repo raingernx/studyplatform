@@ -1,5 +1,9 @@
 # Knowledge Log
 
+## 2026-04-13
+
+- tightened dashboard-v2 entry handoff after visual review showed a synthetic sidebar/topbar skeleton was worse than the real shell: canonical `/dashboard-v2/*` navigations now bypass `DashboardEntryNavigationOverlay`, letting `DashboardV2Shell` and route-owned content loading states handle the transition; legacy dashboard URLs remain the only intended users of the compatibility entry overlay.
+
 ## 2026-04-08
 
 - matched the recommended/treatment listing warm path to its actual smoke shape too: `/resources?category=all&sort=recommended` with `ranking_variant=B` now repeats and uses a burst of `5`, after post-deploy perf still showed `listing_recommended_smoke` failing even though the control/newest listing had already been stabilized.

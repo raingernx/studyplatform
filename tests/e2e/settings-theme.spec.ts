@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { loginAsCreator } from "./helpers/auth";
 
 const CREATOR_EMAIL = "demo.instructor@krukraft.dev";
+const DASHBOARD_SETTINGS_HEADING = /Profile, preferences, and security/i;
 
 async function setUserThemePreference(email: string, theme: "light" | "dark" | "system") {
   const prisma = new PrismaClient();
@@ -54,15 +55,15 @@ test("settings does not flip runtime theme when DB preference differs from local
   await expect(page).toHaveURL(/\/resources$/);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 
-  await page.goto("/settings", { waitUntil: "commit" }).catch((error) => {
+  await page.goto("/dashboard-v2/settings", { waitUntil: "commit" }).catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
     if (!message.includes("ERR_ABORTED")) {
       throw error;
     }
   });
 
-  await expect(page).toHaveURL(/\/settings$/);
-  await expect(page.getByRole("heading", { name: /Settings/i })).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard-v2\/settings$/);
+  await expect(page.getByRole("heading", { name: DASHBOARD_SETTINGS_HEADING })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await expect(page.locator("#preference-theme")).toHaveValue("dark");
 });

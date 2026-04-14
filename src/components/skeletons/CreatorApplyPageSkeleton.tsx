@@ -1,8 +1,8 @@
 "use client";
 
 import { Skeleton } from "boneyard-js/react";
-import { Sparkles } from "lucide-react";
-import { PageContent } from "@/design-system";
+import { BarChart2, DollarSign, FileText, Sparkles, Upload } from "lucide-react";
+import { Badge, PageContent } from "@/design-system";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 
 const CREATOR_APPLY_PAGE_SKELETON_NAME = "creator-apply-page";
@@ -48,6 +48,33 @@ function CreatorApplyHeaderSkeleton() {
     </div>
   );
 }
+
+const CREATOR_APPLY_BENEFITS = [
+  {
+    icon: Upload,
+    title: "Upload and publish resources",
+    description:
+      "List study guides, notes, templates, and downloadable assets for learners.",
+  },
+  {
+    icon: DollarSign,
+    title: "Earn from sales",
+    description:
+      "Track gross revenue and creator share directly from your dashboard.",
+  },
+  {
+    icon: BarChart2,
+    title: "Monitor performance",
+    description:
+      "Review downloads, top-performing resources, and recent sales activity.",
+  },
+  {
+    icon: FileText,
+    title: "Build your creator profile",
+    description:
+      "Customize your public creator identity with a slug, bio, banner, and links.",
+  },
+] as const;
 
 function CreatorApplyStatusPanelSkeleton({
   titleWidth,
@@ -268,6 +295,62 @@ export function CreatorApplyRejectedFeedbackSkeleton() {
         <LoadingSkeleton className="h-4 w-5/6 max-w-md" />
       </div>
     </div>
+  );
+}
+
+export function CreatorApplyRouteLoadingContent() {
+  return (
+    <PageContent className="space-y-8">
+      <section
+        className="space-y-8"
+        data-loading-scope="dashboard-v2-creator-apply"
+      >
+        <div className="rounded-[28px] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-violet-50 p-8 shadow-card">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white">
+              <Sparkles className="h-5 w-5" />
+            </span>
+            <div>
+              <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                Creator
+              </Badge>
+              <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight text-foreground">
+                Become a Creator
+              </h1>
+            </div>
+          </div>
+
+          <p className="mt-5 max-w-3xl text-sm leading-6 text-muted-foreground">
+            Unlock creator tools to upload marketplace resources, earn from every
+            sale, and monitor downloads and analytics from one dashboard.
+          </p>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            {CREATOR_APPLY_BENEFITS.map((benefit) => {
+              const Icon = benefit.icon;
+              return (
+                <div
+                  key={benefit.title}
+                  className="rounded-2xl border border-border bg-card p-5 shadow-sm"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <h2 className="mt-4 text-sm font-semibold text-foreground">
+                    {benefit.title}
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {benefit.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <CreatorApplyPanelSkeleton variant="status-shell" />
+      </section>
+    </PageContent>
   );
 }
 

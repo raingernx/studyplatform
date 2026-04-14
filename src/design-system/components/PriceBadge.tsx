@@ -15,7 +15,7 @@ export function PriceBadge({
 
   if (isFree || value === 0) {
     return (
-      <span className="rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+      <span className="rounded-md border border-success-500/20 bg-accent px-2 py-1 text-xs font-medium text-success-700">
         Free
       </span>
     );
@@ -24,7 +24,7 @@ export function PriceBadge({
   const majorUnits = value / 100;
 
   return (
-    <span className="rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+    <span className="rounded-md border border-success-500/20 bg-accent px-2 py-1 text-xs font-medium text-success-700">
       {formatPrice(majorUnits, currency)}
     </span>
   );

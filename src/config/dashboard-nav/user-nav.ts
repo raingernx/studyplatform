@@ -16,23 +16,23 @@ export const USER_DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
     label: "Dashboard",
     items: [
       {
-        href: routes.dashboard,
+        href: routes.dashboardV2,
         label: "Home",
         icon: LayoutDashboard,
         exact: true,
       },
       {
-        href: routes.library,
+        href: routes.dashboardV2Library,
         label: "Library",
         icon: BookOpen,
       },
       {
-        href: routes.downloads,
+        href: routes.dashboardV2Downloads,
         label: "Downloads",
         icon: Download,
       },
       {
-        href: routes.purchases,
+        href: routes.dashboardV2Purchases,
         label: "Purchases",
         icon: ShoppingBag,
       },
@@ -55,16 +55,15 @@ export const USER_DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
     label: "Account",
     items: [
       {
-        href: routes.subscription,
+        href: routes.dashboardV2Membership,
         label: "Membership",
         icon: CreditCard,
       },
       {
-        href: routes.settings,
+        href: routes.dashboardV2Settings,
         label: "Settings",
         icon: Settings,
       },
     ],
   },
 ];
-
