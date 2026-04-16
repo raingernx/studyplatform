@@ -23,9 +23,40 @@ const StripeCheckoutSchema = z.discriminatedUnion("mode", [
   }),
   z.object({
     mode: z.literal("subscription"),
-    plan: z.enum(["pro_monthly", "pro_annual"]),
+    plan: z.enum(["pro_monthly", "pro_annual", "team_monthly", "team_annual"]),
   }),
 ]);
+
+const DEV_SUBSCRIPTION_PRICE_DATA = {
+  pro_monthly: {
+    unitAmount: 24_900,
+    interval: "month" as const,
+  },
+  pro_annual: {
+    // Stripe expects THB in the smallest currency unit (satang).
+    // The UI shows the annual plan as THB 189/month billed yearly = THB 2,268/year.
+    unitAmount: 226_800,
+    interval: "year" as const,
+  },
+  team_monthly: {
+    unitAmount: 79_000,
+    interval: "month" as const,
+  },
+  team_annual: {
+    // The UI shows the annual team plan as THB 590/month billed yearly = THB 7,080/year.
+    unitAmount: 708_000,
+    interval: "year" as const,
+  },
+} as const;
+
+function isConfiguredStripePriceId(priceId: string | undefined): priceId is string {
+  return (
+    typeof priceId === "string" &&
+    priceId.length > 0 &&
+    priceId !== "price_..." &&
+    !priceId.endsWith("...")
+  );
+}
 
 async function ensureStripeCustomer(userId: string) {
   const user = await findCheckoutUserById(userId);
@@ -280,14 +311,42 @@ export async function createStripeCheckout(body: unknown, userId: string) {
 
   const plan = parsed.data.plan as SubscriptionPlan;
   const priceId = SUBSCRIPTION_PLANS[plan];
+  const fallbackPriceData = DEV_SUBSCRIPTION_PRICE_DATA[plan];
+
+  if (!isConfiguredStripePriceId(priceId) && process.env.NODE_ENV !== "development") {
+    throw new PaymentServiceError(503, {
+      error: "Membership checkout is not configured for this environment.",
+    });
+  }
 
   const checkoutSession = await createCheckoutSessionWithRecovery(
     {
       customer: customerId,
       mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [
+        isConfiguredStripePriceId(priceId)
+          ? { price: priceId, quantity: 1 }
+          : {
+              price_data: {
+                currency: "thb",
+                unit_amount: fallbackPriceData.unitAmount,
+                recurring: { interval: fallbackPriceData.interval },
+                product_data: {
+                  name:
+                    plan === "pro_annual"
+                      ? "Krukraft Pro Annual"
+                      : plan === "pro_monthly"
+                        ? "Krukraft Pro"
+                        : plan === "team_annual"
+                          ? "Krukraft Team Annual"
+                          : "Krukraft Team",
+                },
+              },
+              quantity: 1,
+            },
+      ],
       success_url: `${baseUrl}${routes.dashboardV2Membership}?subscription=success`,
-      cancel_url: `${baseUrl}/pricing?subscription=cancelled`,
+      cancel_url: `${baseUrl}${routes.membership}?subscription=cancelled`,
       subscription_data: { metadata: { userId: user.id, plan } },
     },
     user,

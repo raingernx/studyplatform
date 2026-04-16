@@ -3,6 +3,7 @@ import type { Page } from "@playwright/test";
 const IGNORABLE_DEV_CONSOLE_ERRORS = [
   /_next\/webpack-hmr/i,
   /ERR_INVALID_HTTP_RESPONSE/i,
+  /\[next-auth\]\[error\]\[CLIENT_FETCH_ERROR\][\s\S]*\/api\/auth\/session[\s\S]*Failed to fetch/i,
 ];
 
 export function isIgnorableConsoleError(message: string) {

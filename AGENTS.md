@@ -409,6 +409,39 @@ Keep API routes modular.
 
 Avoid creating unnecessary duplicate logic.
 
+## Prisma Workflow
+
+Use Prisma in three different modes. Do not treat them as interchangeable.
+
+- `npm run db:push`
+  Use only while you are still experimenting locally and the schema is not stable yet. This is the repo's draft mode for schema work.
+- `npm run db:migrate`
+  Use when the schema change is decided and should become real repo history. This creates a Prisma migration and updates the local dev database.
+- `npm run db:deploy`
+  Use only to apply already-created migrations to clean or properly baselined databases such as staging, production, or a fresh dev database. It does not create new migrations.
+
+### Prisma Rule Of Thumb
+
+- still changing your mind about fields or relations: `db:push`
+- schema is settled and should be recorded in git: `db:migrate`
+- another environment needs the migrations that already exist in the repo: `db:deploy`
+
+### Add-A-Field Flow
+
+When adding a new Prisma field or model, use this order:
+
+1. Edit `prisma/schema.prisma`.
+2. If you are still iterating locally, run `npm run db:push`.
+3. Update the related route, service, repository, UI, and loading/skeleton states.
+4. Once the schema change is stable, run `npm run db:migrate`.
+5. Run verification (`typecheck`, `lint`, and relevant runtime proof).
+6. Commit the schema change, migration folder, and code together.
+7. Apply the recorded migrations to other environments with `npm run db:deploy`.
+
+### Current Local Caveat
+
+The current local database is not fully baseline-managed under Prisma Migrate history, so `npm run db:deploy` is not the safe default path for that specific database. For narrowly scoped local fixes, prefer a clean dev database or a narrow SQL change instead of forcing `db:deploy` or `db:push --accept-data-loss`.
+
 For new UI work, prefer importing primitives, layout helpers, and composed building blocks from:
 
 ```
@@ -502,6 +535,15 @@ When editing UI structure, agents must prefer visual hierarchy over box stacking
 - if an inner panel is truly required, it must look intentionally subordinate to the parent surface through weaker contrast or a different background treatment, not as a duplicate card
 - when a surface contains repeated rows or controls, prefer section headers plus divided rows over wrapping every row in its own card
 - when changing final UI hierarchy, review the associated loading, empty, and error states so they do not preserve the old nested-card geometry
+
+## UI Typography And Tracking Rules
+
+When editing product UI text, agents must prefer hierarchy through size, weight, color, and spacing instead of decorative letter spacing.
+
+- do not add `tracking-*`, custom `letter-spacing`, or forced uppercase styling to product UI text by default
+- treat letter spacing in UI as opt-in and rare; use it only when a canonical brand asset or existing approved pattern explicitly requires it
+- dashboard, settings, admin, and form surfaces should not rely on tracking to create hierarchy
+- if a label or caption feels weak, fix it with clearer copy, stronger weight contrast, or better spacing before reaching for tracking
 
 ## UI Loading And Streaming Rules
 
@@ -608,6 +650,8 @@ When implementing features:
 11. When a recurring error class or verification mistake is discovered, decide before close-out whether it belongs in `knowledge/log.md`, an existing wiki page, or a new wiki page; do not rely on memory alone.
 12. Before closing any non-trivial task, perform and report an impact review: identify what neighboring routes, loading states, shared components, tests/probes, and docs/context could be affected, what the likely risks are, and what was changed or verified to keep those areas aligned.
 13. Do not treat “the edited file works” as sufficient evidence when the change touches shared behavior. Shared UI shells, route-family loading, navigation handoff, cache warmups, and probe/test helpers must be checked for downstream impact before the task is considered complete.
+14. When an active parent plan exists in `krukraft-ai-contexts/09-todos.md`, do not recommend, start, or prioritize work outside that plan until the current `Next Up` choice is resolved or the user explicitly reprioritizes. Treat `Deferred` items as out-of-plan by default.
+15. If a potentially useful task sits outside the active parent plan, label it explicitly as out-of-plan and do not steer the user there as the next step unless they ask to change plan.
 
 AI agents should avoid large architectural changes unless explicitly requested.
 
@@ -760,9 +804,11 @@ The repo now accepts these shorthand commands in user requests:
 - `CL` = inspect CI/browser-smoke logs, not workflow status alone
 - `WARM` = inspect post-deploy warm/perf logs, not workflow status alone
 - `KT` = perform knowledge triage (`no ingest`, `log only`, `update existing wiki`, or `new wiki entry`)
+- `Next Up` = recommend the next task strictly from the active parent plan in `krukraft-ai-contexts/09-todos.md`
 
 When a shorthand request is used, agents should follow the same verification and close-out rules as the long-form request. In particular:
 
 - `CL` and `WARM` still require log review for hidden `flaky`, `retry #`, timeout, and threshold-failure signals
 - `CPD` does not bypass verification, impact review, or knowledge triage requirements
 - `CPD` is not complete from `git push` output alone; before claiming it is done, verify that `origin` points to the canonical GitHub repo (`https://github.com/raingernx/KRUKRAFT.git`), that `HEAD` matches `origin/main`, and that deployment evidence exists for the pushed commit. The repo-owned check is `npm run cpd:verify`.
+- `Next Up` must stay plan-locked: answer from the active plan's `Next Up` block first, label recommendations as `in-plan` or `out-of-plan`, and do not recommend `Deferred` work unless the user explicitly reprioritizes.

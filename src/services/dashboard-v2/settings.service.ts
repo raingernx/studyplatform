@@ -1,32 +1,6 @@
 import { formatDate } from "@/lib/format";
-import type { UserPreferences } from "@/lib/preferences";
+import type { Currency, Theme, Timezone, UserPreferences } from "@/lib/preferences";
 import { getDashboardSettingsPageData } from "@/services/admin";
-
-function toTitleCase(value: string) {
-  return value
-    .split(/[_-]/g)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
-}
-
-function getNotificationsSummary(preferences: UserPreferences) {
-  const enabled = [
-    preferences.emailNotifications ? "account alerts" : null,
-    preferences.purchaseReceipts ? "receipts" : null,
-    preferences.productUpdates ? "product updates" : null,
-    preferences.marketingEmails ? "marketing" : null,
-  ].filter(Boolean) as string[];
-
-  if (enabled.length === 0) {
-    return "All email notifications are turned off.";
-  }
-
-  if (enabled.length === 1) {
-    return `${enabled[0]} enabled.`;
-  }
-
-  return `${enabled.slice(0, -1).join(", ")} and ${enabled.at(-1)} enabled.`;
-}
 
 export interface DashboardV2SettingsData {
   state: "ready" | "error";
@@ -34,21 +8,24 @@ export interface DashboardV2SettingsData {
     displayName: string;
     email: string;
     avatarUrl: string | null;
-    joinedLabel: string;
-    note: string;
+    providerAvatarUrl: string | null;
+    providerLabel: string | null;
   };
   preferences: {
-    theme: string;
-    language: string;
-    currency: string;
-    timezone: string;
-    notificationsSummary: string;
+    theme: Theme;
+    currency: Currency;
+    timezone: Timezone;
   };
-  security: {
-    accountLabel: string;
-    accountDetail: string;
-    routeLabel: string;
-    routeDetail: string;
+  notifications: Pick<
+    UserPreferences,
+    "emailNotifications" | "purchaseReceipts" | "productUpdates" | "marketingEmails"
+  >;
+  accountAccess: {
+    email: string;
+    signInMethodLabel: string;
+    canResetPassword: boolean;
+    currentPlanLabel: string;
+    memberSinceLabel: string;
     helpText: string;
   };
   errorTitle?: string;
@@ -68,41 +45,84 @@ export async function getDashboardV2SettingsData(input: {
       userId: input.userId,
       fallbackUser: input.fallbackUser,
     });
+    const linkedProviders =
+      user && "accounts" in user && Array.isArray(user.accounts)
+        ? user.accounts.map((account) => account.provider)
+        : [];
+    const hasGoogleProvider = linkedProviders.includes("google");
+    const currentAvatarUrl =
+      user && "image" in user && typeof user.image === "string" && user.image.trim().length > 0
+        ? user.image.trim()
+        : null;
+    const rawProviderAvatarUrl =
+      user && "providerImage" in user && typeof user.providerImage === "string"
+        ? user.providerImage.trim() || null
+        : null;
+    const inferredProviderAvatarUrl =
+      hasGoogleProvider &&
+      !rawProviderAvatarUrl &&
+      currentAvatarUrl?.includes("googleusercontent.com")
+        ? currentAvatarUrl
+        : null;
+    const hasPassword =
+      user && "hashedPassword" in user && typeof user.hashedPassword === "string"
+        ? user.hashedPassword.trim().length > 0
+        : false;
     const joinedDate =
       user && "createdAt" in user && user.createdAt instanceof Date
         ? user.createdAt
         : null;
+    const subscriptionPlan =
+      user && "subscriptionPlan" in user && typeof user.subscriptionPlan === "string"
+        ? user.subscriptionPlan
+        : null;
+    const subscriptionStatus =
+      user && "subscriptionStatus" in user && typeof user.subscriptionStatus === "string"
+        ? user.subscriptionStatus.toUpperCase()
+        : "INACTIVE";
+    const currentPlanLabel = subscriptionPlan
+      ? subscriptionPlan
+          .split("_")
+          .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+          .join(" ")
+      : subscriptionStatus === "ACTIVE" || subscriptionStatus === "TRIALING"
+        ? "Active membership"
+        : "Free plan";
 
     return {
       state: "ready",
       profile: {
         displayName: user?.name?.trim() || "Account user",
         email: user?.email?.trim() || "No email on file",
-        avatarUrl: user?.image ?? null,
-        joinedLabel: joinedDate ? formatDate(joinedDate) : "Unavailable",
-        note: user?.name?.trim()
-          ? "Public account identity is configured."
-          : "Add a display name when profile editing is connected to this route.",
+        avatarUrl: currentAvatarUrl,
+        providerAvatarUrl: rawProviderAvatarUrl ?? inferredProviderAvatarUrl,
+        providerLabel: hasGoogleProvider ? "Google" : null,
       },
       preferences: {
-        theme: toTitleCase(preferences.theme),
-        language: toTitleCase(preferences.language),
+        theme: preferences.theme,
         currency: preferences.currency,
         timezone: preferences.timezone,
-        notificationsSummary: getNotificationsSummary(preferences),
       },
-      security: {
-        accountLabel: user?.email?.trim()
-          ? "Primary account email on file"
-          : "Primary account email missing",
-        accountDetail: user?.email?.trim()
-          ? "This email is the recovery and account notice contact for the dashboard."
-          : "Add an account email before relying on recovery or billing notices.",
-        routeLabel: "Authenticated dashboard route",
-        routeDetail:
-          "Settings only render after the dashboard-v2 session gate confirms the signed-in user.",
-        helpText:
-          "Billing changes live in Membership. Order receipts and payment history stay in Purchases.",
+      notifications: {
+        emailNotifications: preferences.emailNotifications,
+        purchaseReceipts: preferences.purchaseReceipts,
+        productUpdates: preferences.productUpdates,
+        marketingEmails: preferences.marketingEmails,
+      },
+      accountAccess: {
+        email: user?.email?.trim() || "No email on file",
+        signInMethodLabel:
+          hasGoogleProvider && hasPassword
+            ? "Google and password"
+            : hasGoogleProvider
+              ? "Google account"
+              : hasPassword
+                ? "Email and password"
+                : "Email sign-in",
+        canResetPassword: hasPassword,
+        currentPlanLabel,
+        memberSinceLabel: joinedDate ? formatDate(joinedDate) : "Unavailable",
+        helpText: "Membership handles billing. Purchases keeps receipt history.",
       },
     };
   } catch {
@@ -112,21 +132,26 @@ export async function getDashboardV2SettingsData(input: {
         displayName: "Unavailable",
         email: "Unavailable",
         avatarUrl: null,
-        joinedLabel: "Unavailable",
-        note: "Unavailable",
+        providerAvatarUrl: null,
+        providerLabel: null,
       },
       preferences: {
-        theme: "Unavailable",
-        language: "Unavailable",
-        currency: "Unavailable",
-        timezone: "Unavailable",
-        notificationsSummary: "Unavailable",
+        theme: "system",
+        currency: "THB",
+        timezone: "Asia/Bangkok",
       },
-      security: {
-        accountLabel: "Unavailable",
-        accountDetail: "Unavailable",
-        routeLabel: "Unavailable",
-        routeDetail: "Unavailable",
+      notifications: {
+        emailNotifications: false,
+        purchaseReceipts: false,
+        productUpdates: false,
+        marketingEmails: false,
+      },
+      accountAccess: {
+        email: "Unavailable",
+        signInMethodLabel: "Unavailable",
+        canResetPassword: false,
+        currentPlanLabel: "Unavailable",
+        memberSinceLabel: "Unavailable",
         helpText: "Try reloading this route.",
       },
       errorTitle: "Could not load settings",

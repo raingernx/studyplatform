@@ -19,6 +19,7 @@ export interface DashboardV2MembershipData {
   state: "ready" | "error";
   badgeLabel: string;
   badgeVariant: DashboardV2MembershipBadgeVariant;
+  status: string;
   title: string;
   detail: string;
   support: string;
@@ -26,6 +27,8 @@ export interface DashboardV2MembershipData {
   primaryCtaLabel: string;
   secondaryCtaHref: string;
   secondaryCtaLabel: string;
+  canCancelSubscription: boolean;
+  cancellationScheduled: boolean;
   summaryCards: DashboardV2MembershipSummaryCard[];
   errorTitle?: string;
   errorDescription?: string;
@@ -79,6 +82,7 @@ export async function getDashboardV2MembershipData(input: {
         state: "error",
         badgeLabel: "Unavailable",
         badgeVariant: "warning",
+        status: "UNAVAILABLE",
         title: "Membership unavailable",
         detail: "We could not find your membership profile.",
         support: "Try refreshing this page or signing in again.",
@@ -86,6 +90,8 @@ export async function getDashboardV2MembershipData(input: {
         primaryCtaLabel: "Retry",
         secondaryCtaHref: routes.dashboardV2Purchases,
         secondaryCtaLabel: "View purchases",
+        canCancelSubscription: false,
+        cancellationScheduled: false,
         summaryCards: [],
         errorTitle: "Could not load membership",
         errorDescription:
@@ -106,16 +112,23 @@ export async function getDashboardV2MembershipData(input: {
     const currentPeriodEnd =
       subscription?.currentPeriodEnd ?? overview?.currentPeriodEnd ?? null;
     const hasStripeSubscription = Boolean(subscription?.stripeSubscriptionId);
-    const isActivePlan =
-      normalizedStatus === "ACTIVE" || normalizedStatus === "TRIALING";
+    const hasPaidAccess =
+      normalizedStatus === "ACTIVE" ||
+      normalizedStatus === "TRIALING" ||
+      normalizedStatus === "CANCELED";
+    const canCancelSubscription =
+      hasStripeSubscription &&
+      (normalizedStatus === "ACTIVE" ||
+        normalizedStatus === "TRIALING" ||
+        normalizedStatus === "PAST_DUE");
+    const cancellationScheduled =
+      hasStripeSubscription && normalizedStatus === "CANCELED";
 
-    const title = isActivePlan
+    const title = hasPaidAccess
       ? `${planName} membership`
       : normalizedStatus === "PAST_DUE"
         ? `${planName} membership needs attention`
-        : normalizedStatus === "CANCELED"
-          ? `${planName} membership is ending`
-          : "Free plan";
+        : "Free plan";
 
     const detail =
       normalizedStatus === "ACTIVE" && currentPeriodEnd
@@ -130,8 +143,10 @@ export async function getDashboardV2MembershipData(input: {
                   purchaseCount === 1 ? "" : "s"
                 } remain available on the free plan.`;
 
-    const support = isActivePlan
+    const support = normalizedStatus === "ACTIVE" || normalizedStatus === "TRIALING"
       ? "Use Library for unlimited access and Purchases for invoice history."
+      : normalizedStatus === "CANCELED"
+        ? "Your membership is set to end at the close of the current billing period."
       : normalizedStatus === "PAST_DUE"
         ? "Review plans from the membership page, then check purchases if you need past receipts."
         : "You can keep purchasing resources individually or move to a membership plan later.";
@@ -166,15 +181,16 @@ export async function getDashboardV2MembershipData(input: {
       ? "Private billing data stays behind your authenticated account."
       : "Upgrade from the public membership page when you need unlimited access.";
 
-    const primaryCtaHref = isActivePlan
+    const primaryCtaHref = hasPaidAccess
       ? routes.dashboardV2Library
       : routes.membership;
-    const primaryCtaLabel = isActivePlan ? "Open library" : "Explore plans";
+    const primaryCtaLabel = hasPaidAccess ? "Open library" : "Explore plans";
 
     return {
       state: "ready",
       badgeLabel: badge.label,
       badgeVariant: badge.variant,
+      status: normalizedStatus,
       title,
       detail,
       support,
@@ -182,13 +198,15 @@ export async function getDashboardV2MembershipData(input: {
       primaryCtaLabel,
       secondaryCtaHref: routes.dashboardV2Purchases,
       secondaryCtaLabel: "View purchases",
+      canCancelSubscription,
+      cancellationScheduled,
       summaryCards: [
         {
           label: "Current plan",
-          value: isActivePlan || normalizedStatus === "PAST_DUE" || normalizedStatus === "CANCELED"
+          value: hasPaidAccess || normalizedStatus === "PAST_DUE"
             ? planName
             : "Free",
-          detail: isActivePlan
+          detail: normalizedStatus === "ACTIVE" || normalizedStatus === "TRIALING"
             ? "Unlimited library access"
             : normalizedStatus === "PAST_DUE"
               ? "Billing attention required"
@@ -215,6 +233,7 @@ export async function getDashboardV2MembershipData(input: {
       state: "error",
       badgeLabel: "Unavailable",
       badgeVariant: "warning",
+      status: "UNAVAILABLE",
       title: "Membership unavailable",
       detail: "This route could not load your subscription state.",
       support: "Try refreshing this page. Your account data is still preserved.",
@@ -222,6 +241,8 @@ export async function getDashboardV2MembershipData(input: {
       primaryCtaLabel: "Retry",
       secondaryCtaHref: routes.dashboardV2Purchases,
       secondaryCtaLabel: "View purchases",
+      canCancelSubscription: false,
+      cancellationScheduled: false,
       summaryCards: [],
       errorTitle: "Could not load membership",
       errorDescription:

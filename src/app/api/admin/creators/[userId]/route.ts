@@ -1,4 +1,6 @@
+import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
+import { getCreatorAccessCacheTag } from "@/lib/cache";
 import { requireAdminApi } from "@/lib/auth/require-admin-api";
 import {
   CreatorServiceError,
@@ -25,6 +27,7 @@ export async function PATCH(
 
     if (action === "approve") {
       await approveCreatorApplication(userId);
+      revalidateTag(getCreatorAccessCacheTag(userId), "max");
       return NextResponse.json({ ok: true });
     }
 
@@ -33,6 +36,7 @@ export async function PATCH(
         return NextResponse.json({ error: "A rejection reason is required." }, { status: 400 });
       }
       await rejectCreatorApplication(userId, reason.trim());
+      revalidateTag(getCreatorAccessCacheTag(userId), "max");
       return NextResponse.json({ ok: true });
     }
 

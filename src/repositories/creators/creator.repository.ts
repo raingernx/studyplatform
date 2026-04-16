@@ -144,6 +144,7 @@ const CREATOR_PUBLIC_SHELL_BASE_SELECT = {
   id: true,
   name: true,
   image: true,
+  creatorAvatar: true,
   creatorDisplayName: true,
   creatorSlug: true,
   creatorBio: true,
@@ -219,6 +220,7 @@ export async function findCreatorProfileByUserId(userId: string) {
       name: true,
       email: true,
       image: true,
+      creatorAvatar: true,
       creatorDisplayName: true,
       creatorSlug: true,
       creatorBio: true,
@@ -1434,6 +1436,7 @@ export async function findCreatorDownloadSeries(userId: string, since?: Date) {
 export async function updateCreatorProfileRecord(
   userId: string,
   data: {
+    creatorAvatar?: string | null;
     creatorDisplayName?: string | null;
     creatorSlug?: string | null;
     creatorBio?: string | null;
@@ -1450,6 +1453,7 @@ export async function updateCreatorProfileRecord(
       name: true,
       email: true,
       image: true,
+      creatorAvatar: true,
       creatorDisplayName: true,
       creatorSlug: true,
       creatorBio: true,

@@ -49,12 +49,47 @@ function TopbarSkeleton() {
   return (
     <header className="sticky top-0 z-10 border-b border-border-subtle bg-background/95 px-4 pt-3 pb-3 sm:px-6 lg:px-8">
       <div className="flex items-center gap-3">
-        <LoadingSkeleton className="size-11 rounded-xl lg:hidden" />
-        <LoadingSkeleton className="h-11 min-w-0 flex-1 max-w-2xl rounded-xl" />
-        <LoadingSkeleton className="size-11 rounded-xl" />
-        <LoadingSkeleton className="size-11 rounded-full" />
+        <div className="inline-flex size-11 items-center justify-center rounded-xl lg:hidden">
+          <LoadingSkeleton className="size-5 rounded-md" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="w-full max-w-2xl">
+            <div className="relative w-full">
+              <div className="h-11 w-full rounded-xl border border-input bg-background" />
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                <LoadingSkeleton className="size-4 rounded-full bg-muted-foreground/25" />
+              </div>
+              <div className="pointer-events-none absolute inset-y-0 left-11 flex items-center">
+                <LoadingSkeleton className="h-4 w-52 rounded bg-muted" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="inline-flex size-11 items-center justify-center rounded-xl">
+          <LoadingSkeleton className="size-5 rounded-md" />
+        </div>
+
+        <div className="inline-flex size-11 items-center justify-center rounded-full border border-border-subtle bg-card/90">
+          <LoadingSkeleton className="size-8 rounded-full" />
+        </div>
       </div>
     </header>
+  );
+}
+
+export function DashboardV2ShellSkeleton() {
+  return (
+    <div className="min-h-dvh bg-background text-foreground">
+      <div className="flex min-h-dvh">
+        <SidebarSkeleton />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <TopbarSkeleton />
+          <div className="flex-1" />
+        </div>
+      </div>
+    </div>
   );
 }
 

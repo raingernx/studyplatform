@@ -20,11 +20,16 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { name, email } = body as { name?: unknown; email?: unknown };
+  const { name, email, image } = body as {
+    name?: unknown;
+    email?: unknown;
+    image?: unknown;
+  };
   const result = await updateOwnUserProfile({
     userId: session.user.id,
     name,
     email,
+    image,
   });
 
   if (result.error) {

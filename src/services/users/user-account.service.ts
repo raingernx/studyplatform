@@ -60,8 +60,9 @@ export async function updateOwnUserProfile(input: {
   userId: string;
   name?: unknown;
   email?: unknown;
+  image?: unknown;
 }) {
-  const updates: { name?: string | null; email?: string | null } = {};
+  const updates: { name?: string | null; email?: string | null; image?: string | null } = {};
 
   if (typeof input.name === "string") {
     updates.name = input.name.trim().slice(0, 120);
@@ -70,6 +71,13 @@ export async function updateOwnUserProfile(input: {
   if (typeof input.email === "string") {
     const trimmed = input.email.trim();
     updates.email = trimmed.length > 0 ? trimmed.slice(0, 190) : null;
+  }
+
+  if (typeof input.image === "string") {
+    const trimmed = input.image.trim();
+    updates.image = trimmed.length > 0 ? trimmed.slice(0, 2048) : null;
+  } else if (input.image === null) {
+    updates.image = null;
   }
 
   if (!Object.keys(updates).length) {

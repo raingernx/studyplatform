@@ -7,11 +7,13 @@ export interface InputProps extends Omit<React.ComponentProps<"input">, "prefix"
   rightAdornment?: React.ReactNode
   error?: string
   hint?: string
+  hintClassName?: string
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input({
   error,
   hint,
+  hintClassName,
   id,
   className,
   leftAdornment,
@@ -78,7 +80,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input({
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className={cn("text-caption text-muted-foreground")}>
+        <p id={hintId} className={cn("text-caption text-muted-foreground", hintClassName)}>
           {hint}
         </p>
       ) : null}

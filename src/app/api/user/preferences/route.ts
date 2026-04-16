@@ -4,11 +4,9 @@ import { authOptions } from "@/lib/auth";
 import {
   getUserPreferences,
   updateUserPreferences,
-  ALLOWED_LANGUAGES,
   ALLOWED_THEMES,
   ALLOWED_CURRENCIES,
   ALLOWED_TIMEZONES,
-  type Language,
   type Theme,
   type Currency,
   type Timezone,
@@ -46,7 +44,6 @@ export async function PATCH(req: Request) {
   }
 
   const {
-    language,
     theme,
     currency,
     timezone,
@@ -57,7 +54,6 @@ export async function PATCH(req: Request) {
   } = body as Record<string, unknown>;
 
   const updated = await updateUserPreferences(session.user.id, {
-    language: isOneOf<Language>(language, ALLOWED_LANGUAGES) ? language : undefined,
     theme: isOneOf<Theme>(theme, ALLOWED_THEMES) ? theme : undefined,
     currency: isOneOf<Currency>(currency, ALLOWED_CURRENCIES) ? currency : undefined,
     timezone: isOneOf<Timezone>(timezone, ALLOWED_TIMEZONES) ? timezone : undefined,
@@ -69,4 +65,3 @@ export async function PATCH(req: Request) {
 
   return NextResponse.json({ data: updated });
 }
-

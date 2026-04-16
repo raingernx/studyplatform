@@ -94,12 +94,16 @@ export function getDashboardReadySelector(pathname: string | null, href: string 
     return '[data-route-shell-ready="dashboard-creator-payouts"]';
   }
 
+  if (targetPathname === routes.dashboardV2CreatorStorefront) {
+    return '[data-route-shell-ready="dashboard-creator-profile"]';
+  }
+
   if (targetPathname === routes.dashboardV2CreatorProfile) {
     return '[data-route-shell-ready="dashboard-creator-profile"]';
   }
 
   if (targetPathname === routes.dashboardV2CreatorSettings) {
-    return '[data-route-shell-ready="dashboard-creator-settings"]';
+    return '[data-route-shell-ready="dashboard-settings"]';
   }
 
   if (targetPathname.startsWith("/dashboard-v2/creator")) {

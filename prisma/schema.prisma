@@ -82,11 +82,13 @@ model User {
   email          String?   @unique
   emailVerified  DateTime?
   image          String?
+  providerImage  String?
   hashedPassword String? // null for OAuth-only users
   role           UserRole  @default(STUDENT)
   creatorDisplayName String?
   creatorSlug        String?   @unique
   creatorBio         String?   @db.Text
+  creatorAvatar      String?
   creatorBanner      String?
   creatorEnabled            Boolean                  @default(false)
   creatorStatus             CreatorStatus            @default(INACTIVE)
@@ -166,22 +168,6 @@ model Category {
   slug        String     @unique
   description String?
   resources   Resource[]
-}
-
-model HomepageHero {
-  id               String   @id @default(cuid())
-  title            String
-  subtitle         String
-  primaryCtaText   String
-  primaryCtaLink   String
-  secondaryCtaText String?
-  secondaryCtaLink String?
-  badgeText        String?
-  imageUrl         String?
-  mediaUrl         String?
-  mediaType        String?  // "image" | "gif"
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
 }
 
 model PlatformSettings {
@@ -511,7 +497,7 @@ model UserPreference {
   userId  String @unique
 
   language String @default("th")
-  theme    String @default("light")
+  theme    String @default("system")
   currency String @default("THB")
   timezone String @default("Asia/Bangkok")
 

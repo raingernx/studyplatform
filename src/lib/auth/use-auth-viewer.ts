@@ -22,15 +22,22 @@ type AuthViewerState = AuthViewerPayload & {
 type UseAuthViewerOptions = {
   strategy?: "eager" | "idle";
   idleTimeoutMs?: number;
+  hydrateFromCache?: boolean;
 };
 
 const EMPTY_AUTH_VIEWER: AuthViewerPayload = {
   authenticated: false,
   user: null,
 };
+const AUTH_VIEWER_STORAGE_KEY = "krukraft.authViewer";
 
 let cachedViewer: AuthViewerPayload | null = null;
 let inFlightViewer: Promise<AuthViewerPayload> | null = null;
+
+type LoadAuthViewerOptions = {
+  allowCached?: boolean;
+  allowPersisted?: boolean;
+};
 
 const DEV_TRANSIENT_FETCH_ERROR_PATTERNS = [
   /failed to fetch/i,
@@ -69,6 +76,60 @@ async function fetchAuthViewer() {
   return json.data ?? EMPTY_AUTH_VIEWER;
 }
 
+function canUseSessionStorage() {
+  return typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
+}
+
+function readPersistedAuthViewer() {
+  if (!canUseSessionStorage()) {
+    return null;
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(AUTH_VIEWER_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as AuthViewerPayload | null;
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      typeof parsed.authenticated !== "boolean"
+    ) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function persistAuthViewer(viewer: AuthViewerPayload) {
+  if (!canUseSessionStorage()) {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(AUTH_VIEWER_STORAGE_KEY, JSON.stringify(viewer));
+  } catch {
+    // Best-effort cache only.
+  }
+}
+
+function clearPersistedAuthViewer() {
+  if (!canUseSessionStorage()) {
+    return;
+  }
+
+  try {
+    window.sessionStorage.removeItem(AUTH_VIEWER_STORAGE_KEY);
+  } catch {
+    // Best-effort cache only.
+  }
+}
+
 function isTransientAuthViewerError(error: unknown) {
   if (!(error instanceof Error)) {
     return false;
@@ -93,15 +154,24 @@ function reportAuthViewerError(error: unknown) {
   console.error("[AUTH_VIEWER_HOOK]", error);
 }
 
-function loadAuthViewer() {
-  if (cachedViewer) {
+function loadAuthViewer(options: LoadAuthViewerOptions = {}) {
+  const { allowCached = true, allowPersisted = true } = options;
+
+  if (allowCached && cachedViewer) {
     return Promise.resolve(cachedViewer);
+  }
+
+  const persistedViewer = allowPersisted ? readPersistedAuthViewer() : null;
+  if (allowPersisted && persistedViewer) {
+    cachedViewer = persistedViewer;
+    return Promise.resolve(persistedViewer);
   }
 
   if (!inFlightViewer) {
     inFlightViewer = fetchAuthViewer()
       .then((viewer) => {
         cachedViewer = viewer;
+        persistAuthViewer(viewer);
         return viewer;
       })
       .finally(() => {
@@ -138,6 +208,7 @@ function scheduleIdleLoad(
 export function clearCachedAuthViewer() {
   cachedViewer = null;
   inFlightViewer = null;
+  clearPersistedAuthViewer();
   clearFetchJsonCache();
 }
 
@@ -152,27 +223,38 @@ export function useAuthViewer(options: UseAuthViewerOptions = {}): AuthViewerSta
   const {
     strategy = "eager",
     idleTimeoutMs = 800,
+    hydrateFromCache = true,
   } = options;
   const [state, setState] = useState<AuthViewerState>(() => ({
-    ...EMPTY_AUTH_VIEWER,
-    isReady: false,
+    ...((hydrateFromCache ? cachedViewer : null) ?? EMPTY_AUTH_VIEWER),
+    isReady: hydrateFromCache ? Boolean(cachedViewer) : false,
   }));
 
   useEffect(() => {
     let cancelled = false;
 
-    if (cachedViewer) {
+    const persistedViewer = hydrateFromCache ? readPersistedAuthViewer() : null;
+
+    if (hydrateFromCache && !cachedViewer && persistedViewer) {
+      cachedViewer = persistedViewer;
+    }
+
+    if (hydrateFromCache && cachedViewer) {
       setState({
         ...cachedViewer,
         isReady: true,
       });
-      return () => {
-        cancelled = true;
-      };
     }
 
     const runLoad = () => {
-      void loadAuthViewer()
+      void loadAuthViewer(
+        hydrateFromCache
+          ? undefined
+          : {
+              allowCached: false,
+              allowPersisted: false,
+            },
+      )
         .then((viewer) => {
           if (cancelled) {
             return;

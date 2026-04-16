@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { loginAsCreator } from "./helpers/auth";
 
 const CREATOR_EMAIL = "demo.instructor@krukraft.dev";
-const DASHBOARD_SETTINGS_HEADING = /Profile, preferences, and security/i;
+const DASHBOARD_SETTINGS_HEADING = /Account settings/i;
 
 async function setUserThemePreference(email: string, theme: "light" | "dark" | "system") {
   const prisma = new PrismaClient();
@@ -24,7 +24,7 @@ async function setUserThemePreference(email: string, theme: "light" | "dark" | "
       update: { theme },
       create: {
         userId: user.id,
-        language: "en",
+        language: "th",
         theme,
         currency: "USD",
         timezone: "UTC",
@@ -39,12 +39,13 @@ async function setUserThemePreference(email: string, theme: "light" | "dark" | "
   }
 }
 
-test("settings does not flip runtime theme when DB preference differs from local default", async ({
+test("settings follows system runtime theme when DB preference differs from stored preference", async ({
   page,
 }) => {
   test.setTimeout(60_000);
 
   await setUserThemePreference(CREATOR_EMAIL, "dark");
+  await page.emulateMedia({ colorScheme: "light" });
 
   await page.addInitScript(() => {
     window.localStorage.removeItem("user_theme");
@@ -53,7 +54,11 @@ test("settings does not flip runtime theme when DB preference differs from local
   await loginAsCreator(page, "/resources");
 
   await expect(page).toHaveURL(/\/resources$/);
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect
+    .poll(() => page.locator("html").getAttribute("data-theme"), {
+      timeout: 20_000,
+    })
+    .toBe("light");
 
   await page.goto("/dashboard-v2/settings", { waitUntil: "commit" }).catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
@@ -64,6 +69,11 @@ test("settings does not flip runtime theme when DB preference differs from local
 
   await expect(page).toHaveURL(/\/dashboard-v2\/settings$/);
   await expect(page.getByRole("heading", { name: DASHBOARD_SETTINGS_HEADING })).toBeVisible();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect
+    .poll(() => page.locator("html").getAttribute("data-theme"), {
+      timeout: 20_000,
+    })
+    .toBe("light");
   await expect(page.locator("#preference-theme")).toHaveValue("dark");
+  await expect(page.locator("#settings-preferences")).not.toContainText(/Language/i);
 });

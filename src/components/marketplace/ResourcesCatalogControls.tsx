@@ -29,7 +29,7 @@ const FALLBACK_DISCOVER_CATEGORIES = [
   { id: "category_test_prep", name: "Test Prep", slug: "test-prep" },
 ] satisfies Awaited<ReturnType<typeof getDiscoverCategories>>;
 
-const CONTROLS_BAR_CLASS_NAME = "border-y border-border bg-background";
+const CONTROLS_BAR_CLASS_NAME = "bg-background";
 const CONTROLS_BAR_MAIN_CLASS_NAME = "flex min-w-0 items-center gap-2.5 overflow-hidden";
 const CONTROLS_BAR_GROUP_CLASS_NAME =
   "flex min-w-0 items-center gap-2.5 overflow-hidden";

@@ -5,8 +5,6 @@ import { NavbarShell } from "@/components/layout/NavbarShell";
 import { Container, colorScales } from "@/design-system";
 import { ResourcesHeroStageSkeleton } from "@/components/skeletons/ResourcesHeroStageSkeleton";
 import {
-  ResourcesCatalogControlsBonesPreview,
-  ResourcesCatalogControlsSkeleton,
   ResourcesCatalogSearchBonesPreview,
   ResourcesCatalogSearchSkeleton,
 } from "@/components/marketplace/ResourcesCatalogControlsSkeleton";
@@ -36,7 +34,6 @@ function ManualResourcesDiscoverRouteSkeleton() {
       <NavbarShell
         hasMarketplaceShell
         headerSearch={<ResourcesCatalogSearchSkeleton />}
-        secondaryRow={<ResourcesCatalogControlsSkeleton />}
       />
 
       <main className="flex-1">
@@ -66,7 +63,6 @@ function ManualResourcesListingRouteSkeleton() {
       <NavbarShell
         hasMarketplaceShell
         headerSearch={<ResourcesCatalogSearchSkeleton />}
-        secondaryRow={<ResourcesCatalogControlsSkeleton />}
       />
 
       <main className="flex-1">
@@ -88,7 +84,6 @@ function ResourcesRoutePreview() {
       <NavbarShell
         hasMarketplaceShell
         headerSearch={<ResourcesCatalogSearchBonesPreview />}
-        secondaryRow={<ResourcesCatalogControlsBonesPreview />}
       />
 
       <main className="flex-1">

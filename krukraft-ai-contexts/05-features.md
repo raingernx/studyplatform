@@ -99,9 +99,11 @@ search, filters, pagination, or a non-default sort are active.
 Marketplace hero note:
 - `/resources` discover hero is currently a fixed repo-owned design surface
 - legacy admin hero management, hero analytics, and hero impression/click endpoints are no longer part of the active app surface
+- the older `HomepageHero` table is now treated as a legacy cleanup target rather than an active feature surface
 
 Platform settings notes:
 - Full, full-dark, icon, icon-dark, OG, email, and favicon assets can be edited independently
+- typography is not managed through a dedicated platform-typography DB feature anymore; the orphaned `PlatformTypographySettings` table is now on the cleanup path instead of being part of the active platform-settings contract
 - Admin previews may show inherited fallback assets, but stored values must remain distinct from inherited preview state
 - Public metadata and tab/icon surfaces now read brand assets through runtime `/brand-assets/*` routes so uploads propagate without falling back to stale build-time defaults
 - Dark theme navigation and auth surfaces can now use dedicated dark logos rather than reusing the light assets
@@ -142,8 +144,34 @@ Resource detail page
 - Password reset request + confirm flow
 - Email verification flow (soft verification approach)
 - Credentials + Google login
-- Theme selection still supports `light`, `dark`, and `system`, but new/no-preference users now start from `light` by default and newly created `UserPreference` rows now seed `light` at the data layer too
+- Theme selection still supports `light`, `dark`, and `system`, and new/no-preference users now start from `system` by default while newly created `UserPreference` rows seed that same `system` value at the data layer
 - canonical seeded/local admin identity now uses `admin@krukraft.dev`
+
+## Creator Dashboard Surface
+
+- Dashboard V2 creator navigation now exposes four top-level surfaces:
+  `Workspace`, `Resources`, `Earnings`, and `Storefront`
+- `/dashboard-v2/creator` remains the overview / launch workspace rather than
+  the place for full storefront configuration
+- the `Storefront` creator nav item now opens the live public storefront at
+  `/creators/:slug` directly instead of sending creators through an internal
+  dashboard summary page first
+- `/dashboard-v2/creator/profile` is now the single editing surface for
+  storefront identity and media, while creator readiness/shared-account
+  settings summaries live back on the creator workspace instead of a distinct
+  `storefront` or `settings` destination
+- `/dashboard-v2/creator/storefront` remains only as a compatibility redirect:
+  it forwards to the live public storefront when a creator slug exists, and
+  otherwise falls back to `/dashboard-v2/creator/profile`
+- `/dashboard-v2/creator/settings` now redirects back into the creator
+  workspace for compatibility instead of rendering its own destination
+- `/dashboard-v2/creator/profile` now supports storefront-specific media uploads:
+  - a dedicated store avatar (`creatorAvatar`) that overrides the account photo
+    on creator-facing/public storefront surfaces
+  - a storefront banner (`creatorBanner`) upload path for the public creator
+    header
+  - both uploads reuse `/api/creator/upload/image` and persist through
+    `/api/creator/profile`
 
 ## Secure Download Endpoint
 

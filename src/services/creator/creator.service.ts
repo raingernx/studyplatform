@@ -6,6 +6,7 @@ import {
   CACHE_KEYS,
   CACHE_TAGS,
   CACHE_TTLS,
+  getCreatorAccessCacheTag,
   getCreatorPublicCacheTag,
   rememberJson,
   runSingleFlight,
@@ -114,9 +115,8 @@ const CreatorProfileSchema = z.object({
     .max(600, "Bio must be at most 600 characters.")
     .optional()
     .nullable(),
-  creatorBanner: z
-    .union([z.string().url("Banner must be a valid URL."), z.literal(""), z.null(), z.undefined()])
-    .optional(),
+  creatorAvatar: z.union([previewUrlSchema, z.literal(""), z.null(), z.undefined()]).optional(),
+  creatorBanner: z.union([previewUrlSchema, z.literal(""), z.null(), z.undefined()]).optional(),
   creatorStatus: z.enum(["ACTIVE", "PAUSED"]).default("ACTIVE"),
   socialLinks: z
     .object({
@@ -295,6 +295,7 @@ export interface CreatorProfile {
   name: string | null;
   email: string | null;
   image: string | null;
+  creatorAvatar: string | null;
   creatorDisplayName: string | null;
   creatorSlug: string | null;
   creatorBio: string | null;
@@ -510,6 +511,50 @@ function normalizeCreatorSlugInput(value: string) {
   };
 }
 
+export async function getCreatorSlugAvailability(userId: string, rawSlug: string) {
+  const slugResult = normalizeCreatorSlugInput(rawSlug);
+  const slug = slugResult.normalized;
+
+  if (!slug) {
+    return {
+      normalized: "",
+      available: false,
+      message: "Enter a creator URL slug to check availability.",
+    };
+  }
+
+  if (slugResult.error) {
+    return {
+      normalized: slug,
+      available: false,
+      message: slugResult.error,
+    };
+  }
+
+  if (slug.length < 2) {
+    return {
+      normalized: slug,
+      available: false,
+      message: "Slug must be at least 2 characters.",
+    };
+  }
+
+  const existing = await findCreatorSlugOwner(slug);
+  if (existing && existing.id !== userId) {
+    return {
+      normalized: slug,
+      available: false,
+      message: "That creator slug is already in use.",
+    };
+  }
+
+  return {
+    normalized: slug,
+    available: true,
+    message: "This creator URL is available.",
+  };
+}
+
 function normalizeCreatorProfileInput(input: unknown) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     return {
@@ -667,27 +712,9 @@ const CREATOR_ACCESS_STATE_EMPTY: CreatorAccessState = {
   applicationStatus: "NOT_APPLIED",
 };
 
-export const getCreatorAccessState = cache(async function getCreatorAccessState(
-  userId: string,
-): Promise<CreatorAccessState> {
-  // Guard: never allow an empty/undefined userId to reach Prisma.
-  // session.user.id can be undefined at runtime despite the TypeScript type.
-  if (!userId) {
-    return CREATOR_ACCESS_STATE_EMPTY;
-  }
-
-  // Cache the raw DB context for 30 seconds per user.
-  // React's cache() above deduplicates within a single request; this
-  // unstable_cache layer avoids a DB round-trip on every dashboard navigation.
-  // TTL is short (30 s) so admin-driven status changes (approve/reject creator
-  // application) take effect quickly.  Cache key is userId-scoped — no
-  // cross-user data leakage is possible.
-  const context = await unstable_cache(
-    () => findCreatorAccessContext(userId),
-    ["creator-access-context", userId],
-    { revalidate: 30 },
-  )();
-
+function mapCreatorAccessState(
+  context: Awaited<ReturnType<typeof findCreatorAccessContext>>,
+): CreatorAccessState {
   if (!context) {
     return CREATOR_ACCESS_STATE_EMPTY;
   }
@@ -712,6 +739,40 @@ export const getCreatorAccessState = cache(async function getCreatorAccessState(
     creatorStatus,
     applicationStatus,
   };
+}
+
+export async function getCreatorAccessStateFresh(
+  userId: string,
+): Promise<CreatorAccessState> {
+  if (!userId) {
+    return CREATOR_ACCESS_STATE_EMPTY;
+  }
+
+  return mapCreatorAccessState(await findCreatorAccessContext(userId));
+}
+
+export const getCreatorAccessState = cache(async function getCreatorAccessState(
+  userId: string,
+): Promise<CreatorAccessState> {
+  // Guard: never allow an empty/undefined userId to reach Prisma.
+  // session.user.id can be undefined at runtime despite the TypeScript type.
+  if (!userId) {
+    return CREATOR_ACCESS_STATE_EMPTY;
+  }
+
+  // Cache the raw DB context for 30 seconds per user.
+  // React's cache() above deduplicates within a single request; this
+  // unstable_cache layer avoids a DB round-trip on every dashboard navigation.
+  // TTL is short (30 s) so admin-driven status changes (approve/reject creator
+  // application) take effect quickly.  Cache key is userId-scoped — no
+  // cross-user data leakage is possible.
+  const context = await unstable_cache(
+    () => findCreatorAccessContext(userId),
+    ["creator-access-context", userId],
+    { revalidate: 30, tags: [getCreatorAccessCacheTag(userId)] },
+  )();
+
+  return mapCreatorAccessState(context);
 });
 
 export async function isCreatorEligible(userId: string) {
@@ -1348,6 +1409,7 @@ export async function getCreatorProfile(userId: string): Promise<CreatorProfile 
     name: profile.name,
     email: profile.email,
     image: profile.image,
+    creatorAvatar: profile.creatorAvatar,
     creatorDisplayName: profile.creatorDisplayName,
     creatorSlug: profile.creatorSlug,
     creatorBio: profile.creatorBio,
@@ -1490,6 +1552,10 @@ export async function updateCreatorProfile(userId: string, input: unknown) {
   const socialLinks = parsed.data.socialLinks ?? {};
 
   return updateCreatorProfileRecord(userId, {
+    creatorAvatar:
+      typeof parsed.data.creatorAvatar === "string" && parsed.data.creatorAvatar.trim()
+        ? parsed.data.creatorAvatar.trim()
+        : null,
     creatorDisplayName: displayName,
     creatorSlug: desiredSlug,
     creatorBio: parsed.data.creatorBio?.trim() || null,
@@ -1567,7 +1633,7 @@ async function loadCreatorPublicShell(slug: string) {
         return {
           id: creator.id,
           displayName: creator.creatorDisplayName ?? creator.name ?? "Creator",
-          image: creator.image,
+          image: creator.creatorAvatar ?? creator.image,
           banner: creator.creatorBanner,
           bio: creator.creatorBio,
           slug: creator.creatorSlug,

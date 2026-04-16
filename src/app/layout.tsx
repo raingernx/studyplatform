@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { BonesRegistryBootstrap } from "@/components/providers/BonesRegistryBootstrap";
+import { DashboardEntryNavigationOverlay } from "@/components/providers/DashboardEntryNavigationOverlay";
 import { ResourcesEntryNavigationOverlay } from "@/components/providers/ResourcesEntryNavigationOverlay";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { PlatformConfigProvider } from "@/components/providers/PlatformConfigProvider";
@@ -46,6 +47,7 @@ export default function RootLayout({
         <PlatformConfigProvider initialConfig={platform}>
           <ThemeProvider>
             <Providers>
+              <DashboardEntryNavigationOverlay />
               <ResourcesEntryNavigationOverlay />
               <div className="flex min-h-screen flex-col bg-background">
                 <div className="flex-1 min-h-0">{children}</div>

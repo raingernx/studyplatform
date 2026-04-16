@@ -52,6 +52,10 @@ export function getCreatorPublicCacheTag(identifier: string) {
   return `creator:${identifier}`;
 }
 
+export function getCreatorAccessCacheTag(userId: string) {
+  return `creator-access:${userId}`;
+}
+
 export const CACHE_KEYS = {
   trendingResources: "trending_resources",
   popularResources: "popular_resources",

@@ -22,7 +22,7 @@ export interface DashboardV2CreatorLinkItem {
   title: string;
   detail: string;
   href: string;
-  key: "resources" | "earnings" | "analytics" | "profile";
+  key: "resources" | "earnings" | "analytics" | "storefront";
 }
 
 export interface DashboardV2CreatorChecklistItem {
@@ -43,9 +43,14 @@ export interface DashboardV2CreatorResourceRow {
 export interface DashboardV2CreatorProfileSummary {
   displayName: string;
   slugLabel: string;
+  publicProfileHref: string | null;
   bio: string;
   statusLabel: string;
+  avatarUrl: string | null;
   avatarInitial: string;
+  hasBio: boolean;
+  hasSlug: boolean;
+  hasDisplayName: boolean;
 }
 
 type DashboardV2CreatorOverviewUnavailableData =
@@ -66,9 +71,11 @@ export type DashboardV2CreatorOverviewData =
   | {
       state: "ready";
       creatorName: string;
+      activationStage: "first-run" | "active";
       stats: DashboardV2CreatorStatItem[];
       links: DashboardV2CreatorLinkItem[];
       checklist: DashboardV2CreatorChecklistItem[];
+      totalResourceCount: number;
       resources: DashboardV2CreatorResourceRow[];
       profile: DashboardV2CreatorProfileSummary;
     }
@@ -150,73 +157,101 @@ export async function getDashboardV2CreatorOverviewData(
       profile?.creatorDisplayName?.trim() ||
       profile?.name?.trim() ||
       "Creator workspace";
-    const profileComplete = Boolean(
-      profile?.creatorDisplayName?.trim() && profile.creatorSlug?.trim(),
-    );
+    const hasDisplayName = Boolean(profile?.creatorDisplayName?.trim());
+    const hasSlug = Boolean(profile?.creatorSlug?.trim());
+    const hasBio = Boolean(profile?.creatorBio?.trim());
+    const storefrontBasicsReady = hasDisplayName && hasSlug;
+    const storefrontReady = storefrontBasicsReady && hasBio;
     const firstResourceCreated = overview.totals.totalResources > 0;
     const firstResourcePublished = overview.totals.publishedResources > 0;
     const draftResources =
       overview.totals.totalResources - overview.totals.publishedResources;
+    const firstTimeCreator = overview.totals.totalResources === 0;
 
     return {
       state: "ready",
       creatorName: displayName,
+      activationStage: firstTimeCreator ? "first-run" : "active",
       stats: [
         {
           key: "revenue",
           label: "Revenue",
           value: formatMoneyCents(overview.totals.creatorShare),
-          detail: `${formatMoneyCents(overview.totals.grossRevenue)} gross`,
+          detail: firstResourcePublished
+            ? `${formatMoneyCents(overview.totals.grossRevenue)} gross`
+            : "Creator share starts after your first published sale",
         },
         {
           key: "resources",
-          label: "Published resources",
-          value: String(overview.totals.publishedResources),
-          detail:
-            draftResources > 0
-              ? `${draftResources} draft${draftResources === 1 ? "" : "s"}`
-              : `${overview.totals.totalResources} total`,
+          label: "Resources",
+          value: String(overview.totals.totalResources),
+          detail: firstResourceCreated
+            ? draftResources > 0
+              ? `${draftResources} draft${draftResources === 1 ? "" : "s"} waiting`
+              : `${overview.totals.publishedResources} published`
+            : "Create your first listing to start your catalog",
         },
         {
           key: "downloads",
           label: "Downloads",
           value: formatNumber(overview.totals.totalDownloads),
-          detail: `${formatNumber(
-            overview.totals.downloadsLast30Days,
-          )} in 30 days`,
+          detail:
+            overview.totals.totalDownloads > 0
+              ? `${formatNumber(
+                  overview.totals.downloadsLast30Days,
+                )} in 30 days`
+              : "Downloads appear after learners purchase resources",
         },
       ],
       links: [
         {
           key: "resources",
           title: "Resources",
-          detail: `${overview.totals.totalResources} total · ${overview.totals.publishedResources} published`,
+          detail: firstResourceCreated
+            ? `${overview.totals.totalResources} total · ${overview.totals.publishedResources} published`
+            : "Create and organize your first listing",
           href: routes.dashboardV2CreatorResources,
         },
         {
           key: "earnings",
           title: "Earnings",
-          detail: `${formatMoneyCents(overview.totals.creatorShare)} creator share`,
+          detail:
+            overview.totals.creatorShare > 0
+              ? `${formatMoneyCents(overview.totals.creatorShare)} creator share`
+              : "Sales and payouts appear after your first order",
           href: routes.dashboardV2CreatorSales,
         },
         {
           key: "analytics",
           title: "Analytics",
-          detail: `${formatNumber(overview.totals.totalDownloads)} downloads`,
+          detail:
+            overview.totals.totalDownloads > 0
+              ? `${formatNumber(overview.totals.totalDownloads)} downloads`
+              : "Performance insights unlock as your store gets activity",
           href: routes.dashboardV2CreatorAnalytics,
         },
         {
-          key: "profile",
-          title: "Profile",
-          detail: profileComplete ? "Storefront configured" : "Complete storefront",
-          href: routes.dashboardV2CreatorProfile,
+          key: "storefront",
+          title: "Storefront",
+          detail: storefrontReady
+            ? "Preview your public storefront"
+            : storefrontBasicsReady
+              ? "Add a short bio before you share it"
+              : "Finish your public storefront basics",
+          href: profile?.creatorSlug
+            ? routes.creatorPublicProfile(profile.creatorSlug)
+            : routes.dashboardV2CreatorProfile,
         },
       ],
       checklist: [
         {
           label: "Storefront profile",
-          detail: profileComplete ? "Name and slug are ready" : "Add name and slug",
-          done: profileComplete,
+          detail: storefrontReady
+            ? "Name, slug, and bio are ready"
+            : storefrontBasicsReady
+              ? "Add a short bio before you publish"
+              : "Add your public name and URL",
+          done: storefrontReady,
         },
         {
           label: "First resource",
@@ -229,6 +264,7 @@ export async function getDashboardV2CreatorOverviewData(
           done: firstResourcePublished,
         },
       ],
+      totalResourceCount: overview.totals.totalResources,
       resources: resourceData.resources.slice(0, 6).map((resource) => ({
         id: resource.id,
         title: resource.title,
@@ -242,9 +278,16 @@ export async function getDashboardV2CreatorOverviewData(
         slugLabel: profile?.creatorSlug
           ? `/creators/${profile.creatorSlug}`
           : "No public slug",
+        publicProfileHref: profile?.creatorSlug
+          ? routes.creatorPublicProfile(profile.creatorSlug)
+          : null,
         bio: profile?.creatorBio?.trim() || "No storefront bio yet.",
         statusLabel: toCreatorStatusLabel(profile?.creatorStatus),
+        avatarUrl: profile?.creatorAvatar?.trim() || profile?.image?.trim() || null,
         avatarInitial: toAvatarInitial(displayName),
+        hasBio,
+        hasSlug,
+        hasDisplayName,
       },
     };
   } catch {

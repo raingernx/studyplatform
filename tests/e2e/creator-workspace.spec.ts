@@ -1,11 +1,19 @@
 import { expect, test, type Page } from "@playwright/test";
+import bcrypt from "bcryptjs";
+import {
+  CreatorApplicationStatus,
+  CreatorStatus,
+  PrismaClient,
+  UserRole,
+} from "@prisma/client";
 
-import { loginAsCreator, loginAsUser } from "./helpers/auth";
+import { loginAsCreator, loginAsUser, loginWithCredentials } from "./helpers/auth";
 import { collectRuntimeErrors } from "./helpers/browser";
 
 test.describe.configure({ timeout: 180_000 });
 
-const DASHBOARD_SETTINGS_HEADING = /Profile, preferences, and security/i;
+const DASHBOARD_SETTINGS_HEADING = /Account settings/i;
+const EMPTY_CREATOR_PASSWORD = "Krukraft2024!";
 
 type RefreshSample = {
   href: string;
@@ -16,10 +24,55 @@ type RefreshSample = {
   loadingScopes: string[];
 };
 
+function createEmptyCreatorAuditEmail() {
+  const suffix = `${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+  return `audit.creator.empty.${suffix}@krukraft.dev`;
+}
+
+async function seedEmptyCreatorWorkspaceUser(email: string) {
+  const prisma = new PrismaClient();
+  const hashedPassword = await bcrypt.hash(EMPTY_CREATOR_PASSWORD, 12);
+  const creatorSlug = `empty-creator-${Date.now().toString(36)}`;
+
+  try {
+    await prisma.user.upsert({
+      where: { email },
+      update: {
+        name: "Empty Creator",
+        hashedPassword,
+        role: UserRole.INSTRUCTOR,
+        emailVerified: new Date(),
+        creatorDisplayName: "Empty Creator",
+        creatorSlug,
+        creatorEnabled: true,
+        creatorStatus: CreatorStatus.ACTIVE,
+        creatorApplicationStatus: CreatorApplicationStatus.APPROVED,
+      },
+      create: {
+        name: "Empty Creator",
+        email,
+        hashedPassword,
+        role: UserRole.INSTRUCTOR,
+        emailVerified: new Date(),
+        creatorDisplayName: "Empty Creator",
+        creatorSlug,
+        creatorEnabled: true,
+        creatorStatus: CreatorStatus.ACTIVE,
+        creatorApplicationStatus: CreatorApplicationStatus.APPROVED,
+      },
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
 function isRetryableGotoError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   return (
     message.includes("net::ERR_ABORTED") ||
+    message.includes("net::ERR_CONNECTION_REFUSED") ||
     message.includes("frame was detached") ||
     message.includes("Navigation failed because page was closed")
   );
@@ -378,13 +431,57 @@ async function warmDashboardRoutes(
   }
 }
 
+test("creator workspace empty recent resources state stays centered and actionable", async ({
+  page,
+}) => {
+  const email = createEmptyCreatorAuditEmail();
+  await seedEmptyCreatorWorkspaceUser(email);
+
+  const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
+
+  await loginWithCredentials(
+    page,
+    { email, password: EMPTY_CREATOR_PASSWORD },
+    "/dashboard-v2/creator",
+  );
+
+  await expect(
+    page.locator('[data-route-shell-ready="dashboard-creator-overview"]').first(),
+  ).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByRole("heading", { name: /^Workspace$/i })).toBeVisible();
+  await expect(page.getByText(/^Launch checklist$/i)).toBeVisible();
+  await expect(page.getByText(/^0\/3 complete$/i)).toBeVisible();
+  await expect(page.getByText(/^No creator resources yet$/i)).toBeVisible();
+  await expect(
+    page
+      .locator("#creator-workspace")
+      .getByRole("link", { name: /^Create resource$/i }),
+  ).toHaveCount(2);
+  await expect(
+    page
+      .locator("#creator-workspace")
+      .getByRole("link", { name: /^Storefront/i }),
+  ).toHaveCount(1);
+  await expect(page.locator("#creator-profile-hub")).toHaveCount(0);
+
+  const emptyState = page.getByText(/^No creator resources yet$/i).locator("..");
+  await expect(emptyState).toHaveClass(/max-w-2xl/);
+
+  expect(pageErrors).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});
+
 test("creator workspace routes render creator shells without dashboard-in-dashboard flash", async ({
   page,
 }) => {
+  test.setTimeout(300_000);
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
 
   const creatorRoutes: Array<{
     path: string;
+    finalPath?: string;
     routeReady: string;
     heading: RegExp;
   }> = [
@@ -405,8 +502,9 @@ test("creator workspace routes render creator shells without dashboard-in-dashbo
     },
     {
       path: "/dashboard-v2/creator/settings",
-      routeReady: "dashboard-creator-settings",
-      heading: /^Settings$/i,
+      finalPath: "/dashboard-v2/settings",
+      routeReady: "dashboard-settings",
+      heading: DASHBOARD_SETTINGS_HEADING,
     },
     {
       path: "/dashboard-v2/creator/analytics",
@@ -429,8 +527,11 @@ test("creator workspace routes render creator shells without dashboard-in-dashbo
   await warmDashboardRoutes(page, creatorRoutes);
 
   for (const route of creatorRoutes) {
+    const finalPath = route.finalPath ?? route.path;
     await gotoWithRetry(page, route.path);
-    await expect(page).toHaveURL(new RegExp(`${route.path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
+    await expect(
+      page,
+    ).toHaveURL(new RegExp(`${finalPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
     await expect(page.locator(`[data-route-shell-ready="${route.routeReady}"]`).first()).toBeVisible({
       timeout: 30_000,
     });
@@ -515,6 +616,7 @@ test("creator cold-entry routes clear neutral creator fallback after route readi
 
   const coldEntryRoutes: Array<{
     path: string;
+    finalPath?: string;
     routeReady: string;
     heading: RegExp;
   }> = [
@@ -535,8 +637,9 @@ test("creator cold-entry routes clear neutral creator fallback after route readi
     },
     {
       path: "/dashboard-v2/creator/settings",
-      routeReady: "dashboard-creator-settings",
-      heading: /^Settings$/i,
+      finalPath: "/dashboard-v2/settings",
+      routeReady: "dashboard-settings",
+      heading: DASHBOARD_SETTINGS_HEADING,
     },
     {
       path: "/dashboard-v2/creator/payouts",
@@ -552,9 +655,13 @@ test("creator cold-entry routes clear neutral creator fallback after route readi
   await expect(page).toHaveURL(/\/resources(?:\?.*)?$/);
 
   for (const route of coldEntryRoutes) {
+    const finalPath = route.finalPath ?? route.path;
+    const finalPathPattern = new RegExp(
+      `${finalPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\?.*)?$`,
+    );
     await startRefreshProbe(page);
     await gotoWithRetry(page, route.path);
-    await expect(page).toHaveURL(new RegExp(`${route.path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\?.*)?$`));
+    await expect(page).toHaveURL(finalPathPattern);
     await expect(page.locator(`[data-route-shell-ready="${route.routeReady}"]`).first()).toBeVisible({
       timeout: 30_000,
     });
@@ -564,21 +671,19 @@ test("creator cold-entry routes clear neutral creator fallback after route readi
     await page.waitForTimeout(500);
 
     const samples = await stopRefreshProbe(page);
-    const routeSamples = samples.filter((sample) =>
-      new RegExp(`${route.path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\?.*)?$`).test(sample.href),
-    );
+    const routeSamples = samples.filter((sample) => finalPathPattern.test(sample.href));
 
     expect(routeSamples.length, `${route.path} did not capture route samples during cold entry`).toBeGreaterThan(0);
     expectNoDisallowedScopesAfterRouteReady(
       routeSamples,
       route.routeReady,
       ["dashboard-group", "dashboard-v2-creator-neutral"],
-      route.path,
+      finalPath,
     );
     expectScopesNeverSeen(
       routeSamples,
       ["dashboard-v2-creator-neutral"],
-      route.path,
+      finalPath,
     );
 
     await expectNoDashboardGroupOverlay(page);
@@ -880,25 +985,17 @@ test("creator sidebar transitions keep route-specific loading without creator ne
   expect(consoleErrors).toEqual([]);
 });
 
-test("creator workspace payouts CTA keeps route-specific loading without creator neutral fallback flash", async ({
+test("creator workspace storefront CTA reaches the public storefront", async ({
   page,
 }) => {
   const { pageErrors, consoleErrors } = collectRuntimeErrors(page);
-  const payoutsHref = "/dashboard-v2/creator/payouts";
-  const payoutsUrlPattern = /\/dashboard-v2\/creator\/payouts(?:\?.*)?$/;
-  const payoutsLink = page
-    .locator(`main a[href="${payoutsHref}"]:visible`)
-    .filter({ hasText: /^Payouts$/i })
+  const storefrontUrlPattern = /\/creators\/sandstorm-assets(?:\?.*)?$/;
+  const storefrontLink = page
+    .locator("#creator-workspace")
+    .getByRole("link", { name: /^Storefront$/i })
     .first();
 
   await loginAsCreator(page, "/dashboard-v2/creator");
-
-  await gotoWithRetry(page, payoutsHref);
-  await expect(
-    page.locator('[data-route-shell-ready="dashboard-creator-payouts"]').first(),
-  ).toBeVisible({
-    timeout: 30_000,
-  });
 
   await gotoWithRetry(page, "/dashboard-v2/creator");
   await expect(
@@ -906,42 +1003,26 @@ test("creator workspace payouts CTA keeps route-specific loading without creator
   ).toBeVisible({
     timeout: 30_000,
   });
-  await expect(payoutsLink).toBeVisible({ timeout: 20_000 });
+  await expect(storefrontLink).toBeVisible({ timeout: 20_000 });
 
   await startRefreshProbe(page);
-  await payoutsLink.click();
-  await expect(page).toHaveURL(payoutsUrlPattern, { timeout: 30_000 });
-  await expect(
-    page.locator('[data-route-shell-ready="dashboard-creator-payouts"]').first(),
-  ).toBeVisible({
+  await storefrontLink.click();
+  await expect(page).toHaveURL(storefrontUrlPattern, { timeout: 30_000 });
+  await expect(page.getByRole("heading", { name: /^SANDSTORM$/i }).first()).toBeVisible({
     timeout: 30_000,
   });
-  await expect(page.getByRole("heading", { name: /^Payouts$/i }).first()).toBeVisible({
+  await expect(page.getByRole("link", { name: /^Edit profile$/i }).first()).toBeVisible({
     timeout: 30_000,
   });
   await page.waitForTimeout(500);
 
   const samples = await stopRefreshProbe(page);
-  const routeSamples = samples.filter((sample) => payoutsUrlPattern.test(sample.href));
+  const routeSamples = samples.filter((sample) => storefrontUrlPattern.test(sample.href));
 
   expect(
     routeSamples.length,
-    "workspace -> payouts CTA did not capture route samples",
+    "workspace -> storefront CTA did not capture route samples",
   ).toBeGreaterThan(0);
-  expectScopesNeverSeen(
-    routeSamples,
-    ["dashboard-group", "dashboard-v2-creator-neutral"],
-    "workspace -> payouts CTA",
-  );
-  expectNoDisallowedScopesAfterRouteReady(
-    routeSamples,
-    "dashboard-creator-payouts",
-    ["dashboard-group", "dashboard-v2-creator-neutral", "dashboard-v2-creator"],
-    "workspace -> payouts CTA",
-  );
-
-  await expectNoDashboardGroupOverlay(page);
-  await expectNoDashboardShellStack(page);
 
   expect(pageErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);

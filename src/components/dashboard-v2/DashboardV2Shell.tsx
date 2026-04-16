@@ -8,6 +8,8 @@ import {
 } from "@/components/dashboard-v2/DashboardV2Navigation";
 import { DashboardNavigationReady } from "@/components/layout/dashboard/DashboardNavigationReady";
 import { DashboardOverlayReady } from "@/components/layout/dashboard/DashboardOverlayReady";
+import { routes } from "@/lib/routes";
+import { getCreatorProfile } from "@/services/creator";
 
 async function getDashboardV2Viewer(): Promise<DashboardV2Viewer> {
   const session = await getCachedServerSession();
@@ -16,11 +18,16 @@ async function getDashboardV2Viewer(): Promise<DashboardV2Viewer> {
     user?.name?.trim() ||
     user?.email?.trim().split("@")[0] ||
     "Guest preview";
+  const creatorProfile = user?.id ? await getCreatorProfile(user.id).catch(() => null) : null;
+  const creatorPublicHref = creatorProfile?.creatorSlug
+    ? routes.creatorPublicProfile(creatorProfile.creatorSlug)
+    : null;
 
   return {
     displayName,
     email: user?.email?.trim() ?? null,
     image: user?.image ?? null,
+    creatorPublicHref,
     role: user?.role ?? null,
     subscriptionStatus: user?.subscriptionStatus ?? null,
     isAuthenticated: Boolean(user?.id),
@@ -35,7 +42,7 @@ export async function DashboardV2Shell({ children }: { children: ReactNode }) {
       <DashboardNavigationReady />
       <DashboardOverlayReady />
       <div className="flex min-h-dvh">
-        <DashboardV2Sidebar />
+        <DashboardV2Sidebar viewer={viewer} />
         <div className="flex min-w-0 flex-1 flex-col">
           <DashboardV2Topbar viewer={viewer} />
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">

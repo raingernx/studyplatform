@@ -104,7 +104,19 @@ export function findAdminsWithAuditLogs() {
 export function findUserSettingsProfile(userId: string) {
   return prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, email: true, image: true, createdAt: true },
+    select: {
+      name: true,
+      email: true,
+      image: true,
+      providerImage: true,
+      hashedPassword: true,
+      createdAt: true,
+      subscriptionPlan: true,
+      subscriptionStatus: true,
+      accounts: {
+        select: { provider: true },
+      },
+    },
   });
 }
 
@@ -112,12 +124,14 @@ export function updateUserProfileById(input: {
   userId: string;
   name?: string | null;
   email?: string | null;
+  image?: string | null;
 }) {
   return prisma.user.update({
     where: { id: input.userId },
     data: {
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.email !== undefined ? { email: input.email } : {}),
+      ...(input.image !== undefined ? { image: input.image } : {}),
     },
     select: { name: true, email: true, image: true },
   });

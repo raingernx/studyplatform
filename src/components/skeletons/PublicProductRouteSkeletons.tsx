@@ -6,7 +6,6 @@ import {
   Container,
   PageContainer,
   PageContent,
-  PageContentNarrow,
 } from "@/design-system";
 
 function ListingHeaderSearchSkeleton() {
@@ -98,85 +97,108 @@ export function MembershipPageLoadingShell() {
         headerSearch={<ListingHeaderSearchSkeleton />}
       />
 
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-purple-950 py-20 text-center sm:py-24">
-        <PageContainer>
-          <PageContentNarrow className="space-y-6">
-            <div className="space-y-3">
-              <LoadingSkeleton className="mx-auto h-3 w-24 bg-white/15" />
-              <LoadingSkeleton className="mx-auto h-12 w-80 rounded-2xl bg-white/20" />
-              <LoadingSkeleton className="mx-auto h-5 w-full max-w-2xl bg-white/15" />
-              <LoadingSkeleton className="mx-auto h-5 w-[80%] max-w-xl bg-white/15" />
-            </div>
+      <main className="flex-1">
+        <PageContainer className="py-12 sm:py-14 lg:py-16">
+          <PageContent className="space-y-10 lg:space-y-12">
+            <section className="mx-auto flex w-full max-w-6xl flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="space-y-2">
+                <LoadingSkeleton className="h-10 w-40 rounded-2xl" />
+                <LoadingSkeleton className="h-5 w-44" />
+              </div>
 
-            <div className="flex justify-center">
-              <LoadingSkeleton className="h-8 w-56 rounded-full bg-white/20" />
-            </div>
-
-            <div className="mx-auto inline-flex items-center gap-3 rounded-xl bg-white/10 p-1">
-              <LoadingSkeleton className="h-10 w-28 rounded-lg bg-white/20" />
-              <LoadingSkeleton className="h-10 w-36 rounded-lg bg-white/20" />
-            </div>
-          </PageContentNarrow>
-        </PageContainer>
-      </section>
-
-      <section className="relative -mt-8 pb-20">
-        <PageContainer>
-          <PageContent className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div
-                key={index}
-                className="rounded-[28px] border border-border bg-card p-6 shadow-card"
-              >
-                <LoadingSkeleton className="h-5 w-20" />
-                <LoadingSkeleton className="mt-4 h-10 w-32 rounded-2xl" />
-                <LoadingSkeleton className="mt-3 h-4 w-full" />
-                <div className="mt-6 space-y-3">
-                  {Array.from({ length: 5 }).map((__, rowIndex) => (
-                    <div key={rowIndex} className="flex items-center gap-3">
-                      <LoadingSkeleton className="h-5 w-5 rounded-full" />
-                      <LoadingSkeleton className="h-4 w-40" />
-                    </div>
-                  ))}
+              <div className="shrink-0">
+                <div className="inline-flex gap-2 rounded-full border border-border-subtle bg-card p-0.5">
+                  <LoadingSkeleton className="h-8 w-24 rounded-full" />
+                  <LoadingSkeleton className="h-8 w-24 rounded-full" />
                 </div>
-                <LoadingSkeleton className="mt-8 h-12 w-full rounded-xl" />
               </div>
-            ))}
-          </PageContent>
-        </PageContainer>
-      </section>
+            </section>
 
-      <section className="bg-background py-16">
-        <PageContainer>
-          <PageContent className="space-y-8">
-            <div className="text-center">
-              <LoadingSkeleton className="mx-auto h-3 w-24" />
-              <LoadingSkeleton className="mx-auto mt-3 h-9 w-52 rounded-2xl" />
-              <LoadingSkeleton className="mx-auto mt-2 h-4 w-full max-w-2xl" />
-            </div>
+            <section className="mx-auto max-w-6xl">
+              <div className="grid grid-cols-1 divide-y divide-border-subtle xl:grid-cols-3 xl:divide-x xl:divide-y-0">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className={`px-0 py-7 sm:py-8 ${
+                      index === 0 ? "xl:pr-8" : index === 2 ? "xl:pl-8" : "xl:px-8"
+                    }`}
+                  >
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <LoadingSkeleton className="h-6 w-20" />
+                        <LoadingSkeleton className="h-10 w-24 rounded-2xl" />
+                        <LoadingSkeleton className="h-5 w-28" />
+                      </div>
 
-            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-              <div className="grid grid-cols-4 gap-4 border-b border-border bg-muted/50 px-4 py-4">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <LoadingSkeleton key={index} className="h-4 w-20" />
-                ))}
-              </div>
-              <div className="divide-y divide-border">
-                {Array.from({ length: 6 }).map((_, rowIndex) => (
-                  <div key={rowIndex} className="grid grid-cols-4 gap-4 px-4 py-4">
-                    {Array.from({ length: 4 }).map((__, colIndex) => (
-                      <LoadingSkeleton
-                        key={colIndex}
-                        className={colIndex === 0 ? "h-4 w-40" : "h-4 w-20"}
-                      />
-                    ))}
+                      <div className="space-y-1.5 border-y border-border-subtle py-5">
+                        <LoadingSkeleton className="h-5 w-32" />
+                        <LoadingSkeleton className="h-4 w-20" />
+                      </div>
+                    </div>
+
+                    <div className="mt-6">
+                      <div className="space-y-3">
+                        {Array.from({ length: 3 }).map((__, rowIndex) => (
+                          <div key={rowIndex} className="flex items-center gap-3">
+                            <LoadingSkeleton className="h-5 w-5 rounded-full" />
+                            <LoadingSkeleton className="h-5 w-40" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <LoadingSkeleton className="mt-8 h-10 w-full rounded-xl" />
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
+
+            <section className="mx-auto w-full max-w-6xl pt-8">
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <LoadingSkeleton className="h-5 w-16" />
+                  <LoadingSkeleton className="h-4 w-64" />
+                </div>
+
+                <div className="grid gap-x-10 gap-y-0 lg:grid-cols-2">
+                  {Array.from({ length: 2 }).map((_, columnIndex) => (
+                    <div
+                      key={`faq-skeleton-column-${columnIndex}`}
+                      className="divide-y divide-border-subtle border-y border-border-subtle"
+                    >
+                      {Array.from({ length: 4 }).map((__, index) => (
+                        <div key={index} className="space-y-3 py-4">
+                          <div className="flex items-center justify-between gap-4">
+                            <LoadingSkeleton className="h-5 w-60" />
+                            <LoadingSkeleton className="h-5 w-5 rounded-full" />
+                          </div>
+                          <LoadingSkeleton className="h-4 w-full max-w-2xl" />
+                          <LoadingSkeleton className="h-4 w-[88%] max-w-xl" />
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="mx-auto w-full max-w-6xl pt-10 pb-14 sm:pt-12 sm:pb-16">
+              <div className="rounded-[24px] border border-border-subtle bg-card/40 px-5 py-6 sm:px-7 sm:py-7">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="max-w-xl space-y-1.5">
+                    <LoadingSkeleton className="h-8 w-80 rounded-2xl" />
+                    <LoadingSkeleton className="h-4 w-72" />
+                  </div>
+
+                  <div className="w-full lg:w-auto lg:shrink-0">
+                    <LoadingSkeleton className="h-11 w-full lg:w-40 rounded-xl" />
+                  </div>
+                </div>
+              </div>
+            </section>
           </PageContent>
         </PageContainer>
-      </section>
+      </main>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -39,6 +39,12 @@ export default function RegisterPage() {
   const [loading, setLoading]   = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError]       = useState("");
+  const [isHydrated, setIsHydrated] = useState(false);
+  const formDisabled = !isHydrated || loading || googleLoading;
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -130,8 +136,9 @@ export default function RegisterPage() {
             {/* Google OAuth */}
             <button
               type="button"
-              disabled={loading || googleLoading}
+              disabled={formDisabled}
               onClick={() => void handleGoogleSignIn()}
+              data-auth-register-google-ready={isHydrated ? "true" : "false"}
               className="flex w-full items-center justify-center gap-3 rounded-xl border border-border
                          bg-background px-4 py-2.5 text-[13px] font-medium text-foreground shadow-card
                          transition-all hover:border-border hover:bg-muted hover:shadow-card-md active:scale-[0.99]
@@ -154,7 +161,12 @@ export default function RegisterPage() {
             </div>
 
             {/* Registration form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-4"
+              aria-busy={formDisabled}
+              data-auth-register-form-ready={isHydrated ? "true" : "false"}
+            >
               {error && (
                 <div className="flex items-start gap-2.5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
                   <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
@@ -173,6 +185,7 @@ export default function RegisterPage() {
                   onChange={(e) => setName(e.target.value)}
                   required
                   autoComplete="name"
+                  disabled={formDisabled}
                   placeholder="Jane Smith"
                   className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground
                              placeholder:text-muted-foreground shadow-sm outline-none transition
@@ -191,6 +204,7 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
+                  disabled={formDisabled}
                   placeholder="you@example.com"
                   className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground
                              placeholder:text-muted-foreground shadow-sm outline-none transition
@@ -211,13 +225,20 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   placeholder="Min. 8 characters"
                   minLength={8}
+                  disabled={formDisabled}
                   className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground
                              placeholder:text-muted-foreground shadow-sm outline-none transition
                              focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
-              <Button type="submit" loading={loading} disabled={googleLoading} fullWidth size="lg">
+              <Button
+                type="submit"
+                loading={loading}
+                disabled={!isHydrated || googleLoading}
+                fullWidth
+                size="lg"
+              >
                 Create account
               </Button>
             </form>

@@ -38,6 +38,12 @@
 - dry-run ingest also supports `--format json`, and the repo now exposes `wiki:ingest:dry-run:json` plus `wiki:ingest:batch:dry-run:json` helpers for machine-readable plan export; those JSON previews now carry per-item/per-target `decision` hints (`actions`, `reasons`, `severity`), a top-level `decisionSummary`, `confidence` / `policy` metadata for apply-vs-review gating, top-level batch `policy` overrides for CI-enforced review thresholds, and `--enforce-policy` / `*:enforce` helpers that return non-zero on `blocked_by_policy`. Write-mode `wiki:ingest:enforce` / `wiki:ingest:batch:enforce` now apply the same policy gate before any files are written, `--report-file` can persist the serialized plan for CI artifacts, and `--report-format bundle` upgrades that artifact into one file with `textSummary`, path-level artifact hints, review annotations, GitHub-ready summary/annotation hints, sectioned JSON, and the original plan.
 - default workflow is now `Codex triages first`: the agent should decide whether a change should be skipped, ingested as single-source knowledge, merged into an existing wiki page, or handled as a batch topic, then report that decision back to the user
 - `db:deploy`: `prisma migrate deploy`
+- `db:push`: `prisma db push`
+- `db:migrate`: `prisma migrate dev`
+- `db:local:start`: starts the clean local Postgres cluster at `.local-db/pgdata` on port `54329`
+- `db:local:stop`: stops that local Postgres cluster
+- `db:local:status`: health-checks the local Postgres cluster on `127.0.0.1:54329`
+- `dev:full`: now boots the local Postgres cluster first, then starts Next.js dev, so the repo's one-click local dev path no longer depends on manually starting the clean DB beforehand
 - `perf:post-deploy`: warm cache + smoke perf suite
 - `cpd:verify`: repo-owned CPD guardrail that fails unless `origin` points at the canonical GitHub repo (`https://github.com/raingernx/KRUKRAFT.git`), `HEAD` matches `origin/main`, and GitHub deployment evidence exists for the pushed commit
 - post-deploy perf review is now a layered workflow: use LHCI for local regression floors, then the warmed k6 summary/rollup in GitHub Actions, then Vercel Speed Insights and runtime logs for production-only drift
@@ -81,6 +87,28 @@
 
 Important: build must stay schema-mutation-free. Migration deploy is a separate operational step.
 
+## Prisma Workflow
+
+- `db:push` is draft mode for local schema experimentation. Use it while fields/relations are still changing.
+- `db:migrate` is record-history mode. Use it once the schema change is stable and should be committed as a real migration.
+- `db:deploy` is apply-history mode. Use it only to apply existing migrations to clean or properly baselined databases.
+
+Recommended field-add flow:
+
+1. Edit `prisma/schema.prisma`.
+2. If still iterating locally, use `db:push`.
+3. Update code paths that depend on the new field.
+4. When the schema is settled, run `db:migrate`.
+5. Verify `typecheck`, `lint`, and the affected runtime flow.
+6. Commit schema, migration, and code together.
+7. Use `db:deploy` for other environments.
+
+Current repo caveat:
+
+- The current local database has schema state that is not fully tracked by Prisma Migrate history, so `db:deploy` is not the safe default path for that database.
+- For narrowly scoped local DB fixes, prefer a clean dev DB or narrow SQL over forcing `db:deploy` or `db:push --accept-data-loss`.
+- The clean local Postgres path is now verified again: a fresh database can bootstrap through `db:deploy` + `db:seed`, and the repo includes `20260415013823_add_user_provider_image` so `User.providerImage` is no longer a schema drift that breaks fresh seeds.
+
 ## Analytics / Observability
 
 - Vercel Analytics via `@vercel/analytics`
@@ -108,7 +136,7 @@ Important: build must stay schema-mutation-free. Migration deploy is a separate 
 - GitHub Actions browser smoke now uses the same Playwright config surface but runs in cloud Linux with a repo-owned Postgres service and seeded demo data, which gives the project a browser verification path that does not depend on the quirks of a specific local macOS browser runtime.
 - Storybook is intentionally scoped to `src/design-system/primitives/**/*.stories.*` and `src/design-system/components/**/*.stories.*`.
 - Chromatic is available on top of that same Storybook surface for hosted visual review, but it is not wired into CI or usable until a project token is provisioned.
-- Theme bootstrap now defaults first paint to `light`; stored `dark` and user-selected `system` preferences still override that baseline at runtime, and the Prisma `UserPreference.theme` default now matches that same `light` baseline for newly created rows. The `/dashboard-v2/settings` preference form now materializes the current runtime theme into `localStorage` when no stored theme exists yet, so opening settings no longer feels like it auto-switches to a DB-backed theme behind the user's back.
+- Theme bootstrap now defaults first paint to `system`; stored `light` and `dark` preferences still override that baseline at runtime, and the Prisma `UserPreference.theme` default now matches that same `system` baseline for newly created rows. The `/dashboard-v2/settings` preference form now materializes the current runtime theme mode into `localStorage` when no stored theme exists yet, so opening settings no longer feels like it auto-switches to a DB-backed theme behind the user's back.
 - Accessibility checks are available through `@axe-core/playwright`.
 - Lighthouse CI is configured through `.lighthouserc.json`.
 - Bundle inspection is available through `@next/bundle-analyzer`.
@@ -127,6 +155,8 @@ STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
 STRIPE_PRO_MONTHLY_PRICE_ID
 STRIPE_PRO_ANNUAL_PRICE_ID
+STRIPE_TEAM_MONTHLY_PRICE_ID
+STRIPE_TEAM_ANNUAL_PRICE_ID
 XENDIT_SECRET_KEY
 XENDIT_WEBHOOK_TOKEN
 R2_ENDPOINT

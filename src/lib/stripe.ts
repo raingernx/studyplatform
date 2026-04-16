@@ -11,6 +11,8 @@ export const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
 export const SUBSCRIPTION_PLANS = {
   pro_monthly: env.STRIPE_PRO_MONTHLY_PRICE_ID,
   pro_annual: env.STRIPE_PRO_ANNUAL_PRICE_ID,
+  team_monthly: env.STRIPE_TEAM_MONTHLY_PRICE_ID,
+  team_annual: env.STRIPE_TEAM_ANNUAL_PRICE_ID,
 } as const;
 
 export type SubscriptionPlan = keyof typeof SUBSCRIPTION_PLANS;

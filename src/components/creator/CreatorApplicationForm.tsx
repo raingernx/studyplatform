@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { Button } from "@/design-system";
+import { AlertCircle } from "lucide-react";
+import { Button, Input, Textarea } from "@/design-system";
+import { toSlug } from "@/lib/slug";
 
 interface Props {
   defaultSlug?: string;
@@ -12,30 +13,146 @@ interface Props {
 export function CreatorApplicationForm({ defaultSlug = "" }: Props) {
   const router = useRouter();
 
+  const [hydrated, setHydrated] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [slug, setSlug] = useState(defaultSlug);
   const [bio, setBio] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [success, setSuccess] = useState(false);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(Boolean(defaultSlug));
+  const [slugAvailability, setSlugAvailability] = useState<{
+    status: "idle" | "checking" | "available" | "unavailable" | "invalid";
+    message: string;
+  }>({
+    status: "idle",
+    message:
+      "Lowercase letters, numbers, and hyphens only. This will be your public profile URL.",
+  });
+  const formDisabled = !hydrated || loading;
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   function autoSlug(name: string) {
-    return name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .slice(0, 48);
+    return toSlug(name).slice(0, 48);
   }
 
   function handleNameChange(value: string) {
     setDisplayName(value);
-    if (!slug || slug === autoSlug(displayName)) {
+    setFieldErrors((current) => {
+      if (!current.creatorDisplayName) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next.creatorDisplayName;
+      return next;
+    });
+    if (!slugManuallyEdited) {
       setSlug(autoSlug(value));
     }
   }
+
+  function handleSlugChange(value: string) {
+    const normalized = autoSlug(value);
+    setSlug(normalized);
+    setSlugManuallyEdited(normalized.length > 0);
+    setFieldErrors((current) => {
+      if (!current.creatorSlug) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next.creatorSlug;
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
+    if (!slug) {
+      setSlugAvailability({
+        status: "idle",
+        message:
+          "Lowercase letters, numbers, and hyphens only. This will be your public profile URL.",
+      });
+      return;
+    }
+
+    if (slug.length < 2) {
+      setSlugAvailability({
+        status: "invalid",
+        message: "Slug must be at least 2 characters.",
+      });
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      setSlugAvailability({
+        status: "checking",
+        message: "Checking creator URL availability...",
+      });
+
+      try {
+        const response = await fetch(
+          `/api/creator/slug-availability?slug=${encodeURIComponent(slug)}`,
+          {
+            signal: controller.signal,
+          },
+        );
+        if (!response.ok) {
+          throw new Error("Slug availability check failed.");
+        }
+
+        const json = (await response.json()) as {
+          normalized?: string;
+          available?: boolean;
+          message?: string;
+        };
+
+        if (cancelled) {
+          return;
+        }
+
+        if (typeof json.normalized === "string" && json.normalized !== slug) {
+          setSlug(json.normalized);
+          return;
+        }
+
+        setSlugAvailability({
+          status: json.available ? "available" : "unavailable",
+          message:
+            json.message ??
+            (json.available
+              ? "This creator URL is available."
+              : "That creator slug is already in use."),
+        });
+      } catch (fetchError) {
+        if (controller.signal.aborted || cancelled) {
+          return;
+        }
+
+        setSlugAvailability({
+          status: "idle",
+          message:
+            "Lowercase letters, numbers, and hyphens only. This will be your public profile URL.",
+        });
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [hydrated, slug]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,56 +164,66 @@ export function CreatorApplicationForm({ defaultSlug = "" }: Props) {
       const res = await fetch("/api/creator/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ creatorDisplayName: displayName, creatorSlug: slug, creatorBio: bio }),
+        body: JSON.stringify({
+          creatorDisplayName: displayName,
+          creatorSlug: slug,
+          creatorBio: bio,
+        }),
       });
-      const json = await res.json();
+      const contentType = res.headers.get("content-type") ?? "";
+      const json = contentType.includes("application/json")
+        ? ((await res.json()) as {
+            error?: string;
+            fields?: Record<string, string>;
+          })
+        : null;
 
       if (!res.ok) {
-        if (json.fields) {
+        if (json?.fields) {
           setFieldErrors(json.fields);
           setError(json.error ?? "Please fix the errors below.");
         } else {
-          setError(json.error ?? "Something went wrong. Please try again.");
+          setError(json?.error ?? "Something went wrong. Please try again.");
         }
         return;
       }
 
-      setSuccess(true);
       router.refresh();
+    } catch {
+      setError(
+        "We couldn't submit your application right now. Check your connection and try again.",
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  if (success) {
-    return (
-      <div className="flex items-start gap-3 rounded-2xl border border-green-200 bg-green-50 p-5">
-        <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
-        <div>
-          <p className="text-sm font-semibold text-green-800">Application submitted!</p>
-          <p className="mt-1 text-sm text-green-700">
-            We'll review your application and get back to you shortly. This page will update once a decision is made.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-5"
+      aria-busy={formDisabled}
+      data-creator-application-form-ready={hydrated ? "true" : "false"}
+    >
       {error && !Object.keys(fieldErrors).length && (
-        <div className="flex items-start gap-2.5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
-          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
+        <div
+          role="alert"
+          aria-live="polite"
+          className="flex items-start gap-2.5 rounded-xl border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-danger-600" />
           {error}
         </div>
       )}
 
-      {/* Display name */}
       <div>
-        <label htmlFor="displayName" className="mb-1.5 block text-[13px] font-medium text-foreground">
-          Creator display name <span className="text-red-500">*</span>
+        <label
+          htmlFor="displayName"
+          className="mb-1.5 block text-sm font-medium text-foreground"
+        >
+          Creator display name <span className="text-danger-600">*</span>
         </label>
-        <input
+        <Input
           id="displayName"
           type="text"
           value={displayName}
@@ -104,73 +231,89 @@ export function CreatorApplicationForm({ defaultSlug = "" }: Props) {
           required
           maxLength={64}
           placeholder="e.g. Jane Smith"
-          className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-foreground
-                     placeholder:text-muted-foreground shadow-sm outline-none transition
-                     focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+          autoComplete="nickname"
+          disabled={formDisabled}
+          error={fieldErrors.creatorDisplayName}
         />
-        {fieldErrors.creatorDisplayName && (
-          <p className="mt-1 text-[12px] text-red-600">{fieldErrors.creatorDisplayName}</p>
-        )}
       </div>
 
-      {/* Slug */}
       <div>
-        <label htmlFor="slug" className="mb-1.5 block text-[13px] font-medium text-foreground">
-          Creator URL slug <span className="text-red-500">*</span>
+        <label
+          htmlFor="slug"
+          className="mb-1.5 block text-sm font-medium text-foreground"
+        >
+          Creator URL slug <span className="text-danger-600">*</span>
         </label>
-        <div className="flex items-center overflow-hidden rounded-xl border border-border bg-card shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
-          <span className="select-none border-r border-border bg-muted px-3.5 py-2.5 text-sm text-muted-foreground">
-            /creators/
-          </span>
-          <input
-            id="slug"
-            type="text"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 48))}
-            required
-            maxLength={48}
-            placeholder="jane-smith"
-            className="flex-1 bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none"
-          />
+        <div className="overflow-hidden rounded-xl border border-input bg-background transition-colors focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+          <div className="flex min-h-11 items-stretch">
+            <span className="inline-flex select-none items-center border-r border-input bg-muted px-3.5 text-sm text-muted-foreground">
+              /creators/
+            </span>
+            <input
+              id="slug"
+              type="text"
+              value={slug}
+              onChange={(e) => handleSlugChange(e.target.value)}
+              required
+              maxLength={48}
+              placeholder="jane-smith"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              disabled={formDisabled}
+              aria-invalid={Boolean(fieldErrors.creatorSlug)}
+              aria-describedby="slug-hint"
+              className="min-h-11 min-w-0 flex-1 bg-transparent px-3.5 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+            />
+          </div>
         </div>
         {fieldErrors.creatorSlug ? (
-          <p className="mt-1 text-[12px] text-red-600">{fieldErrors.creatorSlug}</p>
+          <p id="slug-hint" className="mt-1 text-caption text-danger-700">
+            {fieldErrors.creatorSlug}
+          </p>
         ) : (
-          <p className="mt-1 text-[12px] text-muted-foreground">
-            Lowercase letters, numbers, and hyphens only. This will be your public profile URL.
+          <p
+            id="slug-hint"
+            className={`mt-1 text-caption ${
+              slugAvailability.status === "available"
+                ? "text-success-700"
+                : slugAvailability.status === "unavailable" ||
+                    slugAvailability.status === "invalid"
+                  ? "text-danger-700"
+                  : "text-muted-foreground"
+            }`}
+          >
+            {slugAvailability.message}
           </p>
         )}
       </div>
 
-      {/* Bio */}
       <div>
-        <label htmlFor="bio" className="mb-1.5 block text-[13px] font-medium text-foreground">
+        <label
+          htmlFor="bio"
+          className="mb-1.5 block text-sm font-medium text-foreground"
+        >
           Short bio <span className="text-muted-foreground">(optional)</span>
         </label>
-        <textarea
+        <Textarea
           id="bio"
           value={bio}
           onChange={(e) => setBio(e.target.value)}
           maxLength={500}
           rows={3}
           placeholder="Tell us a bit about yourself and the content you plan to create."
-          className="w-full resize-none rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-foreground
-                     placeholder:text-muted-foreground shadow-sm outline-none transition
-                     focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+          hint={`${bio.length}/500`}
+          disabled={formDisabled}
+          className="resize-none"
         />
-        <p className="mt-1 text-right text-[12px] text-muted-foreground">{bio.length}/500</p>
       </div>
 
       <Button type="submit" loading={loading} fullWidth size="lg">
-        {loading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Submitting…
-          </>
-        ) : (
-          "Submit application"
-        )}
+        {loading ? "Submitting..." : "Submit application"}
       </Button>
+      <p className="text-center text-caption text-muted-foreground">
+        Review time: 1–3 business days after submission.
+      </p>
     </form>
   );
 }

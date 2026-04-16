@@ -2,11 +2,12 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BadgeCheck, FileText, Globe, Instagram, Layers3, Linkedin, Sparkles, Youtube } from "lucide-react";
+import { BadgeCheck, Globe, Instagram, Linkedin, Sparkles, Youtube } from "lucide-react";
 import { isTransientPrismaInfrastructureError } from "@/lib/prismaErrors";
 import { Navbar } from "@/components/layout/Navbar";
 import { MarketplaceNavbarSearch } from "@/components/marketplace/MarketplaceNavbarSearch";
-import { Avatar, PageContainer, PageContentWide } from "@/design-system";
+import { CreatorPublicOwnerActions } from "@/components/creator/CreatorPublicOwnerActions";
+import { Avatar, Badge, Button, PageContainer, PageContentWide } from "@/design-system";
 import { PublicResourceCard } from "@/components/resources/PublicResourceCard";
 import { CreatorPublicResourcesSectionFallback } from "@/components/skeletons/PublicRouteSkeletons";
 import { routes } from "@/lib/routes";
@@ -113,6 +114,16 @@ export default async function CreatorPublicProfilePage({
       icon: Linkedin,
     },
   ].filter((link) => Boolean(link.href));
+  const creatorSummary =
+    creator.bio?.trim() ||
+    (creator.resourceCount > 0
+      ? `Browse classroom downloads and study materials published by ${creator.displayName}.`
+      : `${creator.displayName} is preparing this storefront for upcoming classroom resources.`);
+  const resourceLabel =
+    creator.resourceCount > 0
+      ? `${creator.resourceCount} resource${creator.resourceCount === 1 ? "" : "s"}`
+      : "Store opening soon";
+  const isActive = creator.status === "ACTIVE";
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,118 +132,113 @@ export default async function CreatorPublicProfilePage({
       <main>
         <PageContainer className="py-10">
           <PageContentWide>
-        <section className="overflow-hidden rounded-[28px] border border-border bg-card shadow-card">
-          <div className="relative h-48 bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400">
-            {creator.banner && (
-              <Image
-                src={creator.banner}
-                alt={creator.displayName}
-                fill
-                className="object-cover"
-                sizes="(min-width: 1024px) 1152px, 100vw"
-              />
-            )}
-          </div>
-
-          <div className="px-6 pb-8">
-            <div className="-mt-12 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="flex items-end gap-4">
-                <Avatar
-                  src={creator.image}
-                  name={creator.displayName}
-                  alt={creator.displayName}
-                  size={96}
-                  className="rounded-[28px] border-4 border-white bg-muted text-3xl font-bold text-muted-foreground"
-                />
-                <div className="pb-1">
-                  <div className="flex items-center gap-2">
-                    <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
-                      {creator.displayName}
-                    </h1>
-                    {creator.status === "ACTIVE" && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                        <BadgeCheck className="h-3.5 w-3.5" />
-                        Active creator
-                      </span>
-                    )}
-                    {creator.statusBadge && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        {creator.statusBadge.label}
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    /creators/{creator.slug}
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {creator.resourceCount} published resource
-                    {creator.resourceCount === 1 ? "" : "s"}
-                  </p>
-                  {creator.statusBadge?.description && (
-                    <p className="mt-2 text-sm text-muted-foreground">{creator.statusBadge.description}</p>
+            <div className="space-y-10">
+              <section className="overflow-hidden rounded-[32px] border border-border bg-card shadow-card">
+                <div className="relative min-h-[18rem] overflow-hidden">
+                  {creator.banner ? (
+                    <Image
+                      src={creator.banner}
+                      alt={creator.displayName}
+                      fill
+                      className="object-cover"
+                      sizes="(min-width: 1024px) 1152px, 100vw"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.35),transparent_40%),linear-gradient(135deg,rgba(99,102,241,0.28),rgba(15,23,42,0.85)_55%,rgba(8,47,73,0.82))]" />
                   )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--card)/0.98)] via-[hsl(var(--card)/0.78)] to-[hsl(var(--background)/0.25)]" />
+
+                  <div className="relative flex min-h-[18rem] flex-col justify-between gap-8 px-6 py-6 sm:px-8 sm:py-8 lg:min-h-[20rem] lg:px-10 lg:py-10">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={isActive ? "success" : "neutral"}>
+                          {isActive ? (
+                            <>
+                              <BadgeCheck className="size-3.5" />
+                              Active creator
+                            </>
+                          ) : (
+                            "Paused"
+                          )}
+                        </Badge>
+                        <Badge variant={creator.resourceCount > 0 ? "outline" : "neutral"}>
+                          {resourceLabel}
+                        </Badge>
+                        {creator.statusBadge?.label ? (
+                          <Badge variant="featured">{creator.statusBadge.label}</Badge>
+                        ) : null}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {socialLinks.map((link) => {
+                          const Icon = link.icon;
+                          return (
+                            <Button
+                              key={link.key}
+                              asChild
+                              size="icon"
+                              variant="secondary"
+                              className="rounded-full"
+                            >
+                              <Link
+                                href={link.href!}
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label={link.label}
+                                title={link.label}
+                              >
+                                <Icon className="size-4" />
+                              </Link>
+                            </Button>
+                          );
+                        })}
+                        <CreatorPublicOwnerActions
+                          creatorUserId={creator.id}
+                          editHref={routes.dashboardV2CreatorProfile}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-end lg:gap-6">
+                      <Avatar
+                        src={creator.image}
+                        name={creator.displayName}
+                        alt={creator.displayName}
+                        size={104}
+                        className="rounded-[30px] border-4 border-background/95 bg-muted text-3xl font-bold text-muted-foreground shadow-lg"
+                      />
+
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <h1 className="font-display text-4xl font-semibold text-foreground sm:text-5xl">
+                            {creator.displayName}
+                          </h1>
+                          <p className="max-w-3xl text-base leading-7 text-foreground/78 sm:text-lg">
+                            {creatorSummary}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                          <span className="font-medium text-foreground">/creators/{creator.slug}</span>
+                          <span>{creator.resourceCount} published listing{creator.resourceCount === 1 ? "" : "s"}</span>
+                          {creator.momentum?.last30dDownloads ? (
+                            <span>{creator.momentum.last30dDownloads.toLocaleString()} recent downloads</span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </section>
 
-              {socialLinks.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {socialLinks.map((link) => {
-                    const Icon = link.icon;
-                    return (
-                      <Link
-                        key={link.key}
-                        href={link.href!}
-                        className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
-                      >
-                        <Icon className="h-4 w-4" />
-                        {link.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+              <Suspense fallback={<CreatorPublicResourcesSectionFallback />}>
+                <CreatorResourcesSection
+                  creatorResourcesPromise={creatorResourcesPromise}
+                  creatorDisplayName={creator.displayName}
+                  hasBio={Boolean(creator.bio?.trim())}
+                />
+              </Suspense>
             </div>
-
-            {creator.bio && (
-              <p className="mt-6 max-w-3xl text-sm leading-6 text-muted-foreground">{creator.bio}</p>
-            )}
-          </div>
-        </section>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Layers3 className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wide">Resources</span>
-            </div>
-            <p className="mt-3 text-2xl font-bold text-foreground">{creator.resourceCount}</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Sparkles className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wide">Status</span>
-            </div>
-            <p className="mt-3 text-2xl font-bold text-foreground">
-              {creator.statusBadge?.label ?? creator.status}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <FileText className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wide">Slug</span>
-            </div>
-            <p className="mt-3 text-lg font-semibold text-foreground">
-              {creator.momentum?.last30dDownloads
-                ? `${creator.momentum.last30dDownloads.toLocaleString()} recent downloads`
-                : creator.slug ?? "—"}
-            </p>
-          </div>
-        </div>
-
-        <Suspense fallback={<CreatorPublicResourcesSectionFallback />}>
-          <CreatorResourcesSection creatorResourcesPromise={creatorResourcesPromise} />
-        </Suspense>
           </PageContentWide>
         </PageContainer>
       </main>
@@ -250,7 +256,7 @@ function CreatorUnavailableState({ slug }: { slug: string }) {
           <PageContentWide>
             <div className="mx-auto max-w-2xl rounded-[28px] border border-border bg-card px-6 py-10 text-center shadow-sm sm:px-8 sm:py-12">
               <div className="space-y-3">
-                <p className="text-caption font-semibold uppercase tracking-[0.18em] text-primary-700">
+                <p className="text-sm font-semibold text-primary">
                   Creator temporarily unavailable
                 </p>
                 <h1 className="font-display text-3xl font-semibold text-foreground">
@@ -286,36 +292,65 @@ function CreatorUnavailableState({ slug }: { slug: string }) {
 
 async function CreatorResourcesSection({
   creatorResourcesPromise,
+  creatorDisplayName,
+  hasBio,
 }: {
   creatorResourcesPromise: ReturnType<typeof getCreatorPublicResources>;
+  creatorDisplayName: string;
+  hasBio: boolean;
 }) {
   const resources = (await creatorResourcesPromise) ?? [];
+  const hasPublishedResources = resources.length > 0;
 
   return (
-    <section className="mt-8 rounded-[28px] border border-border bg-card p-6 shadow-card">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-display text-2xl font-semibold text-foreground">
-            Published resources
+    <section className="space-y-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <h2 className="font-display text-2xl font-semibold text-foreground sm:text-3xl">
+            {hasPublishedResources ? "Shop resources" : "Store opening soon"}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Browse the latest resources from this creator.
+          <p className="max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
+            {hasPublishedResources
+              ? `Browse the latest classroom downloads and study materials from ${creatorDisplayName}.`
+              : hasBio
+                ? `This storefront is active. Published classroom downloads will appear here once the first resources go live.`
+                : `${creatorDisplayName} is still preparing this storefront. Published classroom downloads will appear here as soon as the first listings go live.`}
           </p>
         </div>
+        {hasPublishedResources ? (
+          <p className="text-sm text-muted-foreground">
+            {resources.length} listing{resources.length === 1 ? "" : "s"}
+          </p>
+        ) : null}
       </div>
 
-      {resources.length === 0 ? (
-        <div className="py-16 text-center">
-          <p className="text-sm text-muted-foreground">No published resources yet.</p>
-        </div>
-      ) : (
-        <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      {hasPublishedResources ? (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {resources.map((resource) => (
             <PublicResourceCard
               key={resource.id}
               resource={resource}
             />
           ))}
+        </div>
+      ) : (
+        <div className="rounded-[28px] border border-dashed border-border-strong bg-card px-6 py-10 shadow-card sm:px-8 sm:py-12">
+          <div className="max-w-2xl space-y-4">
+            <p className="text-sm font-medium text-muted-foreground">
+              Nothing is published yet.
+            </p>
+            <h3 className="font-display text-2xl font-semibold text-foreground">
+              This storefront is getting ready.
+            </h3>
+            <p className="text-sm leading-7 text-muted-foreground sm:text-base">
+              Check back soon for worksheets, assessments, and downloadable study resources.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild variant="secondary" size="sm">
+                <Link href={routes.marketplace}>Browse marketplace</Link>
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </section>

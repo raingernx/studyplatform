@@ -1,6 +1,8 @@
+import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getCreatorAccessCacheTag } from "@/lib/cache";
 import { CreatorServiceError, submitCreatorApplication } from "@/services/creator";
 import { checkRateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 
@@ -34,6 +36,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
     }
     await submitCreatorApplication(session.user.id, body);
+    revalidateTag(getCreatorAccessCacheTag(session.user.id), "max");
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {

@@ -575,12 +575,13 @@ function AnalyticsPreview({
 
 function CreatorResourcesEmptyStatePreview() {
   return (
-    <div className="px-6 py-16 text-center">
-      <LoadingSkeleton className="mx-auto h-10 w-10 rounded-2xl" />
-      <LoadingSkeleton className="mx-auto mt-4 h-5 w-36" />
-      <LoadingSkeleton className="mx-auto mt-2 h-4 w-72 max-w-full" />
-      <LoadingSkeleton className="mx-auto mt-1.5 h-4 w-64 max-w-full" />
-      <LoadingSkeleton className="mx-auto mt-6 h-10 w-44 rounded-xl" />
+    <div className="flex items-center justify-center px-5 py-5">
+      <div className="w-full max-w-2xl rounded-2xl border-2 border-dashed border-border-subtle px-6 py-16 text-center">
+        <LoadingSkeleton className="mx-auto h-5 w-36" />
+        <LoadingSkeleton className="mx-auto mt-3 h-4 w-72 max-w-full" />
+        <LoadingSkeleton className="mx-auto mt-1.5 h-4 w-64 max-w-full" />
+        <LoadingSkeleton className="mx-auto mt-6 h-9 w-36 rounded-xl" />
+      </div>
     </div>
   );
 }

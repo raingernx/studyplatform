@@ -91,6 +91,7 @@ export function ResourcesNavigationOverlay() {
   return (
     <div
       data-loading-scope={overlayScope}
+      data-resources-overlay="navigation"
       className="pointer-events-none fixed inset-0 z-[85] bg-background"
     >
       {overlayMode === "detail"

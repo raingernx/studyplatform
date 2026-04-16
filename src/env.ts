@@ -22,6 +22,12 @@ const EnvSchema = z
     STRIPE_PRO_ANNUAL_PRICE_ID: z
       .string()
       .min(1, "STRIPE_PRO_ANNUAL_PRICE_ID is required"),
+    STRIPE_TEAM_MONTHLY_PRICE_ID: z
+      .string()
+      .min(1, "STRIPE_TEAM_MONTHLY_PRICE_ID is required"),
+    STRIPE_TEAM_ANNUAL_PRICE_ID: z
+      .string()
+      .min(1, "STRIPE_TEAM_ANNUAL_PRICE_ID is required"),
     XENDIT_SECRET_KEY: z.string().min(1).optional(),
     XENDIT_WEBHOOK_TOKEN: z.string().min(1).optional(),
     R2_ENDPOINT: z.string().url().optional(),

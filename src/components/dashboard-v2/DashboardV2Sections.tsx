@@ -18,6 +18,7 @@ import {
   Settings,
   ShieldCheck,
   Star,
+  Store,
   UploadCloud,
 } from "lucide-react";
 
@@ -45,8 +46,14 @@ import { CreatorResourceForm } from "@/components/creator/CreatorResourceForm";
 import {
   DashboardPageShell,
 } from "@/components/dashboard/DashboardPageShell";
+import { IntentPrefetchLink } from "@/components/navigation/IntentPrefetchLink";
 import { ResourceIntentLink } from "@/components/navigation/ResourceIntentLink";
+import { NotificationSettings } from "@/components/settings/NotificationSettings";
+import { PreferenceSettings } from "@/components/settings/PreferenceSettings";
+import { ProfileSettings } from "@/components/settings/ProfileSettings";
+import { SecuritySettings } from "@/components/settings/SecuritySettings";
 import { DashboardV2CreatorInventoryFilters } from "@/components/dashboard-v2/DashboardV2CreatorInventoryFilters";
+import { DashboardV2MembershipActions } from "@/components/dashboard-v2/DashboardV2MembershipActions";
 import type {
   DashboardV2HomeActivityItem,
   DashboardV2HomeContinueLearningItem,
@@ -80,7 +87,6 @@ import type {
 } from "@/services/dashboard-v2/creator-earnings.service";
 import type { DashboardV2CreatorEditorData } from "@/services/dashboard-v2/creator-editor.service";
 import type { DashboardV2CreatorProfileData } from "@/services/dashboard-v2/creator-profile.service";
-import type { DashboardV2CreatorSettingsData } from "@/services/dashboard-v2/creator-settings.service";
 import type {
   DashboardV2LibraryData,
   DashboardV2LibraryFilterKey,
@@ -196,10 +202,10 @@ const creatorWorkspaceLinks = [
     icon: BarChart3,
   },
   {
-    title: "Profile",
-    detail: "Storefront and settings",
+    title: "Storefront",
+    detail: "Preview your public storefront",
     href: routes.dashboardV2CreatorProfile,
-    icon: Star,
+    icon: Store,
   },
 ] as const;
 
@@ -234,7 +240,7 @@ const creatorWorkspaceLinkIconByKey: Record<
   resources: FileText,
   earnings: CircleDollarSign,
   analytics: BarChart3,
-  profile: Star,
+  storefront: Store,
 };
 
 const resources: Resource[] = [
@@ -692,7 +698,7 @@ export function DashboardV2AccountPreview() {
         <CardContent className="divide-y divide-border-subtle">
           {[
             ["Profile", "Name, email, and public identity"],
-            ["Preferences", "Theme, language, and notifications"],
+            ["Appearance", "Theme mode for your device"],
             ["Security", "Account controls and session state"],
           ].map(([label, detail]) => (
             <div key={label} className="flex items-center gap-3 py-3">
@@ -715,7 +721,14 @@ export function DashboardV2AccountPreview() {
   );
 }
 
-function DashboardV2CreatorWorkspaceRouteIntro() {
+function DashboardV2CreatorWorkspaceRouteIntro({
+  data,
+}: {
+  data?: DashboardV2CreatorReadyData;
+} = {}) {
+  const isFirstTimeCreator = data?.activationStage === "first-run";
+  const storefrontHref = data?.profile.publicProfileHref ?? routes.dashboardV2CreatorProfile;
+
   return (
     <section className="flex flex-col gap-4 border-b border-border-subtle pb-6 md:flex-row md:items-end md:justify-between">
       <div>
@@ -724,19 +737,39 @@ function DashboardV2CreatorWorkspaceRouteIntro() {
           Workspace
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Resources, earnings, and storefront status in one place.
+          {isFirstTimeCreator
+            ? "Set up your storefront, publish your first listing, and unlock creator reporting from one workspace."
+            : "Resources, earnings, and storefront status in one place."}
         </p>
       </div>
-      <div className="flex flex-wrap gap-2">
-        <Button asChild size="sm" variant="secondary">
-          <Link href={routes.dashboardV2CreatorResources}>Resources</Link>
-        </Button>
-        <Button asChild size="sm">
-          <Link href={routes.dashboardV2CreatorSales}>Earnings</Link>
-        </Button>
-        <Button asChild size="sm" variant="ghost">
-          <Link href={routes.dashboardV2CreatorPayouts}>Payouts</Link>
-        </Button>
+      <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-1 md:w-auto md:overflow-visible md:pb-0">
+        {isFirstTimeCreator ? (
+          <>
+            <Button asChild size="sm">
+              <Link className="whitespace-nowrap" href={routes.dashboardV2CreatorNewResource}>
+                Create resource
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="secondary">
+              <Link className="whitespace-nowrap" href={storefrontHref}>
+                Storefront
+              </Link>
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button asChild size="sm">
+              <Link className="whitespace-nowrap" href={routes.dashboardV2CreatorResources}>
+                Resources
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="secondary">
+              <Link className="whitespace-nowrap" href={storefrontHref}>
+                Storefront
+              </Link>
+            </Button>
+          </>
+        )}
       </div>
     </section>
   );
@@ -744,8 +777,10 @@ function DashboardV2CreatorWorkspaceRouteIntro() {
 
 function DashboardV2CreatorWorkspaceResourcesPanel({
   resources,
+  totalResources,
 }: {
   resources?: DashboardV2CreatorReadyData["resources"];
+  totalResources?: number;
 }) {
   const resourceRows =
     resources?.map((resource: DashboardV2CreatorReadyData["resources"][number]) => ({
@@ -764,6 +799,10 @@ function DashboardV2CreatorWorkspaceResourcesPanel({
       downloads: resource.downloads,
       href: null,
     }));
+  const fillerRowCount =
+    resources && resourceRows.length > 0
+      ? Math.max(0, 5 - resourceRows.length)
+      : 0;
   const resourcesPanel = (
     <DataPanelTable
       title="Recent resources"
@@ -776,28 +815,36 @@ function DashboardV2CreatorWorkspaceResourcesPanel({
           </Link>
         </Button>
       }
-      className="flex-1"
-      bodyClassName="flex flex-1 flex-col p-0"
+      bodyClassName="p-0"
+      footer={
+        resources && resourceRows.length > 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {totalResources && totalResources > resourceRows.length
+              ? `Showing latest ${resourceRows.length} of ${totalResources} resources`
+              : `Showing ${resourceRows.length} resource${resourceRows.length === 1 ? "" : "s"}`}
+          </p>
+        ) : undefined
+      }
       id="creator-resources"
     >
       <>
         {resources && resourceRows.length === 0 ? (
-          <div className="flex flex-1 p-5">
+          <div className="px-5 py-6">
             <EmptyState
               title="No creator resources yet"
               description="Create your first resource to start tracking sales and downloads here."
               action={
-                <Button asChild>
+                <Button asChild size="sm">
                   <Link href={routes.dashboardV2CreatorNewResource}>
-                    New resource
+                    Create resource
                   </Link>
                 </Button>
               }
-              className="min-h-[220px]"
+              className="min-h-0 w-full max-w-none px-6 py-10"
             />
           </div>
         ) : (
-          <div className="flex-1 overflow-x-auto">
+          <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-left">
               <thead className="border-b border-border-subtle text-xs uppercase text-muted-foreground">
                 <tr>
@@ -854,6 +901,22 @@ function DashboardV2CreatorWorkspaceResourcesPanel({
                     </td>
                   </tr>
                 ))}
+                {Array.from({ length: fillerRowCount }).map((_, index) => (
+                  <tr key={`filler-${index}`} aria-hidden="true" className="bg-card">
+                    <td className="px-5 py-4">
+                      <div className="h-4 w-3/5 rounded-md bg-muted/40" />
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="h-5 w-20 rounded-full bg-muted/40" />
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="h-4 w-16 rounded-md bg-muted/40" />
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="h-4 w-24 rounded-md bg-muted/40" />
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -874,11 +937,28 @@ export function DashboardV2CreatorWorkspace({
   resources?: DashboardV2CreatorReadyData["resources"];
   resourcePanel?: ReactNode;
 } = {}) {
-  const workspaceLinks =
-    data?.links.map((item: DashboardV2CreatorReadyData["links"][number]) => ({
-      ...item,
-      icon: creatorWorkspaceLinkIconByKey[item.key],
-    })) ?? creatorWorkspaceLinks;
+  const checklistItems = data?.checklist ?? [];
+  const completedChecklistCount = checklistItems.filter((item) => item.done).length;
+  const isFirstTimeCreator = data?.activationStage === "first-run";
+  const workspaceCtaHref = routes.dashboardV2CreatorAnalytics;
+  const workspaceCtaLabel = "Full analytics";
+  const nextUnlocks = [
+    {
+      title: "Storefront live",
+      detail: "Share your page after your first publish.",
+      icon: Store,
+    },
+    {
+      title: "Earnings visible",
+      detail: "Sales and payouts appear after your first order.",
+      icon: CircleDollarSign,
+    },
+    {
+      title: "Analytics active",
+      detail: "Insights unlock as your store gets traffic.",
+      icon: BarChart3,
+    },
+  ] as const;
 
   return (
     <section id="creator-workspace" className="space-y-6">
@@ -889,33 +969,61 @@ export function DashboardV2CreatorWorkspace({
               Overview
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Revenue, resources, and downloads from your creator workspace.
+              {isFirstTimeCreator
+                ? "Finish your setup, create your first listing, and keep the launch steps in one place."
+                : "Revenue, resources, and downloads from your creator workspace."}
             </p>
           </div>
-          <Button asChild size="sm" variant="ghost">
-            <Link href={routes.dashboardV2CreatorAnalytics}>
-              Full analytics
-              <ChevronRight className="size-4" aria-hidden />
-            </Link>
-          </Button>
+          {!isFirstTimeCreator ? (
+            <Button asChild size="sm" variant="ghost">
+              <Link href={workspaceCtaHref}>
+                {workspaceCtaLabel}
+                <ChevronRight className="size-4" aria-hidden />
+              </Link>
+            </Button>
+          ) : null}
         </div>
 
         <div id="creator-analytics" className="flex flex-col gap-4">
           <DashboardV2CreatorStats stats={data?.stats} />
           {resourcePanel ?? (
-            <DashboardV2CreatorWorkspaceResourcesPanel resources={resources} />
+            <DashboardV2CreatorWorkspaceResourcesPanel
+              resources={resources}
+              totalResources={data?.totalResourceCount}
+            />
           )}
         </div>
 
         <Card id="creator-quick-links">
           <CardHeader className="border-b border-border-subtle pb-4">
-            <CardTitle>Next</CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Setup status and creator routes.
-            </p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle>
+                  {isFirstTimeCreator ? "Launch checklist" : "Next steps"}
+                </CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {isFirstTimeCreator
+                    ? "Finish setup and ship your first listing."
+                    : "Progress and shortcuts for your workspace."}
+                </p>
+              </div>
+              {checklistItems.length > 0 ? (
+                <Badge
+                  className="shrink-0"
+                  variant={
+                    completedChecklistCount === checklistItems.length
+                      ? "success"
+                      : "warning"
+                  }
+                >
+                  {completedChecklistCount}/{checklistItems.length} complete
+                </Badge>
+              ) : null}
+            </div>
           </CardHeader>
-          <CardContent className="divide-y divide-border-subtle">
-            {data?.checklist.map((item: DashboardV2CreatorReadyData["checklist"][number]) => (
+          <CardContent className="py-0">
+            <div className="divide-y divide-border-subtle">
+              {checklistItems.map((item: DashboardV2CreatorReadyData["checklist"][number]) => (
               <div key={item.label} className="flex items-center gap-3 py-4">
                 <div
                   className={cn(
@@ -943,12 +1051,21 @@ export function DashboardV2CreatorWorkspace({
                   {item.done ? "Done" : "Next"}
                 </Badge>
               </div>
-            ))}
-            {workspaceLinks.map((item: (typeof workspaceLinks)[number]) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-3 py-4 text-left transition hover:text-foreground"
+              ))}
+            </div>
+            <div className="border-y border-border-subtle px-6 py-4">
+              <p className="text-xs font-medium uppercase text-muted-foreground">
+                What unlocks next
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                What unlocks after your first publish.
+              </p>
+            </div>
+            <div className="divide-y divide-border-subtle">
+              {nextUnlocks.map((item) => (
+              <div
+                key={item.title}
+                className="flex items-center gap-3 py-4"
               >
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                   <item.icon className="size-4" aria-hidden />
@@ -961,12 +1078,9 @@ export function DashboardV2CreatorWorkspace({
                     {item.detail}
                   </p>
                 </div>
-                <ChevronRight
-                  className="size-4 shrink-0 text-muted-foreground"
-                  aria-hidden
-                />
-              </Link>
-            ))}
+              </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -976,7 +1090,7 @@ export function DashboardV2CreatorWorkspace({
 
 function DashboardV2CreatorWorkspaceResourcesLoadingPanel() {
   return (
-    <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border-subtle bg-card">
+    <div className="overflow-hidden rounded-xl border border-border-subtle bg-card">
       <div className="flex items-center justify-between gap-4 border-b border-border-subtle px-5 py-4">
         <div className="space-y-2">
           <LoadingSkeleton className="h-5 w-36" />
@@ -984,7 +1098,7 @@ function DashboardV2CreatorWorkspaceResourcesLoadingPanel() {
         </div>
         <LoadingSkeleton className="hidden h-9 w-32 rounded-xl md:block" />
       </div>
-      <div className="flex-1 overflow-x-auto">
+      <div className="overflow-x-auto">
         <div className="grid min-w-[680px] grid-cols-[minmax(0,1fr)_128px_128px_144px] gap-4 border-b border-border-subtle px-5 py-3">
           <LoadingSkeleton className="h-3 w-20" />
           <LoadingSkeleton className="h-3 w-14" />
@@ -1003,64 +1117,10 @@ function DashboardV2CreatorWorkspaceResourcesLoadingPanel() {
           </div>
         ))}
       </div>
+      <div className="border-t border-border-subtle bg-muted/60 px-5 py-3">
+        <LoadingSkeleton className="h-4 w-48" />
+      </div>
     </div>
-  );
-}
-
-function DashboardV2CreatorProfileHubSections({
-  data,
-  focus = "profile",
-}: {
-  data?: DashboardV2CreatorReadyData;
-  focus?: "profile" | "settings";
-}) {
-  const sections =
-    focus === "settings"
-      ? [
-          {
-            id: "creator-profile-settings",
-            title: "Creator settings",
-            description: "Visibility, alerts, and publishing defaults.",
-            content: <DashboardV2CreatorSettingsPanel profile={data?.profile} />,
-          },
-          {
-            id: "creator-profile-identity",
-            title: "Storefront profile",
-            description: "Public name, bio, slug, and focus tags.",
-            content: <DashboardV2CreatorProfilePanel profile={data?.profile} />,
-          },
-        ]
-      : [
-          {
-            id: "creator-profile-identity",
-            title: "Storefront profile",
-            description: "Public name, bio, slug, and focus tags.",
-            content: <DashboardV2CreatorProfilePanel profile={data?.profile} />,
-          },
-          {
-            id: "creator-profile-settings",
-            title: "Creator settings",
-            description: "Visibility, alerts, and publishing defaults.",
-            content: <DashboardV2CreatorSettingsPanel profile={data?.profile} />,
-          },
-        ];
-
-  return (
-    <section id="creator-profile-hub" className="space-y-6">
-      {sections.map((section) => (
-        <section key={section.id} id={section.id} className="space-y-4">
-          <div className="space-y-1">
-            <h2 className="font-ui text-xl font-semibold text-foreground">
-              {section.title}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {section.description}
-            </p>
-          </div>
-          {section.content}
-        </section>
-      ))}
-    </section>
   );
 }
 
@@ -1786,10 +1846,8 @@ export function DashboardV2DownloadsContent({
 
 export function DashboardV2CreatorContent({
   data,
-  workspaceFocus = "default",
 }: {
   data?: DashboardV2CreatorOverviewData;
-  workspaceFocus?: "default" | "profile" | "settings";
 } = {}) {
   if (data?.state === "locked" || data?.state === "error") {
     return (
@@ -1827,14 +1885,10 @@ export function DashboardV2CreatorContent({
 
   return (
     <DashboardPageShell routeReady="dashboard-creator-overview">
-      <DashboardV2CreatorWorkspaceRouteIntro />
+      <DashboardV2CreatorWorkspaceRouteIntro data={readyData} />
       <DashboardV2CreatorWorkspace
         data={readyData}
         resources={readyData?.resources}
-      />
-      <DashboardV2CreatorProfileHubSections
-        data={readyData}
-        focus={workspaceFocus === "settings" ? "settings" : "profile"}
       />
     </DashboardPageShell>
   );
@@ -1843,7 +1897,30 @@ export function DashboardV2CreatorContent({
 function DashboardV2CreatorWorkspaceSummaryLoadingContent() {
   return (
     <section className="space-y-6" data-loading-scope="dashboard-v2-creator">
-      <DashboardV2CreatorWorkspaceRouteIntro />
+      <DashboardV2CreatorWorkspaceRouteIntro
+        data={{
+          state: "ready",
+          creatorName: "Creator workspace",
+          activationStage: "first-run",
+          stats: [],
+          links: [],
+          checklist: [],
+          totalResourceCount: 0,
+          resources: [],
+          profile: {
+            displayName: "Creator workspace",
+            slugLabel: "No public slug",
+            publicProfileHref: null,
+            bio: "No storefront bio yet.",
+            statusLabel: "Active",
+            avatarUrl: null,
+            avatarInitial: "C",
+            hasBio: false,
+            hasSlug: false,
+            hasDisplayName: false,
+          },
+        }}
+      />
       <section id="creator-workspace" className="space-y-6">
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between xl:col-span-2">
@@ -1852,12 +1929,12 @@ function DashboardV2CreatorWorkspaceSummaryLoadingContent() {
                 Overview
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Revenue, resources, and downloads from your creator workspace.
+                Finish your setup, create your first listing, and keep the launch steps in one place.
               </p>
             </div>
             <Button asChild size="sm" variant="ghost">
-              <Link href={routes.dashboardV2CreatorAnalytics}>
-                Full analytics
+              <Link href={routes.dashboardV2CreatorNewResource}>
+                Create resource
                 <ChevronRight className="size-4" aria-hidden />
               </Link>
             </Button>
@@ -1886,13 +1963,19 @@ function DashboardV2CreatorWorkspaceSummaryLoadingContent() {
 
           <Card id="creator-quick-links">
             <CardHeader className="border-b border-border-subtle pb-4">
-              <CardTitle>Next</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Setup status and creator routes.
-              </p>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle>Launch checklist</CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Finish setup and ship your first listing.
+                  </p>
+                </div>
+                <LoadingSkeleton className="h-6 w-24 rounded-full" />
+              </div>
             </CardHeader>
-            <CardContent className="divide-y divide-border-subtle">
-              {Array.from({ length: 7 }).map((_, index) => (
+            <CardContent className="py-0">
+              <div className="divide-y divide-border-subtle">
+                {Array.from({ length: 3 }).map((_, index) => (
                 <div key={index} className="flex items-center gap-3 py-4">
                   <LoadingSkeleton className="size-9 rounded-xl" />
                   <div className="min-w-0 flex-1">
@@ -1901,68 +1984,56 @@ function DashboardV2CreatorWorkspaceSummaryLoadingContent() {
                   </div>
                   <LoadingSkeleton className="h-6 w-16 rounded-full" />
                 </div>
-              ))}
+                ))}
+              </div>
+              <div className="border-y border-border-subtle px-6 py-4">
+                <LoadingSkeleton className="h-3 w-16" />
+                <LoadingSkeleton className="mt-2 h-4 w-40 max-w-full" />
+              </div>
+              <div className="divide-y divide-border-subtle">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="flex items-center gap-3 py-4">
+                    <LoadingSkeleton className="size-9 rounded-xl" />
+                    <div className="min-w-0 flex-1">
+                      <LoadingSkeleton className="h-4 w-28" />
+                      <LoadingSkeleton className="mt-2 h-3 w-36" />
+                    </div>
+                    <LoadingSkeleton className="h-4 w-4" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card id="creator-settings-summary">
+            <CardHeader className="border-b border-border-subtle pb-4">
+              <div className="space-y-2">
+                <LoadingSkeleton className="h-6 w-24" />
+                <LoadingSkeleton className="h-4 w-64 max-w-full" />
+              </div>
+            </CardHeader>
+            <CardContent className="py-0">
+              <div className="divide-y divide-border-subtle">
+                {Array.from({ length: 2 }).map((_, index) => (
+                  <div key={index} className="px-5 py-5 sm:px-6">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <LoadingSkeleton className="h-4 w-36" />
+                          <LoadingSkeleton className="h-6 w-20 rounded-full" />
+                        </div>
+                        <LoadingSkeleton className="h-4 w-full max-w-xl" />
+                      </div>
+                      <LoadingSkeleton className="h-9 w-full rounded-xl sm:w-28" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>
       </section>
 
-      <section id="creator-profile-hub" className="space-y-6">
-        {Array.from({ length: 2 }).map((_, index) => (
-          <section key={index} className="space-y-4">
-            <div className="space-y-1">
-              <LoadingSkeleton className="h-7 w-44" />
-              <LoadingSkeleton className="h-4 w-64 max-w-full" />
-            </div>
-            <div className="overflow-hidden rounded-xl border border-border-subtle bg-card">
-              {index === 0 ? (
-                <>
-                  <div className="border-b border-border-subtle px-6 py-5">
-                    <div className="flex items-start gap-3">
-                      <LoadingSkeleton className="size-12 rounded-2xl" />
-                      <div className="min-w-0">
-                        <LoadingSkeleton className="h-6 w-36" />
-                        <LoadingSkeleton className="mt-2 h-4 w-44" />
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <LoadingSkeleton className="h-6 w-20 rounded-full" />
-                          <LoadingSkeleton className="h-6 w-20 rounded-full" />
-                          <LoadingSkeleton className="h-6 w-20 rounded-full" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="divide-y divide-border-subtle px-6">
-                    {Array.from({ length: 4 }).map((__, rowIndex) => (
-                      <div
-                        key={rowIndex}
-                        className="grid gap-2 py-4 md:grid-cols-[150px_minmax(0,1fr)]"
-                      >
-                        <LoadingSkeleton className="h-4 w-24" />
-                        <LoadingSkeleton className="h-4 w-full max-w-sm" />
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="grid divide-y divide-border-subtle lg:grid-cols-3 lg:divide-x lg:divide-y-0">
-                  {Array.from({ length: 3 }).map((__, panelIndex) => (
-                    <div key={panelIndex} className="flex flex-col gap-5 px-5 py-5">
-                      <div className="flex items-center justify-between gap-3">
-                        <LoadingSkeleton className="size-10 rounded-xl" />
-                        <LoadingSkeleton className="h-6 w-16 rounded-full" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <LoadingSkeleton className="h-5 w-36" />
-                        <LoadingSkeleton className="h-4 w-full max-w-[220px]" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-        ))}
-      </section>
     </section>
   );
 }
@@ -2170,7 +2241,14 @@ function DashboardV2LibraryResults({ data }: { data: DashboardV2LibraryData }) {
         description="Everything you purchase lands here. Start with a resource from the marketplace."
         action={
           <Button asChild size="sm">
-            <Link href={routes.marketplace}>Browse resources</Link>
+            <IntentPrefetchLink
+              href={routes.marketplace}
+              prefetchLimit={6}
+              prefetchScope="dashboard-v2-library-empty"
+              resourcesNavigationMode="discover"
+            >
+              Browse resources
+            </IntentPrefetchLink>
           </Button>
         }
         className="border-border-subtle py-16"
@@ -2530,11 +2608,18 @@ function DashboardV2PurchasesRouteBody({
           title="No purchases yet"
           description="Your completed and in-flight orders will appear here once you buy a resource."
           action={
-            <Button asChild size="sm">
-              <Link href={routes.marketplace}>Browse resources</Link>
-            </Button>
-          }
-          className="border-border-subtle py-16"
+          <Button asChild size="sm">
+            <IntentPrefetchLink
+              href={routes.marketplace}
+              prefetchLimit={6}
+              prefetchScope="dashboard-v2-purchases-empty"
+              resourcesNavigationMode="discover"
+            >
+              Browse resources
+            </IntentPrefetchLink>
+          </Button>
+        }
+        className="border-border-subtle py-16"
         />
       ) : (
         <DataPanelTable title="Purchase ledger" bodyClassName="p-0">
@@ -2628,110 +2713,222 @@ export function DashboardV2PurchasesContent({
 
 export function DashboardV2MembershipContent({
   data,
+  subscriptionState,
 }: {
   data: DashboardV2MembershipData;
+  subscriptionState?: string | null;
 }) {
   return (
     <DashboardPageShell routeReady="dashboard-subscription">
-      <section className="flex flex-col gap-4 border-b border-border-subtle pb-6 md:flex-row md:items-end md:justify-between">
-        <div>
-          <Badge variant="info">Membership</Badge>
-          <h1 className="mt-3 text-balance font-ui text-3xl font-semibold text-foreground">
-            Membership
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Review plan status, renewal timing, and billing coverage without
-            leaving the dashboard shell.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild size="sm">
-            <Link href={data.primaryCtaHref}>{data.primaryCtaLabel}</Link>
-          </Button>
-          <Button asChild size="sm" variant="secondary">
-            <Link href={data.secondaryCtaHref}>{data.secondaryCtaLabel}</Link>
-          </Button>
-        </div>
-      </section>
+      <DashboardV2MembershipIntroContent
+        actions={
+          <DashboardV2MembershipActions
+            primaryHref={data.primaryCtaHref}
+            primaryLabel={data.primaryCtaLabel}
+            secondaryHref={data.secondaryCtaHref}
+            secondaryLabel={data.secondaryCtaLabel}
+            canCancelSubscription={data.canCancelSubscription}
+            cancellationScheduled={data.cancellationScheduled}
+            subscriptionState={subscriptionState}
+          />
+        }
+      />
+      <DashboardV2MembershipResolvedContent data={data} />
+    </DashboardPageShell>
+  );
+}
 
-      {data.state === "error" ? (
-        <EmptyState
-          title={data.errorTitle ?? "Could not load membership"}
-          description={data.errorDescription}
-          action={
-            <Button asChild size="sm" variant="secondary">
-              <Link href={routes.dashboardV2Membership}>Retry</Link>
-            </Button>
-          }
-          className="border-border-subtle py-16"
-        />
-      ) : (
-        <>
-          <section className="grid gap-4 xl:grid-cols-3">
-            {data.summaryCards.map((card) => (
-              <Card key={card.label}>
-                <CardContent className="py-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-muted-foreground">
-                        {card.label}
-                      </p>
-                      <p className="mt-2 text-base font-semibold text-foreground">
-                        {card.value}
-                      </p>
-                    </div>
-                    {card.badgeLabel ? (
-                      <Badge variant={card.badgeVariant ?? "neutral"}>
-                        {card.badgeLabel}
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    {card.detail}
+function DashboardV2MembershipIntroContent({
+  actions,
+}: {
+  actions?: ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-4 border-b border-border-subtle pb-6 md:flex-row md:items-end md:justify-between">
+      <div>
+        <Badge variant="info">Membership</Badge>
+        <h1 className="mt-3 text-balance font-ui text-3xl font-semibold text-foreground">
+          Membership
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Review plan status, renewal timing, and billing coverage without
+          leaving the dashboard shell.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">{actions}</div>
+    </section>
+  );
+}
+
+async function DashboardV2MembershipIntroActions({
+  dataPromise,
+  subscriptionState,
+}: {
+  dataPromise: Promise<DashboardV2MembershipData>;
+  subscriptionState?: string | null;
+}) {
+  const data = await dataPromise;
+
+  return (
+    <DashboardV2MembershipActions
+      primaryHref={data.primaryCtaHref}
+      primaryLabel={data.primaryCtaLabel}
+      secondaryHref={data.secondaryCtaHref}
+      secondaryLabel={data.secondaryCtaLabel}
+      canCancelSubscription={data.canCancelSubscription}
+      cancellationScheduled={data.cancellationScheduled}
+      subscriptionState={subscriptionState}
+    />
+  );
+}
+
+function DashboardV2MembershipResolvedContent({
+  data,
+}: {
+  data: DashboardV2MembershipData;
+}) {
+  return data.state === "error" ? (
+    <EmptyState
+      title={data.errorTitle ?? "Could not load membership"}
+      description={data.errorDescription}
+      action={
+        <Button asChild size="sm" variant="secondary">
+          <Link href={routes.dashboardV2Membership}>Retry</Link>
+        </Button>
+      }
+      className="border-border-subtle py-16"
+    />
+  ) : (
+    <>
+      <section className="grid gap-4 xl:grid-cols-3">
+        {data.summaryCards.map((card) => (
+          <Card key={card.label}>
+            <CardContent className="py-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-muted-foreground">
+                    {card.label}
                   </p>
-                </CardContent>
-              </Card>
-            ))}
-          </section>
-
-          <Card>
-            <CardContent className="flex flex-col gap-6 py-5 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0 max-w-2xl">
-                <div className="flex items-center gap-2">
-                  <Badge variant={data.badgeVariant}>{data.badgeLabel}</Badge>
-                  <span className="text-xs text-muted-foreground">
-                    Route-owned membership state
-                  </span>
+                  <p className="mt-2 text-base font-semibold text-foreground">
+                    {card.value}
+                  </p>
                 </div>
-                <h2 className="mt-4 text-2xl font-semibold text-foreground">
-                  {data.title}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {data.detail}
-                </p>
-                <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  {data.support}
-                </p>
+                {card.badgeLabel ? (
+                  <Badge variant={card.badgeVariant ?? "neutral"}>
+                    {card.badgeLabel}
+                  </Badge>
+                ) : null}
               </div>
-              <div className="flex w-full shrink-0 flex-col gap-3 lg:w-auto">
-                <Button asChild className="w-full lg:min-w-[180px]" size="sm">
-                  <Link href={data.primaryCtaHref}>{data.primaryCtaLabel}</Link>
-                </Button>
-                <Button
-                  asChild
-                  className="w-full lg:min-w-[180px]"
-                  size="sm"
-                  variant="secondary"
-                >
-                  <Link href={data.secondaryCtaHref}>
-                    {data.secondaryCtaLabel}
-                  </Link>
-                </Button>
-              </div>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                {card.detail}
+              </p>
             </CardContent>
           </Card>
-        </>
-      )}
+        ))}
+      </section>
+
+      <Card>
+        <CardContent className="py-5">
+          <div className="min-w-0 max-w-2xl">
+            <div className="flex items-center gap-2">
+              <Badge variant={data.badgeVariant}>{data.badgeLabel}</Badge>
+              <span className="text-xs text-muted-foreground">
+                Route-owned membership state
+              </span>
+            </div>
+            <h2 className="mt-4 text-2xl font-semibold text-foreground">
+              {data.title}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {data.detail}
+            </p>
+            <p className="mt-4 text-sm leading-6 text-muted-foreground">
+              {data.support}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+async function DashboardV2MembershipStreamedBody({
+  dataPromise,
+}: {
+  dataPromise: Promise<DashboardV2MembershipData>;
+}) {
+  const data = await dataPromise;
+  return <DashboardV2MembershipResolvedContent data={data} />;
+}
+
+function DashboardV2MembershipSectionsLoadingContent() {
+  return (
+    <div className="space-y-4" data-loading-scope="dashboard-v2-membership">
+      <section className="grid gap-4 xl:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Card key={index}>
+            <CardContent className="py-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-3">
+                  <LoadingSkeleton className="h-3 w-20" />
+                  <LoadingSkeleton className="h-5 w-28" />
+                </div>
+                {index === 0 ? (
+                  <LoadingSkeleton className="h-6 w-16 rounded-full" />
+                ) : null}
+              </div>
+              <LoadingSkeleton className="mt-4 h-4 w-full max-w-[220px]" />
+              <LoadingSkeleton className="mt-2 h-4 w-5/6" />
+            </CardContent>
+          </Card>
+        ))}
+      </section>
+
+      <div className="rounded-xl border border-border-subtle bg-card p-5">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <LoadingSkeleton className="h-6 w-20 rounded-full" />
+            <LoadingSkeleton className="h-3 w-36" />
+          </div>
+          <LoadingSkeleton className="mt-4 h-8 w-full max-w-md" />
+          <LoadingSkeleton className="mt-3 h-4 w-full max-w-xl" />
+          <LoadingSkeleton className="mt-2 h-4 w-5/6" />
+          <LoadingSkeleton className="mt-4 h-4 w-full max-w-lg" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function DashboardV2MembershipStreamedContent({
+  dataPromise,
+  subscriptionState,
+}: {
+  dataPromise: Promise<DashboardV2MembershipData>;
+  subscriptionState?: string | null;
+}) {
+  return (
+    <DashboardPageShell routeReady="dashboard-subscription">
+      <DashboardV2MembershipIntroContent
+        actions={
+          <Suspense
+            fallback={
+              <div className="flex flex-wrap gap-2">
+                <LoadingSkeleton className="h-9 w-32 rounded-xl" />
+                <LoadingSkeleton className="h-9 w-32 rounded-xl" />
+              </div>
+            }
+          >
+            <DashboardV2MembershipIntroActions
+              dataPromise={dataPromise}
+              subscriptionState={subscriptionState}
+            />
+          </Suspense>
+        }
+      />
+      <Suspense fallback={<DashboardV2MembershipSectionsLoadingContent />}>
+        <DashboardV2MembershipStreamedBody dataPromise={dataPromise} />
+      </Suspense>
     </DashboardPageShell>
   );
 }
@@ -2739,95 +2936,16 @@ export function DashboardV2MembershipContent({
 export function DashboardV2MembershipLoadingContent() {
   return (
     <DashboardPageShell routeReady="dashboard-subscription">
-      <section className="flex flex-col gap-4 border-b border-border-subtle pb-6 md:flex-row md:items-end md:justify-between">
-        <div>
-          <Badge variant="info">Membership</Badge>
-          <h1 className="mt-3 text-balance font-ui text-3xl font-semibold text-foreground">
-            Membership
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Review plan status, renewal timing, and billing coverage without
-            leaving the dashboard shell.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <LoadingSkeleton className="h-9 w-32 rounded-xl" />
-          <LoadingSkeleton className="h-9 w-32 rounded-xl" />
-        </div>
-      </section>
-
-      <div className="space-y-4" data-loading-scope="dashboard-v2-membership">
-        <section className="grid gap-4 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Card key={index}>
-              <CardContent className="py-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-3">
-                    <LoadingSkeleton className="h-3 w-20" />
-                    <LoadingSkeleton className="h-5 w-28" />
-                  </div>
-                  {index === 0 ? (
-                    <LoadingSkeleton className="h-6 w-16 rounded-full" />
-                  ) : null}
-                </div>
-                <LoadingSkeleton className="mt-4 h-4 w-full max-w-[220px]" />
-                <LoadingSkeleton className="mt-2 h-4 w-5/6" />
-              </CardContent>
-            </Card>
-          ))}
-        </section>
-
-        <div className="rounded-xl border border-border-subtle bg-card p-5">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <LoadingSkeleton className="h-6 w-20 rounded-full" />
-                <LoadingSkeleton className="h-3 w-36" />
-              </div>
-              <LoadingSkeleton className="mt-4 h-8 w-full max-w-md" />
-              <LoadingSkeleton className="mt-3 h-4 w-full max-w-xl" />
-              <LoadingSkeleton className="mt-2 h-4 w-5/6" />
-              <LoadingSkeleton className="mt-4 h-4 w-full max-w-lg" />
-            </div>
-            <div className="flex w-full flex-col gap-3 lg:w-[180px]">
-              <LoadingSkeleton className="h-9 w-full rounded-xl" />
-              <LoadingSkeleton className="h-9 w-full rounded-xl" />
-            </div>
+      <DashboardV2MembershipIntroContent
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <LoadingSkeleton className="h-9 w-32 rounded-xl" />
+            <LoadingSkeleton className="h-9 w-32 rounded-xl" />
           </div>
-        </div>
-      </div>
+        }
+      />
+      <DashboardV2MembershipSectionsLoadingContent />
     </DashboardPageShell>
-  );
-}
-
-function DashboardV2SettingsRow({
-  label,
-  value,
-  detail,
-  className,
-}: {
-  label: string;
-  value: ReactNode;
-  detail?: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "grid gap-1 py-4 md:grid-cols-[180px_minmax(0,1fr)] md:gap-6",
-        className,
-      )}
-    >
-      <p className="text-xs font-medium uppercase text-muted-foreground">
-        {label}
-      </p>
-      <div className="min-w-0">
-        <div className="text-sm font-medium text-foreground">{value}</div>
-        {detail ? (
-          <div className="mt-1 text-sm leading-6 text-muted-foreground">{detail}</div>
-        ) : null}
-      </div>
-    </div>
   );
 }
 
@@ -2838,16 +2956,42 @@ export function DashboardV2SettingsContent({
 }) {
   return (
     <DashboardPageShell routeReady="dashboard-settings">
-      <section className="border-b border-border-subtle pb-6">
-        <Badge variant="info">Settings</Badge>
-        <h1 className="mt-3 text-balance font-ui text-3xl font-semibold text-foreground">
-          Profile, preferences, and security
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          One page for account status. Three sections. No extra settings maze.
-        </p>
-      </section>
+      <DashboardV2SettingsIntroContent />
+      <DashboardV2SettingsResolvedContent data={data} />
+    </DashboardPageShell>
+  );
+}
 
+async function DashboardV2SettingsStreamedSections({
+  dataPromise,
+}: {
+  dataPromise: Promise<DashboardV2SettingsData>;
+}) {
+  const data = await dataPromise;
+  return <DashboardV2SettingsResolvedContent data={data} />;
+}
+
+function DashboardV2SettingsIntroContent() {
+  return (
+    <section className="border-b border-border-subtle pb-6">
+      <Badge variant="info">Settings</Badge>
+      <h1 className="mt-3 text-balance font-ui text-3xl font-semibold text-foreground">
+        Account settings
+      </h1>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+        Update your profile, appearance, notifications, and account controls from one protected dashboard page.
+      </p>
+    </section>
+  );
+}
+
+function DashboardV2SettingsResolvedContent({
+  data,
+}: {
+  data: DashboardV2SettingsData;
+}) {
+  return (
+    <>
       {data.state === "error" ? (
         <EmptyState
           title={data.errorTitle ?? "Could not load settings"}
@@ -2860,267 +3004,287 @@ export function DashboardV2SettingsContent({
           className="border-border-subtle py-16"
         />
       ) : (
-        <>
-          <div className="divide-y divide-border-subtle border-b border-border-subtle">
-            <section
-              id="settings-profile"
-              className="grid scroll-mt-24 gap-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10"
-            >
-              <div className="space-y-1.5">
-                <h2 className="text-lg font-semibold text-foreground">Profile</h2>
-                <p className="text-sm leading-6 text-muted-foreground">
-                  Account identity and contact info.
-                </p>
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-start gap-4 border-b border-border-subtle pb-5">
-                  <Avatar
-                    src={data.profile.avatarUrl}
-                    name={data.profile.displayName}
-                    email={data.profile.email}
-                    size={56}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-base font-semibold text-foreground">
-                      {data.profile.displayName}
-                    </p>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                      {data.profile.note}
-                    </p>
-                  </div>
-                </div>
-                <div className="divide-y divide-border-subtle">
-                  <DashboardV2SettingsRow
-                    label="Display name"
-                    value={data.profile.displayName}
-                  />
-                  <DashboardV2SettingsRow label="Email" value={data.profile.email} />
-                  <DashboardV2SettingsRow
-                    label="Joined"
-                    value={data.profile.joinedLabel}
-                  />
-                </div>
-              </div>
-            </section>
-
-            <section
-              id="settings-preferences"
-              className="grid scroll-mt-24 gap-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10"
-            >
-              <div className="space-y-1.5">
-                <h2 className="text-lg font-semibold text-foreground">Preferences</h2>
-                <p className="text-sm leading-6 text-muted-foreground">
-                  Current defaults for presentation and communication.
-                </p>
-              </div>
-              <div className="divide-y divide-border-subtle">
-                <DashboardV2SettingsRow
-                  label="Theme"
-                  value={data.preferences.theme}
-                />
-                <DashboardV2SettingsRow
-                  label="Language"
-                  value={data.preferences.language}
-                />
-                <DashboardV2SettingsRow
-                  label="Currency"
-                  value={data.preferences.currency}
-                />
-                <DashboardV2SettingsRow
-                  label="Timezone"
-                  value={data.preferences.timezone}
-                />
-                <DashboardV2SettingsRow
-                  label="Notifications"
-                  value="Summary"
-                  detail={data.preferences.notificationsSummary}
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+          <div className="min-w-0">
+            <div className="rounded-2xl border border-border-subtle bg-card px-6 py-6">
+              <div id="settings-profile" className="scroll-mt-24">
+                <ProfileSettings
+                  name={data.profile.displayName}
+                  email={data.profile.email}
+                  image={data.profile.avatarUrl}
+                  providerImage={data.profile.providerAvatarUrl}
+                  providerLabel={data.profile.providerLabel}
                 />
               </div>
-            </section>
-
-            <section
-              id="settings-security"
-              className="grid scroll-mt-24 gap-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10"
-            >
-              <div className="space-y-1.5">
-                <h2 className="text-lg font-semibold text-foreground">Security</h2>
-                <p className="text-sm leading-6 text-muted-foreground">
-                  Security status and the next place to go if you need account help.
-                </p>
+              <div
+                id="settings-preferences"
+                className="mt-8 scroll-mt-24 border-t border-border-subtle pt-8"
+              >
+                <PreferenceSettings theme={data.preferences.theme} />
               </div>
-              <div className="divide-y divide-border-subtle">
-                <DashboardV2SettingsRow
-                  label="Account"
-                  value={data.security.accountLabel}
-                  detail={data.security.accountDetail}
+              <div
+                id="settings-notifications"
+                className="mt-8 scroll-mt-24 border-t border-border-subtle pt-8"
+              >
+                <NotificationSettings
+                  emailNotifications={data.notifications.emailNotifications}
+                  purchaseReceipts={data.notifications.purchaseReceipts}
+                  productUpdates={data.notifications.productUpdates}
+                  marketingEmails={data.notifications.marketingEmails}
                 />
-                <DashboardV2SettingsRow
-                  label="Route protection"
-                  value={data.security.routeLabel}
-                  detail={data.security.routeDetail}
-                />
-                <div className="grid gap-2 py-4 md:grid-cols-[180px_minmax(0,1fr)] md:gap-6">
-                  <p className="text-xs font-medium uppercase text-muted-foreground">
-                    Related routes
-                  </p>
-                  <div className="space-y-3">
-                    <div className="flex flex-col divide-y divide-border-subtle">
-                      {[
-                        [
-                          "Membership",
-                          "Billing and plan state",
-                          routes.dashboardV2Membership,
-                        ],
-                        [
-                          "Purchases",
-                          "Receipts and order history",
-                          routes.dashboardV2Purchases,
-                        ],
-                      ].map(([title, detail, href]) => (
-                        <Link
-                          key={title}
-                          href={href}
-                          className="group flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-foreground">
-                              {title}
-                            </p>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                              {detail}
-                            </p>
-                          </div>
-                          <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
-                        </Link>
-                      ))}
-                    </div>
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      {data.security.helpText}
-                    </p>
-                  </div>
-                </div>
               </div>
-            </section>
+            </div>
           </div>
-        </>
+
+          <div className="space-y-5 xl:sticky xl:top-24">
+            <section className="space-y-3 rounded-2xl border border-border-subtle bg-card p-5">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Account notes
+              </p>
+              <div className="space-y-3 text-small text-muted-foreground">
+                <div className="rounded-xl border border-border-subtle bg-background px-4 py-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Current plan
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-foreground">
+                    {data.accountAccess.currentPlanLabel}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border-subtle bg-background px-4 py-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Member since
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-foreground">
+                    {data.accountAccess.memberSinceLabel}
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-3 rounded-2xl border border-border-subtle bg-card p-5">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Billing
+              </p>
+              <div className="space-y-3">
+                <Link
+                  href={routes.dashboardV2Membership}
+                  className="flex items-center gap-3 rounded-xl border border-border-subtle bg-background px-4 py-3 transition-colors hover:border-border hover:bg-card"
+                >
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <CircleDollarSign className="size-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">Membership billing</p>
+                    <p className="mt-1 text-small text-muted-foreground">
+                      Manage your plan and billing.
+                    </p>
+                  </div>
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                </Link>
+                <Link
+                  href={routes.dashboardV2Purchases}
+                  className="flex items-center gap-3 rounded-xl border border-border-subtle bg-background px-4 py-3 transition-colors hover:border-border hover:bg-card"
+                >
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <ReceiptText className="size-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">
+                      Receipts and order history
+                    </p>
+                    <p className="mt-1 text-small text-muted-foreground">
+                      Review past purchases.
+                    </p>
+                  </div>
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                </Link>
+              </div>
+            </section>
+
+            <div
+              id="settings-account-access"
+              className="scroll-mt-24 rounded-2xl border border-border-subtle bg-card p-5"
+            >
+              <SecuritySettings
+                email={data.accountAccess.email}
+                signInMethodLabel={data.accountAccess.signInMethodLabel}
+                canResetPassword={data.accountAccess.canResetPassword}
+              />
+            </div>
+          </div>
+        </div>
       )}
+    </>
+  );
+}
+
+export function DashboardV2SettingsStreamedContent({
+  dataPromise,
+}: {
+  dataPromise: Promise<DashboardV2SettingsData>;
+}) {
+  return (
+    <DashboardPageShell routeReady="dashboard-settings">
+      <DashboardV2SettingsIntroContent />
+      <Suspense fallback={<DashboardV2SettingsSectionsLoadingContent />}>
+        <DashboardV2SettingsStreamedSections dataPromise={dataPromise} />
+      </Suspense>
     </DashboardPageShell>
+  );
+}
+
+function DashboardV2SettingsSectionsLoadingContent() {
+  return (
+    <div
+      className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start"
+      data-loading-scope="dashboard-v2-settings"
+    >
+      <div className="min-w-0">
+        <section className="rounded-2xl border border-border-subtle bg-card px-6 py-6">
+          <div className="space-y-5 border-b border-border-subtle pb-8">
+            <LoadingSkeleton className="h-6 w-24" />
+            <LoadingSkeleton className="h-4 w-56" />
+            <div className="flex flex-col gap-5 border-b border-border-subtle pb-5 md:flex-row md:items-start md:justify-between">
+              <div className="flex min-w-0 items-start gap-4">
+                <LoadingSkeleton className="size-[72px] rounded-full" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <LoadingSkeleton className="h-5 w-24" />
+                    <LoadingSkeleton className="h-5 w-20 rounded-full" />
+                  </div>
+                  <div className="mt-2 space-y-2">
+                    <LoadingSkeleton className="h-4 w-56" />
+                    <LoadingSkeleton className="h-4 w-20" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                <LoadingSkeleton className="h-9 w-32 rounded-xl" />
+                <LoadingSkeleton className="h-9 w-32 rounded-xl" />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div key={index} className="space-y-2">
+                  <LoadingSkeleton className="h-3 w-20" />
+                  <LoadingSkeleton className="h-11 w-full rounded-xl" />
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <LoadingSkeleton className="h-9 w-28 rounded-xl" />
+            </div>
+          </div>
+
+          <div className="space-y-5 border-b border-border-subtle py-8">
+            <LoadingSkeleton className="h-6 w-28" />
+            <LoadingSkeleton className="h-4 w-72" />
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_240px] md:items-start md:gap-6">
+              <div className="space-y-2">
+                <LoadingSkeleton className="h-4 w-20" />
+                <LoadingSkeleton className="h-4 w-full max-w-sm" />
+              </div>
+              <LoadingSkeleton className="h-11 w-full rounded-xl md:justify-self-end" />
+            </div>
+            <div className="flex justify-end">
+              <LoadingSkeleton className="h-9 w-28 rounded-xl" />
+            </div>
+          </div>
+
+          <div className="space-y-5 pt-8">
+            <LoadingSkeleton className="h-6 w-32" />
+            <LoadingSkeleton className="h-4 w-80" />
+            <div className="divide-y divide-border">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="flex items-center justify-between gap-4 py-3">
+                  <div className="space-y-2">
+                    <LoadingSkeleton className="h-4 w-36" />
+                    <LoadingSkeleton className="h-4 w-full max-w-sm" />
+                  </div>
+                  <LoadingSkeleton className="h-6 w-11 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div className="space-y-5">
+        <section className="space-y-3 rounded-2xl border border-border-subtle bg-card p-5">
+          <LoadingSkeleton className="h-3 w-20" />
+          <div className="space-y-3">
+            <div className="rounded-xl border border-border-subtle bg-background px-4 py-3">
+              <LoadingSkeleton className="h-3 w-24" />
+              <LoadingSkeleton className="mt-3 h-4 w-40" />
+            </div>
+            <div className="rounded-xl border border-border-subtle bg-background px-4 py-3">
+              <LoadingSkeleton className="h-3 w-24" />
+              <LoadingSkeleton className="mt-3 h-4 w-28" />
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-3 rounded-2xl border border-border-subtle bg-card p-5">
+          <LoadingSkeleton className="h-3 w-16" />
+          <div className="space-y-3">
+            <div className="rounded-xl border border-border-subtle bg-background px-4 py-3">
+              <div className="flex items-center gap-3">
+                <LoadingSkeleton className="size-11 rounded-lg" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <LoadingSkeleton className="h-4 w-36" />
+                  <LoadingSkeleton className="h-4 w-44" />
+                </div>
+                <LoadingSkeleton className="size-4 rounded-full" />
+              </div>
+            </div>
+            <div className="rounded-xl border border-border-subtle bg-background px-4 py-3">
+              <div className="flex items-center gap-3">
+                <LoadingSkeleton className="size-11 rounded-lg" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <LoadingSkeleton className="h-4 w-40" />
+                  <LoadingSkeleton className="h-4 w-40" />
+                </div>
+                <LoadingSkeleton className="size-4 rounded-full" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-3 rounded-2xl border border-border-subtle bg-card p-5">
+          <LoadingSkeleton className="h-3 w-14" />
+          <div className="space-y-3">
+            <div className="rounded-xl border border-border-subtle bg-background px-4 py-3">
+              <LoadingSkeleton className="h-4 w-28" />
+              <LoadingSkeleton className="mt-3 h-4 w-48" />
+            </div>
+            <div className="rounded-xl border border-border-subtle bg-background px-4 py-3">
+              <LoadingSkeleton className="h-4 w-28" />
+              <LoadingSkeleton className="mt-3 h-4 w-40" />
+            </div>
+            <div className="rounded-xl border border-border-subtle bg-background px-4 py-3">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-3">
+                  <LoadingSkeleton className="h-4 w-24" />
+                  <LoadingSkeleton className="h-4 w-52" />
+                </div>
+                <LoadingSkeleton className="h-9 w-32 rounded-xl" />
+              </div>
+            </div>
+          </div>
+          <div className="pt-1">
+            <LoadingSkeleton className="h-9 w-28 rounded-xl" />
+          </div>
+        </section>
+      </div>
+    </div>
   );
 }
 
 export function DashboardV2SettingsLoadingContent() {
   return (
     <DashboardPageShell routeReady="dashboard-settings">
-      <section className="border-b border-border-subtle pb-6">
-        <Badge variant="info">Settings</Badge>
-        <h1 className="mt-3 text-balance font-ui text-3xl font-semibold text-foreground">
-          Profile, preferences, and security
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          One page for account status. Three sections. No extra settings maze.
-        </p>
-      </section>
-
-      <div
-        className="divide-y divide-border-subtle border-b border-border-subtle"
-        data-loading-scope="dashboard-v2-settings"
-      >
-        {Array.from({ length: 3 }).map((_, sectionIndex) => (
-          <section
-            key={sectionIndex}
-            className="grid gap-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10"
-          >
-            <div className="space-y-2">
-              <LoadingSkeleton className="h-6 w-28" />
-              <LoadingSkeleton className="h-4 w-full max-w-[180px]" />
-              <LoadingSkeleton className="h-4 w-full max-w-[150px]" />
-            </div>
-            {sectionIndex === 0 ? (
-              <div className="min-w-0">
-                <div className="flex items-start gap-4 border-b border-border-subtle pb-5">
-                  <LoadingSkeleton className="size-14 rounded-full" />
-                  <div className="min-w-0 flex-1">
-                    <LoadingSkeleton className="h-5 w-40" />
-                    <LoadingSkeleton className="mt-2 h-4 w-full max-w-md" />
-                  </div>
-                </div>
-                <div className="divide-y divide-border-subtle">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="grid gap-2 py-4 md:grid-cols-[180px_minmax(0,1fr)] md:gap-6"
-                    >
-                      <LoadingSkeleton className="h-3 w-20" />
-                      <LoadingSkeleton className="h-4 w-32" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : sectionIndex === 1 ? (
-              <div className="divide-y divide-border-subtle">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="grid gap-2 py-4 md:grid-cols-[180px_minmax(0,1fr)] md:gap-6"
-                  >
-                    <LoadingSkeleton className="h-3 w-24" />
-                    <div className="space-y-2">
-                      <LoadingSkeleton className="h-4 w-28" />
-                      {index === 4 ? (
-                        <>
-                          <LoadingSkeleton className="h-4 w-full max-w-xl" />
-                          <LoadingSkeleton className="h-4 w-5/6" />
-                        </>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="divide-y divide-border-subtle">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="grid gap-2 py-4 md:grid-cols-[180px_minmax(0,1fr)] md:gap-6"
-                  >
-                    <LoadingSkeleton className="h-3 w-24" />
-                    <div className="space-y-2">
-                      {index === 2 ? (
-                        <>
-                          <LoadingSkeleton className="h-4 w-36" />
-                          <LoadingSkeleton className="h-4 w-32" />
-                          <div className="space-y-3 pt-1">
-                            {Array.from({ length: 2 }).map((__, rowIndex) => (
-                              <div
-                                key={rowIndex}
-                                className={cn(
-                                  "flex items-center justify-between gap-4",
-                                  rowIndex === 1 && "border-t border-border-subtle pt-3",
-                                )}
-                              >
-                                <div className="min-w-0 flex-1">
-                                  <LoadingSkeleton className="h-4 w-24" />
-                                  <LoadingSkeleton className="mt-2 h-4 w-40" />
-                                </div>
-                                <LoadingSkeleton className="size-4 rounded" />
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <LoadingSkeleton className="h-4 w-full max-w-xl" />
-                          <LoadingSkeleton className="h-4 w-5/6" />
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        ))}
-      </div>
+      <DashboardV2SettingsIntroContent />
+      <DashboardV2SettingsSectionsLoadingContent />
     </DashboardPageShell>
   );
 }
@@ -4829,214 +4993,8 @@ function DashboardV2CreatorProfileRouteContent({
 }) {
   return (
     <section className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {[
-          {
-            label: "Storefront status",
-            value: data.statusLabel,
-            detail: data.publicProfileHref ? "Public route is available" : "Add a slug to publish",
-          },
-          {
-            label: "Public slug",
-            value: data.profile.creatorSlug
-              ? `/creators/${data.profile.creatorSlug}`
-              : "Not set",
-            detail: data.profile.creatorSlug
-              ? "Used across resource attribution"
-              : "Needed for a public creator URL",
-          },
-          {
-            label: "Social links",
-            value: String(
-              Object.values(data.profile.socialLinks).filter(Boolean).length,
-            ),
-            detail: "Connected profile destinations",
-          },
-        ].map((item) => (
-          <Card key={item.label} size="sm">
-            <CardContent className="py-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground">
-                {item.label}
-              </p>
-              <p className="mt-2 text-lg font-semibold text-foreground">
-                {item.value}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {item.detail}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <CreatorProfileForm
-        profile={data.profile}
-        accountSettingsHref={routes.dashboardV2Settings}
-      />
+      <CreatorProfileForm profile={data.profile} />
     </section>
-  );
-}
-
-function DashboardV2CreatorSettingsRouteContent({
-  data,
-}: {
-  data: Extract<DashboardV2CreatorSettingsData, { state: "ready" }>;
-}) {
-  return (
-    <DataPanelTable
-      title="Storefront controls"
-      description={`${data.creatorName} uses this route to manage storefront status, publishing readiness, and creator-specific handoff.`}
-      actions={
-        <Button asChild size="sm">
-          <Link href={routes.dashboardV2CreatorProfile}>Edit profile</Link>
-        </Button>
-      }
-      bodyClassName="p-0"
-    >
-      <div className="divide-y divide-border-subtle">
-        {data.controls.map((item) => (
-          <div
-            key={item.id}
-            className="grid gap-4 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center"
-          >
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">
-                {item.label}
-              </p>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                {item.detail}
-              </p>
-            </div>
-            <Badge
-              className="w-fit"
-              variant={getDashboardV2StatusBadgeVariant(item.stateTone)}
-            >
-              {item.stateLabel}
-            </Badge>
-            <Button asChild size="sm" variant="secondary">
-              <Link href={item.href}>{item.actionLabel}</Link>
-            </Button>
-          </div>
-        ))}
-      </div>
-    </DataPanelTable>
-  );
-}
-
-function DashboardV2CreatorProfilePanel({
-  profile,
-}: {
-  profile?: DashboardV2CreatorReadyData["profile"];
-} = {}) {
-  const rows = profile
-    ? [
-        ["Display name", profile.displayName],
-        ["Public slug", profile.slugLabel],
-        ["Bio", profile.bio],
-        ["Storefront status", profile.statusLabel],
-      ]
-    : [
-        ["Display name", "Sandstorm Learning Studio"],
-        ["Public slug", "/creators/sandstorm-learning"],
-        ["Bio", "Middle-school science and literacy resources."],
-        ["Focus areas", "Science labs, vocabulary, intervention packs"],
-      ];
-  const badges = profile
-    ? [profile.statusLabel, profile.slugLabel === "No public slug" ? "Needs slug" : "Public slug"]
-    : ["Science", "Grades 6-8", "Printable"];
-
-  return (
-    <Card>
-      <CardHeader className="border-b border-border-subtle pb-4">
-        <div className="flex items-start gap-3">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-border-subtle bg-accent font-ui text-lg font-semibold text-foreground">
-            {profile?.avatarInitial ?? "S"}
-          </div>
-          <div className="min-w-0">
-            <CardTitle>Storefront identity</CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Name, slug, bio, and focus tags.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {badges.map((tag) => (
-                <Badge key={tag} variant="neutral">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="divide-y divide-border-subtle">
-        {rows.map(([label, value]) => (
-          <div
-            key={label}
-            className="grid gap-2 py-4 md:grid-cols-[150px_minmax(0,1fr)]"
-          >
-            <p className="text-sm font-medium text-muted-foreground">
-              {label}
-            </p>
-            <p className="min-w-0 text-sm font-semibold text-foreground">
-              {value}
-            </p>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function DashboardV2CreatorSettingsPanel({
-  profile,
-}: {
-  profile?: DashboardV2CreatorReadyData["profile"];
-} = {}) {
-  return (
-    <Card>
-      <CardContent className="py-0">
-        <div className="grid divide-y divide-border-subtle lg:grid-cols-3 lg:divide-x lg:divide-y-0">
-          {[
-            {
-              label: "Storefront visibility",
-              detail: "Profile visibility and public ordering.",
-              state: profile?.statusLabel ?? "Public",
-              icon: ShieldCheck,
-            },
-            {
-              label: "Review notifications",
-              detail: "Sales, reviews, and customer alerts.",
-              state: "Email",
-              icon: Bell,
-            },
-            {
-              label: "Publishing defaults",
-              detail: "Draft state and moderation defaults.",
-              state: "Draft",
-              icon: PackagePlus,
-            },
-          ].map((item) => (
-            <div key={item.label} className="flex flex-col gap-5 px-5 py-5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                  <item.icon className="size-4" aria-hidden />
-                </div>
-                <Badge className="shrink-0" variant="neutral">
-                  {item.state}
-                </Badge>
-              </div>
-              <div className="space-y-1.5">
-                <p className="text-base font-semibold text-foreground">
-                  {item.label}
-                </p>
-                <p className="text-sm leading-6 text-muted-foreground">
-                  {item.detail}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 
@@ -5052,13 +5010,6 @@ export function DashboardV2CreatorProfileContent({
         title="Profile"
         description="Edit the public identity learners see across your storefront and creator listings."
         tone="featured"
-        action={
-          data.state === "ready" && data.publicProfileHref ? (
-            <Button asChild size="sm" variant="secondary">
-              <Link href={data.publicProfileHref}>View public profile</Link>
-            </Button>
-          ) : undefined
-        }
       />
 
       {data.state === "locked" || data.state === "error" ? (
@@ -5082,141 +5033,107 @@ export function DashboardV2CreatorProfileLoadingContent() {
         title="Profile"
         description="Edit the public identity learners see across your storefront and creator listings."
         tone="featured"
-        action={<LoadingSkeleton className="h-9 w-36 rounded-xl" />}
       />
 
       <div className="space-y-4" data-loading-scope="dashboard-v2-creator-profile">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Card key={index} size="sm">
-              <CardContent className="py-4">
-                <LoadingSkeleton className="h-3 w-24" />
-                <LoadingSkeleton className="mt-3 h-7 w-36" />
-                <LoadingSkeleton className="mt-2 h-3 w-32" />
-              </CardContent>
-            </Card>
-          ))}
+        <div className="rounded-2xl border border-border-subtle bg-secondary px-5 py-4 shadow-card">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="space-y-2">
+                <LoadingSkeleton className="h-5 w-32" />
+                <LoadingSkeleton className="h-4 w-72" />
+              </div>
+              <div className="space-y-2">
+                <LoadingSkeleton className="h-2 w-full rounded-full" />
+                <LoadingSkeleton className="h-4 w-28" />
+              </div>
+            </div>
+            <LoadingSkeleton className="h-8 w-20 rounded-full" />
+          </div>
         </div>
 
-        <div className="space-y-6 rounded-2xl border border-border-subtle bg-card p-6">
-          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="min-w-0 rounded-2xl border border-border-subtle bg-card p-6">
             <div className="space-y-6">
               <div className="space-y-4">
                 <LoadingSkeleton className="h-5 w-32" />
-                <div className="grid gap-4 md:grid-cols-2">
-                  <LoadingSkeleton className="h-20 rounded-xl" />
-                  <LoadingSkeleton className="h-20 rounded-xl" />
-                </div>
-                <LoadingSkeleton className="h-36 rounded-xl" />
-                <div className="grid gap-4 md:grid-cols-2">
-                  <LoadingSkeleton className="h-20 rounded-xl" />
-                  <LoadingSkeleton className="h-20 rounded-xl" />
+                <div className="space-y-5">
+                  <div className="space-y-3">
+                    <LoadingSkeleton className="h-4 w-64" />
+                    <LoadingSkeleton className="h-14 rounded-xl" />
+                    <LoadingSkeleton className="h-14 rounded-xl" />
+                    <LoadingSkeleton className="h-16 max-w-md rounded-xl" />
+                    <LoadingSkeleton className="h-36 rounded-xl" />
+                    <div className="grid gap-3 md:grid-cols-[minmax(0,180px)_minmax(0,280px)]">
+                      <div className="space-y-2">
+                        <LoadingSkeleton className="h-4 w-20" />
+                        <LoadingSkeleton className="h-4 w-40" />
+                      </div>
+                      <LoadingSkeleton className="h-14 rounded-xl" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 border-t border-border-subtle pt-6">
+                    <LoadingSkeleton className="h-4 w-24" />
+                    <LoadingSkeleton className="h-4 w-80" />
+                    <div className="rounded-xl border border-border-subtle bg-muted p-4">
+                      <div className="divide-y divide-border-subtle lg:grid lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+                        {Array.from({ length: 2 }).map((_, index) => (
+                          <div
+                            key={index}
+                            className={
+                              index === 0
+                                ? "space-y-4 pb-5 lg:pb-0 lg:pr-6"
+                                : "space-y-4 pt-5 lg:pt-0 lg:pl-6"
+                            }
+                          >
+                            <LoadingSkeleton className="h-4 w-28" />
+                            <LoadingSkeleton className="h-14 rounded-xl" />
+                            <div className="flex gap-2">
+                              <LoadingSkeleton className="h-9 w-28 rounded-xl" />
+                              <LoadingSkeleton className="h-9 w-20 rounded-xl" />
+                            </div>
+                            <LoadingSkeleton className="h-3 w-36" />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-6 space-y-4 border-t border-border-subtle pt-6">
+                        <div className="rounded-xl border border-border-subtle bg-card p-4">
+                          <div className="grid gap-4 sm:grid-cols-[80px_minmax(0,1fr)]">
+                            <LoadingSkeleton className="h-20 w-20 rounded-xl" />
+                            <div className="space-y-3">
+                              <LoadingSkeleton className="h-5 w-36" />
+                              <LoadingSkeleton className="h-4 w-full max-w-[220px]" />
+                              <LoadingSkeleton className="h-5 w-24" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="overflow-hidden rounded-xl border border-border-subtle bg-card">
+                          <LoadingSkeleton className="h-48 rounded-none" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <LoadingSkeleton className="h-5 w-28" />
                 <div className="grid gap-4 md:grid-cols-2">
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <LoadingSkeleton key={index} className="h-16 rounded-xl" />
+                  {Array.from({ length: 5 }).map((_, index, items) => (
+                    <LoadingSkeleton
+                      key={index}
+                      className={`h-16 rounded-xl ${index === items.length - 1 ? "md:col-span-2" : ""}`}
+                    />
                   ))}
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-4">
-              <div className="rounded-xl border border-border-subtle bg-muted p-4">
-                <div className="flex gap-4">
-                  <LoadingSkeleton className="size-28 rounded-xl" />
-                  <div className="flex-1 space-y-3">
-                    <LoadingSkeleton className="h-4 w-32" />
-                    <LoadingSkeleton className="h-4 w-full max-w-[240px]" />
-                    <LoadingSkeleton className="h-4 w-40" />
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-xl border border-border-subtle bg-muted p-4">
-                <LoadingSkeleton className="h-4 w-28" />
-                <LoadingSkeleton className="mt-3 h-40 rounded-xl" />
-                <LoadingSkeleton className="mt-3 h-3 w-40" />
+              <div className="space-y-3 border-t border-border-subtle pt-6">
+                <LoadingSkeleton className="h-4 w-48" />
+                <LoadingSkeleton className="h-9 w-full rounded-xl" />
               </div>
             </div>
           </div>
-
-          <div className="flex items-center justify-between gap-4 rounded-2xl border border-border-subtle bg-card px-5 py-4">
-            <LoadingSkeleton className="h-4 w-56" />
-            <LoadingSkeleton className="h-9 w-36 rounded-xl" />
-          </div>
-        </div>
-      </div>
-    </DashboardPageShell>
-  );
-}
-
-export function DashboardV2CreatorSettingsContent({
-  data,
-}: {
-  data: DashboardV2CreatorSettingsData;
-}) {
-  return (
-    <DashboardPageShell routeReady="dashboard-creator-settings">
-      <DashboardV2RouteIntro
-        eyebrow="Creator settings"
-        title="Settings"
-        description="Manage storefront visibility, publishing readiness, and creator-specific control handoff."
-        tone="featured"
-      />
-
-      {data.state === "locked" || data.state === "error" ? (
-        <DashboardV2ProtectedRouteEmptyState
-          state={data}
-          retryHref={routes.dashboardV2CreatorSettings}
-          icon={<Settings className="size-5 text-muted-foreground" aria-hidden />}
-        />
-      ) : (
-        <DashboardV2CreatorSettingsRouteContent data={data} />
-      )}
-    </DashboardPageShell>
-  );
-}
-
-export function DashboardV2CreatorSettingsLoadingContent() {
-  return (
-    <DashboardPageShell routeReady="dashboard-creator-settings">
-      <DashboardV2RouteIntro
-        eyebrow="Creator settings"
-        title="Settings"
-        description="Manage storefront visibility, publishing readiness, and creator-specific control handoff."
-        tone="featured"
-      />
-
-      <div className="space-y-4" data-loading-scope="dashboard-v2-creator-settings">
-        <div className="overflow-hidden rounded-xl border border-border-subtle bg-card">
-          <div className="border-b border-border-subtle px-5 py-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div>
-                <LoadingSkeleton className="h-6 w-40" />
-                <LoadingSkeleton className="mt-2 h-4 w-full max-w-lg" />
-              </div>
-              <LoadingSkeleton className="h-9 w-28 rounded-xl" />
-            </div>
-          </div>
-          <div className="divide-y divide-border-subtle">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div
-                key={index}
-                className="grid gap-4 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center"
-              >
-                <div className="space-y-2">
-                  <LoadingSkeleton className="h-4 w-32" />
-                  <LoadingSkeleton className="h-4 w-full max-w-xl" />
-                </div>
-                <LoadingSkeleton className="h-6 w-24 rounded-full" />
-                <LoadingSkeleton className="h-9 w-28 rounded-xl" />
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </DashboardPageShell>
   );

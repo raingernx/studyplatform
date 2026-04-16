@@ -35,9 +35,9 @@
   `BonesRegistryBootstrap` provider after hydration, which reduces the Fast
   Refresh blast radius when `src/bones/registry.js` is regenerated during
   skeleton work.
-- The no-preference/default theme path is now `light`; `system` remains
-  available in user settings but is no longer the initial baseline for first
-  paint or newly created preference records.
+- The no-preference/default theme path is now `system`; explicit `light` and
+  `dark` remain available in user settings, but fresh loads and newly created
+  preference records return to the same system-following baseline.
 
 ## Responsive Breakpoints
 
@@ -150,28 +150,53 @@
   derive a fallback overlay directly from `usePathname()` transitions, not only
   from click-started navigation state. That keeps shell coverage active for
   browser back/forward and any route change where the intent state was not
-  started in time, while dashboard-v2 now relies on its real shell and
-  route-owned loading surfaces instead of a root dashboard overlay.
-- The remaining root overlay is target-aware for resources only:
-  `ResourcesNavigationOverlay` resolves browse/listing vs detail from the
-  destination resources href before it renders. Dashboard destinations should
-  use canonical `/dashboard-v2/*` links and the `DashboardV2Shell` loading
-  contract directly.
+  started in time. Dashboard-v2 uses a different cross-group bridge:
+  `DashboardEntryNavigationOverlay` remains mounted from the root layout, but
+  its job is now limited to a shell-only dashboard frame so public → dashboard
+  jumps do not flash generic dashboard content before the destination route's
+  own loading surface appears.
+- The root overlays now split by family and ownership: resources keeps the
+  target-aware `ResourcesNavigationOverlay`, while dashboard entry keeps a
+  shell-only `DashboardEntryNavigationOverlay`. Dashboard destinations should
+  still use canonical `/dashboard-v2/*` links, and the route-owned dashboard
+  `loading.tsx` remains the owner of content skeleton geometry after the shell
+  bridge hands off.
 - If users report "dashboard on dashboard" during entry transitions, treat it
-  as a wrong-level fallback or stale compatibility-route bug first. The old
-  root dashboard entry overlay and legacy dashboard group shells have been
-  removed, so new reports should be investigated in dashboard-v2 route loading
-  or shell readiness rather than legacy overlay ownership.
+  as a wrong-level fallback or stale compatibility-route bug first. The active
+  root dashboard entry overlay should now render only navbar + sidebar; any
+  dashboard content skeleton visible before the destination route loads is a
+  regression in overlay ownership rather than intended behavior.
 - Public-navbar protected links such as `คลังของฉัน` now point directly to
   canonical `/dashboard-v2/*` destinations. First-entry transitions from
   `/resources` into `/dashboard-v2/library` should use the dashboard-v2 shell
   and route-owned library loading state, not a legacy `/dashboard/library`
   compatibility overlay.
+- The public marketplace account dropdown now mirrors the dashboard-v2 avatar
+  menu contract too: the menu uses the same DS dropdown structure, the same
+  `ACCOUNT` / `CREATOR` grouping, the same `data-dashboard-account-menu` /
+  `data-dashboard-account-link` verification hooks, and the same canonical
+  `/dashboard-v2/*` destinations for `Dashboard home`, `Membership`,
+  `Settings`, `Creator workspace`, `Creator resources`, `Creator earnings`,
+  and `Creator storefront`. The old `KC Premium` text-only shortcut was
+  replaced by a redesigned `Membership` card-style entry inside that menu
+  instead of keeping a separate public-only IA branch.
+- That authenticated account-menu contract is now implemented from one shared
+  component used by both the public navbar and the dashboard-v2 topbar. Trigger
+  shape, signed-in context row, compact `Membership` feature card, account and
+  creator sections, active-row highlighting, and `Sign out` action styling
+  should stay aligned across both surfaces unless a future change intentionally
+  forks the shared component.
+- Public header auth affordances now also seed from a session-scoped cached
+  auth-viewer snapshot in the browser. `useAuthViewer()` still revalidates
+  against `/api/auth/viewer`, but it can restore the last known authenticated
+  viewer immediately after a document reload so `/resources` and other public
+  routes stop flashing a long auth-placeholder state before `คลังของฉัน` and
+  the account trigger reappear.
 - The same handoff model now extends further into the creator workspace: the
-  creator overview, analytics, resources, sales, profile, and apply routes
-  now expose route-ready markers so dashboard entry/in-group overlays do not
-  clear purely from generic dashboard-shell readiness when the target route is
-  still mounting.
+  creator overview, analytics, resources, sales, storefront, profile, and
+  apply routes now expose route-ready markers so dashboard entry/in-group
+  overlays do not clear purely from generic dashboard-shell readiness when the
+  target route is still mounting.
 - Creator resource create/edit routes now use their own route-ready marker as
   well, so handoffs into `/dashboard-v2/creator/resources/new` and
   `/dashboard-v2/creator/resources/[id]` stay on the editor skeleton instead of
@@ -207,9 +232,12 @@
   `/dashboard-v2/purchases`, `/dashboard-v2/membership`, and
   `/dashboard-v2/settings` learner routes plus the `/dashboard-v2/creator`
   overview route plus `/dashboard-v2/creator/analytics`,
-  `/dashboard-v2/creator/sales`, `/dashboard-v2/creator/payouts`,
-  `/dashboard-v2/creator/profile`, and `/dashboard-v2/creator/settings` now
-  behave like private dashboard routes with real data, while
+  `/dashboard-v2/creator/sales`, `/dashboard-v2/creator/payouts`, and
+  `/dashboard-v2/creator/profile` now behave like private dashboard routes with
+  real data. The legacy `/dashboard-v2/creator/storefront` pathname now
+  redirects to the live public storefront (or profile fallback), and the
+  legacy `/dashboard-v2/creator/settings` pathname redirects into the creator
+  workspace instead of rendering its own destination surface. Meanwhile,
   `/dashboard-v2/creator/resources/new` and
   `/dashboard-v2/creator/resources/[id]` now stay inside the real Dashboard V2
   shell with route-owned editor states. The edit route renders the same
@@ -224,7 +252,9 @@
   client navigation component inside the otherwise server-led shell. Desktop
   nav and the mobile drawer should expose exactly one active item with
   `aria-current="page"`, including nested creator resource create/edit routes
-  mapping back to the creator Resources item.
+  mapping back to the creator Resources item. The creator `Storefront` item is
+  now a direct link to `/creators/:slug`, so it does not participate in
+  dashboard route active-state mapping.
 - Dashboard V2 topbar account controls now follow the same split: the shell
   stays server-led, but a small client dropdown owns the premium account-menu
   interaction. The trigger should render real viewer data when a session is
@@ -253,6 +283,29 @@
   the whole app just because `localStorage.user_theme` is empty. The live
   theme should remain whatever the mounted client is already using until the
   user changes or saves a new preference explicitly.
+- `/dashboard-v2/settings` is no longer a read-only account-summary page.
+  The live route now uses a denser two-column account layout with an overview
+  panel, interactive profile/preferences/notification forms, and a separate
+  security rail. Matching loading states should follow that same shell and
+  form geometry rather than reverting to generic settings rows. The route also
+  no longer shows any language selector; Thai is treated as the fixed product
+  language for this settings surface. The profile subsection itself is now
+  organized around a compact photo-management panel plus cleaner name/email
+  fields. The right rail now exposes a real `Security` section instead of a
+  generic account-access card: it shows sign-in method, signed-in email,
+  password-reset action only for password-backed accounts, and sign-out
+  controls. If the signed-in account came from Google and has a stored
+  provider avatar, removing a custom upload from settings should restore that
+  Google photo rather than falling back to initials immediately.
+- `/dashboard-v2/membership` now follows the same shell-first learner-account
+  rhythm: the intro shell and CTA bar render first inside the dashboard shell,
+  while the membership summary cards and plan-status panel stream in behind a
+  matching in-page structural fallback instead of blocking the whole account
+  route on the full membership payload. The intro CTA bar is now live too: it
+  no longer stays as fake loading pills after readiness, free-plan users get
+  real `Explore plans` + `View purchases` actions, paid users can open the
+  library directly, and Stripe-backed members can cancel renewal from the same
+  route.
 - `/categories/[slug]`, `/creators/[slug]`, `/admin/creators`, the
   compatibility redirect route `/resources/id/[id]`, and the legacy
   dashboard alias `/purchases` now all have explicit route-level loading
@@ -271,6 +324,14 @@
   loading shells. The checkout shells intentionally stay neutral and mirror
   the final centered status-card geometry instead of using success/danger
   accent fills during loading.
+- the public `/membership` surface no longer uses the older gradient-heavy
+  marketing layout; it now renders as a stripped-down, plan-first pricing page
+  with a left-aligned `Pricing` heading, one monthly/annual billing toggle, and
+  three clean plan columns separated by dividers rather than a stacked card
+  deck. The matching `loading.tsx` shell mirrors that same column-first
+  geometry instead of loading as a heavier marketing/pricing hybrid first, and
+  the bottom CTA now reuses the same live `Pro` / `Team` membership actions as
+  the pricing columns instead of linking to placeholder follow-up routes.
 - The remaining admin root/index pages now also have explicit loading shells:
   `/admin`, `/admin/activity`, `/admin/audit`, `/admin/categories`,
   `/admin/orders`, `/admin/reviews`, `/admin/tags`, and `/admin/users`.
@@ -398,11 +459,18 @@ max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8
   `/dashboard-v2/purchases`, `/dashboard-v2/membership`, and
   `/dashboard-v2/settings` are now integrated Dashboard V2 product routes, and
   `/dashboard-v2/creator`, `/dashboard-v2/creator/profile`,
-  `/dashboard-v2/creator/settings`, `/dashboard-v2/creator/analytics`,
+  `/dashboard-v2/creator/analytics`,
   `/dashboard-v2/creator/sales`, and `/dashboard-v2/creator/payouts` are now
   integrated creator routes: they redirect anonymous users to login, render
   data-backed surfaces after auth, and use the shared `DashboardV2Shell`
-  chrome.
+  chrome. `/dashboard-v2/creator/storefront` and
+  `/dashboard-v2/creator/settings` still exist only as compatibility redirects.
+- `/dashboard-v2/creator` now behaves as a lighter overview / launch workspace:
+  stats, recent resources, checklist, and shortcuts stay here, while full
+  storefront editing lives in `/dashboard-v2/creator/profile`.
+- the fourth top-level creator navigation item still reads `Storefront`, but it
+  now opens the live public storefront (`/creators/:slug`) directly instead of
+  routing through an internal dashboard summary page first.
 - Other Dashboard V2 creator child routes are still in staged rebuild status
   until their remaining Phase 4 route-by-route data/auth integration lands.
 - The route family uses `DashboardV2Shell` as the only visible chrome owner.

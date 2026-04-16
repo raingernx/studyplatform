@@ -1,4 +1,4 @@
-import { DashboardV2SettingsContent } from "@/components/dashboard-v2/DashboardV2Sections";
+import { DashboardV2SettingsStreamedContent } from "@/components/dashboard-v2/DashboardV2Sections";
 import { requireSession } from "@/lib/auth/require-session";
 import { routes } from "@/lib/routes";
 import { getDashboardV2SettingsData } from "@/services/dashboard-v2/settings.service";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardV2SettingsPage() {
   const { userId, session } = await requireSession(routes.dashboardV2Settings);
-  const data = await getDashboardV2SettingsData({
+  const dataPromise = getDashboardV2SettingsData({
     userId,
     fallbackUser: {
       name: session.user.name ?? null,
@@ -20,5 +20,5 @@ export default async function DashboardV2SettingsPage() {
     },
   });
 
-  return <DashboardV2SettingsContent data={data} />;
+  return <DashboardV2SettingsStreamedContent dataPromise={dataPromise} />;
 }

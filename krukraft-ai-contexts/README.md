@@ -42,7 +42,7 @@ track the current codebase state, not just earlier conversation exports.
 - `src/proxy.ts` is the active request interception entry for Next 16. `middleware.ts` is a compatibility shim.
 - Public preview images use Next Image when the source is optimizer-compatible (`https`, allowlisted remote hosts); the app bypasses `/_next/image` only for non-optimizable cases such as GIFs, non-HTTPS sources, or non-allowlisted hosts.
 - Above-the-fold marketplace surfaces now opt specific hero/spotlight/card images into eager loading instead of applying blanket eager behavior.
-- Theme first-paint bootstrap now defaults to `light` and applies stored `dark` / opt-in `system` preferences before hydration, so fresh loads no longer start from `system`.
+- Theme first-paint bootstrap now defaults to the resolved `system` theme and applies stored `light` / `dark` preferences before hydration, so fresh loads follow OS appearance again unless the user explicitly picked another theme.
 - The app now serves a generated root `robots.txt` via `src/app/robots.ts`, using build-safe public platform config so crawlers no longer hit a local/public 404 just to discover crawl rules.
 - Resource detail pages were decomposed into shell + deferred body/footer/purchase/review/related paths to reduce first-render latency.
 - Admin settings must read live DB-backed platform config; build-safe platform config is only for branding-only build paths.

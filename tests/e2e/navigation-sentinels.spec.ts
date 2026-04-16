@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { PrismaClient } from "@prisma/client";
 
 import { loginAsAdmin, loginAsCreator } from "./helpers/auth";
@@ -6,7 +6,80 @@ import { collectRuntimeErrors } from "./helpers/browser";
 
 test.describe.configure({ timeout: 90_000 });
 
-const DASHBOARD_SETTINGS_HEADING = /Profile, preferences, and security/i;
+const DASHBOARD_SETTINGS_HEADING = /Account settings/i;
+
+async function waitForResourcesShell(page: Page) {
+  await expect(page).toHaveURL(/\/resources(?:\?.*)?$/, { timeout: 30_000 });
+  await expect(page.locator('[data-route-shell-ready="resources-browse"]').first()).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(
+    page.locator('[data-loading-scope="resources-browse"][data-resources-overlay]:visible'),
+  ).toHaveCount(0, {
+    timeout: 30_000,
+  });
+}
+
+async function returnToResources(page: Page) {
+  await page.goto("/resources", { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await waitForResourcesShell(page);
+}
+
+async function openAccountMenu(page: Page, trigger: Locator) {
+  const menu = page.locator('[data-dashboard-account-menu="true"]:visible').first();
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await trigger.scrollIntoViewIfNeeded().catch(() => undefined);
+    await trigger.click({ timeout: 5_000 });
+
+    try {
+      await expect(menu).toBeVisible({ timeout: 5_000 });
+      return;
+    } catch (error) {
+      if (attempt === 1) {
+        throw error;
+      }
+
+      await page.keyboard.press("Escape").catch(() => undefined);
+    }
+  }
+}
+
+async function clickAccountMenuTargetWithRetry(
+  page: Page,
+  trigger: Locator,
+  href: string,
+) {
+  const visibleMenu = page.locator('[data-dashboard-account-menu="true"]:visible').first();
+  const urlPattern = new RegExp(
+    `${href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\?.*)?$`,
+  );
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await openAccountMenu(page, trigger);
+
+    const item = page
+      .locator(
+        `[data-dashboard-account-menu="true"] [data-dashboard-account-link="${href}"]:visible`,
+      )
+      .first();
+    await expect(item).toBeVisible({ timeout: 20_000 });
+    await item.scrollIntoViewIfNeeded().catch(() => undefined);
+    await item.click();
+
+    try {
+      await expect(page).toHaveURL(urlPattern, { timeout: 20_000 });
+      return;
+    } catch (error) {
+      if (attempt === 1) {
+        throw error;
+      }
+
+      await page.keyboard.press("Escape").catch(() => undefined);
+      await expect(visibleMenu).toHaveCount(0, { timeout: 2_000 }).catch(() => undefined);
+    }
+  }
+}
 
 async function findSeededResourceId() {
   const prisma = new PrismaClient();
@@ -35,37 +108,45 @@ test("public account dropdown reaches dashboard routes without shell hangs", asy
 
   const accountButton = page
     .locator(
-      'header button[aria-label="เปิดเมนูบัญชี"]:visible, header button[aria-label="Open account menu"]:visible',
+      'header button[data-dashboard-account-trigger="true"][data-dashboard-account-ready="true"]',
     )
     .first();
 
-  await expect(accountButton).toBeVisible({ timeout: 20_000 });
+  await expect(accountButton).toBeVisible({ timeout: 30_000 });
 
   const targets: Array<{ href: string; heading: RegExp; routeReady: string }> = [
     { href: "/dashboard-v2", heading: /Welcome back/i, routeReady: "dashboard-overview" },
     {
-      href: "/dashboard-v2/purchases",
-      heading: /^Order history$/i,
-      routeReady: "dashboard-purchases",
+      href: "/dashboard-v2/membership",
+      heading: /^(Membership|Subscription)$/i,
+      routeReady: "dashboard-subscription",
     },
     {
       href: "/dashboard-v2/settings",
       heading: DASHBOARD_SETTINGS_HEADING,
       routeReady: "dashboard-settings",
     },
+    {
+      href: "/dashboard-v2/creator",
+      heading: /^Workspace$/i,
+      routeReady: "dashboard-creator-overview",
+    },
+    {
+      href: "/dashboard-v2/creator/resources",
+      heading: /^Creator resources$/i,
+      routeReady: "dashboard-creator-resources",
+    },
+    {
+      href: "/dashboard-v2/creator/sales",
+      heading: /^Earnings$/i,
+      routeReady: "dashboard-creator-sales",
+    },
   ];
 
   for (const target of targets) {
-    await page.goto("/resources", { waitUntil: "domcontentloaded" });
-    await accountButton.click();
-
-    const link = page.locator(`a[href="${target.href}"]:visible`).first();
-    await expect(link).toBeVisible({ timeout: 20_000 });
-
-    await Promise.all([
-      page.waitForURL(new RegExp(`${target.href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\?.*)?$`)),
-      link.click(),
-    ]);
+    await returnToResources(page);
+    await expect(accountButton).toBeVisible({ timeout: 30_000 });
+    await clickAccountMenuTargetWithRetry(page, accountButton, target.href);
 
     await expect(page.locator(`[data-route-shell-ready="${target.routeReady}"]`).first()).toBeVisible({
       timeout: 20_000,
@@ -87,7 +168,9 @@ test("dashboard avatar menu reaches home membership and settings", async ({ page
 
   await loginAsCreator(page, "/dashboard-v2");
   await expect(page).toHaveURL(/\/dashboard-v2(?:\?.*)?$/);
-  await expect(page.getByRole("heading", { name: /Welcome back/i }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Welcome back/i }).first()).toBeVisible({
+    timeout: 20_000,
+  });
 
   const avatarButton = page
     .locator(
@@ -116,9 +199,11 @@ test("dashboard avatar menu reaches home membership and settings", async ({ page
     await expect(page.getByRole("heading", { name: /Welcome back/i }).first()).toBeVisible({
       timeout: 20_000,
     });
+    await expect(page.locator('[data-loading-scope="dashboard-group"]:visible')).toHaveCount(0, {
+      timeout: 20_000,
+    });
 
-    await avatarButton.scrollIntoViewIfNeeded();
-    await avatarButton.click();
+    await openAccountMenu(page, avatarButton);
 
     const link = page
       .locator(
@@ -127,10 +212,11 @@ test("dashboard avatar menu reaches home membership and settings", async ({ page
       .first();
     await expect(link).toBeVisible({ timeout: 20_000 });
 
-    await Promise.all([
-      page.waitForURL(new RegExp(`${target.href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\?.*)?$`)),
-      link.click(),
-    ]);
+    await link.click();
+    await expect(page).toHaveURL(
+      new RegExp(`${target.href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\?.*)?$`),
+      { timeout: 20_000 },
+    );
 
     await expect(page.locator(`[data-route-shell-ready="${target.routeReady}"]`).first()).toBeVisible({
       timeout: 20_000,

@@ -1,186 +1,353 @@
-# Krukraft — Current TODOs and Audit Scope
+# Krukraft — Active Phase Tracker
 
-## Current Priority TODOs
+Use this file as the single source of truth for active implementation state.
 
-- [ ] Replace `XENDIT_SECRET_KEY` test key in production environment
-- [ ] Verify `DIRECT_URL` is present and correct for Prisma CLI / migration workflows in production
-- [ ] Keep tuning ranked-search query plans and decide whether Postgres-backed relevance is still sufficient before introducing a separate search engine
-- [ ] Keep post-deploy warm targets aligned with perf smoke and browser verification coverage
-- [ ] Re-run perf measurements after major listing/detail/search changes and update thresholds intentionally
-- [ ] Continue refining detail-page CTA/trust/review timing if new regressions appear
-- [ ] Recheck preview/production LCP after major marketplace image or layout changes; local dev reruns on 2026-04-02 stopped reproducing the old Next `loading="eager"` advice, but dev-mode LHCI is still not production truth
-- [ ] Verify uploaded favicon and OG logo changes propagate correctly through `/brand-assets/*` in production browsers and social crawlers
-- [ ] Recheck that the trimmed repo-owned fallback asset set (`public/brand/*` without legacy `public/logo/*`) still covers every favicon / metadata surface that should remain first-party
-- [ ] Recheck production refresh behavior after the latest navbar fallback-height and logo-flicker fixes to confirm the remaining brand chrome feels visually stable on cold loads
-- [ ] Finish route-family fallback cleanup on public routes so hard refreshes on `/resources` and other public pages stay inside family-specific or neutral shells without route-agnostic navbar/page chrome reading as another page
-- [ ] Keep the local verification stack aligned: request smoke for auth/redirect checks, `chrome-devtools-mcp` for authenticated browser probing, and Playwright for canonical CI/regression coverage
-- [ ] Keep the dashboard-v2 runtime perf baseline frozen at `Phase 3A nav prefetch uplift + Phase 3B creator/resources timing cleanup` until the next route-level perf pass is chosen deliberately and reintroduced one route at a time with matching proof
+## Plan Snapshot
 
-## Product / UX Follow-Ups
+Parent Plan: `Dashboard-v2 stabilization and Vercel-like transition plan`
 
-- [ ] Keep discover fallbacks aligned with final section intent; avoid misleading placeholder destinations
-- [ ] Audit live search, filter/sidebar fallbacks, and creator-profile fallbacks for usable-but-consistent loading states
-- [ ] Verify dashboard/admin hard refreshes no longer show the global app-root fallback before their family loading shells under repeated refresh stress
-- [ ] Pilot `boneyard-js` on one high-value flow before considering wider skeleton replacement; keep route-level loading/error/empty-state contracts explicit even if DOM-captured bones are adopted
-- [ ] Keep Playwright search smoke aligned with real canonical submit flows as marketplace search UX evolves
-- [ ] Re-audit brand asset previews if legacy stored values from earlier fallback behavior still exist in the database
+> [!info] Current Phase
+> `Stabilized dashboard-v2 rollback baseline`
 
-## Dashboard V2 Cutover Readiness (2026-04-12)
+> [!success] Completed
+> Phase 1: Loading Ownership Reset
+> Phase 2: Shell-First Route Design
 
-### Route parity audit
+> [!warning] Active
+> Phase 3: Prefetch And Timing Tuning
 
-| Legacy route | Canonical route | Status | Notes |
-| --- | --- | --- | --- |
-| `/dashboard` | `/dashboard-v2` | removed | hard cut: no proxy compatibility redirect |
-| `/dashboard/library` | `/dashboard-v2/library` | removed | hard cut: no proxy compatibility redirect |
-| `/dashboard/downloads` | `/dashboard-v2/downloads` | removed | hard cut: no proxy compatibility redirect |
-| `/dashboard/purchases` | `/dashboard-v2/purchases` | removed | hard cut: no proxy compatibility redirect |
-| `/settings` | `/dashboard-v2/settings` | removed | hard cut: no proxy compatibility redirect |
-| `/subscription` | `/dashboard-v2/membership` | removed | hard cut: no proxy compatibility redirect |
-| `/dashboard/creator` | `/dashboard-v2/creator` | removed | hard cut: no proxy compatibility redirect |
-| `/dashboard/creator/resources` | `/dashboard-v2/creator/resources` | removed | hard cut: no proxy compatibility redirect |
-| `/dashboard/creator/resources/new` | `/dashboard-v2/creator/resources/new` | removed | hard cut: no proxy compatibility redirect |
-| `/dashboard/creator/resources/[id]` | `/dashboard-v2/creator/resources/[id]` | removed | hard cut: no proxy compatibility redirect |
-| `/dashboard/creator/analytics` | `/dashboard-v2/creator/analytics` | removed | hard cut: no proxy compatibility redirect |
-| `/dashboard/creator/sales` | `/dashboard-v2/creator/sales` | removed | hard cut: no proxy compatibility redirect |
-| `/dashboard/creator/profile` | `/dashboard-v2/creator/profile` | removed | hard cut: no proxy compatibility redirect |
-| `/dashboard/creator/settings` | `/dashboard-v2/creator/settings` | removed | hard cut: no proxy compatibility redirect |
-| `/dashboard/creator/apply` | `/dashboard-v2/creator/apply` | removed | hard cut: dashboard-v2 parity route owns the live creator onboarding flow |
+> [!tip] Frozen Baseline
+> Phase 3A: nav prefetch uplift
+> Phase 3B: creator/resources timing cleanup
 
-### Remaining cutover blockers
+> [!todo] Next Decision
+> Choose the next deliberate route-level perf pass or another explicitly scoped follow-up
 
-- [x] Retired compatibility-only not-found/error route files in `(dashboard)` and `(dashboard-lite)` after those old families stopped owning live route UI
-- [x] Rechecked post-checkout and purchase-recovery links on 2026-04-13; `PendingPurchasePoller`, `LastPurchaseRecovery`, checkout success CTAs, and dashboard-v2 membership CTAs target `routes.dashboardV2Library`, `routes.dashboardV2LibraryPaymentSuccess()`, or `routes.dashboardV2Purchases`, not `/dashboard/library`
-- [x] Hard cut chosen on 2026-04-13 because the site has no real users yet: old dashboard URL/bookmark support was removed instead of kept through a longer compatibility window.
+> [!abstract] Partial
+> Phase 4: Durable UX Verification
 
-### Legacy path disposition
+## Status Board
 
-#### Remove now
+| Track    | Status  | Note                                                                                               |
+| -------- | ------- | -------------------------------------------------------------------------------------------------- |
+| Phase 1  | Done    | ownership reset closed                                                                             |
+| Phase 2  | Done    | shell-first loading contract active                                                                |
+| Phase 3  | Active  | frozen baseline only                                                                               |
+| Phase 3A | Frozen  | nav prefetch uplift                                                                                |
+| Phase 3B | Frozen  | creator/resources timing cleanup                                                                   |
+| Phase 4  | Partial | dashboard-v2 family and public↔dashboard handoff proofs are currently clean on the active baseline |
 
-- redirect-only compatibility page files that duplicated proxy-owned canonical redirects:
-  - `(dashboard-lite)/dashboard/page.tsx`
-  - `(dashboard-lite)/dashboard/library/page.tsx`
-  - `(dashboard-lite)/dashboard/downloads/page.tsx`
-  - `(dashboard-lite)/dashboard/purchases/page.tsx`
-  - `(dashboard-lite)/settings/page.tsx`
-  - `(dashboard-lite)/subscription/page.tsx`
-  - `(dashboard-lite)/purchases/page.tsx`
-  - `(dashboard)/dashboard/creator/apply/page.tsx`
-  - `(dashboard)/dashboard/creator/settings/page.tsx`
-  - `(dashboard)/dashboard/creator/(protected)/page.tsx`
-  - `(dashboard)/dashboard/creator/(protected)/profile/page.tsx`
-  - `(dashboard)/dashboard/creator/(protected)/sales/page.tsx`
-  - `(dashboard)/dashboard/creator/(protected)/analytics/page.tsx`
-  - `(dashboard)/dashboard/creator/(protected)/resources/page.tsx`
-  - `(dashboard)/dashboard/creator/(protected)/resources/new/page.tsx`
-  - `(dashboard)/dashboard/creator/(protected)/resources/[id]/page.tsx`
+## Progress
 
-#### Removed in hard cut
+Dashboard-v2 stabilization
+`[███████░░░] 70%`
 
-- old URL/bookmark compatibility paths that no longer redirect through proxy:
-  - `/dashboard`
-  - `/dashboard/library`
-  - `/dashboard/downloads`
-  - `/dashboard/purchases`
-  - `/settings`
-  - `/subscription`
-  - `/dashboard/creator`
-  - `/dashboard/creator/apply`
-  - `/dashboard/creator/resources`
-  - `/dashboard/creator/resources/new`
-  - `/dashboard/creator/resources/[id]`
-  - `/dashboard/creator/analytics`
-  - `/dashboard/creator/sales`
-  - `/dashboard/creator/profile`
-  - `/dashboard/creator/settings`
-  - `/dashboard/resources`
+```mermaid
+flowchart TB
+  subgraph Completed
+    P1[Phase 1<br/>Done]
+    P2[Phase 2<br/>Done]
+  end
 
-Runtime note (2026-04-13):
-- previous local proxy smoke passed before the hard cut, proving canonical dashboard-v2 parity existed before removing old URL handoff
-- app/tests/scripts no longer target these paths directly; after the hard cut, they are intentionally unsupported legacy URLs instead of active navigation or bookmark-redirect destinations
-- `/dashboard/resources` was removed with the rest of the compatibility set; creator apply/resources handoff must use canonical dashboard-v2 routes directly
+  subgraph Current
+    P3[Phase 3<br/>Active]
+    P3A[3A<br/>Frozen baseline]
+    P3B[3B<br/>Frozen baseline]
+  end
 
-### Navigation handoff plan before freezing the old shell
+  subgraph Next
+    P3N[Next pass<br/>Not chosen]
+    P4[Phase 4<br/>Partial]
+  end
 
-1. Keep `dashboard-v2` as the only canonical destination in shared nav, auth callbacks, post-purchase CTAs, and dashboard overlays.
-2. Keep learner/creator shells removed from active navigation; they no longer act as redirect-only public compatibility entrypoints after the hard cut.
-3. Keep cleanup/removal as a separate pass for dead shell helpers that are not tied to external URL support.
-4. After the old shell no longer owns unique UI, remove leftover internal references to legacy dashboard routes instead of preserving bookmark redirects.
+  P1 --> P2 --> P3
+  P3 --> P3A
+  P3 --> P3B
+  P3 --> P3N --> P4
+```
 
-### Cleanup / removal plan (separate from compatibility freeze)
+## Daily Workflow
 
-1. Retire old route-family loading shells and skeleton helpers that no longer represent live UI.
-2. Remove compatibility-only not-found/error surfaces after confirming they no longer represent a supported entry path.
-3. Delete old `(dashboard)` / `(dashboard-lite)` shell chrome when no live route still imports those wrappers.
+Before starting:
+- Read `Current Phase`
+- Pick exactly one item from `Next Up`
+- Move it to `In Progress`
 
-### Cleanup progress
+Before closing:
+- Update `In Progress`
+- Update `Next Up`
+- Fill `Session Close-Out Template`
 
-- [x] Deleted dead compatibility-only shell helpers:
-  - `src/app/(dashboard-lite)/DashboardSessionLayoutContent.tsx`
-  - `src/app/(dashboard)/DashboardGroupLayoutContent.tsx`
-  - `src/app/(dashboard)/dashboard/creator/(protected)/CreatorProtectedLayoutContent.tsx`
-- [x] Moved legacy learner/creator route aliases out of `src/lib/routes.ts` during the compatibility freeze, then removed the temporary compatibility helper during the hard cut so canonical `dashboard-v2` routes are the only first-class dashboard destinations in the route map
-- [x] Updated overlay/state/footer normalization to stop importing a legacy alias map from the canonical route registry; after the hard cut, those surfaces only recognize canonical dashboard-v2/admin routing
-- [x] Deleted compatibility-only top-level `loading.tsx` files under `src/app/(dashboard-lite)` and `src/app/(dashboard)` because those old route families no longer own visible loading UI before redirecting into `dashboard-v2`
-- [x] Deleted compatibility-only dashboard `error.tsx` / `not-found.tsx` files under `src/app/(dashboard-lite)/dashboard` and `src/app/(dashboard)/dashboard`; canonical dashboard-v2 and app-level fallbacks now own those surfaces
-- [x] Removed the unused legacy `creatorResource(id)` alias during freeze, then removed the remaining temporary legacy alias helper during the hard cut
-- [x] Centralized proxy canonicalization through the temporary compatibility helper during freeze and moved app-facing dashboard probes/tests to canonical `/dashboard-v2/*` paths; that proxy canonicalization has now been removed with old URL support
-- [x] Centralized legacy creator query normalization in the temporary compatibility helper during freeze, then removed that overlay/proxy normalization when the hard cut made old URLs unsupported
-- [x] Deleted redirect-only learner/account/creator compatibility page files whose behavior was duplicated by proxy-owned canonical redirects during freeze; the later hard cut removed the proxy/helper layer too
-- [x] Re-ran runtime smoke against the old learner/account/creator URLs after deleting redirect-only route shims; that evidence was used to choose the later hard cut rather than keeping bookmark redirects
-- [x] Rechecked post-checkout and purchase-recovery source links; current app-facing paths use dashboard-v2 destinations and do not point users back to `/dashboard/library`
-- [x] Classified `/dashboard/resources` as an intentional compatibility-only exception because it performs session-role and creator-access branching before redirecting to canonical dashboard-v2 creator routes
-- [x] Hard cut old URL/bookmark support after confirming the project has no real users yet: deleted `src/lib/dashboard-route-compatibility.ts`, removed proxy canonicalization, removed overlay/footer/navigation-state legacy normalization, and deleted the `/dashboard/resources` compatibility route.
-
-### Final parity / cutover checklist
-
-- [x] Canonical app-facing navigation and purchase CTAs use `/dashboard-v2/*` route constants
-- [x] Old learner/account/creator URLs are no longer represented as compatibility inputs; dashboard-v2 is the only supported dashboard route family after the hard cut
-- [x] `/dashboard/resources` no longer remains as a role/access handoff exception; use canonical dashboard-v2 creator apply/resources routes directly
-- [x] Dropped old URL/bookmark support by deleting `src/lib/dashboard-route-compatibility.ts` and related proxy/overlay/footer/navigation-state normalization after intentionally choosing hard cutover behavior
-
-### Phase 5 close-out evidence
-
-- [x] Browser-level runtime proof from the public marketplace navbar shows `คลังของฉัน` linking directly to `http://127.0.0.1:3000/dashboard-v2/library`
-- [x] Browser-level runtime proof from the public account menu shows canonical dashboard-v2 destinations only:
-  - `Dashboard` -> `/dashboard-v2`
-  - `My Library` -> `/dashboard-v2/library`
-  - `Purchases` -> `/dashboard-v2/purchases`
-  - `Settings` -> `/dashboard-v2/settings`
-  - `KC Premium` -> `/dashboard-v2/membership`
-- [x] Click-through verification on 2026-04-13 confirmed public-entry handoff lands on canonical dashboard-v2 routes with the dashboard-v2 shell:
-  - `/resources` -> account menu -> `Settings` -> `http://127.0.0.1:3000/dashboard-v2/settings`
-  - `/resources` -> account menu -> `Purchases` -> `http://127.0.0.1:3000/dashboard-v2/purchases`
-- [x] No surviving public-entry path verified in this pass routed through old `/dashboard*` URLs, old dashboard shells, or old dashboard-family compatibility redirects
-
-### Phase 5 status
-
-- [x] Phase 5 cutover readiness is closed for the dashboard route family
-- [ ] Phase 6 post-cutover stabilization remains the next phase
-
-## Audit Scope (Useful Ongoing Areas)
-
-- `src/app/resources`
-- `src/app/categories`
-- `src/app/creators`
-- `src/app/dashboard`
-- `src/app/admin`
-- `src/app/api`
-- `src/components`
-- `src/services`
-- `src/repositories`
-- `prisma/schema.prisma`
-
-## Audit Scope (Topics)
-
-- Payment config and webhook correctness
-- Upload and storage flows
-- Search / filter / category / recommendation behavior
-- RSC streaming performance and cache consistency
-- Admin settings / platform branding / build-safe config boundaries
-- Security boundaries: auth guards, admin routes, internal warm routes
-- Deployment workflow: build vs migrate separation, warm-cache coverage, perf thresholds
+Rules:
+- Keep exactly one `Current Phase`
+- Keep `Next Up` to at most 3 items
+- Move anything not being worked right now into `Deferred`
+- If a phase status changes, update this file in the same session
+- If the parent plan status changes, update `Plan Snapshot`, `Current Status Inside Parent Plan`, and `Phase Map` in the same session
+- Do not mark work complete in chat until the relevant phase/plan state here is updated
+- If this file has an active parent plan, do not recommend or start `Deferred` work as the next step unless the user explicitly changes priorities
+- When suggesting follow-up work, state whether it is `in-plan` or `out-of-plan` before recommending it
+- If the user says `Next Up`, answer from the active plan's `Next Up` block first and keep the recommendation inside the active plan unless the user explicitly asks to reprioritize
 
 ---
 
-*Refreshed against the repo state on 2026-04-13.*
+## Current Phase
+
+### Name
+Stabilized dashboard-v2 rollback baseline
+
+### Parent Plan
+Dashboard-v2 stabilization and Vercel-like transition plan
+
+### Current Status Inside Parent Plan
+- Phase 1 is done
+- Phase 2 is done
+- Phase 3 is partial and intentionally frozen at a narrow baseline
+- Phase 4 is partial
+- The last deliberate follow-up on public account-menu parity and public↔dashboard library handoff is now green on the active baseline
+- The latest local proof pass has `navigation-shells` and `navigation-sentinels` green after stabilizing the public `/resources` auth-viewer + dashboard library cold-entry boundary
+- Public navbar and dashboard-v2 topbar now share one authenticated account-dropdown component and one IA/UI contract instead of maintaining separate menu implementations
+- Marketplace navbar loading and dashboard-v2 topbar loading were re-audited after the shared dropdown/UI pass so their skeleton ownership and geometry match the current UI more closely
+- The latest hydration warning sample on the public navbar was audited and is not an active reproducible crash right now; the remaining public proof issue is a dropdown click-through timeout flake in `navigation-sentinels`
+- The public account-dropdown click-through timeout in `navigation-sentinels` is now green again after tightening the sentinel helper around the real dropdown activation contract and matching the helper timeout budget to the real public→dashboard dev compile boundary
+- Shared authenticated account-dropdown rows now use direct link owners again for navigation instead of nested button owners
+- The recurring one-pass local dev flake in `creator-workspace.spec.ts` was traced to the post-login cold-entry `page.goto(...)` path in `tests/e2e/helpers/auth.ts`; the helper now retries retryable cold-entry failures and waits only for `commit`, and the full suite is green again on the active baseline
+- The learner account surface pass on `/dashboard-v2/settings` has now landed: the route streams its sections behind an in-page `Suspense` boundary again, while its route-level loading and proof surface were kept aligned
+- The same `/dashboard-v2/settings` route is no longer a read-only summary surface: it now uses interactive profile, preferences, notification, and security sections, and the route/API surface no longer exposes a language selector for this page
+- The same settings surface now also supports user-owned profile photo changes: `/api/user/profile/avatar` uploads the image, `/api/user/profile` persists the new `image` field, and the root client provider tree now includes `SessionProvider` so `useSession().update(...)` can refresh the dashboard/avatar chrome immediately after save
+- Google-backed profile photos are now a first-class fallback path in settings too: Google sign-in syncs the provider image into `User.providerImage`, the settings profile panel exposes cleaner photo actions, and removing a custom upload restores the stored Google photo when one exists instead of dropping directly to initials
+- The legacy `HomepageHero` and orphaned `PlatformTypographySettings` DB tables are now intentionally being removed instead of treated as active feature surfaces
+- The learner account follow-up on `/dashboard-v2/membership` has now landed too: the route renders its intro shell first and streams the membership results body behind a matching in-page `Suspense` boundary instead of awaiting the whole account payload before first in-page content
+- The same `/dashboard-v2/membership` route is now audit-clean enough to use as a real account surface: its intro CTA bar no longer freezes as skeleton buttons after readiness, free-plan users get live `Explore plans` + `View purchases` actions, and Stripe-backed members can cancel renewal from the route itself
+- The route-specific membership proofs are green, while the remaining one-pass instability still presents as the older public sentinel / creator cold-entry dev flake classes rather than a confirmed `/dashboard-v2/membership` regression
+- `tests/e2e/creator-workspace.spec.ts` is green again as the dashboard-v2 handoff baseline after filtering NextAuth client session fetch abort noise out of runtime-console failure collection
+- Public → dashboard-v2 entry transitions were rechecked after the shell-only entry overlay pass, and `navigation-shells` is green again with no blank-gap evidence before route-owned loading takes over
+- The public `/membership` page has now been rebuilt as a DS pricing surface
+  instead of the older legacy marketing page, and `tests/e2e/membership-public.spec.ts`
+  is green against the new route contract
+- The same public `/membership` page has now been tightened again around a
+  Linear-style, plan-first structure: left-aligned pricing heading, one billing
+  toggle, three divider-separated plan columns, and a matching slimmed-down
+  loading shell; the `Team` tier is no longer sales-only and now reuses the
+  same Stripe-backed checkout flow class as `Pro`
+- The next deliberate choice is open again after the `/dashboard-v2/settings` and `/dashboard-v2/membership` passes landed
+
+### Goal
+Keep the post-rollback dashboard-v2 baseline stable while reopening route-level perf only one route at a time and only after the previous narrow pass is actually closed with proof.
+
+### Why this is the current phase
+- The active perf baseline is intentionally limited to:
+  - Phase 3A: nav prefetch uplift
+  - Phase 3B: creator/resources timing cleanup
+- A new narrow learner-account follow-up has now landed on top of that frozen baseline:
+  - `/dashboard-v2/settings` streams its sections again behind an in-page `Suspense` boundary
+  - `/dashboard-v2/membership` now streams its results body behind an in-page `Suspense` boundary after the intro shell renders
+- Later broad route-level perf experiments were rolled back.
+- Cleanup after rollback is done.
+- The latest warm local verification pass for `tests/e2e/creator-workspace.spec.ts` passed `8/8`.
+
+### Definition of Done
+- [x] The next route-level perf pass is chosen intentionally
+- [x] That pass is implemented for one route family only
+- [x] Matching loading / fallback / route contract proof is updated
+- [x] Runtime verification is rerun on the affected flow
+- [x] Relevant context docs are updated in the same work session
+
+### Phase Map
+
+| Phase | Name | Status | Notes |
+| --- | --- | --- | --- |
+| 1 | Loading Ownership Reset | done | parent neutral fallbacks were removed from visible ownership |
+| 2 | Shell-First Route Design | done | canonical dashboard-v2 routes now use shell-first loading contract |
+| 3 | Prefetch And Timing Tuning | partial / frozen | keep only `Phase 3A nav prefetch uplift` and `Phase 3B creator/resources timing cleanup` in the active baseline |
+| 4 | Durable UX Verification | partial | key dashboard-v2 handoff coverage exists, but future route-by-route work still needs matching proof when reopened |
+
+---
+
+## Current Goal
+
+Choose and execute the next safe, narrow improvement without losing the stabilized rollback baseline.
+
+Current recommendation order:
+1. Runtime feel recheck on dashboard-v2 routes
+2. Pick one narrow next pass:
+   - learner account surface perf (`settings` first if needed)
+   - account-menu parity audit
+   - another route-specific perf pass only after proof
+
+---
+
+## In Progress
+
+- [x] Runtime feel recheck across key dashboard-v2 routes
+- [x] Public account-menu parity pass for IA and UI structure
+- [x] Public↔dashboard library handoff stabilization after menu parity pass
+- [x] Public `/resources` auth-viewer cold-entry stabilization after menu parity pass
+- [x] Shared authenticated account dropdown for public + dashboard-v2
+- [x] Marketplace navbar skeleton ownership/geometry pass after the shared dropdown refresh
+- [x] Dashboard-v2 topbar skeleton pass to align loading geometry with the live navbar
+- [x] Dashboard entry overlay now uses a shell-only dashboard bridge instead of a full generic dashboard content skeleton during public → dashboard handoff
+- [x] Audit the recent public navbar hydration warning sample
+- [x] Clean the remaining `navigation-sentinels` public account-dropdown click-through timeout
+- [x] Restore stable link-owner navigation inside the shared authenticated account dropdown
+- [x] Stabilize the recurring one-pass `creator-workspace.spec.ts` cold-entry flake at the auth helper boundary
+- [x] Re-open the learner account surface perf pass on `/dashboard-v2/settings`
+- [x] Re-open the learner membership surface perf pass on `/dashboard-v2/membership`
+- [ ] Do not restart broad dashboard-v2 streaming work from memory
+- [ ] Re-open perf only route-by-route with proof after each pass
+
+---
+
+## Next Up
+
+- [ ] Decide the next deliberate follow-up after the `/dashboard-v2/settings` and `/dashboard-v2/membership` passes
+- [ ] Re-evaluate whether the next narrow pass should be another learner account surface, a creator account surface, or a non-perf UX follow-up
+- [ ] If the next pass is not chosen immediately, keep the tracker explicit about that instead of reopening work from memory
+
+---
+
+## Blocked / Waiting
+
+- [ ] None right now
+
+Use this section only for real blockers:
+- missing env / credentials
+- failing CI unrelated to the current task
+- unclear product decision
+- waiting on design / business confirmation
+
+---
+
+## Deferred
+
+### Dashboard / Perf
+- [ ] Revisit route-level perf passes beyond the current rollback baseline only one route at a time
+- [ ] Recheck whether `membership`, `settings`, `creator/profile`, or the public creator storefront need additional runtime perf work after visual/runtime feel review
+- [ ] Re-open earnings perf only if runtime feel proves it is still a hotspot after rollback baseline
+
+### Public Route / Loading Follow-ups
+- [ ] Finish route-family fallback cleanup on public routes so hard refreshes on `/resources` and similar pages stay inside family-specific or neutral shells
+- [ ] Audit discover/search/filter/creator-profile fallbacks for usable-but-consistent loading states after the navbar/topbar skeleton pass
+- [ ] Verify dashboard/admin hard refreshes no longer show the global app-root fallback before their family loading shells under repeated refresh stress
+
+### Brand / Platform
+- [ ] Re-run perf measurements after major listing/detail/search changes and update thresholds intentionally
+- [ ] Recheck preview/production LCP after major marketplace image or layout changes
+- [ ] Verify favicon and OG logo propagation through `/brand-assets/*` in production browsers and crawlers
+- [ ] Recheck that the trimmed first-party brand asset set still covers every metadata/favicon surface
+
+### Ops / Config
+- [ ] Replace `XENDIT_SECRET_KEY` test key in production environment
+- [ ] Verify `DIRECT_URL` is present and correct for Prisma CLI / migration workflows in production
+- [ ] Keep post-deploy warm targets aligned with perf smoke and browser verification coverage
+
+---
+
+## Verification Baseline
+
+Run these before claiming dashboard-v2 stabilization work is complete:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run context:check`
+- `npm run test:e2e -- --project=chromium tests/e2e/creator-workspace.spec.ts`
+- `npm run test:e2e -- --project=chromium tests/e2e/navigation-shells.spec.ts`
+- `npm run test:e2e -- --project=chromium tests/e2e/navigation-sentinels.spec.ts`
+
+If the task touches creator editor flows, also consider:
+- `npm run test:e2e -- --project=chromium tests/e2e/dashboard-v2-creator-editor-route-family.spec.ts`
+- `npm run test:e2e -- --project=chromium tests/e2e/dashboard-v2-creator-editor-hardening.spec.ts`
+
+---
+
+## Current Baseline Notes
+
+### Dashboard-v2
+- `dashboard-v2` is the only canonical dashboard family.
+- Old `(dashboard)` and `(dashboard-lite)` route families were hard-cut and removed.
+- Active runtime perf baseline keeps the original frozen core at:
+  - nav prefetch uplift
+  - creator/resources timing cleanup
+- plus one new deliberate learner-account follow-up:
+- `/dashboard-v2/settings` now streams its sections behind an in-page `Suspense` boundary again instead of awaiting the full combined payload before first in-page HTML
+- `/dashboard-v2/settings` now renders a real interactive settings surface inside that streamed shell, and the dashboard-v2 settings route/API no longer accept a page-level language preference
+- `/dashboard-v2/membership` now renders its intro shell before the membership payload resolves and streams the summary cards plus plan-status panel behind a route-matched in-page fallback instead of awaiting the full account payload before any in-page content
+
+### Verification
+- Warm local `creator-workspace.spec.ts` passed `8/8` after rollback cleanup and short flake stabilization.
+- Treat that suite as the main dashboard-v2 regression gate unless a task clearly needs a narrower surface.
+- Runtime feel recheck on 2026-04-14 still confirms the dashboard-v2 family suite passes, and the public follow-up that remained after that pass is now green too:
+  - `tests/e2e/navigation-shells.spec.ts` passes for `/resources` ↔ `/dashboard-v2/library`
+  - `tests/e2e/navigation-sentinels.spec.ts` passes for the public account dropdown contract
+- Public account-menu parity pass now mirrors dashboard-v2 IA/UI on the marketplace header, including the redesigned `Membership` entry and creator links, and the follow-up stabilization work closed the remaining public `/resources` auth-viewer and library cold-entry proof failures on the active baseline.
+- The `/dashboard-v2/settings` pass is now also green against:
+  - `tests/e2e/settings-theme.spec.ts`
+  - `tests/e2e/navigation-sentinels.spec.ts` (`dashboard avatar menu reaches home membership and settings`)
+  - `tests/e2e/creator-workspace.spec.ts` (`dashboard-v2 account surfaces clear the dashboard overlay after shell readiness`)
+- The `/dashboard-v2/membership` pass is green against:
+  - `tests/e2e/dashboard-membership.spec.ts`
+  - `tests/e2e/creator-workspace.spec.ts` (`dashboard-v2 account surfaces clear the dashboard overlay after shell readiness`)
+  - `tests/e2e/navigation-shells.spec.ts`
+- One-pass local reruns still surfaced the older public sentinel and creator cold-entry flake classes during this work session, but those failures happened outside the membership route contract itself
+
+### Git / Repo Hygiene
+- Local design-tool repos under `.design-tools/*` are intentionally not tracked by the main repo.
+
+---
+
+## Decision Log
+
+Add only short, high-signal entries here.
+
+- 2026-04-14: Keep dashboard-v2 perf baseline frozen after rollback; do not re-open broad streaming refactors.
+- 2026-04-14: Remove `.design-tools/awesome-design-md` and `.design-tools/shadcn-examples` from repo tracking; keep them local-only.
+- 2026-04-14: Runtime feel recheck shows dashboard-v2 internal route family is stable; next follow-up should target public↔dashboard library handoff/account-menu parity before reopening another perf pass.
+- 2026-04-14: Public navbar account menu now follows the dashboard-v2 account-menu contract for IA/UI, but the next active follow-up remains public↔dashboard library handoff stabilization because `navigation-shells` still catches a blank-gap transition sample at that boundary.
+- 2026-04-14: The authenticated account dropdown is now a shared public+dashboard component; keep sentinel coverage green when changing trigger shape, featured membership item, or account/creator menu sections.
+- 2026-04-15: Marketplace navbar skeleton ownership and dashboard-v2 topbar skeleton geometry were both tightened after the shared dropdown refresh; the next public-nav follow-up is proof cleanliness, not another structural menu rewrite.
+- 2026-04-15: The latest public navbar hydration warning sample points to a recoverable SSR/client mismatch around the auth-viewer boundary in dev, but it is not currently an active repro; treat the remaining public dropdown navigation timeout as the main open proof issue.
+- 2026-04-15: `navigation-sentinels` is green again after tightening the public account-dropdown sentinel helper to use the real dropdown activation contract instead of an over-forced click path.
+
+---
+
+## Session Close-Out Template
+
+Copy/update this at the end of a non-trivial task:
+
+- Phase status:
+  - `open` / `closed` / `deferred`
+- Parent plan status changed?
+  - `yes` / `no`
+- What changed:
+  - ...
+- Verification run:
+  - ...
+- Next recommended task:
+  - ...
+- Knowledge triage:
+  - `no ingest` / `log only` / `update existing wiki` / `new wiki entry`
+
+Close-out rule:
+- If `Phase status` changed, update `Plan Snapshot` and `Phase Map` before ending the session
+- If the parent plan moved to a new stage or closed, update `Current Phase`, `Current Status Inside Parent Plan`, and `Next Up` before ending the session
+
+### Phase Change Checklist
+
+- [ ] Update `Phase status`
+- [ ] Update `Plan Snapshot`
+- [ ] Update `Phase Map`
+- [ ] Update `Current Status Inside Parent Plan`
+- [ ] Update `In Progress`
+- [ ] Update `Next Up`
+- [ ] Record verification actually run
+- [ ] Record the next recommended task before closing the session
+
+---
+
+## Reference Pointers
+
+Use these for deeper context instead of expanding this file again:
+- Architecture / route-family behavior: [04-architecture.md](/Users/shanerinen/Projects/krukraft/krukraft-ai-contexts/04-architecture.md)
+- Performance notes / rollback baseline: [08-performance-audit.md](/Users/shanerinen/Projects/krukraft/krukraft-ai-contexts/08-performance-audit.md)
+- Design-system ownership: [06-design-system.md](/Users/shanerinen/Projects/krukraft/krukraft-ai-contexts/06-design-system.md)
+- Layout / UX conventions: [07-layout-ux.md](/Users/shanerinen/Projects/krukraft/krukraft-ai-contexts/07-layout-ux.md)

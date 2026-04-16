@@ -100,6 +100,7 @@ export function ResourcesEntryNavigationOverlay() {
   return (
     <div
       data-loading-scope={overlayScope}
+      data-resources-overlay="entry"
       className="pointer-events-none fixed inset-0 z-[84] bg-background"
     >
       {overlayMode === "detail"

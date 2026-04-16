@@ -1,45 +1,55 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 
-import { Button } from "@/design-system";
+import { Button, useToast } from "@/design-system";
 import { primeAuthViewer, useAuthViewer } from "@/lib/auth/use-auth-viewer";
 import { routes } from "@/lib/routes";
+import { cn } from "@/lib/utils";
 
 export interface PricingTier {
   id: string;
   name: string;
   price: { monthly: number; annual: number };
   description: string;
-  features: string[];
   cta: string;
+  features: string[];
   highlighted?: boolean;
   badge?: string;
   stripePlan?: { monthly: string; annual: string };
+  href?: string;
+  external?: boolean;
 }
 
 interface PricingCardProps {
   tier: PricingTier;
   billing: "monthly" | "annual";
+  columnPosition?: "start" | "middle" | "end";
 }
 
-export function PricingCard({ tier, billing }: PricingCardProps) {
+interface MembershipTierActionProps {
+  tier: PricingTier;
+  billing: "monthly" | "annual";
+  className?: string;
+  fullWidth?: boolean;
+  disableMotion?: boolean;
+}
+
+export function MembershipTierAction({
+  tier,
+  billing,
+  className,
+  fullWidth = true,
+  disableMotion = false,
+}: MembershipTierActionProps) {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [isCheckingAccount, setIsCheckingAccount] = useState(false);
   const authViewer = useAuthViewer({ strategy: "idle", idleTimeoutMs: 800 });
   const router = useRouter();
-
-  const price = billing === "annual" ? tier.price.annual : tier.price.monthly;
-  const savings =
-    billing === "annual" && tier.price.monthly > 0
-      ? Math.round(
-          ((tier.price.monthly * 12 - tier.price.annual * 12) /
-            (tier.price.monthly * 12)) *
-            100,
-        )
-      : 0;
 
   async function handleSubscribe() {
     if (!tier.stripePlan) return;
@@ -56,150 +66,175 @@ export function PricingCard({ tier, billing }: PricingCardProps) {
         })();
 
     if (!viewer.authenticated) {
-      router.push(`${routes.login}?next=${encodeURIComponent(routes.membership)}`);
+      router.push(routes.loginWithNext(routes.membership));
       return;
     }
 
     setLoading(true);
     try {
-      const plan = billing === "annual" ? tier.stripePlan.annual : tier.stripePlan.monthly;
+      const plan =
+        billing === "annual" ? tier.stripePlan.annual : tier.stripePlan.monthly;
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: "subscription", plan }),
       });
-      const json = await res.json();
-      if (json.data?.url) window.location.href = json.data.url;
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(
+          typeof json?.error === "string"
+            ? json.error
+            : "Could not start checkout.",
+        );
+      }
+
+      if (typeof json?.data?.url !== "string") {
+        throw new Error("Could not start checkout.");
+      }
+
+      window.location.href = json.data.url;
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not start checkout.",
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  if (tier.highlighted) {
+  const actionLabel = isCheckingAccount ? "Checking account…" : tier.cta;
+  const actionVariant = tier.highlighted ? "primary" : "outline";
+
+  if (tier.stripePlan) {
     return (
-      <div className="relative flex flex-col overflow-hidden rounded-3xl p-px shadow-pricing-featured">
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500 via-violet-500 to-blue-700" />
-
-        <div className="relative flex flex-1 flex-col rounded-[calc(1.25rem-1px)] bg-zinc-950 p-8">
-          <div className="absolute inset-0 rounded-[calc(1.25rem-1px)] bg-dot-dark opacity-40" />
-
-          {tier.badge ? (
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-3.5 py-1 text-xs font-bold text-white shadow-glow-orange">
-                <Sparkles className="h-3 w-3" />
-                {tier.badge}
-              </span>
-            </div>
-          ) : null}
-
-          <div className="relative">
-            <p className="text-xs font-semibold uppercase tracking-widest text-blue-400">
-              {tier.name}
-            </p>
-            <p className="mt-1.5 text-sm text-white/72">{tier.description}</p>
-
-            <div className="mt-6 flex items-baseline gap-1.5">
-              <span className="text-5xl font-bold tracking-tight text-white">
-                {price === 0 ? "Free" : `$${price}`}
-              </span>
-              {price > 0 ? <span className="text-sm text-white/45">/mo</span> : null}
-              {savings > 0 ? (
-                <span className="ml-2 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-400 ring-1 ring-emerald-500/30">
-                  Save {savings}%
-                </span>
-              ) : null}
-            </div>
-
-            <div className="mt-6 border-t border-white/10" />
-
-            <ul className="mt-5 flex-1 space-y-3">
-              {tier.features.map((feature) => (
-                <li key={feature} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-600/20 ring-1 ring-blue-500/30">
-                    <Check className="h-3 w-3 text-blue-400" />
-                  </span>
-                  <span className="text-sm leading-relaxed text-white/82">
-                    {feature}
-                  </span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-8">
-              <Button
-                onClick={tier.stripePlan ? handleSubscribe : undefined}
-                onPointerEnter={tier.stripePlan ? () => void primeAuthViewer() : undefined}
-                onFocus={tier.stripePlan ? () => void primeAuthViewer() : undefined}
-                loading={loading || isCheckingAccount}
-                variant="accent"
-                fullWidth
-                size="lg"
-                className="shadow-glow-orange"
-                disabled={loading || isCheckingAccount}
-              >
-                {isCheckingAccount ? "Checking account…" : tier.cta}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Button
+        onClick={handleSubscribe}
+        onPointerEnter={() => void primeAuthViewer()}
+        onFocus={() => void primeAuthViewer()}
+        loading={loading || isCheckingAccount}
+        variant={actionVariant}
+        className={cn(fullWidth && "w-full", disableMotion && "transition-none", className)}
+        disabled={loading || isCheckingAccount}
+      >
+        {actionLabel}
+      </Button>
     );
   }
 
-  return (
-    <div className="relative flex flex-col rounded-3xl bg-card p-8 ring-1 ring-border shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-md">
-      {tier.badge ? (
-        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-foreground px-3.5 py-1 text-xs font-bold text-background shadow-sm">
-          {tier.badge}
-        </span>
-      ) : null}
-
-      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-        {tier.name}
-      </p>
-      <p className="mt-1.5 text-sm text-muted-foreground">{tier.description}</p>
-
-      <div className="mt-6 flex items-baseline gap-1.5">
-        <span className="text-5xl font-bold tracking-tight text-foreground">
-          {price === 0 ? "Free" : `$${price}`}
-        </span>
-        {price > 0 ? <span className="text-sm text-muted-foreground">/mo</span> : null}
-        {savings > 0 ? (
-          <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-            Save {savings}%
-          </span>
-        ) : null}
-      </div>
-
-      <div className="mt-6 border-t border-border" />
-
-      <ul className="mt-5 flex-1 space-y-3">
-        {tier.features.map((feature) => (
-          <li key={feature} className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 ring-1 ring-blue-100">
-              <Check className="h-3 w-3 text-blue-600" />
-            </span>
-            <span className="text-sm leading-relaxed text-muted-foreground">
-              {feature}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <div className="mt-8">
+  if (tier.href) {
+    if (tier.external) {
+      const isMailto = tier.href.startsWith("mailto:");
+      return (
         <Button
-          onClick={tier.stripePlan ? handleSubscribe : undefined}
-          onPointerEnter={tier.stripePlan ? () => void primeAuthViewer() : undefined}
-          onFocus={tier.stripePlan ? () => void primeAuthViewer() : undefined}
-          loading={loading || isCheckingAccount}
-          variant="outline"
-          fullWidth
-          size="lg"
-          disabled={loading || isCheckingAccount}
+          asChild
+          variant={actionVariant}
+          className={cn(fullWidth && "w-full", disableMotion && "transition-none", className)}
         >
-          {isCheckingAccount ? "Checking account…" : tier.cta}
+          <a
+            href={tier.href}
+            {...(!isMailto ? { target: "_blank", rel: "noreferrer" } : {})}
+          >
+            {tier.cta}
+          </a>
         </Button>
+      );
+    }
+
+    return (
+      <Button
+        asChild
+        variant={actionVariant}
+        className={cn(fullWidth && "w-full", disableMotion && "transition-none", className)}
+      >
+        <Link href={tier.href}>{tier.cta}</Link>
+      </Button>
+    );
+  }
+
+  return null;
+}
+
+export function PricingCard({
+  tier,
+  billing,
+  columnPosition = "middle",
+}: PricingCardProps) {
+  const price = billing === "annual" ? tier.price.annual : tier.price.monthly;
+  const annualSavings =
+    billing === "annual" && tier.price.monthly > 0
+      ? Math.round(
+          ((tier.price.monthly * 12 - tier.price.annual * 12) /
+            (tier.price.monthly * 12)) *
+            100,
+        )
+      : 0;
+  const billingNote =
+    tier.id === "free"
+      ? null
+      : billing === "annual"
+        ? "Billed annually"
+        : "Billed monthly";
+  const supportLine =
+    tier.id === "free"
+      ? "For individual purchases"
+      : tier.id === "team"
+        ? "Shared billing and onboarding"
+        : "For regular use";
+
+  const action = (
+    <MembershipTierAction tier={tier} billing={billing} className="w-full" />
+  );
+
+  return (
+    <div
+      data-membership-tier={tier.id}
+      className={cn(
+        "flex h-full flex-col px-0 py-7 sm:py-8",
+        columnPosition === "start"
+          ? "xl:pr-8"
+          : columnPosition === "end"
+            ? "xl:pl-8"
+            : "xl:px-8",
+      )}
+    >
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <h2 className="text-base font-semibold tracking-[0.01em] text-foreground">{tier.name}</h2>
+          <div className="text-3xl font-semibold tracking-tight text-foreground">
+            {price === 0 ? "Free" : `THB ${price}`}
+          </div>
+          <p className="text-base text-muted-foreground">
+            {price === 0 ? "Forever" : supportLine}
+          </p>
+        </div>
+
+        <div className="space-y-1.5 border-y border-border-subtle py-5">
+          <p className="text-base text-muted-foreground">
+            {tier.id === "free" ? tier.description : `${tier.description} · ${billingNote}`}
+          </p>
+          {annualSavings > 0 ? (
+            <p className="text-xs tracking-[0.14em] text-primary uppercase">
+              Save {annualSavings}% yearly
+            </p>
+          ) : null}
+        </div>
       </div>
+
+      <div className="mt-6 flex-1">
+        <div className="space-y-3">
+          {tier.features.map((feature) => (
+            <div key={feature} className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-primary/15 bg-accent text-primary">
+                <Check className="h-3.5 w-3.5" />
+              </span>
+              <span className="text-base leading-7 text-foreground/88">{feature}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-8">{action}</div>
     </div>
   );
 }

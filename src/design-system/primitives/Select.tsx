@@ -6,11 +6,13 @@ export interface SelectProps
   extends React.SelectHTMLAttributes<HTMLSelectElement> {
   error?: string
   hint?: string
+  hintClassName?: string
 }
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function Select({
   error,
   hint,
+  hintClassName,
   id,
   className,
   "aria-describedby": ariaDescribedBy,
@@ -46,7 +48,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function Select(
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className={cn("text-caption text-muted-foreground")}>
+        <p id={hintId} className={cn("text-caption text-muted-foreground", hintClassName)}>
           {hint}
         </p>
       ) : null}

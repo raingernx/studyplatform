@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "type": "file",
+      "ctime": 1776174354969,
+      "path": "krukraft-ai-contexts/09-todos.md"
+    },
+    {
+      "type": "file",
+      "ctime": 1776174543870,
+      "path": "krukraft-ai-contexts/04-architecture.md"
+    },
+    {
+      "type": "file",
+      "ctime": 1776174550671,
+      "path": "krukraft-ai-contexts/08-performance-audit.md"
+    }
+  ]
+}

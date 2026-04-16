@@ -57,7 +57,7 @@ function DropdownItem({
       data-slot="dropdown-item"
       data-destructive={destructive || undefined}
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2",
+        "relative flex cursor-pointer select-none items-center gap-2 rounded-lg px-3 py-2",
         "text-sm text-foreground outline-none transition-colors",
         "focus:bg-muted focus:text-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-40",
@@ -112,7 +112,7 @@ function DropdownCheckboxItem({
     <DropdownPrimitive.CheckboxItem
       data-slot="dropdown-checkbox-item"
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-lg py-2 pl-8 pr-3",
+        "relative flex cursor-pointer select-none items-center gap-2 rounded-lg py-2 pl-8 pr-3",
         "text-sm text-foreground outline-none transition-colors",
         "focus:bg-muted focus:text-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-40",
@@ -144,7 +144,7 @@ function DropdownRadioItem({
     <DropdownPrimitive.RadioItem
       data-slot="dropdown-radio-item"
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-lg py-2 pl-8 pr-3",
+        "relative flex cursor-pointer select-none items-center gap-2 rounded-lg py-2 pl-8 pr-3",
         "text-sm text-foreground outline-none transition-colors",
         "focus:bg-muted focus:text-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-40",
@@ -176,7 +176,7 @@ function DropdownSubTrigger({
     <DropdownPrimitive.SubTrigger
       data-slot="dropdown-sub-trigger"
       className={cn(
-        "flex cursor-default select-none items-center gap-2 rounded-lg px-3 py-2",
+        "flex cursor-pointer select-none items-center gap-2 rounded-lg px-3 py-2",
         "text-sm text-foreground outline-none transition-colors",
         "focus:bg-muted data-[state=open]:bg-muted",
         inset && "pl-8",

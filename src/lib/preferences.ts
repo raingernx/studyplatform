@@ -41,7 +41,7 @@ const USER_PREFERENCE_SELECT = {
 
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   language: "en",
-  theme: "light",
+  theme: "system",
   currency: "USD",
   timezone: "UTC",
   emailNotifications: true,

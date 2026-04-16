@@ -31,8 +31,6 @@ export function SettingsTabs({ user, preferences }: SettingsTabsProps) {
       />
       <PreferenceSettings
         theme={preferences.theme}
-        currency={preferences.currency}
-        timezone={preferences.timezone}
       />
       <DangerZone />
     </div>

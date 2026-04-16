@@ -47,6 +47,7 @@ storybook-static/
 repomix-output*.xml
 repomix-output*.md
 repomix-output*.json
+.local-db/
 .byom/
 .codex/environments/
 .agents/skills/*

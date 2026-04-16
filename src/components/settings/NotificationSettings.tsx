@@ -117,7 +117,7 @@ export function NotificationSettings({
     >
       <div className="flex items-center gap-2 text-caption text-muted-foreground">
         <Bell className="h-3.5 w-3.5 text-muted-foreground" />
-        Notification preferences are stored locally for now.
+        Notification preferences are saved to your account.
       </div>
       {status.message ? (
         <p

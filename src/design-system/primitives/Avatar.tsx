@@ -84,7 +84,7 @@ export function Avatar({
     return (
       <div
         className={cn(
-          "overflow-hidden rounded-full ring-1 ring-surface-200 bg-surface-100",
+          "relative overflow-hidden rounded-full ring-1 ring-surface-200 bg-surface-100",
           className,
         )}
         style={dimension}
@@ -93,10 +93,9 @@ export function Avatar({
           <Image
             src={normalizedSrc}
             alt={imageAlt}
-            width={size}
-            height={size}
+            fill
             sizes={`${size}px`}
-            className="h-full w-full object-cover"
+            className="object-cover"
             onError={() => setBroken(true)}
           />
         ) : (

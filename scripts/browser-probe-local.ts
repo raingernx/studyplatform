@@ -1810,6 +1810,7 @@ async function runSettingsThemeScenario({ browser }: ProbeContext) {
 
   const context = await createContext(browser);
   const page = await context.newPage();
+  await page.emulateMedia({ colorScheme: "light" });
 
   await page.addInitScript(() => {
     window.localStorage.removeItem("user_theme");

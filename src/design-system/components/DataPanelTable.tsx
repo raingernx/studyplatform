@@ -2,6 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 
 import {
   Card,
+  CardFooter,
   CardTitle,
 } from "@/design-system/primitives/Card";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ export interface DataPanelTableProps
   description?: ReactNode;
   actions?: ReactNode;
   toolbar?: ReactNode;
+  footer?: ReactNode;
   children: ReactNode;
   headerClassName?: string;
   bodyClassName?: string;
@@ -22,6 +24,7 @@ export function DataPanelTable({
   description,
   actions,
   toolbar,
+  footer,
   children,
   className,
   headerClassName,
@@ -56,6 +59,7 @@ export function DataPanelTable({
       </div>
 
       <div className={cn("p-0", bodyClassName)}>{children}</div>
+      {footer ? <CardFooter>{footer}</CardFooter> : null}
     </Card>
   );
 }

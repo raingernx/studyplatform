@@ -77,6 +77,7 @@ interface Props {
 
 export function TagsClient({ tags }: Props) {
   const router = useRouter();
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // ── Create form state ───────────────────────────────────────────────────────
   const [createName, setCreateName]     = useState("");
@@ -93,6 +94,10 @@ export function TagsClient({ tags }: Props) {
   // ── Delete confirmation state ───────────────────────────────────────────────
   const [deleteId, setDeleteId]           = useState<string | null>(null);
   const [deletePending, setDeletePending] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // Auto-focus the edit input whenever a row enters edit mode
   useEffect(() => {
@@ -208,7 +213,12 @@ export function TagsClient({ tags }: Props) {
           <h2 className="text-[14px] font-semibold text-foreground">Create new tag</h2>
         </div>
 
-        <form onSubmit={handleCreate} className="px-5 py-4">
+        <form
+          onSubmit={handleCreate}
+          className="px-5 py-4"
+          aria-busy={!isHydrated || createPending}
+          data-admin-tags-create-form-ready={isHydrated ? "true" : "false"}
+        >
           <div className="flex items-start gap-3">
             <div className="flex-1">
               <Input
@@ -219,7 +229,7 @@ export function TagsClient({ tags }: Props) {
                   setCreateError(null);
                 }}
                 placeholder="Tag name, e.g. Exam Prep"
-                disabled={createPending}
+                disabled={!isHydrated || createPending}
                 className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5
                            text-[13px] text-foreground placeholder:text-muted-foreground shadow-sm outline-none
                            transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100
@@ -246,7 +256,7 @@ export function TagsClient({ tags }: Props) {
 
             <Button
               type="submit"
-              disabled={!createName.trim() || createPending}
+              disabled={!isHydrated || !createName.trim() || createPending}
               className="flex flex-shrink-0 items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2.5
                          text-[13px] font-medium text-white shadow-sm transition
                          hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"

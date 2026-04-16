@@ -10,9 +10,6 @@ export type DashboardV2CreatorProfileData =
   | {
       state: "ready";
       profile: CreatorProfile;
-      displayName: string;
-      statusLabel: string;
-      publicProfileHref: string | null;
     }
   | {
       state: "locked";
@@ -26,16 +23,6 @@ export type DashboardV2CreatorProfileData =
       title: string;
       description: string;
     };
-
-function toCreatorStatusLabel(status: string | null | undefined) {
-  if (!status) return "Inactive";
-
-  return status
-    .toLowerCase()
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
 
 export async function getDashboardV2CreatorProfileData(
   userId: string,
@@ -65,19 +52,9 @@ export async function getDashboardV2CreatorProfileData(
       };
     }
 
-    const displayName =
-      profile.creatorDisplayName?.trim() ||
-      profile.name?.trim() ||
-      "Creator profile";
-
     return {
       state: "ready",
       profile,
-      displayName,
-      statusLabel: toCreatorStatusLabel(profile.creatorStatus),
-      publicProfileHref: profile.creatorSlug
-        ? routes.creatorPublicProfile(profile.creatorSlug)
-        : null,
     };
   } catch {
     return {

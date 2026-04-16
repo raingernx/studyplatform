@@ -106,44 +106,48 @@ export function CreatorPublicProfileLoadingShell() {
       <main>
         <PageContainer className="py-10">
           <PageContentWide>
-            <section className="overflow-hidden rounded-[28px] border border-border bg-card shadow-card">
-              <LoadingSkeleton className="h-48 w-full rounded-none" />
+            <div className="space-y-10">
+              <section className="overflow-hidden rounded-[32px] border border-border bg-card shadow-card">
+                <LoadingSkeleton className="h-72 w-full rounded-none" />
 
-              <div className="px-6 pb-8">
-                <div className="-mt-12 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="flex items-end gap-4">
-                    <LoadingSkeleton className="h-24 w-24 rounded-[28px] border border-border bg-card" />
-                    <div className="space-y-2 pb-1">
-                      <LoadingSkeleton className="h-10 w-56 rounded-2xl" />
-                      <LoadingSkeleton className="h-4 w-36" />
-                      <LoadingSkeleton className="h-4 w-32" />
+                <div className="-mt-64 px-6 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <LoadingSkeleton className="h-7 w-28 rounded-full bg-card/80" />
+                      <LoadingSkeleton className="h-7 w-32 rounded-full bg-card/80" />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {Array.from({ length: 3 }).map((_, index) => (
+                        <LoadingSkeleton
+                          key={index}
+                          className="size-10 rounded-full bg-card/80"
+                        />
+                      ))}
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    {Array.from({ length: 3 }).map((_, index) => (
-                      <LoadingSkeleton key={index} className="h-10 w-28 rounded-xl" />
-                    ))}
+                  <div className="mt-12 grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-end lg:gap-6">
+                    <LoadingSkeleton className="h-[104px] w-[104px] rounded-[30px] border border-border bg-card/90" />
+
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <LoadingSkeleton className="h-12 w-72 max-w-full rounded-2xl bg-card/85" />
+                        <LoadingSkeleton className="h-5 w-full max-w-3xl bg-card/70" />
+                        <LoadingSkeleton className="h-5 w-4/5 max-w-2xl bg-card/60" />
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        <LoadingSkeleton className="h-4 w-40 bg-card/65" />
+                        <LoadingSkeleton className="h-4 w-32 bg-card/55" />
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </section>
 
-                <div className="mt-6 space-y-2">
-                  <LoadingSkeleton className="h-4 w-full max-w-3xl" />
-                  <LoadingSkeleton className="h-4 w-4/5 max-w-2xl" />
-                </div>
-              </div>
-            </section>
-
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="rounded-2xl border border-border bg-card p-5 shadow-card">
-                  <LoadingSkeleton className="h-4 w-20" />
-                  <LoadingSkeleton className="mt-3 h-8 w-28" />
-                </div>
-              ))}
+              <CreatorPublicResourcesSectionFallback />
             </div>
-
-            <CreatorPublicResourcesSectionFallback />
           </PageContentWide>
         </PageContainer>
       </main>
@@ -153,10 +157,10 @@ export function CreatorPublicProfileLoadingShell() {
 
 export function CreatorPublicResourcesSectionFallback() {
   return (
-    <section className="mt-8 rounded-[28px] border border-border bg-card p-6 shadow-card">
+    <section className="space-y-5">
       <div className="space-y-2">
         <LoadingSkeleton className="h-8 w-56 rounded-2xl" />
-        <LoadingSkeleton className="h-4 w-64" />
+        <LoadingSkeleton className="h-4 w-[32rem] max-w-[72vw]" />
       </div>
       <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 6 }).map((_, index) => (

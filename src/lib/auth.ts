@@ -82,6 +82,27 @@ function backoffTokenRoleRefresh(
   setCachedRole(userId, fallbackRole, fallbackSubscriptionStatus);
 }
 
+function getOAuthProfileImage(
+  profile: unknown,
+  fallbackImage: string | null | undefined,
+): string | null {
+  if (profile && typeof profile === "object") {
+    const picture =
+      "picture" in profile && typeof profile.picture === "string"
+        ? profile.picture.trim()
+        : "image" in profile && typeof profile.image === "string"
+          ? profile.image.trim()
+          : "";
+
+    if (picture.length > 0) {
+      return picture;
+    }
+  }
+
+  const fallback = fallbackImage?.trim();
+  return fallback && fallback.length > 0 ? fallback : null;
+}
+
 // ── Auth options ──────────────────────────────────────────────────────────────
 
 const providers = [
@@ -156,14 +177,60 @@ export const authOptions: NextAuthOptions = {
   providers,
 
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider !== "google" || !user.id) {
+        return true;
+      }
+
+      const providerImage = getOAuthProfileImage(
+        profile,
+        typeof user.image === "string" ? user.image : null,
+      );
+
+      if (!providerImage) {
+        return true;
+      }
+
+      try {
+        const existingUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { image: true, providerImage: true },
+        });
+
+        const shouldTrackProviderAsCurrentImage =
+          !existingUser?.image || existingUser.image === existingUser.providerImage;
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            providerImage,
+            ...(shouldTrackProviderAsCurrentImage ? { image: providerImage } : {}),
+          },
+        });
+
+        if (shouldTrackProviderAsCurrentImage) {
+          user.image = providerImage;
+        }
+      } catch (error) {
+        if (!isMissingTableError(error)) {
+          console.error("[AUTH] Failed to sync provider avatar:", error);
+        }
+      }
+
+      return true;
+    },
+
     // Persist role + id in the JWT, keeping them in sync with the DB via
     // the in-memory role cache (max one DB call per user per 60 seconds).
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       const now = Date.now();
 
       // On first sign-in `user` is populated — write to cache immediately.
       if (user) {
         token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        token.picture = user.image;
         token.role =
           (user.role as AppUserRole | undefined) ??
           (token.role as AppUserRole | undefined) ??
@@ -172,6 +239,23 @@ export const authOptions: NextAuthOptions = {
           user.subscriptionStatus ?? token.subscriptionStatus ?? undefined;
         token.roleRefreshedAt = now;
         setCachedRole(user.id!, token.role, token.subscriptionStatus ?? null);
+      }
+
+      if (trigger === "update" && session && typeof session === "object") {
+        const nextName =
+          "name" in session && typeof session.name === "string" ? session.name : token.name;
+        const nextEmail =
+          "email" in session && typeof session.email === "string" ? session.email : token.email;
+        const nextImage =
+          "image" in session
+            ? typeof session.image === "string"
+              ? session.image
+              : null
+            : token.picture ?? null;
+
+        token.name = nextName;
+        token.email = nextEmail;
+        token.picture = nextImage;
       }
 
       // On every subsequent token refresh check the cache first.
@@ -229,6 +313,12 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.name = typeof token.name === "string" ? token.name : session.user.name;
+        session.user.email = typeof token.email === "string" ? token.email : session.user.email;
+        session.user.image =
+          typeof token.picture === "string" || token.picture === null
+            ? token.picture
+            : session.user.image;
         session.user.role = token.role ?? "STUDENT";
         session.user.subscriptionStatus = token.subscriptionStatus ?? undefined;
       }

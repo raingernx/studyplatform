@@ -33,6 +33,7 @@ const canonicalDashboardRoutes = {
   dashboardV2CreatorAnalytics: "/dashboard-v2/creator/analytics",
   dashboardV2CreatorSales: "/dashboard-v2/creator/sales",
   dashboardV2CreatorPayouts: "/dashboard-v2/creator/payouts",
+  dashboardV2CreatorStorefront: "/dashboard-v2/creator/storefront",
   dashboardV2CreatorProfile: "/dashboard-v2/creator/profile",
   dashboardV2CreatorSettings: "/dashboard-v2/creator/settings",
   dashboardV2LibraryPaymentSuccess: () => "/dashboard-v2/library?payment=success",

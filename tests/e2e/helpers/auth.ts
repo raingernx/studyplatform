@@ -7,12 +7,14 @@ import {
   UserRole,
 } from "@prisma/client";
 
-type LoginCredentials = {
+export type LoginCredentials = {
   email: string;
   password: string;
 };
 
 const AUTH_NAVIGATION_TIMEOUT_MS = 120_000;
+const AUTH_CALLBACK_RETRY_LIMIT = 3;
+const AUTH_GOTO_RETRY_LIMIT = 3;
 const TEST_BASE_URL =
   process.env.PLAYWRIGHT_TEST_BASE_URL ??
   process.env.BASE_URL ??
@@ -34,6 +36,13 @@ const USER_CREDENTIALS: LoginCredentials = {
 };
 
 let ensureAuthFixturesPromise: Promise<void> | null = null;
+
+function isRetryableAuthGotoError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /ERR_ABORTED|ERR_CONNECTION_REFUSED|Timeout .* exceeded|frame was detached/i.test(
+    message,
+  );
+}
 
 async function ensureAuthFixtures() {
   const prisma = new PrismaClient();
@@ -118,7 +127,7 @@ async function ensureAuthFixturesOnce() {
   await ensureAuthFixturesPromise;
 }
 
-async function loginWithCredentials(
+export async function loginWithCredentials(
   page: Page,
   credentials: LoginCredentials,
   nextPath: string,
@@ -138,18 +147,45 @@ async function loginWithCredentials(
     throw new Error("Credentials login did not receive a csrf token.");
   }
 
-  const callbackResponse = await request.post(
-    `${TEST_BASE_URL}/api/auth/callback/credentials`,
-    {
-      form: {
-        csrfToken,
-        email: credentials.email,
-        password: credentials.password,
-        callbackUrl: `${TEST_BASE_URL}${nextPath}`,
-        json: "true",
-      },
-    },
-  );
+  let callbackResponse: Awaited<ReturnType<typeof request.post>> | null = null;
+  let callbackError: unknown = null;
+
+  for (let attempt = 0; attempt < AUTH_CALLBACK_RETRY_LIMIT; attempt += 1) {
+    try {
+      callbackResponse = await request.post(
+        `${TEST_BASE_URL}/api/auth/callback/credentials`,
+        {
+          form: {
+            csrfToken,
+            email: credentials.email,
+            password: credentials.password,
+            callbackUrl: `${TEST_BASE_URL}${nextPath}`,
+            json: "true",
+          },
+        },
+      );
+      callbackError = null;
+      break;
+    } catch (error) {
+      callbackError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      const isRetryable = /ECONNRESET|socket hang up|fetch failed|network/i.test(
+        message,
+      );
+
+      if (!isRetryable || attempt === AUTH_CALLBACK_RETRY_LIMIT - 1) {
+        throw error;
+      }
+
+      await page.waitForTimeout(250 * (attempt + 1));
+    }
+  }
+
+  if (!callbackResponse) {
+    throw callbackError instanceof Error
+      ? callbackError
+      : new Error("Credentials callback failed before a response was returned.");
+  }
 
   if (!callbackResponse.ok()) {
     throw new Error(
@@ -173,10 +209,23 @@ async function loginWithCredentials(
     )
     .toBeTruthy();
 
-  await page.goto(nextPath, {
-    timeout: AUTH_NAVIGATION_TIMEOUT_MS,
-    waitUntil: "domcontentloaded",
-  });
+  await request.get(`${TEST_BASE_URL}/api/auth/viewer`).catch(() => null);
+
+  for (let attempt = 0; attempt < AUTH_GOTO_RETRY_LIMIT; attempt += 1) {
+    try {
+      await page.goto(nextPath, {
+        timeout: AUTH_NAVIGATION_TIMEOUT_MS,
+        waitUntil: "commit",
+      });
+      break;
+    } catch (error) {
+      if (!isRetryableAuthGotoError(error) || attempt === AUTH_GOTO_RETRY_LIMIT - 1) {
+        throw error;
+      }
+
+      await page.waitForTimeout(500 * (attempt + 1));
+    }
+  }
   await expect(page).toHaveURL(targetUrlPattern, {
     timeout: AUTH_NAVIGATION_TIMEOUT_MS,
   });
